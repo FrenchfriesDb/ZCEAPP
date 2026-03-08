@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "865041448347",
+    "project_id": "zce-ai-18385",
+    "storage_bucket": "zce-ai-18385.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:865041448347:android:1daab2d33bef3455f6353e",
+        "android_client_info": {
+          "package_name": "com.usahealthlife.zce"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "865041448347-hb4vsnbhhrlgu2ilm5utaiblpejbmf7q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAqD0rmvRUvBAZL0vWiQQ9YRl1Fq0EJXWE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "865041448347-hb4vsnbhhrlgu2ilm5utaiblpejbmf7q.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "865041448347-ejhqhfra989fjumcsdrp3u49fhlpchi7.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.usahealthlife.zce"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
