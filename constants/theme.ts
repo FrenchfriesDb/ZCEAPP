@@ -62,10 +62,46 @@ const gradients = {
 const glows = {
   glowBlue: 'rgba(0, 245, 255, 0.25)',
   glowBlueStrong: 'rgba(0, 245, 255, 0.45)',
-  glowPurple: 'rgba(255, 255, 255, 0.08)',
-  glowRed: 'rgba(255, 68, 68, 0.35)',
+  glowPurple: 'rgba(126, 48, 225, 0.25)',
+  glowRed: 'rgba(255, 78, 80, 0.25)',
+  glowOrange: 'rgba(255, 140, 0, 0.25)',
   glowWhite: 'rgba(255, 255, 255, 0.08)',
 };
+
+// ── Time-Based Accents ──────────────────────────────────────────
+export const TimeColors = {
+  // 4 AM — deep navy pre-dawn
+  preDawn: ['#000328', '#00458E'],
+  // 5 AM — steel blue dawn
+  earlierDawn: ['#243748', '#4B749F'],
+  // 6–7 AM — sunrise morning light
+  morning: ['#F5F5F5', '#71C3F7'],
+  // 8:30 AM – 4 PM — Cloud Drift (Vibrant Sky)
+  day: ['#2C6CBC', '#71C3F7', '#F6F6F6'],
+  // 5 PM — warm golden hour
+  goldenHour: ['#FFA585', '#FFEDA0'],
+  // 5:30 PM — rose mauve dusk
+  dusk: ['#DD83AD', '#C3E1FC'],
+  // 6–7 PM — fiery sunset
+  sunset: ['#FF0F7B', '#F89B29'],
+  // 7–8 PM — neon pink-cyan
+  twilight: ['#FF1B6B', '#45CAFF'],
+  // 9 PM — Night Dive
+  nightDive: ['#020344', '#28B8D5'],
+  // 10 PM — Void Spark
+  voidSpark: ['#000328', '#00458E'],
+  // 11 PM — Midnight Mist
+  midnightMist: ['#211F2F', '#918CA9'],
+  // 12 AM – 4 AM — Deep Abyss
+  deepAbyss: ['#0E1C26', '#2A454B', '#294861'],
+  // 7:10 AM – 7:30 AM — Citrus Sunrise
+  sunriseCitrus: ['#FFCF67', '#D3321D'],
+  // Cloud Drift Alias for clarity
+  cloudDrift: ['#2C6CBC', '#71C3F7', '#F6F6F6'],
+};
+
+// Helper: derive the dominant accent color (first stop) for any single-color usage
+export const getTimeAccent = (palette: string[]) => palette[0];
 
 export const Colors = {
   ...rawPalette,

@@ -7,7 +7,7 @@ import { useUser } from '@/context/UserContext';
 import GlassCard from '@/components/GlassCard';
 
 export default function EditProfileScreen() {
-    const { user, updateProfile, signOut, changeEmail, changePassword, deleteAccount, resetProgress } = useUser();
+    const { user, updateProfile, signOut, changeEmail, changePassword, deleteAccount, resetProgress, changeUsername } = useUser();
 
     const [name, setName] = useState(user?.name || '');
     const [title, setTitle] = useState(user?.title || '');
@@ -17,6 +17,10 @@ export default function EditProfileScreen() {
     const [isSaving, setIsSaving] = useState(false);
     const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
     const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+    const [newUsername, setNewUsername] = useState('');
+    const [isChangingUsername, setIsChangingUsername] = useState(false);
+    const [usernameError, setUsernameError] = useState('');
+    const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/;
 
     const handleSave = async () => {
         setIsSaving(true);
@@ -138,6 +142,24 @@ export default function EditProfileScreen() {
         firstConfirm();
     };
 
+    const handleUsernameUpdate = async () => {
+        setUsernameError('');
+        if (!newUsername) return;
+        if (!USERNAME_REGEX.test(newUsername)) {
+            setUsernameError('3–20 chars, letters/numbers/underscore only.');
+            return;
+        }
+        setIsChangingUsername(true);
+        try {
+            await changeUsername(newUsername.toLowerCase());
+            setNewUsername('');
+        } catch (e: any) {
+            setUsernameError(e?.message || 'Failed to update username.');
+        } finally {
+            setIsChangingUsername(false);
+        }
+    };
+
     return (
         <View style={styles.container}>
             <LinearGradient colors={['#050508', '#080816', '#000000']} style={StyleSheet.absoluteFill} />
@@ -184,6 +206,33 @@ export default function EditProfileScreen() {
                             numberOfLines={4}
                             placeholderTextColor={Colors.textTertiary}
                         />
+                    </View>
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.label}>USERNAME · LEADERBOARD IDENTITY</Text>
+                        <View style={styles.usernameCurrentRow}>
+                            <Text style={styles.usernameAt}>@</Text>
+                            <Text style={styles.usernameCurrent}>{user?.username || '—not set—'}</Text>
+                        </View>
+                        <TextInput
+                            style={styles.input}
+                            value={newUsername}
+                            onChangeText={v => { setNewUsername(v.replace(/\s/g, '').slice(0, 20)); setUsernameError(''); }}
+                            placeholder="new_username"
+                            placeholderTextColor={Colors.textTertiary}
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                        />
+                        {!!usernameError && <Text style={styles.fieldError}>{usernameError}</Text>}
+                        <Text style={styles.fieldHint}>30-day cooldown after changing. Choose wisely.</Text>
+                        <Pressable
+                            onPress={handleUsernameUpdate}
+                            style={({ pressed }) => [styles.smallBtn, pressed && styles.pressed, !newUsername && { opacity: 0.4 }]}
+                            disabled={!newUsername || isChangingUsername}
+                        >
+                            <Text style={styles.smallBtnText}>
+                                {isChangingUsername ? 'UPDATING...' : 'UPDATE USERNAME'}
+                            </Text>
+                        </Pressable>
                     </View>
 
                     <Pressable onPress={handleSave} style={({ pressed }) => [styles.saveBtn, pressed && styles.pressed]}>
@@ -274,7 +323,7 @@ export default function EditProfileScreen() {
                     <Text style={styles.deleteText}>TERMINATE AGENT (DELETE ACCOUNT)</Text>
                 </Pressable>
             </ScrollView>
-        </View>
+        </View >
     );
 }
 
@@ -320,4 +369,11 @@ const styles = StyleSheet.create({
 
     deleteBtn: { marginTop: 12, borderColor: 'rgba(255, 0, 0, 0.5)', backgroundColor: 'rgba(255, 0, 0, 0.05)' },
     deleteText: { color: '#FF4444', fontFamily: Fonts.monoBold, fontSize: 12, letterSpacing: 1 },
+
+    // Username section
+    usernameCurrentRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 6 },
+    usernameAt: { fontFamily: Fonts.monoBold, fontSize: 13, color: Colors.accentPrimary },
+    usernameCurrent: { fontFamily: Fonts.mono, fontSize: 13, color: '#fff', letterSpacing: 0.5 },
+    fieldError: { color: '#FF3B30', fontFamily: Fonts.mono, fontSize: 9, letterSpacing: 0.3 },
+    fieldHint: { color: 'rgba(255,255,255,0.25)', fontFamily: Fonts.mono, fontSize: 9, letterSpacing: 0.3 },
 });

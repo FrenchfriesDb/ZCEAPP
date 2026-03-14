@@ -9,7 +9,7 @@ import { useUser } from '@/context/UserContext';
 import { AIService } from '@/services/ai';
 
 export default function LinkDrill() {
-    const { completeDrill, addDrillLog } = useUser();
+    const { user, completeDrill, addDrillLog } = useUser();
     const [word1, setWord1] = useState("Link");
     const [word2, setWord2] = useState("Game");
     const [active, setActive] = useState(false);
@@ -44,6 +44,7 @@ export default function LinkDrill() {
     };
 
     const shuffle = async () => {
+        if (isLoading) return; // Prevent race condition
         setActive(true);
         setIsFinished(false);
         setFeedback("");
@@ -74,9 +75,9 @@ export default function LinkDrill() {
                    - Bold/Direct
                 Do NOT include a Brutal Truth section, Challenge section, or Quote section.
             `;
-            const result = await AIService.generateResponse([{ role: 'user', content: promptText }], 'groq');
+            const result = await AIService.generateResponse([{ role: 'user', content: promptText }], 'groq', user?.name || 'AGENT', user?.level || 1, 'coach');
             setFeedback(result);
-            await completeDrill(5);
+            await completeDrill(20);
             await addDrillLog('Link Game', 100, result);
         } catch (e) {
             setFeedback("Connection severed. Log it anyway.");
@@ -87,11 +88,11 @@ export default function LinkDrill() {
 
     return (
         <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             keyboardVerticalOffset={0}
             style={styles.container}
         >
-            <LinearGradient colors={['#000', '#111']} style={StyleSheet.absoluteFill} />
+            <LinearGradient colors={Colors.gradientDark} style={StyleSheet.absoluteFill} />
 
             <View style={styles.header}>
                 <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')} style={styles.backBtn}>
@@ -115,7 +116,7 @@ export default function LinkDrill() {
                             <View style={styles.timerBarBg}>
                                 <Animated.View style={[styles.timerBarFill, {
                                     width: timerAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
-                                    backgroundColor: timeLeft < 3 ? '#FF4444' : '#FFD93D'
+                                    backgroundColor: timeLeft < 3 ? Colors.accentPrimary : Colors.textSecondary
                                 }]} />
                             </View>
                             <Text style={styles.timerText}>{timeLeft.toFixed(1)}s</Text>
@@ -153,7 +154,7 @@ export default function LinkDrill() {
                                         multiline
                                     />
                                     <Pressable onPress={handleAnalyze} style={styles.submitBtn} disabled={isLoading || !response}>
-                                        {isLoading ? <ActivityIndicator color="#000" /> : <Text style={styles.btnTextDark}>ANALYZE LINK</Text>}
+                                        {isLoading ? <ActivityIndicator color={Colors.bgPrimary} /> : <Text style={styles.btnTextDark}>ANALYZE LINK</Text>}
                                     </Pressable>
                                 </View>
                             ) : (
@@ -161,8 +162,12 @@ export default function LinkDrill() {
                                     <ScrollView style={styles.feedbackScroll} contentContainerStyle={styles.feedbackScrollContent}>
                                         <Text style={styles.feedbackText}>{feedback}</Text>
                                     </ScrollView>
-                                    <Pressable onPress={shuffle} style={styles.btn}>
-                                        <Text style={styles.btnText}>NEXT ROUND</Text>
+                                    <Pressable
+                                        onPress={shuffle}
+                                        style={[styles.btn, isLoading && { opacity: 0.5 }]}
+                                        disabled={isLoading}
+                                    >
+                                        <Text style={styles.btnText}>{isLoading ? 'ANALYZING...' : 'NEXT ROUND'}</Text>
                                     </Pressable>
                                 </View>
                             )}
@@ -181,40 +186,40 @@ const styles = StyleSheet.create({
     header: { flexDirection: 'row', alignItems: 'center', paddingTop: 56, paddingBottom: 16, paddingHorizontal: 20 },
     backBtn: { width: 60 },
     headerSpacer: { width: 60 },
-    backText: { color: 'rgba(255,255,255,0.5)', fontFamily: Fonts.mono, fontSize: 12 },
-    title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: '#fff', letterSpacing: 3, textAlign: 'center' },
+    backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12 },
+    title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: Colors.textPrimary, letterSpacing: 3, textAlign: 'center' },
 
     scrollContent: { flexGrow: 1 },
     content: { flex: 1, paddingHorizontal: Spacing.lg, gap: 16, paddingTop: 12 },
     centerBox: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 24 },
-    intro: { color: '#ccc', fontFamily: Fonts.body, fontSize: 16, textAlign: 'center' },
+    intro: { color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 16, textAlign: 'center' },
 
     timerBarBg: { width: '100%', height: 4, backgroundColor: 'rgba(255,255,255,0.1)' },
     timerBarFill: { height: '100%' },
-    timerText: { color: '#fff', fontFamily: Fonts.heading, fontSize: 24, textAlign: 'center' },
+    timerText: { color: Colors.textPrimary, fontFamily: Fonts.heading, fontSize: 24, textAlign: 'center' },
 
     wordsContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, width: '100%' },
     wordCard: { width: '38%', aspectRatio: 1.2, justifyContent: 'center', alignItems: 'center', borderRadius: 16 },
-    word: { fontFamily: Fonts.heading, fontSize: 18, color: '#fff', textAlign: 'center' },
+    word: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.textPrimary, textAlign: 'center' },
     plus: { fontFamily: Fonts.heading, fontSize: 24, color: Colors.accentPrimary },
 
     btn: { backgroundColor: '#fff', paddingHorizontal: 30, paddingVertical: 14, borderRadius: 30, width: '100%', alignItems: 'center' },
-    btnText: { fontFamily: Fonts.heading, fontSize: 14, color: '#000', letterSpacing: 2 },
+    btnText: { fontFamily: Fonts.heading, fontSize: 14, color: Colors.bgPrimary, letterSpacing: 2 },
 
     feedbackSection: { width: '100%', gap: 16, flex: 1 },
     wordsHeader: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 10 },
-    wordSmall: { fontFamily: Fonts.heading, fontSize: 16, color: 'rgba(255,255,255,0.6)' },
+    wordSmall: { fontFamily: Fonts.heading, fontSize: 16, color: Colors.textSecondary },
     plusSmall: { fontFamily: Fonts.heading, fontSize: 16, color: Colors.accentPrimary },
 
     logSection: { gap: 10 },
     label: { fontFamily: Fonts.mono, fontSize: 10, color: Colors.accentPrimary, letterSpacing: 2 },
     input: {
         backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: 14,
-        color: '#fff', fontFamily: Fonts.body, fontSize: 16, minHeight: 80, textAlignVertical: 'top',
+        color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 16, minHeight: 80, textAlignVertical: 'top',
         borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
     },
     submitBtn: { backgroundColor: '#fff', paddingVertical: 14, borderRadius: 30, alignItems: 'center' },
-    btnTextDark: { fontFamily: Fonts.heading, fontSize: 14, color: '#000', letterSpacing: 2 },
+    btnTextDark: { fontFamily: Fonts.heading, fontSize: 14, color: Colors.bgPrimary, letterSpacing: 2 },
 
     resultContainer: { gap: 16, flex: 1 },
     feedbackScroll: {
@@ -226,5 +231,5 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(255,255,255,0.08)',
     },
     feedbackScrollContent: { padding: 18 },
-    feedbackText: { color: '#fff', fontFamily: Fonts.body, fontSize: 14, lineHeight: 22 },
+    feedbackText: { color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 14, lineHeight: 22 },
 });

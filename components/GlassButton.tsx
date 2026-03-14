@@ -7,10 +7,12 @@ import {
     Animated,
     ViewStyle,
     TextStyle,
+    Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Colors, Fonts, FontSizes, Radius } from '@/constants/theme';
+import { useTimeColors } from '@/hooks/useTimeColors';
 
 /**
  * Ultra-realistic "water-glass" button.
@@ -42,21 +44,21 @@ interface GlassButtonProps {
 const TINT = {
     dark: {
         rimColors: [
-            'rgba(255,255,255,0.50)',  // top specular — bright white hairline
-            'rgba(255,255,255,0.08)',  // mid
-            'rgba(0,0,0,0.55)',        // bottom shadow
+            'rgba(255,255,255,0.40)',  // top specular rim
+            'rgba(255,255,255,0.05)',
+            'rgba(0,0,0,0.80)',        // bottom shadow
         ] as const,
         bodyColors: [
-            'rgba(255,255,255,0.07)', // top glass shimmer
-            'rgba(255,255,255,0.015)', // mid body
-            'rgba(0,0,0,0.22)',        // bottom inner shadow (depth)
+            '#1a1a1a',                 // Top dark gray
+            '#0c0c0c',                 // mid
+            '#000000',                 // bottom pure black
         ] as const,
         specularColors: [
-            'rgba(255,255,255,0.18)', // specular hot-spot
-            'rgba(255,255,255,0.04)', // fade
-            'rgba(255,255,255,0.00)', // transparent
+            'rgba(255,255,255,0.15)',  // bubble highlight
+            'rgba(255,255,255,0.03)',
+            'rgba(255,255,255,0.00)',
         ] as const,
-        label: Colors.textPrimary,
+        label: '#E8E8E8',
         glowColor: 'rgba(255,255,255,0.10)',
     },
     blue: {
@@ -99,22 +101,22 @@ const TINT = {
     },
     monochrome: {
         rimColors: [
-            'rgba(255,255,255,0.90)', // Ultra 4k bright top
-            'rgba(255,255,255,0.20)',
-            'rgba(255,255,255,0.05)',
+            'rgba(255,255,255,0.80)',
+            'rgba(180,180,180,0.20)',
+            'rgba(0,0,0,0.80)',
         ] as const,
         bodyColors: [
-            'rgba(255,255,255,0.15)', // Bubble shimmer
-            'rgba(255,255,255,0.05)',
-            'rgba(0,0,0,0.40)',       // Depth
+            '#2a2a2a',
+            '#121212',
+            '#000000',
         ] as const,
         specularColors: [
-            'rgba(255,255,255,0.45)', // 4k specular hot-spot
-            'rgba(255,255,255,0.15)',
+            'rgba(255,255,255,0.35)',
+            'rgba(255,255,255,0.10)',
             'rgba(255,255,255,0.00)',
         ] as const,
         label: '#FFFFFF',
-        glowColor: 'rgba(255,255,255,0.25)',
+        glowColor: 'rgba(255,255,255,0.15)',
     },
 };
 
@@ -138,6 +140,8 @@ export default function GlassButton({
 }: GlassButtonProps) {
     const scaleAnim = useRef(new Animated.Value(1)).current;
     const glowAnim = useRef(new Animated.Value(0.4)).current;
+    const timePalette = useTimeColors();
+    const systemColor = timePalette[0];
 
     // glow halo pulse
     useEffect(() => {
@@ -177,9 +181,9 @@ export default function GlassButton({
                         styles.glowHalo,
                         {
                             borderRadius: br + 6,
-                            shadowColor: t.glowColor,
+                            shadowColor: tint === 'blue' ? systemColor : t.glowColor,
                             shadowOpacity: glowAnim,
-                            backgroundColor: t.glowColor,
+                            backgroundColor: tint === 'blue' ? systemColor : t.glowColor,
                             ...(isCircle ? { width: circle + 12, height: circle + 12, left: -6, top: -6 } : {}),
                         },
                     ]} />
@@ -233,7 +237,17 @@ export default function GlassButton({
                             </View>
 
                             {/* 6 ── LABEL */}
-                            {icon ? <Text style={{ fontSize: fs, color: t.label }}>{icon}</Text> : null}
+                            {icon ? (
+                                <Text style={{
+                                    fontSize: fs,
+                                    color: t.label,
+                                    fontFamily: Platform.OS === 'ios' ? 'System' : undefined,
+                                    fontWeight: 'normal',
+                                    letterSpacing: 0
+                                }}>
+                                    {icon}
+                                </Text>
+                            ) : null}
                             <Text style={[styles.label, { fontSize: fs, color: t.label }, labelStyle]}>
                                 {label}
                             </Text>

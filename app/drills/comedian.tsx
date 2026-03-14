@@ -9,7 +9,7 @@ import { AIService } from '@/services/ai';
 import { useUser } from '@/context/UserContext';
 
 export default function ComedianDrill() {
-    const { completeDrill, addDrillLog } = useUser();
+    const { user, completeDrill, addDrillLog } = useUser();
     const [object, setObject] = useState("This App");
     const [response, setResponse] = useState("");
     const [feedback, setFeedback] = useState("");
@@ -40,9 +40,9 @@ export default function ComedianDrill() {
                    - Bold/Direct
                 Do NOT include a Brutal Truth section, Challenge section, or Quote section.
             `;
-            const result = await AIService.generateResponse([{ role: 'user', content: promptText }], 'groq');
+            const result = await AIService.generateResponse([{ role: 'user', content: promptText }], 'groq', user?.name || 'AGENT', user?.level || 1, 'coach');
             setFeedback(result);
-            await completeDrill(7);
+            await completeDrill(20);
             await addDrillLog('Stand-Up Drill', 100, result);
         } catch (e) {
             setFeedback("Connection severed. Log it anyway.");
@@ -53,11 +53,11 @@ export default function ComedianDrill() {
 
     return (
         <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             keyboardVerticalOffset={0}
             style={styles.container}
         >
-            <LinearGradient colors={['#FF4081', '#000']} style={StyleSheet.absoluteFill} />
+            <LinearGradient colors={Colors.gradientDark} style={StyleSheet.absoluteFill} />
             <View style={styles.overlay} />
 
             <View style={styles.header}>
@@ -77,7 +77,7 @@ export default function ComedianDrill() {
                     <Text style={styles.label}>THE SUBJECT:</Text>
                     <Text style={styles.object}>{object}</Text>
                     <Pressable onPress={generate} style={styles.nextSubject}>
-                        <Text style={styles.nextSubjectText}>🎲 RANDOMIZE</Text>
+                        <Text style={styles.nextSubjectText}><Text style={{}}>🎲</Text> RANDOMIZE</Text>
                     </Pressable>
                 </GlassCard>
 
@@ -93,7 +93,7 @@ export default function ComedianDrill() {
                             multiline
                         />
                         <Pressable onPress={handleAnalyze} style={styles.analyzeBtn} disabled={isLoading || !response}>
-                            {isLoading ? <ActivityIndicator color="#000" /> : <Text style={styles.analyzeBtnText}>GET FEEDBACK</Text>}
+                            {isLoading ? <ActivityIndicator color={Colors.bgPrimary} /> : <Text style={styles.analyzeBtnText}>GET FEEDBACK</Text>}
                         </Pressable>
                     </View>
                 ) : (
@@ -120,15 +120,15 @@ const styles = StyleSheet.create({
     header: { flexDirection: 'row', alignItems: 'center', marginBottom: 30 },
     backBtn: { width: 60 },
     headerSpacer: { width: 60 },
-    backText: { color: 'rgba(255,255,255,0.5)', fontFamily: Fonts.mono, fontSize: 12 },
-    title: { flex: 1, fontFamily: Fonts.heading, fontSize: 18, color: '#fff', letterSpacing: 3, textAlign: 'center' },
+    backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12 },
+    title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: Colors.textPrimary, letterSpacing: 3, textAlign: 'center' },
 
     scrollContent: { paddingHorizontal: Spacing.lg, gap: 16, paddingBottom: 40 },
-    instruction: { fontFamily: Fonts.body, fontSize: 16, color: '#ccc', textAlign: 'center' },
+    instruction: { fontFamily: Fonts.body, fontSize: 16, color: Colors.textSecondary, textAlign: 'center' },
 
     card: { padding: 24, alignItems: 'center', width: '100%' },
     label: { fontFamily: Fonts.mono, fontSize: 12, color: Colors.accentPrimary, marginBottom: 10 },
-    object: { fontFamily: Fonts.heading, fontSize: 28, color: '#fff', textAlign: 'center' },
+    object: { fontFamily: Fonts.heading, fontSize: 28, color: Colors.textPrimary, textAlign: 'center' },
     nextSubject: { marginTop: 12, padding: 8, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 20 },
     nextSubjectText: { fontFamily: Fonts.mono, fontSize: 10, color: 'rgba(255,255,255,0.4)', letterSpacing: 1 },
 
@@ -136,11 +136,11 @@ const styles = StyleSheet.create({
     inputLabel: { fontFamily: Fonts.mono, fontSize: 10, color: Colors.accentPrimary, letterSpacing: 2 },
     input: {
         backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: 14,
-        color: '#fff', fontFamily: Fonts.body, fontSize: 16, minHeight: 80, textAlignVertical: 'top',
+        color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 16, minHeight: 80, textAlignVertical: 'top',
         borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
     },
     analyzeBtn: { backgroundColor: '#fff', paddingVertical: 14, borderRadius: 30, alignItems: 'center' },
-    analyzeBtnText: { fontFamily: Fonts.heading, fontSize: 14, color: '#000', letterSpacing: 2 },
+    analyzeBtnText: { fontFamily: Fonts.heading, fontSize: 14, color: Colors.bgPrimary, letterSpacing: 2 },
 
     feedbackSection: { gap: 16 },
     feedbackScroll: {
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(255,255,255,0.08)',
     },
     feedbackScrollContent: { padding: 18 },
-    feedbackText: { color: '#fff', fontFamily: Fonts.body, fontSize: 14, lineHeight: 22 },
+    feedbackText: { color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 14, lineHeight: 22 },
 
     btn: { backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 40, paddingVertical: 14, borderRadius: 30, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
     btnText: { fontFamily: Fonts.heading, fontSize: 14, color: '#fff', letterSpacing: 2 },

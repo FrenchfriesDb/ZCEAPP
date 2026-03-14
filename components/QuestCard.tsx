@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import { Colors, Fonts, FontSizes, Spacing, Radius } from '@/constants/theme';
 import GlassCard from './GlassCard';
+import { useTimeColors } from '@/hooks/useTimeColors';
 
 interface QuestCardProps {
     icon: string;
@@ -13,22 +14,40 @@ interface QuestCardProps {
 }
 
 export default function QuestCard({ icon, title, description, xpReward, completed, onToggle }: QuestCardProps) {
+    const timePalette = useTimeColors();
+    const systemColor = timePalette[0];
+
     return (
-        <GlassCard style={completed ? styles.completedCard : undefined} glowColor={completed ? Colors.accentCyan : undefined}>
+        <GlassCard
+            style={completed ? styles.completedCard : styles.card}
+            glowColor={completed ? systemColor + '22' : 'transparent'}
+            intensity={25}
+        >
             <View style={styles.row}>
-                <View style={styles.iconBox}>
-                    <Text style={styles.icon}>{icon}</Text>
+                <View
+                    style={[styles.iconBox, completed && { borderColor: systemColor + '33' }]}
+                >
+                    <Text style={[styles.icon, completed && { opacity: 0.8 }]}>
+                        <Text style={styles.emojiFix}>{icon}</Text>
+                    </Text>
                 </View>
+
                 <View style={styles.content}>
                     <Text style={[styles.title, completed && styles.completedText]}>{title}</Text>
                     <Text style={styles.description}>{description}</Text>
                 </View>
+
                 <View style={styles.right}>
-                    <View style={styles.xpBadge}>
-                        <Text style={styles.xpText}>+{xpReward} XP</Text>
+                    <View style={[styles.xpBadge, { borderColor: systemColor + '44' }, completed && { opacity: 0.5 }]}>
+                        <Text style={[styles.xpText, { color: systemColor }]}>+{xpReward} XP</Text>
                     </View>
-                    <Pressable onPress={onToggle} style={[styles.checkbox, completed && styles.checkboxDone]}>
-                        {completed && <Text style={styles.checkmark}>✓</Text>}
+
+                    <Pressable onPress={onToggle} style={({ pressed }) => [
+                        styles.checkbox,
+                        completed && { backgroundColor: systemColor, borderColor: systemColor },
+                        pressed && { opacity: 0.7, transform: [{ scale: 0.95 }] }
+                    ]}>
+                        {completed ? <Text style={styles.checkmark}>✓</Text> : <View style={styles.checkboxInner} />}
                     </Pressable>
                 </View>
             </View>
@@ -37,72 +56,88 @@ export default function QuestCard({ icon, title, description, xpReward, complete
 }
 
 const styles = StyleSheet.create({
+    card: {
+        marginBottom: 4,
+    },
     completedCard: {
-        opacity: 0.7,
+        opacity: 0.6,
+        marginBottom: 4,
     },
     row: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
+        gap: 16,
     },
     iconBox: {
-        width: 44,
-        height: 44,
-        borderRadius: Radius.md,
-        backgroundColor: 'rgba(74, 158, 255, 0.1)',
-        borderWidth: 0.5,
-        borderColor: 'rgba(74, 158, 255, 0.2)',
+        width: 48,
+        height: 48,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.08)',
+        backgroundColor: 'rgba(255, 255, 255, 0.04)',
         justifyContent: 'center',
         alignItems: 'center',
     },
     icon: {
-        fontSize: 22,
+        fontSize: 24,
+    },
+    emojiFix: {
+        fontFamily: Platform.OS === 'ios' ? 'System' : undefined,
+        fontWeight: 'normal',
+        letterSpacing: 0,
     },
     content: {
         flex: 1,
-        gap: 3,
+        gap: 4,
     },
     title: {
-        fontFamily: Fonts.headingSemi,
-        fontSize: FontSizes.md,
+        fontFamily: Fonts.heading,
+        fontSize: 16,
         color: Colors.textPrimary,
+        letterSpacing: 0.5,
     },
     completedText: {
         textDecorationLine: 'line-through',
-        color: Colors.textTertiary,
+        color: 'rgba(255, 255, 255, 0.3)',
     },
     description: {
         fontFamily: Fonts.body,
-        fontSize: FontSizes.sm,
-        color: Colors.textTertiary,
-        lineHeight: 16,
+        fontSize: 12,
+        color: 'rgba(255, 255, 255, 0.5)',
+        lineHeight: 18,
     },
     right: {
-        alignItems: 'center',
-        gap: 8,
+        alignItems: 'flex-end',
+        gap: 10,
     },
     xpBadge: {
-        backgroundColor: 'rgba(123, 97, 255, 0.15)',
-        borderRadius: 4,
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderWidth: 0.5,
-        borderColor: 'rgba(123, 97, 255, 0.3)',
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 6,
+        borderWidth: 1,
+        borderColor: 'rgba(0, 245, 255, 0.2)',
     },
     xpText: {
-        fontFamily: Fonts.mono,
+        fontFamily: Fonts.monoBold,
         fontSize: 10,
-        color: '#7B61FF',
-        letterSpacing: 0.5,
+        color: Colors.accentCyan,
+        letterSpacing: 1,
     },
     checkbox: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
+        width: 28,
+        height: 28,
+        borderRadius: 14,
         borderWidth: 1.5,
-        borderColor: 'rgba(255, 255, 255, 0.2)',
+        borderColor: 'rgba(255, 255, 255, 0.15)',
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    },
+    checkboxInner: {
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+        backgroundColor: 'transparent',
     },
     checkboxDone: {
         backgroundColor: Colors.accentCyan,
@@ -111,6 +146,6 @@ const styles = StyleSheet.create({
     checkmark: {
         color: '#000',
         fontSize: 14,
-        fontWeight: '700',
+        fontWeight: '900',
     },
 });

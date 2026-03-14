@@ -45,9 +45,9 @@ export default function FlipDrill() {
         try {
             const result = await AIService.generateResponse([
                 { role: 'user', content: promptText }
-            ], 'deepseek');
+            ], 'deepseek', user?.name || 'AGENT', user?.level || 1, 'coach');
             setAnalysis(result);
-            await completeDrill(8);
+            await completeDrill(20);
             await addDrillLog('Flip Formula', 100, result);
         } catch (e) {
             setAnalysis("Connection severed. Rate your own wit today.");
@@ -58,11 +58,11 @@ export default function FlipDrill() {
 
     return (
         <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             keyboardVerticalOffset={0}
             style={styles.container}
         >
-            <LinearGradient colors={['#0F2027', '#203A43', '#2C5364']} style={StyleSheet.absoluteFill} />
+            <LinearGradient colors={Colors.gradientDark} style={StyleSheet.absoluteFill} />
 
             <View style={styles.header}>
                 <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')} style={styles.backBtn}>
@@ -108,7 +108,7 @@ export default function FlipDrill() {
                 </View>
 
                 <Pressable onPress={handleAnalyze} style={({ pressed }) => [styles.btn, pressed && styles.btnPressed]}>
-                    {loading ? <ActivityIndicator color="#000" /> : <Text style={styles.btnText}>ANALYZE WITH AI</Text>}
+                    {loading ? <ActivityIndicator color={Colors.bgPrimary} /> : <Text style={styles.btnText}>ANALYZE WITH AI</Text>}
                 </Pressable>
 
                 {analysis ? (
@@ -130,31 +130,35 @@ const styles = StyleSheet.create({
     header: { flexDirection: 'row', alignItems: 'center', paddingTop: 56, paddingBottom: 16, paddingHorizontal: 20 },
     backBtn: { width: 60 },
     headerSpacer: { width: 60 },
-    backText: { color: 'rgba(255,255,255,0.5)', fontFamily: Fonts.mono, fontSize: 12 },
-    title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: '#fff', letterSpacing: 3, textAlign: 'center' },
+    backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12 },
+    title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: Colors.textPrimary, letterSpacing: 3, textAlign: 'center' },
 
     scrollContent: { padding: Spacing.lg, paddingBottom: 60, gap: 20 },
-    instruction: { fontFamily: Fonts.body, fontSize: 14, color: '#ccc', textAlign: 'center', marginBottom: 10 },
+    instruction: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, textAlign: 'center', marginBottom: 10 },
 
     inputGroup: { gap: 10 },
     label: { fontFamily: Fonts.mono, fontSize: 10, color: Colors.accentPrimary, letterSpacing: 1 },
     row: { flexDirection: 'row', gap: 10 },
     input: {
         backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: 14,
-        color: '#fff', fontFamily: Fonts.body, fontSize: 16, textAlignVertical: 'top',
+        color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 16, textAlignVertical: 'top',
         borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
     },
     genBtn: { width: 50, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-    genBtnText: { fontSize: 24 },
-
+    genBtnText: {
+        fontSize: 24,
+        fontFamily: Platform.OS === 'ios' ? 'System' : undefined,
+        fontWeight: 'normal',
+        letterSpacing: 0,
+    },
     btn: {
-        height: 56, borderRadius: 28, backgroundColor: '#fff',
+        height: 56, borderRadius: 28, backgroundColor: Colors.accentPrimary,
         justifyContent: 'center', alignItems: 'center', marginTop: 10
     },
     btnPressed: { opacity: 0.9 },
-    btnText: { fontFamily: Fonts.heading, fontSize: 14, color: '#000', letterSpacing: 2 },
+    btnText: { fontFamily: Fonts.heading, fontSize: 14, color: Colors.bgPrimary, letterSpacing: 2 },
 
     resultCard: { padding: 20, marginTop: 10 },
     resultTitle: { fontFamily: Fonts.heading, fontSize: 16, color: Colors.accentPrimary, marginBottom: 12 },
-    analysisText: { fontFamily: Fonts.body, fontSize: 14, color: '#fff', lineHeight: 22 },
+    analysisText: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textPrimary, lineHeight: 22 },
 });

@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Animated, Modal, TextInput, KeyboardAvoidingView, Platform, FlatList, Alert } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Colors, Fonts, FontSizes, Spacing, Radius } from '@/constants/theme';
 import XPBar from '@/components/XPBar';
 import GlassCard from '@/components/GlassCard';
 import GlassButton from '@/components/GlassButton';
-import MentorEntity from '@/components/MentorEntity';
+import ProofModal from '@/components/ProofModal';
 import { useUser } from '@/context/UserContext';
+import { useTimeColors } from '@/hooks/useTimeColors';
 
 const ROASTS = [
   "You didn't talk to anyone today? Bro, I'm a robot and even I'm disappointed.",
@@ -47,33 +48,33 @@ const ZANE_QUOTES = [
 ];
 
 const DAILY_MISSION_POOL = [
-  { id: 'dm_stranger', icon: '🔥', title: 'COLD OPEN STRANGER', xp: 10 },
-  { id: 'dm_eyelock', icon: '👁️', title: 'EYE-LOCK: BLINK FIRST = LOSE', xp: 10 },
-  { id: 'dm_compliment', icon: '💣', title: 'DROP BOLD COMPLIMENT', xp: 10 },
-  { id: 'dm_roast', icon: '🤜', title: 'BRUTAL ROAST (FRIEND)', xp: 10 },
-  { id: 'dm_group', icon: '⚡', title: 'INFILTRATE COLD GROUP', xp: 10 },
-  { id: 'dm_command', icon: '👑', title: 'COMMAND ROOM 60S', xp: 10 },
-  { id: 'dm_flip', icon: '🔄', title: 'FRAME FLIP DEFENSIVE LINE', xp: 10 },
-  { id: 'dm_joke', icon: '🎭', title: 'EXTRACT 3 LAUGHS', xp: 10 },
-  { id: 'dm_reject', icon: '🛡️', title: 'HUNT REJECTION', xp: 10 },
-  { id: 'dm_lead', icon: '🎤', title: 'SEIZE CONVERSATIONAL REINS', xp: 10 },
-  { id: 'dm_story', icon: '🔮', title: 'HOOK AUDIENCE: 60S STORY', xp: 10 },
-  { id: 'dm_confront', icon: '⚔️', title: 'ASSERT RAW TRUTH', xp: 10 },
+  { id: 'dm_stranger', icon: '🔥', title: 'COLD OPEN STRANGER', xp: 10, desc: 'Initiate a conversation with a total stranger.' },
+  { id: 'dm_eyelock', icon: '👁️', title: 'EYE-LOCK: BLINK FIRST = LOSE', xp: 10, desc: 'Hold eye contact until they break. No exceptions.' },
+  { id: 'dm_compliment', icon: '💣', title: 'DROP BOLD COMPLIMENT', xp: 10, desc: 'Give someone a genuine, high-status compliment.' },
+  { id: 'dm_roast', icon: '🤜', title: 'BRUTAL ROAST (FRIEND)', xp: 10, desc: 'Sharpen your wit with a playful, sharp remark.' },
+  { id: 'dm_group', icon: '⚡', title: 'INFILTRATE COLD GROUP', xp: 10, desc: 'Approach and join a group of people already talking.' },
+  { id: 'dm_command', icon: '👑', title: 'COMMAND ROOM 60S', xp: 10, desc: 'Enter a room and dominate the energy for 1 minute.' },
+  { id: 'dm_flip', icon: '🔄', title: 'FRAME FLIP DEFENSIVE LINE', xp: 10, desc: 'Turn a defensive moment into a status win.' },
+  { id: 'dm_joke', icon: '🎭', title: 'EXTRACT 3 LAUGHS', xp: 10, desc: 'Use clever wit to make three people laugh genuinely.' },
+  { id: 'dm_reject', icon: '🛡️', title: 'HUNT REJECTION', xp: 10, desc: 'Purposefully seek out a "No" to build immunity.' },
+  { id: 'dm_lead', icon: '🎤', title: 'SEIZE CONVERSATIONAL REINS', xp: 10, desc: 'Direct the topic of conversation in a group.' },
+  { id: 'dm_story', icon: '🔮', title: 'HOOK AUDIENCE: 60S STORY', xp: 10, desc: 'Control the attention with a magnetic 60s tale.' },
+  { id: 'dm_confront', icon: '⚔️', title: 'ASSERT RAW TRUTH', xp: 10, desc: 'State a blunt, honest truth without flinching.' },
 ];
 
 const QUEST_POOL = [
-  { id: 'q_mirror', icon: '🪞', title: '5-MIN MIRROR SIEGE', xp: 10 },
-  { id: 'q_record', icon: '🎥', title: 'RECORD & AUDIT VOICE', xp: 10 },
-  { id: 'q_cold', icon: '🥶', title: 'COLD SHOWER DISCIPLINE', xp: 10 },
-  { id: 'q_posture', icon: '💪', title: 'CLAIM YOUR SPACE: 1HR POSTURE', xp: 10 },
-  { id: 'q_nofiller', icon: '🤐', title: 'ZERO FILLER WORDS: 1HR', xp: 10 },
-  { id: 'q_villain', icon: '👹', title: 'DRAFT YOUR VILLAIN ARC', xp: 10 },
-  { id: 'q_dominate', icon: '🏆', title: 'LIST 3 DOMINANCE REPS', xp: 10 },
-  { id: 'q_silence', icon: '📵', title: 'SILENCE THE NOISE: 2HR OFFLINE', xp: 10 },
-  { id: 'q_journal', icon: '📓', title: 'RAW OPERATION JOURNAL', xp: 10 },
-  { id: 'q_breath', icon: '🌬️', title: 'BOX BREATHING: 4-4-4-4', xp: 10 },
-  { id: 'q_shadow', icon: '🌑', title: 'SHADOW WORK: FACE FEAR', xp: 10 },
-  { id: 'q_meditate', icon: '🧘', title: 'SILENCE WATCHER: 10M SIEGE', xp: 10 },
+  { id: 'q_mirror', icon: '🪞', title: '5-MIN MIRROR SIEGE', xp: 10, desc: 'Practice micro-expressions and tone in the mirror.' },
+  { id: 'q_record', icon: '🎥', title: 'RECORD & AUDIT VOICE', xp: 10, desc: 'Analyze your pitch, pace, and vocal presence.' },
+  { id: 'q_cold', icon: '🥶', title: 'COLD SHOWER DISCIPLINE', xp: 10, desc: 'Do 2 minutes of freezing water. Kill the comfort.' },
+  { id: 'q_posture', icon: '💪', title: 'CLAIM YOUR SPACE: 1HR POSTURE', xp: 10, desc: 'Maintain absolute alpha posture for 60 minutes.' },
+  { id: 'q_nofiller', icon: '🤐', title: 'ZERO FILLER WORDS: 1HR', xp: 10, desc: 'Eliminate "um," "like," and "basically" completely.' },
+  { id: 'q_villain', icon: '👹', title: 'DRAFT YOUR VILLAIN ARC', xp: 10, desc: 'Define your boundaries and the things you stop tolerating.' },
+  { id: 'q_dominate', icon: '🏆', title: 'LIST 3 DOMINANCE REPS', xp: 10, desc: 'Write down three times you led or influenced a room.' },
+  { id: 'q_silence', icon: '📵', title: 'SILENCE THE NOISE: 2HR OFFLINE', xp: 10, desc: 'Go 120 minutes without a single digital distraction.' },
+  { id: 'q_journal', icon: '📓', title: 'RAW OPERATION JOURNAL', xp: 10, desc: 'Document your victories and mistakes with zero filter.' },
+  { id: 'q_breath', icon: '🌬️', title: 'BOX BREATHING: 4-4-4-4', xp: 10, desc: 'Calm the neural stack with 5 minutes of box breathing.' },
+  { id: 'q_shadow', icon: '🌑', title: 'SHADOW WORK: FACE FEAR', xp: 10, desc: 'Confront one thing you are currently avoiding.' },
+  { id: 'q_meditate', icon: '🧘', title: 'SILENCE WATCHER: 10M SIEGE', xp: 10, desc: 'Sit in absolute silence for 10 minutes. Watch the mind.' },
 ];
 
 const RECOVERY_QUESTIONS = [
@@ -87,9 +88,13 @@ const RECOVERY_QUESTIONS = [
 const pick8 = (pool: any[]) => [...pool].sort(() => 0.5 - Math.random()).slice(0, 8);
 
 export default function DojoScreen() {
-  const { user, completeQuest, resetQuests, recoverStreak } = useUser();
+  const { user, completeQuest, resetQuests, recoverStreak, deploySystemBackup } = useUser();
+  const timePalette = useTimeColors();
+  const systemColor = timePalette[0];
   const [roastIndex, setRoastIndex] = useState(() => Math.floor(Math.random() * ROASTS.length));
   const [quoteIndex, setQuoteIndex] = useState(() => Math.floor(Math.random() * ZANE_QUOTES.length));
+
+  // ... rest of the component state ...
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
 
@@ -98,11 +103,20 @@ export default function DojoScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [historyVisible, setHistoryVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
-  const [itemLog, setItemLog] = useState('');
   const [historyTab, setHistoryTab] = useState<'drills' | 'journal'>('drills');
   const [recoveryVisible, setRecoveryVisible] = useState(false);
   const [recoveryQuestion, setRecoveryQuestion] = useState('');
   const [recoveryAnswer, setRecoveryAnswer] = useState('');
+  const [nudgeVisible, setNudgeVisible] = useState(false);
+  const hasShownNudge = useRef(false);
+
+  // Trigger Nudge: "Yesterday you chose average. Today choose power."
+  useEffect(() => {
+    if (user?.streakAtRisk && !hasShownNudge.current) {
+      setNudgeVisible(true);
+      hasShownNudge.current = true;
+    }
+  }, [user?.streakAtRisk]);
 
   // Roast rotation with fade
   useEffect(() => {
@@ -113,7 +127,7 @@ export default function DojoScreen() {
       });
     }, 6000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fadeAnim]);
 
 
 
@@ -135,7 +149,7 @@ export default function DojoScreen() {
       });
     }, 1500);
     return () => clearTimeout(timer);
-  }, [allDailyDone]);
+  }, [allDailyDone, resetQuests]);
 
   const rebootDaily = async () => {
     const oldIds = dailyMissions.map(m => m.id);
@@ -160,13 +174,6 @@ export default function DojoScreen() {
     setModalVisible(true);
   };
 
-  const claimItem = async () => {
-    if (!selectedItem) return;
-    await completeQuest(selectedItem.id, selectedItem.xp, itemLog);
-    setModalVisible(false);
-    setItemLog('');
-    setSelectedItem(null);
-  };
 
   const handleRecovery = async () => {
     if (!recoveryAnswer.trim()) {
@@ -185,67 +192,77 @@ export default function DojoScreen() {
   const MissionRow = ({ item }: { item: any }) => {
     const isDone = completedIds.includes(item.id);
     return (
-      <Pressable
+      <GlassCard
+        themed
         onPress={() => handlePress(item)}
-        disabled={isDone}
-        style={({ pressed }) => [{ opacity: isDone ? 0.4 : pressed ? 0.85 : 1 }, { marginBottom: 10 }]}
+        style={[styles.missionCard, isDone && styles.missionCardDone, { padding: 0 }, { marginBottom: 12 }]}
       >
-        <View style={[styles.missionCard, isDone && styles.missionCardDone]}>
-          <BlurView intensity={16} tint="dark" style={StyleSheet.absoluteFill} />
-          {/* Left accent bar */}
-          <View style={[styles.missionAccentBar, isDone && { backgroundColor: '#00F5FF', opacity: 1 }]} />
+        {/* Left accent bar — Smooth White -> Base gradient */}
+        <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, overflow: 'hidden' }}>
+          <LinearGradient
+            colors={isDone
+              ? ['rgba(255,255,255,0.2)', 'rgba(255,255,255,0.05)']
+              : ['#FFFFFF', timePalette[0]] as any // Pure White top to themed base
+            }
+            style={StyleSheet.absoluteFill}
+          />
+        </View>
 
+        <View style={{ flexDirection: 'row', alignItems: 'center', padding: 18, gap: 14 }}>
           {/* Icon badge */}
           <View style={[styles.missionIconBadge, isDone && styles.missionIconBadgeDone]}>
-            <Text style={[styles.missionIcon, isDone && { color: '#00F5FF' }]}>{isDone ? '✓' : item.icon}</Text>
+            <Text allowFontScaling={false} style={[styles.missionIcon, { color: '#FFFFFF', fontSize: 18 }, isDone && { opacity: 0.5 }]}>{isDone ? '✓' : item.icon}</Text>
           </View>
 
           {/* Info */}
-          <View style={{ flex: 1, gap: 3 }}>
-            <Text style={[styles.missionTitle, isDone && styles.missionTitleDone]}>
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={[styles.missionTitle, isDone && styles.missionTitleDone, { fontFamily: Fonts.monoBold, fontSize: 13, color: '#B3E0FF', letterSpacing: 0.5 }]}>
               {item.title.toUpperCase()}
             </Text>
-            <Text style={styles.missionId}>ID_{item.id.toUpperCase()}</Text>
+            <Text style={[styles.missionId, { fontFamily: Fonts.body, fontSize: 11, color: '#FFFFFF', opacity: 1.0 }]}>{item.desc}</Text>
           </View>
 
           {/* XP pill */}
-          <View style={[styles.xpPill, isDone && { backgroundColor: 'rgba(0, 245, 255, 0.1)', borderColor: 'rgba(0, 245, 255, 0.2)' }]}>
-            <Text style={[styles.xpPillText, isDone && { color: '#00F5FF' }]}>
+          <View style={[styles.xpPill, { borderWidth: 1, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4, borderColor: 'rgba(255,255,255,0.4)' }, isDone && { backgroundColor: 'rgba(255, 255, 255, 0.05)', borderColor: 'rgba(255,255,255,0.1)' }]}>
+            <Text style={[styles.xpPillText, { fontFamily: Fonts.monoBold, fontSize: 10, color: '#FFFFFF' }, isDone && { color: 'rgba(255,255,255,0.3)' }]}>
               {isDone ? 'DONE' : `+${item.xp}`}
             </Text>
           </View>
         </View>
-      </Pressable>
+      </GlassCard>
     );
   };
 
   // ── SECTION HEADER ───────────────────────────────────────────────────────────
   const SectionHeader = ({ title, done, onReboot, count, total }: {
     title: string; done: boolean; onReboot: () => void; count: number; total: number;
-  }) => (
-    <View style={styles.sectionHeader}>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.sectionTitle}>{title}</Text>
-        <Text style={styles.sectionSub}>{count}/{total} COMPLETED</Text>
+  }) => {
+    return (
+      <View style={styles.sectionHeader}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.sectionTitle}>{title}</Text>
+          <Text style={styles.sectionSub}>{count}/{total} COMPLETED</Text>
+        </View>
+        {done ? (
+          <GlassButton
+            label="◆ REBOOT"
+            onPress={onReboot}
+            size="sm"
+            tint="blue"
+            style={{ marginLeft: 8 }}
+          />
+        ) : null}
       </View>
-      {done ? (
-        <GlassButton
-          label="◆ REBOOT"
-          onPress={onReboot}
-          size="sm"
-          tint="blue"
-          style={{ marginLeft: 8 }}
-        />
-      ) : null}
-    </View>
-  );
+    );
+  };
 
   return (
     <View style={styles.container}>
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
-
-      {/* No Neural Grid Overlay - Reverted to clean version */}
-
+      <LinearGradient
+        colors={timePalette.map(c => `${c}33`) as any} // ~20% opacity for background base
+        style={StyleSheet.absoluteFill}
+      />
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.85)' }]} />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Profile Header — Clean Spacing */}
@@ -257,12 +274,14 @@ export default function DojoScreen() {
           <View style={styles.heroStreakWrapper}>
             <Text style={[
               styles.heroNumber,
+              { textShadowColor: systemColor + '66' },
               (user?.streakAtRisk && streakCount > 0) && { color: Colors.accentDanger, textShadowColor: 'rgba(255, 68, 68, 0.3)' }
             ]}>
               {streakCount}
             </Text>
             <Text style={[
               styles.heroUnit,
+              { color: systemColor },
               (user?.streakAtRisk && streakCount > 0) && { color: Colors.accentDanger, opacity: 1 }
             ]}>
               {(user?.streakAtRisk && streakCount > 0) ? 'REPAIR REQUIRED' : 'DAY STREAK'}
@@ -270,20 +289,45 @@ export default function DojoScreen() {
           </View>
 
           <Text style={styles.welcomeText}>
-            Welcome back, {user?.name || 'Agent'}.
+            Welcome back, {user?.name?.split(' ')[0] || 'Agent'}.
           </Text>
-
 
           {/* XP Progression — Directly below streak as requested */}
           <View style={styles.heroXPContainer}>
-            <XPBar currentXP={user?.xp || 0} />
+            <XPBar xp={user?.xp || 0} />
             <Text style={styles.xpSubLabel} numberOfLines={1} adjustsFontSizeToFit>
               CHARISMA ENGINE // PROGRESSION {user?.xp || 0} XP TOTAL
             </Text>
           </View>
         </View>
 
+        {/* ═══ SYSTEM BACKUP ALERT ═══ */}
+        {user && (user.streakAtRisk || (new Date().getHours() >= 21 && user.xp === (user.dailyXp?.[new Date().toISOString().split('T')[0]] || 0) && (user.systemBackups || 0) > 0)) && (
+          <GlassCard style={[styles.backupBanner, user.streakAtRisk && styles.backupBannerCritical]}>
+            <View style={styles.backupBannerContent}>
+              <Text style={styles.backupBannerTitle}>
+                {user.streakAtRisk ? '🚨 CRITICAL: STREAK VULNERABLE' : '⚠️ NIGHT OPS: NO ACTIVITY'}
+              </Text>
+              <Text style={styles.backupBannerSub}>
+                {user.streakAtRisk
+                  ? "Your streak is offline. Deploy a backup now to repair the engine."
+                  : "9PM and zero reps. Use a System Backup or get to work."}
+              </Text>
 
+              {(user.systemBackups || 0) > 0 ? (
+                <GlassButton
+                  label={`DEPLOY SYSTEM BACKUP (${user.systemBackups} LEFT)`}
+                  onPress={deploySystemBackup}
+                  tint={user.streakAtRisk ? "red" : "blue"}
+                  size="sm"
+                  style={{ marginTop: 12 }}
+                />
+              ) : (
+                <Text style={styles.noBackupText}>OUT OF SYSTEM BACKUPS. EARN 500XP TO PURCHASE.</Text>
+              )}
+            </View>
+          </GlassCard>
+        )}
 
         {/* ═══ PRIMARY CTA ═══ */}
         <View>
@@ -291,7 +335,7 @@ export default function DojoScreen() {
             label="Talk to Zane"
             onPress={() => router.push('/chat')}
             size="lg"
-            tint="blue"
+            tint="monochrome"
             variant="pill"
             glow
             style={{ width: '100%' }}
@@ -299,29 +343,37 @@ export default function DojoScreen() {
         </View>
 
         {/* ═══ ZANE ROAST OF THE DAY ═══ */}
-        <Pressable
+        <GlassCard
           onPress={() => setRoastIndex((roastIndex + 1) % ROASTS.length)}
           style={styles.roastCard}
+          themed
         >
           <View style={styles.roastHeader}>
-            <Text style={styles.roastLabel}>🔥 ZANE'S ROAST</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Text style={styles.emojiIcon}>🔥</Text>
+              <Text allowFontScaling={false} style={styles.roastLabel}>ZANE&apos;S ROAST</Text>
+            </View>
             <Text style={styles.roastTap}>tap to refresh</Text>
           </View>
           <Text style={styles.roastCardText}>“{ROASTS[roastIndex]}”</Text>
-        </Pressable>
+        </GlassCard>
 
         {/* ═══ DAILY QUOTE ═══ */}
-        <Pressable
+        <GlassCard
           onPress={() => setQuoteIndex((quoteIndex + 1) % ZANE_QUOTES.length)}
           style={styles.quoteCard}
+          themed
         >
           <View style={styles.quoteHeader}>
-            <Text style={styles.quoteLabel}>⚡ DAILY QUOTE</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Text style={styles.emojiIcon}>⚡</Text>
+              <Text allowFontScaling={false} style={styles.quoteLabel}>DAILY QUOTE</Text>
+            </View>
             <Text style={styles.quoteTap}>tap to refresh</Text>
           </View>
-          <Text style={styles.quoteTextMain}>“{ZANE_QUOTES[quoteIndex]}”</Text>
-          <Text style={styles.quoteAttr}>— Zane × Goggins Engine</Text>
-        </Pressable>
+          <Text style={[styles.quoteTextMain, { color: '#FFFFFF' }]}>“{ZANE_QUOTES[quoteIndex]}”</Text>
+          <Text style={[styles.quoteAttr, { color: 'rgba(255,255,255,0.7)' }]}>— Zane × Goggins Engine</Text>
+        </GlassCard>
 
         {/* ═══ DIVIDER ═══ */}
         <View style={styles.divider} />
@@ -351,7 +403,7 @@ export default function DojoScreen() {
         <View style={styles.divider} />
         <Pressable onPress={() => setHistoryVisible(true)} style={styles.archivesBtn}>
           <View style={styles.archivesBtnInner}>
-            <Text style={styles.archivesBtnIcon}>📂</Text>
+            <Text allowFontScaling={false} style={styles.archivesBtnIcon}>📂</Text>
             <View style={{ flex: 1 }}>
               <Text style={styles.archivesBtnTitle}>Archives</Text>
               <Text style={styles.archivesBtnSub}>Training logs, mission journals, Zane entries</Text>
@@ -359,44 +411,37 @@ export default function DojoScreen() {
             <Text style={styles.archivesBtnArrow}>→</Text>
           </View>
         </Pressable>
+
+        <Pressable onPress={() => router.push('/research')} style={styles.archivesBtn}>
+          <View style={styles.archivesBtnInner}>
+            <Text allowFontScaling={false} style={styles.archivesBtnIcon}>📖</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.archivesBtnTitle}>Research & Lore</Text>
+              <Text style={styles.archivesBtnSub}>Study the social engineering archives</Text>
+            </View>
+            <Text style={styles.archivesBtnArrow}>→</Text>
+          </View>
+        </Pressable>
       </ScrollView>
 
-      {/* ── CLAIM MODAL ── */}
-      <Modal animationType="slide" transparent visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
-          <View style={styles.modalContentWrapper}>
-            <View style={styles.modalCard}>
-              <Text style={styles.modalTitle}>MISSION LOG</Text>
-              <Text style={styles.modalSub}>{selectedItem?.title}</Text>
-              <Text style={styles.modalLabel}>HOW DID IT GO?</Text>
-              <TextInput
-                style={styles.modalInput}
-                placeholder="Briefly log the interaction..."
-                placeholderTextColor={Colors.textTertiary}
-                value={itemLog}
-                onChangeText={setItemLog}
-                multiline
-              />
-              <View style={styles.modalButtons}>
-                <GlassButton
-                  label="CANCEL"
-                  onPress={() => setModalVisible(false)}
-                  tint="dark"
-                  size="md"
-                  style={{ flex: 1 }}
-                />
-                <GlassButton
-                  label={`CLAIM +${selectedItem?.xp} XP`}
-                  onPress={claimItem}
-                  tint="blue"
-                  size="md"
-                  style={{ flex: 2 }}
-                />
-              </View>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
+      {/* ── PROOF MODAL ── */}
+      <ProofModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        onComplete={async (proofData) => {
+          if (!selectedItem) return;
+
+          let log = `Verified: ${selectedItem.title}.`;
+          if (proofData.text) log += ` Description: ${proofData.text}`;
+          if (proofData.photoUri) log += ` [Photo Proof Attached]`;
+          if (proofData.voiceUri) log += ` [Voice Proof Attached]`;
+
+          await completeQuest(selectedItem.id, selectedItem.xp, log);
+          setModalVisible(false);
+          setSelectedItem(null);
+        }}
+        questTitle={selectedItem?.title || ''}
+      />
 
       {/* ── RECOVERY MODAL ── */}
       <Modal animationType="slide" transparent visible={recoveryVisible} onRequestClose={() => setRecoveryVisible(false)}>
@@ -497,7 +542,22 @@ export default function DojoScreen() {
           />
         </View>
       </Modal>
-    </View>
+
+      {/* ── BEHAVIORAL NUDGE MODAL ── */}
+      <Modal visible={nudgeVisible} transparent animationType="fade" onRequestClose={() => setNudgeVisible(false)}>
+        <View style={styles.nudgeOverlay}>
+          <BlurView intensity={40} style={StyleSheet.absoluteFill} />
+          <GlassCard style={styles.nudgeCard}>
+            <Text style={styles.nudgeTitle}>SYSTEM ALERT</Text>
+            <Text style={styles.nudgeQuote}>"Yesterday you chose average."</Text>
+            <Text style={styles.nudgeSubTitle}>Today choose power.</Text>
+            <View style={styles.nudgeDivider} />
+            <Text style={styles.nudgeInstruction}>Your streak handle is compromised. Initiate a session immediately to stabilize your momentum.</Text>
+            <GlassButton label="RECLAIM STATUS" onPress={() => setNudgeVisible(false)} tint="blue" size="lg" glow style={{ width: '100%', marginTop: 20 }} />
+          </GlassCard>
+        </View>
+      </Modal>
+    </View >
   );
 }
 
@@ -530,7 +590,7 @@ const styles = StyleSheet.create({
   welcomeText: {
     fontFamily: Fonts.body,
     fontSize: 20,
-    color: 'rgba(255,255,255,0.4)',
+    color: '#FFFFFF',
     textAlign: 'center',
     marginBottom: 40,
     marginTop: -10,
@@ -592,7 +652,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   roastLabel: {
-    fontFamily: Fonts.monoBold,
     fontSize: 10,
     color: '#888888',
     letterSpacing: 3,
@@ -607,9 +666,44 @@ const styles = StyleSheet.create({
   roastCardText: {
     fontFamily: Fonts.body,
     fontSize: 14,
-    color: 'rgba(255,255,255,0.8)',
+    color: '#FFFFFF',
     lineHeight: 22,
-    fontStyle: 'italic',
+    fontWeight: '500', // Making text slightly bolder for "light" feel
+  },
+  // Backup Banner
+  backupBanner: {
+    padding: 20,
+    backgroundColor: 'rgba(0, 150, 255, 0.05)',
+    borderColor: 'rgba(0, 150, 255, 0.2)',
+    borderRadius: Radius.xl,
+  },
+  backupBannerCritical: {
+    backgroundColor: 'rgba(255, 50, 50, 0.05)',
+    borderColor: 'rgba(255, 50, 50, 0.3)',
+  },
+  backupBannerContent: {
+    alignItems: 'center',
+  },
+  backupBannerTitle: {
+    fontFamily: Fonts.monoBold,
+    fontSize: 11,
+    color: '#fff',
+    letterSpacing: 2,
+    marginBottom: 6,
+  },
+  backupBannerSub: {
+    fontFamily: Fonts.body,
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.6)',
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  noBackupText: {
+    fontFamily: Fonts.monoBold,
+    fontSize: 9,
+    color: 'rgba(255,255,255,0.3)',
+    marginTop: 12,
+    letterSpacing: 1,
   },
   quoteCard: {
     backgroundColor: 'rgba(125, 125, 125, 0.04)',
@@ -625,7 +719,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   quoteLabel: {
-    fontFamily: Fonts.monoBold,
     fontSize: 10,
     color: '#777777',
     letterSpacing: 3,
@@ -672,7 +765,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     gap: 14,
   },
-  archivesBtnIcon: { fontSize: 24 },
+  archivesBtnIcon: {
+    fontSize: 24,
+    fontFamily: Platform.OS === 'ios' ? 'Apple Color Emoji' : undefined,
+    fontWeight: 'normal',
+    letterSpacing: 0,
+  },
   archivesBtnTitle: {
     fontFamily: Fonts.heading,
     fontSize: 16,
@@ -737,9 +835,9 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: Radius.md,
-    backgroundColor: 'rgba(0, 245, 255, 0.08)',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
     borderWidth: 1,
-    borderColor: 'rgba(0, 245, 255, 0.15)',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -749,7 +847,16 @@ const styles = StyleSheet.create({
   },
   missionIcon: {
     fontSize: 16,
-    color: '#00F5FF',
+    color: '#FFFFFF',
+    fontFamily: Platform.OS === 'ios' ? 'System' : undefined,
+    fontWeight: 'normal',
+    letterSpacing: 0,
+  },
+  emojiIcon: {
+    fontSize: 14,
+    fontFamily: Platform.OS === 'ios' ? 'System' : undefined,
+    fontWeight: 'normal',
+    letterSpacing: 0,
   },
   missionTitle: {
     fontFamily: Fonts.headingSemi,
@@ -769,17 +876,17 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   xpPill: {
-    backgroundColor: 'rgba(0, 245, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
     borderRadius: Radius.pill,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderWidth: 1,
-    borderColor: 'rgba(0, 245, 255, 0.2)',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   xpPillText: {
     fontFamily: Fonts.monoBold,
     fontSize: 10,
-    color: '#00F5FF',
+    color: '#FFFFFF',
     fontWeight: '800',
     letterSpacing: 0.5,
   },
@@ -808,7 +915,7 @@ const styles = StyleSheet.create({
   modalSub: {
     fontFamily: Fonts.mono,
     fontSize: FontSizes.sm,
-    color: '#00F5FF',
+    color: 'rgba(255,255,255,0.6)',
     marginBottom: 20,
     letterSpacing: 1,
   },
@@ -868,21 +975,23 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.borderGlass,
   },
   historyTabBtnActive: {
-    backgroundColor: 'rgba(0, 245, 255, 0.12)',
-    borderColor: '#00F5FF',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   historyTabText: {
     fontFamily: Fonts.monoBold,
     fontSize: 11, color: Colors.textSecondary, letterSpacing: 2,
   },
-  historyTabTextActive: { color: '#00F5FF' },
+  historyTabTextActive: { color: '#FFFFFF' },
   historyList: { padding: Spacing.xl, gap: 14, paddingBottom: 120 },
   logCard: { borderRadius: Radius.lg },
   logTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
   logType: {
     fontFamily: Fonts.monoBold,
-    fontSize: 11, color: '#00F5FF', letterSpacing: 2,
+    fontSize: 11, color: 'rgba(255,255,255,0.6)', letterSpacing: 2,
   },
+  footerLink: { fontFamily: Fonts.mono, color: 'rgba(255,255,255,0.4)', fontSize: 9, textDecorationLine: 'underline' },
+  footerVersion: { fontFamily: Fonts.mono, color: 'rgba(255,255,255,0.3)', fontSize: 8 },
   logDate: {
     fontFamily: Fonts.mono, fontSize: 11, color: Colors.textTertiary,
   },
@@ -906,4 +1015,13 @@ const styles = StyleSheet.create({
     textAlign: 'center', color: Colors.textTertiary,
     fontFamily: Fonts.mono, marginTop: 40, fontSize: 13,
   },
+  nudgeOverlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', padding: 24,
+  },
+  nudgeCard: { width: '100%', padding: 30, alignItems: 'center' },
+  nudgeTitle: { fontFamily: Fonts.monoBold, fontSize: 10, color: '#FF3B30', letterSpacing: 4, marginBottom: 20 },
+  nudgeQuote: { fontFamily: Fonts.heading, fontSize: 24, color: '#fff', textAlign: 'center', fontWeight: '900' },
+  nudgeSubTitle: { fontFamily: Fonts.heading, fontSize: 20, color: Colors.accentPrimary, textAlign: 'center', marginTop: 8 },
+  nudgeDivider: { width: 60, height: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginVertical: 24 },
+  nudgeInstruction: { fontFamily: Fonts.body, fontSize: 13, color: 'rgba(255,255,255,0.5)', textAlign: 'center', lineHeight: 20 },
 });

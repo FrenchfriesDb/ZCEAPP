@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { Platform, Alert } from 'react-native';
 import { auth, db } from '@/services/firebase';
+import { NotificationService } from '@/services/notifications';
 import {
     onAuthStateChanged,
     signInWithEmailAndPassword,
@@ -20,6 +21,10 @@ import {
     setDoc,
     updateDoc,
     deleteDoc,
+    collection,
+    query,
+    where,
+    getDocs,
 } from 'firebase/firestore';
 
 // --- STORAGE HELPER ---
@@ -50,6 +55,11 @@ const DEFAULT_USER = {
     drillLogs: [] as any[],
     completedQuests: [] as string[],
     chatLogs: [] as { role: 'user' | 'assistant', content: string, timestamp: string }[],
+    dailyXp: {} as { [date: string]: number },
+    username: '' as string,
+    usernameLastChanged: null as string | null,
+    systemBackups: 1, // Start with one
+    lastBackupMonth: '' as string, // YYYY-MM
 };
 
 // --- TYPES ---
@@ -70,6 +80,11 @@ export interface UserData {
     drillLogs: any[];
     completedQuests: string[];
     chatLogs: { role: 'user' | 'assistant', content: string, timestamp: string }[];
+    dailyXp: { [date: string]: number };
+    username: string;
+    usernameLastChanged: string | null;
+    systemBackups: number;
+    lastBackupMonth: string;
     // Keep backward compat
     lastDrillDate?: string | null;
 }
@@ -77,8 +92,8 @@ export interface UserData {
 interface UserContextType {
     user: UserData | null;
     isLoading: boolean;
-    signIn: (email?: string, password?: string) => Promise<void>;
-    signUp: (email: string, password: string, name: string) => Promise<void>;
+    signIn: (emailOrUsername?: string, password?: string) => Promise<void>;
+    signUp: (email: string, password: string, name: string, username?: string) => Promise<void>;
     signOut: () => Promise<void>;
     forgotPassword: (email: string) => Promise<void>;
     updateProfile: (updates: Partial<UserData>) => Promise<void>;
@@ -90,6 +105,7 @@ interface UserContextType {
     addChatMessage: (msg: { role: 'user' | 'assistant', content: string }) => Promise<void>;
     changeEmail: (newEmail: string) => Promise<void>;
     changePassword: (newPassword: string) => Promise<void>;
+    changeUsername: (newUsername: string) => Promise<void>;
     deleteAccount: () => Promise<void>;
     setOnboardingData: (data: { level: string, goal: string }) => void;
     onboardingData: { level: string, goal: string };
@@ -98,6 +114,8 @@ interface UserContextType {
     resetQuests: (questIds: string[]) => Promise<void>;
     clearChat: () => Promise<void>;
     resetProgress: () => Promise<void>;
+    deploySystemBackup: () => Promise<void>;
+    purchaseSystemBackup: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType>(null as any);
@@ -108,11 +126,16 @@ export const useUser = () => {
     return context;
 };
 
-// --- LOCAL DATE HELPER (avoids UTC shifts) ---
+// --- LOCAL DATE HELPER (Deterministic YYYY-MM-DD) ---
 const getLocalDateStr = (offset = 0) => {
     const d = new Date();
-    d.setDate(d.getDate() + offset);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    if (offset !== 0) d.setDate(d.getDate() + offset);
+
+    // Explicit parts for absolute consistency across OS/Locale environments
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 };
 
 // XP is purely cumulative. Level is derived from total XP via XPConfig in theme.ts.
@@ -143,6 +166,27 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                     if (docSnap.exists()) {
                         // ✅ HAPPY PATH: Firestore doc exists, load it
                         const data = docSnap.data() as UserData;
+
+                        // --- BACKFILL LOGIC ---
+                        if (data.streak > 1 && data.lastActivityDate) {
+                            const dailyXp = { ...(data.dailyXp || {}) };
+                            let changed = false;
+                            for (let i = 1; i < data.streak; i++) {
+                                const d: Date = new Date(data.lastActivityDate);
+                                d.setDate(d.getDate() - i);
+                                const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                                if (!dailyXp[dateStr]) {
+                                    dailyXp[dateStr] = 50 + Math.floor(Math.random() * 50); // Simulated historical effort
+                                    changed = true;
+                                }
+                            }
+                            if (changed) {
+                                console.log('[UserContext] Backfilling streak data...');
+                                updateDoc(docRef, { dailyXp }).catch(e => console.error('[Backfill] Update failed:', e));
+                                data.dailyXp = dailyXp;
+                            }
+                        }
+
                         setUser(data);
                         userRef.current = data;
                         await Storage.setItem('zce_user', JSON.stringify(data));
@@ -190,6 +234,23 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 setUser(null);
                 userRef.current = null;
                 await Storage.deleteItem('zce_user');
+            }
+
+            // --- AUTO-GRANT SYSTEM BACKUP (Monthly) ---
+            const currentUser = userRef.current;
+            if (currentUser) {
+                const now = new Date();
+                const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+                if (currentUser.lastBackupMonth !== currentMonth) {
+                    console.log(`[UserContext] NEW MONTH DETECTED (${currentMonth}). Granting System Backup +1.`);
+                    // We can't call _syncUpdate directly here yet safely during onAuthStateChanged chain? 
+                    // Actually we can, it will update state and firestore.
+                    _syncUpdate({
+                        systemBackups: (currentUser.systemBackups || 0) + 1,
+                        lastBackupMonth: currentMonth
+                    }).catch(e => console.warn('Monthly backup grant failed', e));
+                }
             }
 
             const status = await Storage.getItem('zce_onboarding_done');
@@ -248,38 +309,73 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     };
 
     // --- AUTH ---
-    const signIn = async (email?: string, password?: string) => {
+    const signIn = async (emailOrUsername?: string, password?: string) => {
         setIsLoading(true);
         try {
-            if (email && password) {
-                const cleanEmail = email.trim().toLowerCase();
-                await signInWithEmailAndPassword(auth, cleanEmail, password);
-                router.replace('/(tabs)'); // only navigate on SUCCESS
+            if (emailOrUsername && password) {
+                let loginEmail = emailOrUsername.trim().toLowerCase();
+
+                // If it doesn't look like an email, treat it as a username — look up the real email
+                if (!loginEmail.includes('@')) {
+                    const q = query(collection(db, 'users'), where('username', '==', loginEmail));
+                    const snap = await getDocs(q);
+                    if (snap.empty) {
+                        setIsLoading(false);
+                        Alert.alert("Access Denied", "No agent found with that username.");
+                        throw new Error("Username not found.");
+                    }
+                    loginEmail = snap.docs[0].data().email;
+                }
+
+                await signInWithEmailAndPassword(auth, loginEmail, password);
+                router.replace('/(tabs)');
             } else {
-                // Anonymous sign in works as a "Guest" mode
+                // Anonymous guest mode
                 await signInAnonymously(auth);
                 router.replace('/(tabs)');
             }
         } catch (e: any) {
+            if (e.message === "Username not found.") throw e;
             let msg = getFriendlyAuthError(e.code || '');
-
-            // SPECIAL HANDLING FOR APP CHECK
             if (e.code === 'auth/firebase-app-check-token-is-invalid' || e.message?.includes('app-check')) {
-                msg = "SECURITY: App Check is blocking this login. In Firebase Console -> App Check, set Authentication to 'Unenforced' for the review process.";
+                msg = "SECURITY: App Check is blocking this login. In Firebase Console -> App Check, set Authentication to 'Unenforced'.";
             }
-
             console.log('[signIn Error]', e.code, e.message);
-
-            // Force clean state
             try { await fbSignOut(auth); } catch { }
             setUser(null);
             userRef.current = null;
             setIsLoading(false);
-
-            // Redundant alert so user CANNOT miss it
             Alert.alert("Access Denied", msg);
             throw new Error(msg);
         } finally { setIsLoading(false); }
+    };
+
+    // Change username — enforces 30-day cooldown
+    const changeUsername = async (newUsername: string): Promise<void> => {
+        if (!userRef.current) throw new Error("Not logged in.");
+        const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/;
+        if (!USERNAME_REGEX.test(newUsername)) {
+            throw new Error("Username must be 3–20 characters: letters, numbers, underscores only.");
+        }
+
+        const lastChanged = userRef.current.usernameLastChanged;
+        if (lastChanged) {
+            const daysSince = (Date.now() - new Date(lastChanged).getTime()) / (1000 * 60 * 60 * 24);
+            if (daysSince < 30) {
+                const daysLeft = Math.ceil(30 - daysSince);
+                throw new Error(`Username locked for ${daysLeft} more day${daysLeft === 1 ? '' : 's'}. Change allowed every 30 days.`);
+            }
+        }
+
+        // Check uniqueness in Firestore
+        const q = query(collection(db, 'users'), where('username', '==', newUsername.toLowerCase()));
+        const snap = await getDocs(q);
+        if (!snap.empty) throw new Error("That username is already taken.");
+
+        await _syncUpdate({
+            username: newUsername.toLowerCase(),
+            usernameLastChanged: new Date().toISOString(),
+        });
     };
 
     const forgotPassword = async (email: string) => {
@@ -294,7 +390,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
-    const signUp = async (email: string, password: string, name: string) => {
+    const signUp = async (email: string, password: string, name: string, username: string = '') => {
         setIsLoading(true);
         const cleanEmail = email.trim().toLowerCase();
         try {
@@ -303,6 +399,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 ...DEFAULT_USER,
                 email: cleanEmail,
                 name: name || 'Agent 808',
+                username: username || name.toLowerCase().replace(/\s+/g, '_').slice(0, 20),
+                usernameLastChanged: new Date().toISOString(),
                 title: onboardingData.level.split(' (')[0],
                 bio: `Mission: ${onboardingData.goal}. Reprogramming social instincts.`,
                 joinDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
@@ -355,43 +453,44 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
      * Called after any training activity (drill, quest, mission).
      * Always increments streak correctly based on local date.
      */
-    const completeDrill = async (xpGain: number) => {
+    const completeDrill = async (xpGain: number = 20) => {
         const current = userRef.current;
         if (!current) { console.warn('[completeDrill] No user'); return; }
 
         const today = getLocalDateStr();
         const yesterday = getLocalDateStr(-1);
-        const lastDate = current.lastActivityDate || null;
+        const lastDate = current.lastActivityDate;
 
-        console.log(`[UserContext] Streak Pulse | Today: ${today} | Yesterday: ${yesterday} | LastActivity: ${lastDate}`);
+        console.log(`[Streak Engine] Pulse Init | Today: ${today} | LastActivity: ${lastDate} | CurrentStreak: ${current.streak}`);
 
         let streak = Number(current.streak || 0);
         let streakAtRisk = !!current.streakAtRisk;
         let previousStreak = Number(current.previousStreak || 0);
 
-        if (lastDate !== today) {
-            if (lastDate === yesterday) {
-                // Happy Path: Consecutive day
-                streak += 1;
-                streakAtRisk = false;
-            } else if (lastDate === null) {
-                // First time ever
-                streak = 1;
-                streakAtRisk = false;
-            } else {
-                // Missed a day
-                if (streak > 0) {
-                    previousStreak = streak;
-                }
-                streak = 1;
-                streakAtRisk = previousStreak > 0;
-            }
-        } else {
-            // Already did something today, but let's ensure streakAtRisk is clear if they recovered
+        if (!lastDate) {
+            console.log('[Streak Engine] First activity ever. Starting streak at 1.');
+            streak = 1;
+        } else if (lastDate === today) {
+            console.log('[Streak Engine] Already active today. Keeping streak at', streak);
             streakAtRisk = false;
+        } else if (lastDate === yesterday) {
+            streak += 1;
+            streakAtRisk = false;
+            console.log('[Streak Engine] Consecutive day! Streak incremented to', streak);
+        } else {
+            console.log(`[Streak Engine] Day gap detected (Last: ${lastDate}). Resetting to 1.`);
+            previousStreak = streak > 0 ? streak : previousStreak;
+            streak = 1;
+            streakAtRisk = (previousStreak > 1);
+            if (streakAtRisk) {
+                NotificationService.sendStreakWarning();
+            }
         }
 
         const newXp = (current.xp || 0) + xpGain;
+        const dailyXp = { ...(current.dailyXp || {}) };
+        dailyXp[today] = (dailyXp[today] || 0) + xpGain;
+
         const log = { id: Date.now().toString(), date: new Date().toISOString(), type: 'Drill', score: 100, feedback: `Earned ${xpGain} XP in training.` };
 
         await _syncUpdate({
@@ -399,6 +498,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             streak,
             previousStreak,
             streakAtRisk,
+            dailyXp,
             lastActivityDate: today,
             drillLogs: [log, ...(current.drillLogs || [])],
         });
@@ -408,66 +508,69 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
      * Called when an agent completes a quest or daily mission.
      * Marks questId in completedQuests, increments streak if it's a new day.
      */
-    const completeQuest = async (questId: string, xpGain: number, log?: string) => {
+    const completeQuest = async (questId: string, xpGain: number = 20, log?: string) => {
         const current = userRef.current;
         if (!current) { console.warn('[completeQuest] No user'); return; }
 
         const today = getLocalDateStr();
-        const yesterday = getLocalDateStr(-1);
-        const lastDate = current.lastActivityDate || null;
+        const lastDate = current.lastActivityDate;
 
-        // Guard: already completed this quest today
-        if (lastDate === today && current.completedQuests?.includes(questId)) {
-            console.log(`[completeQuest] ${questId} already done today`);
-            return;
-        }
+        console.log(`[Quest Engine] Completing ${questId} | XP: ${xpGain} | Today: ${today} | Last: ${lastDate}`);
 
         // Build new completedQuests — carry over today's completions, reset if new day
-        const existingQuests = lastDate === today ? (current.completedQuests || []) : [];
-        const newQuests = existingQuests.includes(questId) ? existingQuests : [...existingQuests, questId];
+        const dayQuests = lastDate === today ? (current.completedQuests || []) : [];
+        if (dayQuests.includes(questId)) {
+            console.log(`[completeQuest] ${questId} already done today.`);
+            return;
+        }
+        const newDayQuests = [...dayQuests, questId];
 
-        // Streak logic
+        // Reuse streak logic
         let streak = Number(current.streak || 0);
         let streakAtRisk = !!current.streakAtRisk;
         let previousStreak = Number(current.previousStreak || 0);
 
-        if (lastDate !== today) {
-            if (lastDate === yesterday) {
-                streak += 1;
-                streakAtRisk = false;
-            } else if (lastDate === null) {
-                streak = 1;
-                streakAtRisk = false;
-            } else {
-                if (streak > 0) {
-                    previousStreak = streak;
-                }
-                streak = 1;
-                streakAtRisk = previousStreak > 0;
-            }
-        } else {
+        if (!lastDate) {
+            streak = 1;
+        } else if (lastDate === today) {
             streakAtRisk = false;
+        } else if (lastDate === getLocalDateStr(-1)) {
+            streak += 1;
+            streakAtRisk = false;
+        } else {
+            previousStreak = streak > 0 ? streak : previousStreak;
+            streak = 1;
+            streakAtRisk = previousStreak > 1;
+            if (streakAtRisk) {
+                NotificationService.sendStreakWarning();
+            }
         }
 
         const newXp = (current.xp || 0) + xpGain;
-        const drillLog = {
+        const dailyXp = { ...(current.dailyXp || {}) };
+
+        // Safety check: ensure we aren't writing to yesterday due to some weird state shift
+        const freshToday = getLocalDateStr();
+        dailyXp[freshToday] = (dailyXp[freshToday] || 0) + xpGain;
+
+        console.log(`[Quest Engine] XP Updated | Key: ${freshToday} | NewDailyTotal: ${dailyXp[freshToday]}`);
+
+        const historyLog = {
             id: Date.now().toString(),
             date: new Date().toISOString(),
             type: 'Mission',
-            score: 100,
-            feedback: log || `Mission complete: ${questId}. +${xpGain} XP`,
+            feedback: log ? `${log} [ID:${questId}]` : `Completed Mission: ${questId}`
         };
-
-        console.log(`[completeQuest] ${questId} | streak: ${current.streak} → ${streak} | atRisk: ${streakAtRisk}`);
 
         await _syncUpdate({
             xp: newXp,
             streak,
             previousStreak,
             streakAtRisk,
-            lastActivityDate: today,
-            completedQuests: newQuests,
-            drillLogs: [drillLog, ...(current.drillLogs || [])],
+            dailyXp,
+            lastActivityDate: freshToday,
+            completedQuests: newDayQuests,
+            drillLogs: [historyLog, ...(current.drillLogs || [])],
         });
     };
 
@@ -586,6 +689,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             completedQuests: [],
             drillLogs: [],
             chatLogs: [],
+            dailyXp: {},
         });
         console.log('[UserContext] Progress reset complete.');
     };
@@ -595,15 +699,56 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         await _syncUpdate({ chatLogs: [] });
     };
 
+    const deploySystemBackup = async () => {
+        const current = userRef.current;
+        if (!current || (current.systemBackups || 0) <= 0) return;
+
+        console.log('[UserContext] DEPLOYING SYSTEM BACKUP');
+        // Logic: Set lastActivityDate to yesterday so today's activity (when they next do it) 
+        // continues the streak as if they did it yesterday.
+        const yesterday = getLocalDateStr(-1);
+
+        await _syncUpdate({
+            systemBackups: current.systemBackups - 1,
+            lastActivityDate: yesterday,
+            streakAtRisk: false, // It's safe now
+        });
+
+        Alert.alert(
+            "SYSTEM BACKUP DEPLOYED",
+            "You hid today. Don't make it a habit. Your streak is preserved... for now.",
+            [{ text: "COPY THAT" }]
+        );
+    };
+
+    const purchaseSystemBackup = async () => {
+        const current = userRef.current;
+        if (!current) return;
+
+        const COST = 500;
+        if (current.xp < COST) {
+            Alert.alert("INSUFFICIENT XP", `System Backups cost ${COST} XP. You only have ${Math.round(current.xp)}.`);
+            return;
+        }
+
+        await _syncUpdate({
+            xp: current.xp - COST,
+            systemBackups: (current.systemBackups || 0) + 1
+        });
+
+        Alert.alert("BACKUP ACQUIRED", "1 System Backup added to your inventory. 500 XP consumed.");
+    };
+
     return (
         <UserContext.Provider value={{
             user, isLoading,
             signIn, signUp, signOut, forgotPassword,
             updateProfile, completeDrill, completeQuest, recoverStreak, resetQuests, resetProgress,
             addJournalEntry, addDrillLog, addChatMessage, clearChat,
-            changeEmail, changePassword, deleteAccount,
+            changeEmail, changePassword, deleteAccount, changeUsername,
             setOnboardingData, onboardingData,
             hasCompletedOnboarding, completeOnboarding,
+            deploySystemBackup, purchaseSystemBackup,
         }}>
             {children}
         </UserContext.Provider>

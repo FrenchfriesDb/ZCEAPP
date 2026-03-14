@@ -1,35 +1,49 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import { Colors, Fonts, Radius, XPConfig } from '@/constants/theme';
-import { useTimeColors } from '@/hooks/useTimeColors';
-import GlassCard from '@/components/GlassCard';
+import { Fonts, Radius, XPConfig } from '@/constants/theme';
+import { useXPBarColors } from '@/hooks/useXPBarColors';
+import { getTimeAccent } from '@/constants/theme';
 
-interface XPBarProps {
-    currentXP: number;
+interface Props {
+    xp: number;
 }
 
-export default function XPBar({ currentXP }: XPBarProps) {
-    const levelInfo = XPConfig.getLevel(currentXP);
-    const xpInLevel = XPConfig.getXpInCurrentLevel(currentXP);
-    const progress = XPConfig.getProgress(currentXP);
-    const palette = useTimeColors();
+/**
+ * XP Progress Bar — correct gradient reveal
+ *
+ * Uses onLayout to get the real pixel width of the track.
+ * The fill is an Animated.View that grows from 0px → barWidth px.
+ * Inside it, the LinearGradient is always rendered at the FULL bar width
+ * but gets clipped by the fill view's overflow:hidden — so:
+ *   - 0 XP   → fill width = 0px  → nothing visible
+ *   - 50% XP → fill width = half → you see the left half of the gradient
+ *   - 100%   → fill width = full → entire gradient visible
+ *
+ * No color bleed, no overlay hacks.
+ */
+export default function XPBar({ xp }: Props) {
+    const levelInfo = XPConfig.getLevel(xp);
+    const xpInLevel = XPConfig.getXpInCurrentLevel(xp);
+    const progress = XPConfig.getProgress(xp); // 0–1
+    const palette = useXPBarColors();
 
-    const animatedWidth = useRef(new Animated.Value(0)).current;
+    const [barWidth, setBarWidth] = useState(0);
+    const animatedProgress = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
-        Animated.spring(animatedWidth, {
+        Animated.spring(animatedProgress, {
             toValue: isFinite(progress) ? progress : 0,
             useNativeDriver: false,
             tension: 20,
             friction: 7,
         }).start();
-    }, [currentXP, progress]);
+    }, [xp, progress]);
 
-    const widthInterpolation = animatedWidth.interpolate({
+    // Fill width in real pixels — gradient inside is also barWidth wide, clipped by fill
+    const fillWidth = animatedProgress.interpolate({
         inputRange: [0, 1],
-        outputRange: ['0%', '100%'],
+        outputRange: [0, barWidth],
     });
 
     return (
@@ -44,20 +58,22 @@ export default function XPBar({ currentXP }: XPBarProps) {
                 </Text>
             </View>
 
-            <View style={styles.barTrack}>
-                <Animated.View
-                    style={[
-                        styles.barFill,
-                        {
-                            width: widthInterpolation,
-                        },
-                    ]}
-                >
-                    <LinearGradient
-                        colors={palette as any}
-                        start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                        style={styles.barGradient}
-                    />
+            {/* Track */}
+            <View
+                style={styles.barTrack}
+                onLayout={e => setBarWidth(e.nativeEvent.layout.width)}
+            >
+                {/* Animated fill — clips the gradient to earned portion only */}
+                <Animated.View style={[styles.barFill, { width: fillWidth }]}>
+                    {/* Gradient rendered at full bar width so colors are always proportional */}
+                    {barWidth > 0 && (
+                        <LinearGradient
+                            colors={palette.length >= 2 ? [...palette].reverse() as any : ['#60EFFF', '#0061FF']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={{ width: barWidth, height: '100%' }}
+                        />
+                    )}
                 </Animated.View>
             </View>
         </View>
@@ -117,9 +133,7 @@ const styles = StyleSheet.create({
     },
     barFill: {
         height: '100%',
+        overflow: 'hidden',  // clips gradient to earned portion
         borderRadius: 3,
-    },
-    barGradient: {
-        flex: 1,
     },
 });

@@ -11,11 +11,12 @@ const TAB_CONFIG = [
   { name: 'drills', label: 'Drills', icon: '⚡' },
   { name: 'leaderboard', label: 'Board', icon: '👑' },
   { name: 'profile', label: 'Profile', icon: '🧬' },
-  { name: 'chat', label: 'Chat', icon: '🤖' },
-  { name: 'research', label: 'Research', icon: '📖' },
 ];
 
 function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+  const currentRoute = state.routes[state.index].name;
+  if (currentRoute === 'chat' || currentRoute === 'research') return null;
+
   return (
     <View style={styles.tabBarOuter}>
       <View style={styles.tabBarContainer}>
@@ -34,7 +35,7 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
                 style={[styles.tabItem, focused && styles.tabItemActive]}
               >
                 <Text style={[styles.tabIcon, focused && styles.tabIconActive]}>
-                  {tab.icon}
+                  <Text style={styles.emoji}>{tab.icon}</Text>
                 </Text>
                 {focused && <View style={styles.activeIndicator} />}
               </Pressable>
@@ -59,6 +60,8 @@ export default function TabLayout() {
           options={{ title: tab.label }}
         />
       ))}
+      <Tabs.Screen name="chat" options={{ tabBarStyle: { display: 'none' } }} />
+      <Tabs.Screen name="research" options={{ tabBarStyle: { display: 'none' } }} />
     </Tabs>
   );
 }
@@ -66,7 +69,7 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   tabBarOuter: {
     position: 'absolute',
-    bottom: 30,
+    bottom: 15,
     left: 20,
     right: 20,
     alignItems: 'center',
@@ -106,14 +109,19 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
   tabIcon: {
-    fontSize: 22,
-    opacity: 0.4,
+    fontSize: 24,
+    opacity: 0.35,
+  },
+  emoji: {
+    fontFamily: Platform.OS === 'ios' ? 'System' : undefined,
+    fontWeight: 'normal',
+    letterSpacing: 0,
   },
   tabIconActive: {
     opacity: 1,
-    fontSize: 22,
-    textShadowColor: '#ffffff',
-    textShadowRadius: 10,
+    fontSize: 24,
+    textShadowColor: Colors.accentPrimary,
+    textShadowRadius: 15,
   },
   tabLabel: {
     fontFamily: Fonts.mono,
@@ -123,20 +131,20 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   tabLabelActive: {
-    color: '#FFFFFF',
+    color: Colors.accentPrimary,
     fontFamily: Fonts.monoBold,
     letterSpacing: 1,
   },
   activeIndicator: {
     position: 'absolute',
     bottom: -6,
-    width: 20,
+    width: 22,
     height: 3,
     borderRadius: 1.5,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#FFFFFF',
+    backgroundColor: Colors.accentPrimary,
+    shadowColor: Colors.accentPrimary,
     shadowOffset: { width: 0, height: 0 },
-    shadowRadius: 10,
-    shadowOpacity: 0.8,
+    shadowRadius: 12,
+    shadowOpacity: 0.9,
   },
 });

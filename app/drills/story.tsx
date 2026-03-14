@@ -17,7 +17,7 @@ const PROMPTS = [
 ];
 
 export default function StoryDrill() {
-    const { completeDrill, addDrillLog } = useUser();
+    const { user, completeDrill, addDrillLog } = useUser();
     const [active, setActive] = useState(false);
     const [prompt, setPrompt] = useState("");
     const [timeLeft, setTimeLeft] = useState(35);
@@ -79,9 +79,9 @@ export default function StoryDrill() {
                    - Bold/Direct
                 Do NOT include a Brutal Truth section, Challenge section, or Quote section.
             `;
-            const result = await AIService.generateResponse([{ role: 'user', content: promptText }], 'groq');
+            const result = await AIService.generateResponse([{ role: 'user', content: promptText }], 'groq', user?.name || 'AGENT', user?.level || 1, 'coach');
             setFeedback(result);
-            await completeDrill(8);
+            await completeDrill(20);
             await addDrillLog('Storytelling', 100, result);
         } catch (e) {
             setFeedback("Connection severed. Log it anyway.");
@@ -92,11 +92,11 @@ export default function StoryDrill() {
 
     return (
         <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             keyboardVerticalOffset={0}
             style={styles.container}
         >
-            <LinearGradient colors={['#00E5FF', '#000']} style={StyleSheet.absoluteFill} />
+            <LinearGradient colors={Colors.gradientDark} style={StyleSheet.absoluteFill} />
             <View style={styles.overlay} />
 
             <View style={styles.header}>
@@ -144,7 +144,7 @@ export default function StoryDrill() {
                                     multiline
                                 />
                                 <Pressable onPress={handleAnalyze} style={styles.submitBtn} disabled={isLoading || !response}>
-                                    {isLoading ? <ActivityIndicator color="#000" /> : <Text style={styles.btnTextSmall}>ANALYZE STORY</Text>}
+                                    {isLoading ? <ActivityIndicator color={Colors.bgPrimary} /> : <Text style={styles.btnTextSmall}>ANALYZE STORY</Text>}
                                 </Pressable>
                             </View>
                         ) : (
@@ -171,35 +171,35 @@ const styles = StyleSheet.create({
     header: { flexDirection: 'row', alignItems: 'center', marginBottom: 30 },
     backBtn: { width: 60 },
     headerSpacer: { width: 60 },
-    backText: { color: 'rgba(255,255,255,0.5)', fontFamily: Fonts.mono, fontSize: 12 },
-    title: { flex: 1, fontFamily: Fonts.heading, fontSize: 18, color: '#fff', letterSpacing: 3, textAlign: 'center' },
+    backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12 },
+    title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: Colors.textPrimary, letterSpacing: 3, textAlign: 'center' },
 
     scrollContent: { flexGrow: 1, padding: Spacing.lg, paddingBottom: 40 },
     centerBox: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
-    intro: { color: '#ccc', fontFamily: Fonts.body, fontSize: 16, marginBottom: 16, textAlign: 'center' },
+    intro: { color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 16, marginBottom: 16, textAlign: 'center' },
 
     btn: { backgroundColor: '#fff', paddingHorizontal: 36, paddingVertical: 16, borderRadius: 30 },
-    btnText: { fontFamily: Fonts.heading, fontSize: 14, color: '#000', letterSpacing: 2 },
+    btnText: { fontFamily: Fonts.heading, fontSize: 14, color: Colors.bgPrimary, letterSpacing: 2 },
 
     activeContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14, width: '100%' },
-    timer: { fontFamily: Fonts.heading, fontSize: 48, color: '#fff' },
-    prompt: { fontFamily: Fonts.heading, fontSize: 20, color: '#fff', textAlign: 'center', lineHeight: 28 },
+    timer: { fontFamily: Fonts.heading, fontSize: 48, color: Colors.textPrimary },
+    prompt: { fontFamily: Fonts.heading, fontSize: 20, color: Colors.textPrimary, textAlign: 'center', lineHeight: 28 },
     barBg: { width: '100%', height: 8, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 4 },
-    barFill: { height: '100%', backgroundColor: '#00E5FF', borderRadius: 4 },
+    barFill: { height: '100%', backgroundColor: Colors.accentPrimary, borderRadius: 4 },
 
     feedbackSection: { flex: 1, gap: 14 },
     promptCardSmall: { padding: 12 },
-    promptSmall: { color: 'rgba(255,255,255,0.6)', fontFamily: Fonts.body, fontSize: 14, fontStyle: 'italic' },
+    promptSmall: { color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 14, fontStyle: 'italic' },
 
     logSection: { gap: 10 },
     label: { fontFamily: Fonts.mono, fontSize: 10, color: Colors.accentPrimary, letterSpacing: 2 },
     input: {
         backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: 14,
-        color: '#fff', fontFamily: Fonts.body, fontSize: 16, minHeight: 80, textAlignVertical: 'top',
+        color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 16, minHeight: 80, textAlignVertical: 'top',
         borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
     },
     submitBtn: { backgroundColor: '#fff', paddingVertical: 14, borderRadius: 30, alignItems: 'center' },
-    btnTextSmall: { fontFamily: Fonts.heading, fontSize: 13, color: '#000', letterSpacing: 2 },
+    btnTextSmall: { fontFamily: Fonts.heading, fontSize: 13, color: Colors.bgPrimary, letterSpacing: 2 },
 
     resultContainer: { gap: 16 },
     feedbackScroll: {
@@ -210,5 +210,5 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(255,255,255,0.08)',
     },
     feedbackScrollContent: { padding: 18 },
-    feedbackText: { color: '#fff', fontFamily: Fonts.body, fontSize: 14, lineHeight: 22 },
+    feedbackText: { color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 14, lineHeight: 22 },
 });

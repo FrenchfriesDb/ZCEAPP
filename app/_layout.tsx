@@ -1,7 +1,7 @@
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import { View, Text, StyleSheet, Animated, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
@@ -98,6 +98,8 @@ const loadStyles = StyleSheet.create({
   loadingText: { fontSize: 9, fontWeight: '400', color: 'rgba(74, 158, 255, 0.4)', letterSpacing: 2 },
 });
 
+import { NotificationService } from '@/services/notifications';
+
 function RootLayoutNav() {
   const { user, isLoading, hasCompletedOnboarding } = useUser();
   const segments = useSegments();
@@ -134,6 +136,14 @@ function RootLayoutNav() {
       if (inAuthGroup || (isLandingOrRoot && s0 !== '(tabs)')) {
         router.replace('/(tabs)');
       }
+
+      // Initialize all 7 notification types for this user (NATIVE ONLY)
+      if (Platform.OS !== 'web') {
+        const firstName = user.name?.split(' ')[0] ?? 'Agent';
+        const streak = user.streak ?? 0;
+        NotificationService.initForUser(firstName, streak);
+        NotificationService.touchReengagement(firstName);
+      }
     }
   }, [user, isLoading, segments, hasCompletedOnboarding]);
 
@@ -146,6 +156,7 @@ function RootLayoutNav() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="auth/login" options={{ headerShown: false, gestureEnabled: false }} />
       <Stack.Screen name="settings/edit-profile" options={{ presentation: 'modal', headerShown: false }} />
+      <Stack.Screen name="settings/notification-settings" options={{ presentation: 'modal', headerShown: false }} />
     </Stack>
   );
 }

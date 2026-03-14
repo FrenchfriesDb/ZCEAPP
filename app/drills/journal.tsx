@@ -21,10 +21,10 @@ export default function JournalDrill() {
         try {
             const aiFeedback = await AIService.generateResponse([
                 { role: 'user', content: `Analyze this journal entry about a social interaction. Rewrite it how a high-status elite would handle it and give me a mission to improve: ${entry}` }
-            ], 'groq');
+            ], 'groq', user?.name || 'AGENT', user?.level || 1, 'coach');
 
             await addJournalEntry(entry, aiFeedback);
-            await completeDrill(7);
+            await completeDrill(20);
             setAnalysis(aiFeedback);
             setSaved(true);
         } catch (e) {
@@ -39,10 +39,10 @@ export default function JournalDrill() {
 
     return (
         <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={styles.container}
         >
-            <LinearGradient colors={['#240b36', '#c31432']} style={StyleSheet.absoluteFill} />
+            <LinearGradient colors={Colors.gradientDark} style={StyleSheet.absoluteFill} />
             <View style={styles.overlay} />
 
             <View style={styles.header}>
@@ -93,15 +93,15 @@ const styles = StyleSheet.create({
 
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingTop: 60, paddingBottom: 20, position: 'relative' },
     backBtn: { position: 'absolute', left: 20, top: 60 },
-    backText: { color: 'rgba(255,255,255,0.5)', fontFamily: Fonts.mono, fontSize: 12 },
-    title: { fontFamily: Fonts.heading, fontSize: 18, color: '#fff', letterSpacing: 4 },
+    backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12 },
+    title: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.textPrimary, letterSpacing: 4 },
 
     content: { padding: 24, paddingBottom: 100 },
-    prompt: { fontFamily: Fonts.body, fontSize: 15, color: '#ccc', marginBottom: 20, lineHeight: 22 },
+    prompt: { fontFamily: Fonts.body, fontSize: 15, color: Colors.textSecondary, marginBottom: 20, lineHeight: 22 },
 
     input: {
         backgroundColor: 'rgba(255,255,255,0.05)',
-        borderRadius: 16, padding: 20, fontSize: 16, fontFamily: Fonts.body, color: '#fff',
+        borderRadius: 16, padding: 20, fontSize: 16, fontFamily: Fonts.body, color: Colors.textPrimary,
         minHeight: 200, textAlignVertical: 'top', lineHeight: 24,
         borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
     },
@@ -110,10 +110,10 @@ const styles = StyleSheet.create({
         marginTop: 20, height: 56, borderRadius: 28,
         backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center'
     },
-    btnText: { fontFamily: Fonts.heading, fontSize: 14, color: '#000', letterSpacing: 2 },
+    btnText: { fontFamily: Fonts.heading, fontSize: 14, color: Colors.bgPrimary, letterSpacing: 2 },
 
     analysisCard: { padding: 24, marginTop: 20 },
-    analysisText: { color: '#fff', fontFamily: Fonts.body, fontSize: 16, lineHeight: 24, marginBottom: 20 },
+    analysisText: { color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 16, lineHeight: 24, marginBottom: 20 },
     doneBtn: { backgroundColor: Colors.accentPrimary, paddingVertical: 14, borderRadius: 28, alignItems: 'center' },
-    doneBtnText: { color: '#fff', fontFamily: Fonts.heading, fontSize: 13, letterSpacing: 2 },
+    doneBtnText: { color: Colors.bgPrimary, fontFamily: Fonts.heading, fontSize: 13, letterSpacing: 2 },
 });

@@ -146,7 +146,7 @@ function OptionBtn({ label, icon, selected, onPress }: {
     return (
         <Pressable onPress={onPress} style={styles.optPressable}>
             <View style={[styles.optBtn, selected && styles.optBtnActive]}>
-                <Text style={styles.optIcon}>{icon}</Text>
+                <Text style={[styles.optIcon]}>{icon}</Text>
                 <Text style={[styles.optText, selected && styles.optTextActive]} numberOfLines={2}>{label}</Text>
                 {selected && <Text style={styles.optCheck}>◆</Text>}
             </View>

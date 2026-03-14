@@ -6,7 +6,8 @@ import { Colors, Fonts, FontSizes, Spacing, Radius } from '@/constants/theme';
 import GlassCard from '@/components/GlassCard';
 import { AIService, ZANE_SYSTEM_PROMPT } from '@/services/ai';
 import { useUser } from '@/context/UserContext';
-import { useNavigation } from 'expo-router';
+import { useNavigation, router } from 'expo-router';
+import { useTimeColors } from '@/hooks/useTimeColors';
 
 interface Message {
     id: number;
@@ -28,6 +29,8 @@ export default function ChatScreen() {
     const [isTyping, setIsTyping] = useState(false);
     const scrollRef = useRef<ScrollView>(null);
     const [isKeyboardActive, setIsKeyboardActive] = useState(false);
+    const timePalette = useTimeColors();
+    const systemColor = timePalette[0];
     const dotAnim = useRef(new Animated.Value(0)).current;
     const pulseAnim = useRef(new Animated.Value(1)).current;
 
@@ -70,7 +73,7 @@ export default function ChatScreen() {
                     const welcomeText = await AIService.generateResponse(
                         [{ role: 'user', content: 'REQUEST: AUDIT OPENING. Start the session.' }],
                         'groq',
-                        user?.name || 'AGENT',
+                        user?.name?.split(' ')[0] || 'AGENT',
                         user?.level || 1
                     );
                     setMessages([{
@@ -81,7 +84,8 @@ export default function ChatScreen() {
                     }]);
                     addChatMessage({ role: 'assistant', content: welcomeText });
                 } catch (e) {
-                    const fallback = "AGENT-la. Connection unstable. Go find a rep while I reboot.";
+                    const firstName = user?.name?.split(' ')[0] || 'AGENT';
+                    const fallback = `${firstName}-la. Connection unstable. Go find a rep while I reboot.`;
                     setMessages([{ id: 0, text: fallback, sender: 'ai', timestamp: getTimeString() }]);
                 } finally {
                     setIsTyping(false);
@@ -187,11 +191,10 @@ export default function ChatScreen() {
             {/* Header */}
             <View style={styles.header}>
                 <View style={styles.headerLeft}>
-                    <Animated.View style={[styles.aiAvatar, { transform: [{ scale: pulseAnim }] }]}>
-                        <LinearGradient
-                            colors={['#00F5FF', '#00A8B0']}
-                            style={StyleSheet.absoluteFill}
-                        />
+                    <Pressable onPress={() => router.back()} style={styles.backBtnHeader}>
+                        <Text style={styles.backIconHeader}>←</Text>
+                    </Pressable>
+                    <Animated.View style={[styles.aiAvatar, { transform: [{ scale: pulseAnim }], backgroundColor: systemColor, shadowColor: systemColor }]}>
                         <Text style={styles.monogram}>Z</Text>
                     </Animated.View>
                     <View>
@@ -206,8 +209,8 @@ export default function ChatScreen() {
 
             <KeyboardAvoidingView
                 style={styles.chatArea}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={0}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
             >
                 <ScrollView
                     ref={scrollRef}
@@ -219,8 +222,8 @@ export default function ChatScreen() {
                     {messages.map((msg, index) => (
                         <View key={`${msg.id}-${index}`} style={[styles.msgRow, msg.sender === 'user' && styles.msgRowUser]}>
                             {msg.sender === 'ai' && (
-                                <View style={styles.msgAvatarSmall}>
-                                    <Text style={styles.monogramSmall}>Z</Text>
+                                <View style={[styles.msgAvatarSmall, { backgroundColor: systemColor + '11', borderColor: systemColor + '33' }]}>
+                                    <Text style={[styles.monogramSmall, { color: systemColor }]}>Z</Text>
                                 </View>
                             )}
                             <View style={[styles.bubble, msg.sender === 'user' ? styles.bubbleUser : styles.bubbleAI]}>
@@ -234,14 +237,14 @@ export default function ChatScreen() {
 
                     {isTyping && (
                         <View style={styles.msgRow}>
-                            <View style={styles.msgAvatarSmall}>
-                                <Text style={styles.monogramSmall}>Z</Text>
+                            <View style={[styles.msgAvatarSmall, { backgroundColor: systemColor + '11', borderColor: systemColor + '33' }]}>
+                                <Text style={[styles.monogramSmall, { color: systemColor }]}>Z</Text>
                             </View>
                             <View style={[styles.bubble, styles.bubbleAI, styles.typingBubble]}>
                                 <Animated.View style={[styles.typingDots, { opacity: dotAnim }]}>
-                                    <View style={styles.dot} />
-                                    <View style={styles.dot} />
-                                    <View style={styles.dot} />
+                                    <View style={[styles.dot, { backgroundColor: systemColor }]} />
+                                    <View style={[styles.dot, { backgroundColor: systemColor }]} />
+                                    <View style={[styles.dot, { backgroundColor: systemColor }]} />
                                 </Animated.View>
                             </View>
                         </View>
@@ -249,7 +252,7 @@ export default function ChatScreen() {
                 </ScrollView>
 
                 {/* Input */}
-                <View style={[styles.inputContainer, { paddingBottom: isKeyboardActive ? (Platform.OS === 'ios' ? 8 : 4) : 110 }]}>
+                <View style={[styles.inputContainer, isKeyboardActive && { paddingBottom: 0 }]}>
                     <View style={styles.inputBox}>
                         <TextInput
                             style={styles.input}
@@ -286,14 +289,26 @@ const styles = StyleSheet.create({
     headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },
     aiAvatar: {
         width: 36, height: 36, borderRadius: 10,
-        backgroundColor: '#00F5FF', overflow: 'hidden',
+        overflow: 'hidden',
         justifyContent: 'center', alignItems: 'center',
-        shadowColor: '#00F5FF', shadowRadius: 15, shadowOpacity: 0.5,
+        shadowRadius: 15, shadowOpacity: 0.5,
     },
     monogram: { fontFamily: Fonts.heading, fontSize: 18, color: '#000000', fontWeight: '900' },
     aiDot: { width: 10, height: 10, borderRadius: 3, backgroundColor: Colors.accentPrimary, shadowColor: Colors.accentPrimary, shadowRadius: 10, shadowOpacity: 0.8 },
     headerTitle: { fontFamily: Fonts.heading, fontSize: FontSizes.lg, color: Colors.textPrimary, letterSpacing: 2, fontWeight: '800' },
     headerSub: { fontFamily: Fonts.monoBold, fontSize: 8, color: Colors.accentPrimary, letterSpacing: 2, textTransform: 'uppercase' },
+    backBtnHeader: {
+        width: 32,
+        height: 32,
+        borderRadius: 8,
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 4,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+    },
+    backIconHeader: { color: '#fff', fontSize: 18, fontWeight: '800' },
     purgeBtn: { padding: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', borderRadius: 4 },
     purgeText: { color: Colors.textTertiary, fontSize: 8, fontFamily: Fonts.monoBold },
 
@@ -305,10 +320,10 @@ const styles = StyleSheet.create({
     msgRowUser: { justifyContent: 'flex-end' },
     msgAvatarSmall: {
         width: 28, height: 28, borderRadius: 6,
-        backgroundColor: 'rgba(0, 245, 255, 0.1)', borderWidth: 1, borderColor: 'rgba(0, 245, 255, 0.2)',
+        borderWidth: 1,
         justifyContent: 'center', alignItems: 'center', marginBottom: 2,
     },
-    monogramSmall: { fontFamily: Fonts.heading, fontSize: 13, color: '#00F5FF', fontWeight: '900' },
+    monogramSmall: { fontFamily: Fonts.heading, fontSize: 13, fontWeight: '900' },
     msgAvatarDot: { width: 6, height: 6, borderRadius: 2, backgroundColor: Colors.accentPrimary },
 
     bubble: { maxWidth: '82%', borderRadius: 18, padding: 16, gap: 6 },
@@ -325,6 +340,7 @@ const styles = StyleSheet.create({
     inputContainer: {
         paddingHorizontal: Spacing.lg,
         paddingTop: Spacing.md,
+        paddingBottom: Platform.OS === 'ios' ? 34 : 20, // Clean flush padding for home indicator
         borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.04)',
         backgroundColor: Colors.bgPrimary,
     },

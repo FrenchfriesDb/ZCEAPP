@@ -47,15 +47,16 @@ export default function LoginScreen() {
 
                     <View style={styles.form}>
                         <View style={styles.inputGroup}>
-                            <Text style={styles.label}>AGENT ID / EMAIL</Text>
+                            <Text style={styles.label}>USERNAME OR EMAIL</Text>
                             <TextInput
                                 style={styles.input}
-                                placeholder="agent@zce.io"
-                                placeholderTextColor="rgba(255,255,255,0.3)"
+                                placeholder="dark_ceo_zane  or  agent@zce.io"
+                                placeholderTextColor="rgba(255,255,255,0.25)"
                                 value={email}
                                 onChangeText={setEmail}
                                 autoCapitalize="none"
-                                keyboardType="email-address"
+                                autoCorrect={false}
+                                keyboardType="default"
                             />
                         </View>
 

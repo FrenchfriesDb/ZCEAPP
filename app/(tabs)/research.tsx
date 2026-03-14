@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Fonts, FontSizes, Spacing, Radius } from '@/constants/theme';
+import { router } from 'expo-router';
 import GlassCard from '@/components/GlassCard';
 
 const CHAPTERS = [
@@ -65,7 +66,16 @@ export default function ResearchScreen() {
 
             <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 <View style={styles.header}>
-                    <Text style={styles.headerTitle}>CHARISMA RESEARCH JOURNAL</Text>
+                    <Pressable
+                        onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}
+                        style={styles.backBtn}
+                    >
+                        <Text style={styles.backIcon}>←</Text>
+                    </Pressable>
+                    <View style={styles.headerTextContainer}>
+                        <Text style={styles.headerTitle}>RESEARCH JOURNAL</Text>
+                        <Text style={styles.headerSub}>ARCHITECT MODE: ONLINE</Text>
+                    </View>
                 </View>
 
                 {/* Hero Card */}
@@ -150,15 +160,28 @@ const styles = StyleSheet.create({
     scroll: { flex: 1 },
     scrollContent: { padding: Spacing.lg, paddingTop: 60, gap: 12 },
     cornerGlow: { position: 'absolute', width: 300, height: 300, borderRadius: 150 },
-    header: { marginBottom: 8 },
-    headerSub: { fontFamily: Fonts.mono, fontSize: FontSizes.xs, color: Colors.accentSecondary, letterSpacing: 3 },
-    headerTitle: { fontFamily: Fonts.heading, fontSize: FontSizes.h1, color: Colors.textPrimary, letterSpacing: 4 },
+    header: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, gap: 12 },
+    backBtn: {
+        width: 32,
+        height: 32,
+        borderRadius: 8,
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+    },
+    backIcon: { color: '#fff', fontSize: 18, fontWeight: '800' },
+    headerTextContainer: { flex: 1 },
+    headerTitle: { fontFamily: Fonts.heading, fontSize: FontSizes.lg, color: Colors.textPrimary, letterSpacing: 2 },
+    headerSub: { fontFamily: Fonts.monoBold, fontSize: 8, color: Colors.accentPrimary, letterSpacing: 2, textTransform: 'uppercase' },
     sectionTitle: { fontFamily: Fonts.mono, fontSize: FontSizes.xs, color: Colors.textTertiary, letterSpacing: 3, marginTop: 8 },
 
     heroContent: { alignItems: 'center', gap: 10, paddingVertical: 8 },
     bookIcon: { width: 60, height: 60, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
     bookEmoji: {
         fontSize: 28,
+
     },
     heroTitle: { fontFamily: Fonts.heading, fontSize: FontSizes.xl, color: Colors.textPrimary, textAlign: 'center', letterSpacing: 1 },
     heroAuthor: { fontFamily: Fonts.mono, fontSize: 9, color: Colors.accentPrimary, letterSpacing: 3 },

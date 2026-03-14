@@ -4,6 +4,7 @@ import { BlurView } from 'expo-blur';
 import { Colors, Fonts, FontSizes, Spacing, Radius } from '@/constants/theme';
 import GlassButton from '@/components/GlassButton';
 import { router } from 'expo-router';
+import { useTimeColors } from '@/hooks/useTimeColors';
 
 const DRILL_MODULES = [
     {
@@ -73,11 +74,13 @@ const DRILL_MODULES = [
 ];
 
 export default function DrillsScreen() {
+    const timePalette = useTimeColors();
+    const systemColor = timePalette[0];
     return (
         <View style={styles.container}>
             <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
-            <View style={[styles.ambientGlow, { top: -50, right: -50, backgroundColor: 'rgba(0, 245, 255, 0.04)' }]} />
-            <View style={[styles.ambientGlow, { bottom: 100, left: -40, backgroundColor: 'rgba(126, 48, 225, 0.03)' }]} />
+            <View style={[styles.ambientGlow, { top: -50, right: -50, backgroundColor: systemColor + '0A' }]} />
+            <View style={[styles.ambientGlow, { bottom: 100, left: -40, backgroundColor: systemColor + '05' }]} />
 
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
@@ -85,7 +88,7 @@ export default function DrillsScreen() {
             >
                 {/* Header */}
                 <View style={styles.header}>
-                    <Text style={styles.headerEyebrow}>Z.A.N.E. PROTOCOL</Text>
+                    <Text style={[styles.headerEyebrow, { color: systemColor }]}>Z.A.N.E. PROTOCOL</Text>
                     <Text style={styles.headerTitle}>Training Modules</Text>
                     <Text style={styles.headerSub}>Select a protocol to begin your session.</Text>
                 </View>

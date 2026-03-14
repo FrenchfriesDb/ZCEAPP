@@ -1,157 +1,369 @@
-import { View, Text, StyleSheet, TextInput, Pressable, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import {
+    View, Text, StyleSheet, TextInput, Pressable,
+    KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { router } from 'expo-router';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
 import { useUser } from '@/context/UserContext';
 import { Animated } from 'react-native';
+import { db } from '@/services/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+
+const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/;
+type UsernameStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid';
+
+// Each input field has a little icon + accent color for visual identity
+const FIELDS = [
+    { key: 'name', label: 'CODENAME', icon: '◈', placeholder: 'Your name', secure: false, board: 'default' as const },
+    { key: 'username', label: 'LEADERBOARD ALIAS', icon: '@', placeholder: 'dark_ceo_zane', secure: false, board: 'default' as const },
+    { key: 'email', label: 'AGENT ID (EMAIL)', icon: '◉', placeholder: 'agent@zce.io', secure: false, board: 'email-address' as const },
+    { key: 'password', label: 'ACCESS CODE', icon: '◈', placeholder: '••••••••', secure: true, board: 'default' as const },
+    { key: 'confirmPassword', label: 'CONFIRM ACCESS CODE', icon: '◈', placeholder: '••••••••', secure: true, board: 'default' as const },
+];
 
 export default function SignupScreen() {
     const { signUp } = useUser();
     const [name, setName] = useState('');
+    const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>('idle');
+    const [focusedField, setFocusedField] = useState<string | null>(null);
 
     const fadeAnim = useRef(new Animated.Value(0)).current;
+    const slideAnim = useRef(new Animated.Value(24)).current;
+    const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const scrollRef = useRef<ScrollView>(null);
+    const fieldY = useRef<Record<string, number>>({});
+
+    const scrollToField = (field: string) => {
+        const y = fieldY.current[field] ?? 0;
+        scrollRef.current?.scrollTo({ y: Math.max(0, y - 60), animated: true });
+    };
 
     useEffect(() => {
-        Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }).start();
+        Animated.parallel([
+            Animated.timing(fadeAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
+            Animated.timing(slideAnim, { toValue: 0, duration: 700, useNativeDriver: true }),
+        ]).start();
+        return () => { if (debounceTimer.current) clearTimeout(debounceTimer.current); };
     }, []);
 
+    const checkUsername = useCallback(async (value: string) => {
+        if (!USERNAME_REGEX.test(value)) { setUsernameStatus('invalid'); return; }
+        setUsernameStatus('checking');
+        try {
+            const snap = await getDocs(query(collection(db, 'users'), where('username', '==', value.toLowerCase())));
+            setUsernameStatus(snap.empty ? 'available' : 'taken');
+        } catch { setUsernameStatus('idle'); }
+    }, []);
+
+    const handleUsernameChange = (raw: string) => {
+        const clean = raw.replace(/\s/g, '').slice(0, 20);
+        setUsername(clean);
+        if (clean.length < 3) { setUsernameStatus('idle'); return; }
+        setUsernameStatus('checking');
+        if (debounceTimer.current) clearTimeout(debounceTimer.current);
+        debounceTimer.current = setTimeout(() => checkUsername(clean), 600);
+    };
+
+    const usernameColor = () => {
+        if (usernameStatus === 'available') return '#00C853';
+        if (usernameStatus === 'taken') return '#FF3B30';
+        if (usernameStatus === 'invalid') return '#FF9500';
+        return Colors.accentPrimary;
+    };
+
+    const usernameMessage = () => {
+        if (usernameStatus === 'available') return '✓  USERNAME AVAILABLE';
+        if (usernameStatus === 'taken') return '✗  ALREADY TAKEN';
+        if (usernameStatus === 'invalid') return '⚠  3–20 CHARS, LETTERS/NUMBERS/_ ONLY';
+        if (usernameStatus === 'checking') return '◌  CHECKING REGISTRY...';
+        return '';
+    };
+
     const handleSignup = async () => {
-        if (!name || !email || !password || !confirmPassword) {
-            setError('All fields are required.');
-            return;
+        if (!name || !username || !email || !password || !confirmPassword) {
+            setError('All fields required.'); return;
         }
-        if (password !== confirmPassword) {
-            setError('Passwords do not match.');
-            return;
+        if (!USERNAME_REGEX.test(username)) {
+            setError('Username: 3–20 characters, letters, numbers, underscores only.'); return;
         }
+        if (usernameStatus === 'taken') { setError('Username taken. Choose another.'); return; }
+        if (usernameStatus === 'checking') { setError('Still verifying username. Try again in a moment.'); return; }
+        if (password !== confirmPassword) { setError('Access codes do not match.'); return; }
+
         setLoading(true);
         setError('');
-
         try {
-            await signUp(email, password, name);
+            await signUp(email, password, name, username.toLowerCase());
         } catch (e: any) {
             setError(e.message || 'Signup failed.');
             setLoading(false);
         }
     };
 
-    return (
-        <View style={styles.container}>
-            <LinearGradient colors={['#050508', '#080816', '#000000']} style={StyleSheet.absoluteFill} />
+    const fieldValue = (key: string) => {
+        if (key === 'name') return name;
+        if (key === 'username') return username;
+        if (key === 'email') return email;
+        if (key === 'password') return password;
+        if (key === 'confirmPassword') return confirmPassword;
+        return '';
+    };
+    const setFieldValue = (key: string, v: string) => {
+        if (key === 'name') setName(v);
+        else if (key === 'username') handleUsernameChange(v);
+        else if (key === 'email') setEmail(v);
+        else if (key === 'password') setPassword(v);
+        else if (key === 'confirmPassword') setConfirmPassword(v);
+    };
 
-            <ScrollView contentContainerStyle={styles.scrollContent}>
-                <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
+    return (
+        <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={{ flex: 1 }}
+        >
+            <LinearGradient colors={['#030305', '#060610', '#000000']} style={StyleSheet.absoluteFill} />
+
+            {/* Ambient glow blobs */}
+            <View style={[styles.blob, { top: -80, left: -60, backgroundColor: 'rgba(74,158,255,0.06)' }]} />
+            <View style={[styles.blob, { bottom: 60, right: -80, backgroundColor: 'rgba(123,97,255,0.05)' }]} />
+
+            <ScrollView
+                ref={scrollRef}
+                contentContainerStyle={styles.scroll}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+                keyboardDismissMode="interactive"
+            >
+                <Animated.View style={[styles.inner, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+
+                    {/* ── HEADER ── */}
                     <View style={styles.header}>
+                        {/* ZCE badge */}
+                        <View style={styles.logoBadge}>
+                            <Text style={styles.logoText}>ZCE</Text>
+                        </View>
                         <Text style={styles.title}>INITIATE</Text>
                         <Text style={styles.subtitle}>CREATE YOUR IDENTITY</Text>
-                        <Text style={{ color: 'rgba(255,255,255,0.15)', fontSize: 8, fontFamily: Fonts.mono, marginTop: 10 }}>FIRMWARE V2.0.1 (STRICT AUTH)</Text>
+                        <View style={styles.tagRow}>
+                            <View style={styles.tagDot} />
+                            <Text style={styles.tag}>FIRMWARE V2.0.1</Text>
+                            <View style={styles.tagDivider} />
+                            <Text style={styles.tag}>STRICT AUTH</Text>
+                            <View style={styles.tagDot} />
+                        </View>
                     </View>
 
-                    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.form}>
+                    {/* ── FORM CARD ── */}
+                    <BlurView intensity={10} tint="dark" style={styles.card}>
+                        <View style={styles.cardInner}>
+                            {FIELDS.map((field) => {
+                                const isFocused = focusedField === field.key;
+                                const isUsername = field.key === 'username';
+                                const showStatus = isUsername && usernameMessage() !== '';
 
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>CODENAME</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Agent Name"
-                                placeholderTextColor="rgba(255,255,255,0.3)"
-                                value={name}
-                                onChangeText={setName}
-                            />
-                        </View>
+                                return (
+                                    <View
+                                        key={field.key}
+                                        style={styles.fieldGroup}
+                                        onLayout={e => { fieldY.current[field.key] = e.nativeEvent.layout.y; }}
+                                    >
+                                        <View style={styles.labelRow}>
+                                            <Text style={[styles.labelIcon, isFocused && { color: Colors.accentPrimary }]}>
+                                                {field.key === 'username' ? `@` : field.icon}
+                                            </Text>
+                                            <Text style={[styles.label, isFocused && { color: Colors.accentPrimary }]}>
+                                                {field.label}
+                                            </Text>
+                                            {isUsername && usernameStatus === 'checking' && (
+                                                <ActivityIndicator size="small" color={Colors.accentPrimary} style={{ marginLeft: 6 }} />
+                                            )}
+                                        </View>
 
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>EMAIL</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="agent@zce.io"
-                                placeholderTextColor="rgba(255,255,255,0.3)"
-                                value={email}
-                                onChangeText={setEmail}
-                                autoCapitalize="none"
-                                keyboardType="email-address"
-                            />
-                        </View>
+                                        <View style={[
+                                            styles.inputWrap,
+                                            isFocused && styles.inputWrapFocused,
+                                            isUsername && usernameStatus === 'available' && styles.inputWrapGreen,
+                                            isUsername && usernameStatus === 'taken' && styles.inputWrapRed,
+                                        ]}>
+                                            <TextInput
+                                                style={styles.input}
+                                                value={fieldValue(field.key)}
+                                                onChangeText={v => setFieldValue(field.key, v)}
+                                                placeholder={field.placeholder}
+                                                placeholderTextColor="rgba(255,255,255,0.18)"
+                                                secureTextEntry={field.secure}
+                                                autoCapitalize={field.key === 'name' ? 'words' : 'none'}
+                                                autoCorrect={false}
+                                                keyboardType={field.board}
+                                                onFocus={() => { setFocusedField(field.key); scrollToField(field.key); }}
+                                                onBlur={() => setFocusedField(null)}
+                                            />
+                                            {/* Inline status for username */}
+                                            {isUsername && usernameStatus !== 'checking' && usernameStatus !== 'idle' && (
+                                                <View style={[styles.statusPill, { backgroundColor: usernameColor() + '22', borderColor: usernameColor() + '55' }]}>
+                                                    <Text style={[styles.statusPillText, { color: usernameColor() }]}>
+                                                        {usernameStatus === 'available' ? '✓' : usernameStatus === 'taken' ? '✗' : '⚠'}
+                                                    </Text>
+                                                </View>
+                                            )}
+                                        </View>
 
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>PASSWORD</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="••••••••"
-                                placeholderTextColor="rgba(255,255,255,0.3)"
-                                value={password}
-                                onChangeText={setPassword}
-                                secureTextEntry
-                            />
-                        </View>
+                                        {showStatus && (
+                                            <Text style={[styles.statusHint, { color: usernameColor() }]}>
+                                                {usernameMessage()}
+                                            </Text>
+                                        )}
+                                    </View>
+                                );
+                            })}
 
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>CONFIRM PASSWORD</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="••••••••"
-                                placeholderTextColor="rgba(255,255,255,0.3)"
-                                value={confirmPassword}
-                                onChangeText={setConfirmPassword}
-                                secureTextEntry
-                            />
-                        </View>
+                            {/* Error */}
+                            {!!error && (
+                                <View style={styles.errorBox}>
+                                    <Text style={styles.errorText}>⚠  {error}</Text>
+                                </View>
+                            )}
 
-                        {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-                        <Pressable onPress={handleSignup} style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}>
-                            <LinearGradient
-                                colors={['#4A9EFF', '#7B61FF']}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                                style={styles.buttonGradient}
+                            {/* Submit */}
+                            <Pressable
+                                onPress={handleSignup}
+                                disabled={loading}
+                                style={({ pressed }) => [styles.submitBtn, pressed && { opacity: 0.85 }]}
                             >
-                                <Text style={styles.buttonText}>{loading ? 'INITIALIZING...' : 'BEGIN PROTOCOL'}</Text>
-                            </LinearGradient>
-                        </Pressable>
+                                <LinearGradient
+                                    colors={['#4A9EFF', '#7B61FF', '#B44FFF']}
+                                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                                    style={styles.submitGradient}
+                                >
+                                    {loading ? (
+                                        <ActivityIndicator color="#fff" />
+                                    ) : (
+                                        <Text style={styles.submitText}>BEGIN PROTOCOL</Text>
+                                    )}
+                                </LinearGradient>
+                            </Pressable>
+                        </View>
+                    </BlurView>
 
-                        <Pressable onPress={() => router.replace('/auth/login')} style={styles.link}>
-                            <Text style={styles.linkText}>ALREADY HAVE ACCESS? LOG IN</Text>
-                        </Pressable>
-                    </KeyboardAvoidingView>
+                    {/* ── FOOTER ── */}
+                    <Pressable onPress={() => router.replace('/auth/login')} style={styles.loginLink}>
+                        <Text style={styles.loginLinkText}>ALREADY HAVE ACCESS?  </Text>
+                        <Text style={[styles.loginLinkText, styles.loginLinkAccent]}>LOG IN →</Text>
+                    </Pressable>
+
                 </Animated.View>
             </ScrollView>
-        </View>
+        </KeyboardAvoidingView>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: Colors.bgPrimary },
-    scrollContent: { flexGrow: 1, justifyContent: 'center', padding: Spacing.xl },
-    content: { width: '100%', maxWidth: 400, alignSelf: 'center', gap: 40 },
+    scroll: { flexGrow: 1, paddingHorizontal: Spacing.xl, paddingVertical: 64 },
+    inner: { width: '100%', maxWidth: 420, alignSelf: 'center', gap: 28 },
+
+    blob: { position: 'absolute', width: 320, height: 320, borderRadius: 160 },
+
+    // ── HEADER
     header: { alignItems: 'center', gap: 10 },
-    title: { fontFamily: Fonts.heading, fontSize: 36, color: Colors.textPrimary, letterSpacing: 6, fontWeight: '800' },
-    subtitle: { fontFamily: Fonts.monoBold, fontSize: 10, color: Colors.accentPrimary, letterSpacing: 4, textTransform: 'uppercase' },
-    form: { gap: 20, paddingHorizontal: 16 },
-    inputGroup: { gap: 8 },
-    label: { fontFamily: Fonts.mono, fontSize: 9, color: Colors.textTertiary, letterSpacing: 1, fontWeight: '600' },
-    input: {
+    logoBadge: {
+        width: 52, height: 52, borderRadius: 14,
+        backgroundColor: 'rgba(74,158,255,0.08)',
+        borderWidth: 1, borderColor: 'rgba(74,158,255,0.25)',
+        alignItems: 'center', justifyContent: 'center',
+        marginBottom: 6,
+    },
+    logoText: { fontFamily: Fonts.heading, fontSize: 16, color: '#fff', letterSpacing: 3 },
+    title: {
+        fontFamily: Fonts.heading,
+        fontSize: 40,
+        color: '#FFFFFF',
+        letterSpacing: 8,
+        fontWeight: '900',
+    },
+    subtitle: {
+        fontFamily: Fonts.monoBold,
+        fontSize: 10,
+        color: Colors.accentPrimary,
+        letterSpacing: 4,
+    },
+    tagRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
+    tagDot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: 'rgba(255,255,255,0.2)' },
+    tagDivider: { width: 1, height: 10, backgroundColor: 'rgba(255,255,255,0.12)' },
+    tag: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.25)', letterSpacing: 1.5 },
+
+    // ── CARD
+    card: { borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)' },
+    cardInner: { padding: 24, gap: 18, backgroundColor: 'rgba(255,255,255,0.02)' },
+
+    // ── FIELDS
+    fieldGroup: { gap: 7 },
+    labelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    labelIcon: { fontFamily: Fonts.mono, fontSize: 12, color: 'rgba(255,255,255,0.25)', width: 14, textAlign: 'center' },
+    label: { fontFamily: Fonts.monoBold, fontSize: 9, color: 'rgba(255,255,255,0.35)', letterSpacing: 1.5 },
+
+    inputWrap: {
+        flexDirection: 'row',
+        alignItems: 'center',
         height: 52,
-        backgroundColor: 'rgba(255,255,255,0.03)',
+        backgroundColor: 'rgba(255,255,255,0.04)',
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.08)',
+        borderColor: 'rgba(255,255,255,0.09)',
         borderRadius: 14,
         paddingHorizontal: 16,
-        color: Colors.textPrimary,
+    },
+    inputWrapFocused: {
+        borderColor: 'rgba(74,158,255,0.5)',
+        backgroundColor: 'rgba(74,158,255,0.04)',
+    },
+    inputWrapGreen: { borderColor: 'rgba(0,200,83,0.4)', backgroundColor: 'rgba(0,200,83,0.03)' },
+    inputWrapRed: { borderColor: 'rgba(255,59,48,0.4)', backgroundColor: 'rgba(255,59,48,0.03)' },
+    input: {
+        flex: 1,
+        color: '#FFFFFF',
         fontFamily: Fonts.body,
         fontSize: 15,
     },
-    button: { height: 54, borderRadius: 14, overflow: 'hidden', marginTop: 12 },
-    buttonPressed: { opacity: 0.8 },
-    buttonGradient: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    buttonText: { fontFamily: Fonts.heading, fontSize: 14, color: '#fff', letterSpacing: 2.5, fontWeight: '800' },
-    link: { alignItems: 'center', marginTop: 16 },
-    linkText: { fontFamily: Fonts.monoBold, fontSize: 10, color: Colors.textTertiary, textDecorationLine: 'underline', letterSpacing: 1 },
-    errorText: { color: Colors.danger, fontFamily: Fonts.mono, fontSize: 10, textAlign: 'center' },
+    statusPill: {
+        width: 24, height: 24, borderRadius: 12,
+        alignItems: 'center', justifyContent: 'center',
+        borderWidth: 1, marginLeft: 8,
+    },
+    statusPillText: { fontFamily: Fonts.monoBold, fontSize: 11 },
+    statusHint: { fontFamily: Fonts.mono, fontSize: 9, letterSpacing: 0.5, marginLeft: 20 },
+
+    // ── ERROR
+    errorBox: {
+        backgroundColor: 'rgba(255,59,48,0.08)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,59,48,0.3)',
+        borderRadius: 10,
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+    },
+    errorText: { fontFamily: Fonts.mono, fontSize: 10, color: '#FF3B30', letterSpacing: 0.3, textAlign: 'center' },
+
+    // ── SUBMIT
+    submitBtn: { borderRadius: 14, overflow: 'hidden', marginTop: 4 },
+    submitGradient: { height: 56, justifyContent: 'center', alignItems: 'center' },
+    submitText: {
+        fontFamily: Fonts.heading,
+        fontSize: 14,
+        color: '#FFFFFF',
+        letterSpacing: 3,
+        fontWeight: '800',
+    },
+
+    // ── FOOTER
+    loginLink: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
+    loginLinkText: { fontFamily: Fonts.mono, fontSize: 10, color: 'rgba(255,255,255,0.3)', letterSpacing: 1 },
+    loginLinkAccent: { color: Colors.accentPrimary },
 });

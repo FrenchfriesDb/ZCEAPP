@@ -8,7 +8,7 @@ import { AIService } from '@/services/ai';
 import { useUser } from '@/context/UserContext';
 
 export default function WitDrill() {
-    const { completeDrill, addDrillLog } = useUser();
+    const { user, completeDrill, addDrillLog } = useUser();
     const [line1, setLine1] = useState('');
     const [rewrite1, setRewrite1] = useState('');
     const [line2, setLine2] = useState('');
@@ -38,10 +38,10 @@ export default function WitDrill() {
                    - Bold/Direct
                 Do NOT include a Brutal Truth section, Challenge section, or Quote section.
             `;
-            const result = await AIService.generateResponse([{ role: 'user', content: promptText }], 'groq');
+            const result = await AIService.generateResponse([{ role: 'user', content: promptText }], 'groq', user?.name || 'AGENT', user?.level || 1, 'coach');
             setFeedback(result);
             setSubmitted(true);
-            await completeDrill(15);
+            await completeDrill(20);
             await addDrillLog('Wit Mining', 100, result);
         } catch (e) {
             setFeedback("Connection severed. Log it anyway.");
@@ -52,11 +52,11 @@ export default function WitDrill() {
 
     return (
         <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             keyboardVerticalOffset={0}
             style={styles.container}
         >
-            <LinearGradient colors={['#FF9F00', '#FF4081']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+            <LinearGradient colors={Colors.gradientDark} style={StyleSheet.absoluteFill} />
             <View style={styles.overlay} />
 
             <View style={styles.header}>
@@ -74,7 +74,7 @@ export default function WitDrill() {
 
                 <GlassCard style={styles.card}>
                     <Text style={styles.label}>LINE 1 (ORIGINAL)</Text>
-                    <TextInput style={styles.input} placeholder="..." placeholderTextColor="#999" value={line1} onChangeText={setLine1} />
+                    <TextInput style={styles.input} placeholder="..." placeholderTextColor="rgba(255,255,255,0.3)" value={line1} onChangeText={setLine1} />
 
                     <View style={{ height: 10 }} />
 
@@ -94,7 +94,7 @@ export default function WitDrill() {
 
                 {!submitted ? (
                     <Pressable onPress={handleAnalyze} style={styles.btn} disabled={isLoading || !rewrite1 || !rewrite2}>
-                        {isLoading ? <ActivityIndicator color="#000" /> : <Text style={styles.btnText}>COMPLETE MINING</Text>}
+                        {isLoading ? <ActivityIndicator color={Colors.bgPrimary} /> : <Text style={styles.btnText}>COMPLETE MINING</Text>}
                     </Pressable>
                 ) : (
                     <View style={styles.resultContainer}>
@@ -120,21 +120,21 @@ const styles = StyleSheet.create({
     header: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
     backBtn: { width: 60 },
     headerSpacer: { width: 60 },
-    backText: { color: 'rgba(255,255,255,0.5)', fontFamily: Fonts.mono, fontSize: 12 },
-    title: { flex: 1, fontFamily: Fonts.heading, fontSize: 18, color: '#fff', letterSpacing: 3, textAlign: 'center' },
+    backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12 },
+    title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: Colors.textPrimary, letterSpacing: 3, textAlign: 'center' },
 
     content: { paddingBottom: 40, gap: 14 },
-    instruction: { color: '#ccc', fontFamily: Fonts.body, fontSize: 14, textAlign: 'center', marginBottom: 6 },
+    instruction: { color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 14, textAlign: 'center', marginBottom: 6 },
 
     card: { padding: 16 },
     label: { color: Colors.accentPrimary, fontFamily: Fonts.mono, fontSize: 10, letterSpacing: 1, marginBottom: 6 },
     input: {
         backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 8, padding: 12,
-        color: '#fff', fontFamily: Fonts.body, fontSize: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
+        color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
     },
 
     btn: { backgroundColor: '#fff', paddingVertical: 14, borderRadius: 30, alignItems: 'center', marginTop: 6 },
-    btnText: { fontFamily: Fonts.heading, fontSize: 14, letterSpacing: 2, color: '#000' },
+    btnText: { fontFamily: Fonts.heading, fontSize: 14, letterSpacing: 2, color: Colors.bgPrimary },
 
     resultContainer: { gap: 16 },
     feedbackScroll: {
@@ -145,5 +145,5 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(255,255,255,0.08)',
     },
     feedbackScrollContent: { padding: 18 },
-    feedbackText: { color: '#fff', fontFamily: Fonts.body, fontSize: 14, lineHeight: 22 },
+    feedbackText: { color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 14, lineHeight: 22 },
 });

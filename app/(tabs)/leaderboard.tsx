@@ -55,9 +55,12 @@ export default function LeaderboardScreen() {
             let r = 1;
             snapshot.forEach((doc) => {
                 const data = doc.data();
+                // Prioritize username for competitive identity, fallback to name
+                const displayName = (data.username || data.name || 'Anonymous Agent').toUpperCase();
+
                 rankings.push({
                     rank: r++,
-                    name: data.name || 'Anonymous Agent',
+                    name: displayName,
                     level: data.level || 0,
                     title: data.title || 'Initiate',
                     xp: data.xp || 0,
@@ -108,9 +111,11 @@ export default function LeaderboardScreen() {
                         {[currentData[1], currentData[0], currentData[2]].map((entry, i) => {
                             const podiumColors = ['#C0C0C0', '#FFD700', '#CD7F32'];
                             const heights = [80, 110, 60];
+                            // Podium names in BOLD ALL CAPS username
+                            const displayName = (entry.name || '').toUpperCase();
                             return (
                                 <View key={entry.rank} style={styles.podiumSlot}>
-                                    <Text style={styles.podiumName} numberOfLines={1}>{entry.name.split('_')[0]}</Text>
+                                    <Text style={styles.podiumName} numberOfLines={1}>{displayName.split('_')[0]}</Text>
                                     <View style={[styles.podiumBlock, {
                                         height: heights[i],
                                         borderTopColor: podiumColors[i],
@@ -141,6 +146,10 @@ export default function LeaderboardScreen() {
                             const isTop3 = entry.rank <= 3;
                             const rankColor = isMe ? Colors.accentDanger : getRankColor(entry.rank);
 
+                            // For Me row in SIM, use current user's username
+                            let rowName = entry.name.toUpperCase();
+                            if (isMe && user?.username) rowName = user.username.toUpperCase();
+
                             return (
                                 <View
                                     key={i}
@@ -165,7 +174,7 @@ export default function LeaderboardScreen() {
                                     {/* User info */}
                                     <View style={styles.rowContent}>
                                         <Text style={[styles.rowName, isMe && { color: Colors.accentPrimary }]}>
-                                            {entry.name.toUpperCase()}
+                                            {rowName}
                                             {isMe ? '  ◈ YOU' : ''}
                                         </Text>
                                         <View style={styles.rowMeta}>
