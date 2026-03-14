@@ -14,7 +14,6 @@ export default function ProfileScreen() {
     // UI State
     const [sharing, setSharing] = useState(false);
     const [archivesVisible, setArchivesVisible] = useState(false);
-    const [archiveTab, setArchiveTab] = useState<'drills' | 'journal'>('journal');
     const [usernameModalVisible, setUsernameModalVisible] = useState(false);
     const [newUsername, setNewUsername] = useState('');
     const [usernameLoading, setUsernameLoading] = useState(false);
@@ -35,7 +34,6 @@ export default function ProfileScreen() {
     if (!user) {
         return (
             <View style={styles.container}>
-                <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
                 <Text style={{ color: 'rgba(255,255,255,0.4)', fontFamily: Fonts.mono, fontSize: 10, letterSpacing: 3 }}>IDENTITY NOT FOUND</Text>
                 <Pressable onPress={() => signOut()} style={styles.signOutBtn}>
                     <Text style={styles.signOutText}>FORCE LOGOUT</Text>
@@ -49,21 +47,13 @@ export default function ProfileScreen() {
 
     return (
         <View style={styles.container}>
-            {/* Background Layers */}
-            <LinearGradient
-                colors={timePalette.map(c => `${c}33`) as any}
-                style={StyleSheet.absoluteFill}
-            />
+            <LinearGradient colors={timePalette.map(c => `${c}33`) as any} style={StyleSheet.absoluteFill} />
             <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.85)' }]} />
 
-            <ScrollView
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
-            >
-                {/* 1. Profile Header Card */}
+            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                {/* Header Card */}
                 <GlassCard themed style={styles.header} intensity={35}>
                     <View style={styles.headerContent}>
-                        {/* Avatar */}
                         <View style={styles.avatarContainer}>
                             <View style={styles.avatar}>
                                 <Text style={styles.avatarText}>{user.name.charAt(0)}</Text>
@@ -71,17 +61,12 @@ export default function ProfileScreen() {
                             <View style={[styles.onlineBadge, { backgroundColor: systemColor, shadowColor: systemColor }]} />
                         </View>
 
-                        {/* Identity Meta */}
                         <View style={styles.identity}>
-                            <Text style={styles.name} numberOfLines={1} adjustsFontSizeToFit>
-                                {user.name.toUpperCase()}
-                            </Text>
+                            <Text style={styles.name} numberOfLines={1} adjustsFontSizeToFit>{user.name.toUpperCase()}</Text>
                             <View style={styles.identityMeta}>
                                 {user.username ? (
                                     <Pressable onPress={() => setUsernameModalVisible(true)}>
-                                        <Text style={[styles.usernameTag, { color: '#B3E0FF' }]}>
-                                            @{user.username.toLowerCase()}
-                                        </Text>
+                                        <Text style={[styles.usernameTag, { color: '#B3E0FF' }]}>@{user.username.toLowerCase()}</Text>
                                     </Pressable>
                                 ) : (
                                     <Pressable onPress={() => setUsernameModalVisible(true)} style={styles.setUsernameBtn}>
@@ -94,7 +79,6 @@ export default function ProfileScreen() {
                             </View>
                         </View>
 
-                        {/* Quick Actions */}
                         <View style={styles.headerActions}>
                             <Pressable onPress={() => router.push('/settings/edit-profile')} style={styles.settingsBtn}>
                                 <Text style={styles.emojiFix}>⚙️</Text>
@@ -106,7 +90,7 @@ export default function ProfileScreen() {
                     </View>
                 </GlassCard>
 
-                {/* 2. Heatmap Card */}
+                {/* Heatmap Section */}
                 <GlassCard themed style={styles.heatmapCard} intensity={25}>
                     <StaticMap dailyXp={user.dailyXp || {}} drillLogs={user.drillLogs || []} />
                     <Pressable
@@ -126,7 +110,7 @@ export default function ProfileScreen() {
                     </Pressable>
                 </GlassCard>
 
-                {/* 3. Stats Grid */}
+                {/* Stats Grid */}
                 <View style={styles.statsGrid}>
                     <GlassCard themed style={styles.statCard} intensity={15}>
                         <Text style={styles.statLabel}>DRILLS</Text>
@@ -140,13 +124,13 @@ export default function ProfileScreen() {
                     </GlassCard>
                 </View>
 
-                {/* 4. Mission Statement */}
+                {/* Bio Card */}
                 <GlassCard themed style={styles.bioCard} intensity={10}>
                     <Text style={styles.sectionTitle}>MISSION STATEMENT</Text>
                     <Text style={styles.bioText}>"{user.bio}"</Text>
                 </GlassCard>
 
-                {/* 5. Access Buttons */}
+                {/* Links */}
                 <GlassCard noPadding style={{ marginBottom: 12 }}>
                     <Pressable onPress={() => setArchivesVisible(true)} style={styles.archivesBtn}>
                         <Text style={styles.emojiFix}>📂</Text>
@@ -167,7 +151,7 @@ export default function ProfileScreen() {
                 </View>
             </ScrollView>
 
-            {/* Modals Container */}
+            {/* Modals */}
             <Modal visible={archivesVisible} transparent animationType="fade">
                 <View style={styles.archiveModalOverlay}>
                     <View style={styles.archiveHeader}>
@@ -179,10 +163,10 @@ export default function ProfileScreen() {
                     </View>
                     <FlatList
                         data={user.drillLogs || []}
-                        keyExtractor={(item, index) => index.toString()}
+                        keyExtractor={(_, index) => index.toString()}
                         renderItem={({ item }) => (
                             <GlassCard style={styles.archiveItem}>
-                                <Text style={{ color: '#fff' }}>{item.feedback || item.entry || 'No Log Content'}</Text>
+                                <Text style={{ color: '#fff' }}>{item.feedback || item.entry || 'Session Complete'}</Text>
                             </GlassCard>
                         )}
                         contentContainerStyle={{ padding: 20 }}
