@@ -88,17 +88,20 @@ export default function ProfileScreen() {
                                         <Text style={styles.setUsernameBtnText}>+ SET USERNAME</Text>
                                     </Pressable>
                                 )}
+                                <View style={[styles.levelBadge, { borderColor: systemColor + '66', backgroundColor: systemColor + '22' }]}>
+                                    <Text style={[styles.levelText, { color: '#B3E0FF' }]}>LVL {levelInfo.level}</Text>
+                                </View>
                             </View>
                         </View>
-                    </View>
 
-                    <View style={styles.headerActions}>
-                        <Pressable onPress={() => router.push('/settings/edit-profile')} style={styles.settingsBtn}>
-                            <Text style={styles.emojiFix}>⚙️</Text>
-                        </Pressable>
-                        <Pressable onPress={() => router.push('/settings/notification-settings')} style={styles.settingsBtn}>
-                            <Text style={styles.emojiFix}>🔔</Text>
-                        </Pressable>
+                        <View style={styles.headerActions}>
+                            <Pressable onPress={() => router.push('/settings/edit-profile')} style={styles.settingsBtn}>
+                                <Text style={styles.emojiFix}>⚙️</Text>
+                            </Pressable>
+                            <Pressable onPress={() => router.push('/settings/notification-settings')} style={styles.settingsBtn}>
+                                <Text style={styles.emojiFix}>🔔</Text>
+                            </Pressable>
+                        </View>
                     </View>
                 </GlassCard>
 
@@ -114,42 +117,14 @@ export default function ProfileScreen() {
                         {sharing ? (
                             <ActivityIndicator size="small" color="#FF9500" />
                         ) : (
-                            <>
-                                <View style={styles.socialBoostMain}>
-                                    <Text style={styles.socialBoostIcon}>⚡</Text>
-                                    <Text style={styles.socialBoostText}>DAILY BOOST (+50 XP)</Text>
-                                </View>
-                                <Text style={styles.socialBoostSub}>Tap to broadcast aura (Proof of Work)</Text>
-                            </>
+                            <View style={styles.socialBoostMain}>
+                                <Text style={styles.socialBoostIcon}>✨</Text>
+                                <Text style={styles.socialBoostText}>SHARE AURA</Text>
+                                <Text style={styles.socialBoostSub}>+50 XP</Text>
+                            </View>
                         )}
                     </Pressable>
                 </GlassCard>
-
-                {/* Stats Grid */}
-                <View style={styles.statsGrid}>
-                    <GlassCard themed style={styles.statCard} intensity={12}>
-                        <Text style={styles.statLabel}>AGENT STREAK</Text>
-                        <Text style={[styles.statValue, { textShadowColor: 'rgba(255,255,255,0.2)' }]}>{user.streak}</Text>
-                        <Text style={[styles.statSub, { color: '#FFFFFF' }]}>DAYS ACTIVE</Text>
-                    </GlassCard>
-                </View>
-
-                <View style={styles.statsGrid}>
-                    <GlassCard themed style={styles.statCard} intensity={15}>
-                        <Text style={styles.statLabel}>NEURAL LEVEL</Text>
-                        <Text style={[styles.statValue, { textShadowColor: 'rgba(255,255,255,0.2)' }]}>{levelInfo.level}</Text>
-                        <Text style={[styles.statSub, { color: '#FFFFFF' }]}>{levelInfo.title.toUpperCase()}</Text>
-                    </GlassCard>
-                    <GlassCard themed style={styles.statCard} intensity={15}>
-                        <Text style={styles.statLabel}>SYSTEM BACKUPS</Text>
-                        <Text style={[styles.statValue, { textShadowColor: 'rgba(255,255,255,0.2)' }]}>{user.systemBackups || 0}</Text>
-                        <Pressable onPress={purchaseSystemBackup}>
-                            <Text style={[styles.statSub, { color: user.xp >= 500 ? '#FFFFFF' : 'rgba(255,255,255,0.4)' }]}>
-                                {user.xp >= 500 ? '+ BUY (500XP)' : 'XP LOW'}
-                            </Text>
-                        </Pressable>
-                    </GlassCard>
-                </View>
 
                 <View style={styles.statsGrid}>
                     <GlassCard themed style={styles.statCard} intensity={15}>
@@ -201,7 +176,7 @@ export default function ProfileScreen() {
                         <Pressable onPress={() => setArchivesVisible(false)}>
                             <Text style={styles.closeText}>← CLOSE</Text>
                         </Pressable>
-                        <Text style={styles.archiveHeaderTitle}>ARCHIVES</Text>
+                        <Text style={archiveHeaderTitle}>ARCHIVES</Text>
                         <View style={{ width: 60 }} />
                     </View>
                     <View style={styles.archiveTabs}>
@@ -284,7 +259,7 @@ export default function ProfileScreen() {
                     </View>
                 </View>
             </Modal>
-        </View >
+        </View>
     );
 }
 
@@ -402,8 +377,8 @@ const styles = StyleSheet.create({
     footerVersion: { fontFamily: Fonts.mono, color: 'rgba(255,255,255,0.1)', fontSize: 8 },
     archiveModalOverlay: { flex: 1, backgroundColor: '#000' },
     archiveHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, paddingTop: 60 },
-    closeText: { color: 'rgba(255,255,255,0.5)', fontFamily: Fonts.mono, fontSize: 11 },
     archiveHeaderTitle: { fontFamily: Fonts.heading, fontSize: 20, color: '#fff', letterSpacing: 4 },
+    closeText: { color: 'rgba(255,255,255,0.5)', fontFamily: Fonts.mono, fontSize: 11 },
     archiveTabs: { flexDirection: 'row', padding: 20, gap: 10 },
     archiveTabBtn: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
     archiveTabBtnActive: { backgroundColor: 'rgba(255, 255, 255, 0.1)', borderColor: 'rgba(255, 255, 255, 0.3)' },
@@ -427,36 +402,4 @@ const styles = StyleSheet.create({
     modalCancelText: { fontFamily: Fonts.mono, color: 'rgba(255,255,255,0.5)', fontSize: 12 },
     modalConfirm: { flex: 1, height: 52, borderRadius: 16, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
     modalConfirmText: { fontFamily: Fonts.heading, color: '#000', fontSize: 13, fontWeight: '800' },
-    socialBoostBtn: {
-        backgroundColor: 'rgba(255, 149, 0, 0.1)',
-        borderWidth: 1,
-        borderColor: 'rgba(255, 149, 0, 0.3)',
-        borderRadius: Radius.md,
-        paddingVertical: 12,
-        marginTop: 16,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    socialBoostMain: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    socialBoostIcon: {
-        fontSize: 14,
-    },
-    socialBoostText: {
-        fontFamily: Fonts.monoBold,
-        fontSize: 11,
-        color: '#FF9500',
-        letterSpacing: 2,
-    },
-    socialBoostSub: {
-        fontFamily: Fonts.mono,
-        fontSize: 8,
-        color: 'rgba(255, 149, 0, 0.5)',
-        marginTop: 2,
-        textTransform: 'uppercase',
-        letterSpacing: 1,
-    },
 });

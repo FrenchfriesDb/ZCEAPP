@@ -1,6 +1,15 @@
-import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Lazy-load expo-notifications to prevent web/SSR environment crashes
+const getNotifications = () => {
+    if (Platform.OS === 'web') return null;
+    try {
+        return require('expo-notifications');
+    } catch (e) {
+        return null;
+    }
+};
 
 // ─── Storage Keys ─────────────────────────────────────────────────────────────
 const KEYS = {
@@ -143,7 +152,8 @@ export async function saveNotifSettings(settings: NotifSettings) {
 export const NotificationService = {
 
     async requestPermissions(): Promise<boolean> {
-        if (Platform.OS === 'web') return false;
+        const Notifications = getNotifications();
+        if (!Notifications || Platform.OS === 'web') return false;
         try {
             const { status } = await Notifications.requestPermissionsAsync();
             if (status !== 'granted') {
@@ -173,14 +183,15 @@ export const NotificationService = {
 
     /** Called when settings change — clears and re-schedules recurring only */
     async rescheduleRecurring(settings: NotifSettings, firstName: string = 'Agent') {
-        if (Platform.OS === 'web') return;
+        const Notifications = getNotifications();
+        if (!Notifications || Platform.OS === 'web') return;
         // Cancel ONLY the recurring (tagged) ones, not immediate ones
         try {
             const all = await Notifications.getAllScheduledNotificationsAsync();
             const recurringIds = all
-                .filter(n => (n.content.data as any)?.type === 'recurring')
-                .map(n => n.identifier);
-            await Promise.all(recurringIds.map(id => Notifications.cancelScheduledNotificationAsync(id)));
+                .filter((n: any) => (n.content.data as any)?.type === 'recurring')
+                .map((n: any) => n.identifier);
+            await Promise.all(recurringIds.map((id: string) => Notifications.cancelScheduledNotificationAsync(id)));
         } catch (e) {
             console.warn('[NOTIF] Reschedule failed:', e);
             return;
@@ -243,28 +254,22 @@ export const NotificationService = {
         console.log('[NOTIF] Recurring notifications scheduled');
     },
 
-    /**
-     * Call this EVERY time user completes a quest / opens app with activity.
-     * Cancels today's 7PM streak protector and reschedules it for tomorrow.
-     * This is how we make the streak protector "only fire if no activity today."
-     */
     async onUserActivity(firstName: string, streak: number) {
+        const Notifications = getNotifications();
+        if (!Notifications || Platform.OS === 'web') return;
         const settings = await loadSettings();
         if (!settings.streakProtector) return;
 
-        // Cancel today's streak protector notification
-        if (Platform.OS === 'web') return;
         try {
             const all = await Notifications.getAllScheduledNotificationsAsync();
             const streakProtectors = all.filter(
-                n => (n.content.data as any)?.subtype === 'streak_protector'
+                (n: any) => (n.content.data as any)?.subtype === 'streak_protector'
             );
             await Promise.all(
-                streakProtectors.map(n => Notifications.cancelScheduledNotificationAsync(n.identifier))
+                streakProtectors.map((n: any) => Notifications.cancelScheduledNotificationAsync(n.identifier))
             );
         } catch (e) { }
 
-        // Reschedule with real streak count for tomorrow's message
         const name = firstName || 'Agent';
         await Notifications.scheduleNotificationAsync({
             content: {
@@ -281,8 +286,9 @@ export const NotificationService = {
         });
     },
 
-    /** Fire immediately: Quest Reminder (only if settings allow + quiet check + daily cap) */
     async sendQuestReminder(firstName: string) {
+        const Notifications = getNotifications();
+        if (!Notifications || Platform.OS === 'web') return;
         const settings = await loadSettings();
         if (!settings.questReminder || isQuietTime()) return;
         if (!(await canSendToday())) return;
@@ -294,23 +300,21 @@ export const NotificationService = {
                 sound: true,
                 data: { type: 'immediate', subtype: 'quest_reminder' },
             },
-            trigger: null, // immediate
+            trigger: null,
         });
         await incrementDailyCount();
     },
 
-    /** Fire immediately: Streak Milestone (3, 7, 14, 30) */
     async sendStreakMilestone(streak: number, firstName: string) {
+        const Notifications = getNotifications();
+        if (!Notifications || Platform.OS === 'web') return;
         const settings = await loadSettings();
         if (!settings.streakMilestone) return;
 
         const milestones = [3, 7, 14, 30];
         if (!milestones.includes(streak)) return;
 
-        // Only notify once per milestone
-        const lastNotified = parseInt(
-            (await AsyncStorage.getItem(KEYS.LAST_STREAK)) || '0', 10
-        );
+        const lastNotified = parseInt((await AsyncStorage.getItem(KEYS.LAST_STREAK)) || '0', 10);
         if (lastNotified >= streak) return;
         await AsyncStorage.setItem(KEYS.LAST_STREAK, String(streak));
 
@@ -327,15 +331,13 @@ export const NotificationService = {
         });
     },
 
-    /** Fire immediately: Level Up */
     async sendLevelUp(newLevel: number, firstName: string) {
+        const Notifications = getNotifications();
+        if (!Notifications || Platform.OS === 'web') return;
         const settings = await loadSettings();
         if (!settings.levelUp) return;
 
-        // Only notify once per level
-        const lastLevel = parseInt(
-            (await AsyncStorage.getItem(KEYS.LAST_LEVEL)) || '0', 10
-        );
+        const lastLevel = parseInt((await AsyncStorage.getItem(KEYS.LAST_LEVEL)) || '0', 10);
         if (lastLevel >= newLevel) return;
         await AsyncStorage.setItem(KEYS.LAST_LEVEL, String(newLevel));
 
@@ -355,41 +357,26 @@ export const NotificationService = {
         await incrementDailyCount();
     },
 
-    /**
-     * Call on every app open:
-     * 1. Cancels the existing 48h timer.
-     * 2. Records current time.
-     * 3. Schedules a NEW re-engagement notification 48h from now.
-     * Because it's always rescheduled on open, it only fires if 48h pass without an open.
-     */
     async touchReengagement(firstName: string) {
+        const Notifications = getNotifications();
+        if (!Notifications || Platform.OS === 'web') return;
         const settings = await loadSettings();
 
-        // Cancel previous
-        if (Platform.OS === 'web') return;
         const existingId = await AsyncStorage.getItem(KEYS.REENGAGEMENT_ID);
         if (existingId) {
             await Notifications.cancelScheduledNotificationAsync(existingId).catch(() => { });
         }
 
         await AsyncStorage.setItem(KEYS.LAST_OPEN, Date.now().toString());
-
         if (!settings.reengagement) return;
 
-        // Schedule 48h from now
         const fortyEightHoursMs = 48 * 60 * 60 * 1000;
         const fireAt = new Date(Date.now() + fortyEightHoursMs);
 
-        // Respect quiet hours: if it would fire between 10PM and 7AM, push to 9AM that morning
         const fireHour = fireAt.getHours();
         if (fireHour >= 22 || fireHour < 7) {
             fireAt.setHours(9, 0, 0, 0);
-            if (fireHour < 7) {
-                // Already adjusted to today 9AM — fine
-            } else {
-                // Was 10PM+, push to next morning
-                fireAt.setDate(fireAt.getDate() + 1);
-            }
+            if (fireHour >= 22) fireAt.setDate(fireAt.getDate() + 1);
         }
 
         const name = firstName || 'Agent';
@@ -408,22 +395,22 @@ export const NotificationService = {
         await AsyncStorage.setItem(KEYS.REENGAGEMENT_ID, id);
     },
 
-    /** Initialize everything on login. Call ONCE when user is confirmed authenticated. */
     async initForUser(firstName: string, currentStreak: number) {
+        const Notifications = getNotifications();
+        if (!Notifications || Platform.OS === 'web') return;
+
         const granted = await this.requestPermissions();
         if (!granted) return;
 
         await this.scheduleRecurring(firstName);
         await this.touchReengagement(firstName);
 
-        // Reschedule streak protector with real streak number
         const settings = await loadSettings();
         if (settings.streakProtector && currentStreak > 0) {
-            if (Platform.OS === 'web') return;
             const name = firstName || 'Agent';
             try {
                 const all = await Notifications.getAllScheduledNotificationsAsync();
-                const sp = all.find(n => (n.content.data as any)?.subtype === 'streak_protector');
+                const sp = all.find((n: any) => (n.content.data as any)?.subtype === 'streak_protector');
                 if (sp) {
                     await Notifications.cancelScheduledNotificationAsync(sp.identifier);
                     await Notifications.scheduleNotificationAsync({
@@ -434,9 +421,9 @@ export const NotificationService = {
                             data: { type: 'recurring', subtype: 'streak_protector' },
                         },
                         trigger: {
-                            type: Notifications.SchedulableTriggerInputTypes.DAILY,
                             hour: 19,
                             minute: 0,
+                            repeats: true,
                         },
                     });
                 }
@@ -449,6 +436,8 @@ export const NotificationService = {
     },
 
     async sendStreakWarning() {
+        const Notifications = getNotifications();
+        if (!Notifications || Platform.OS === 'web') return;
         const settings = await loadSettings();
         if (!settings.streakProtector || isQuietTime()) return;
         if (!(await canSendToday())) return;
@@ -465,7 +454,6 @@ export const NotificationService = {
         await incrementDailyCount();
     },
 
-    // Legacy alias kept for _layout.tsx compatibility during migration
     async scheduleDailyReminder(_hour?: number, _minute?: number) {
         console.log('[NOTIF] scheduleDailyReminder is deprecated — using initForUser instead');
     },
