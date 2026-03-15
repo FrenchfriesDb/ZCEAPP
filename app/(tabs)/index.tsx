@@ -293,7 +293,7 @@ export default function DojoScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={timePalette.map(c => `${c}33`) as any} // ~20% opacity for background base
+        colors={['#00000033', '#33333333']} // ~20% opacity black/gray gradient
         style={StyleSheet.absoluteFill}
       />
       <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.85)' }]} />
