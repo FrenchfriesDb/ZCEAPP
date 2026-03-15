@@ -324,12 +324,12 @@ const styles = StyleSheet.create({
     // ── HEADER
     header: { alignItems: 'center', gap: 10 },
     logoBadge: {
-        width: 52, height: 52, borderRadius: 0,
+        width: 80, height: 80, borderRadius: 0,
         backgroundColor: 'transparent',
         alignItems: 'center', justifyContent: 'center',
         marginBottom: 6,
     },
-    logoImage: { width: 40, height: 40 },
+    logoImage: { width: 70, height: 70 },
     title: {
         fontFamily: Fonts.heading,
         fontSize: 40,
