@@ -2,7 +2,7 @@ import {
     View, Text, StyleSheet, TextInput, Pressable, Animated,
     KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator
 } from 'react-native';
-import { PanGestureHandler, State } from 'react-native-gesture-handler';
+import { PanGestureHandler, State, NativeViewGestureHandler } from 'react-native-gesture-handler';
 import { router } from 'expo-router';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Colors, Fonts, Spacing } from '@/constants/theme';
@@ -199,6 +199,7 @@ export default function SignupScreen() {
                                             )}
                                         </View>
 
+                                        <NativeViewGestureHandler>
                                         <View style={[
                                             styles.inputWrap,
                                             isFocused && styles.inputWrapFocused,
@@ -227,6 +228,7 @@ export default function SignupScreen() {
                                                 </View>
                                             )}
                                         </View>
+</NativeViewGestureHandler>
 
                                         {showStatus && (
                                             <Text style={[styles.statusHint, { color: usernameColor() }]}>

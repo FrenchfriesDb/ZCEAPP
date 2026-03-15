@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, TextInput, Pressable, KeyboardAvoidingView, Platform, Animated, ScrollView } from 'react-native';
-import { PanGestureHandler, State } from 'react-native-gesture-handler';
+import { PanGestureHandler, State, NativeViewGestureHandler } from 'react-native-gesture-handler';
 import { router } from 'expo-router';
 import { useState, useRef, useEffect } from 'react';
 import { Fonts, Spacing } from '@/constants/theme';
@@ -63,6 +63,7 @@ export default function LoginScreen() {
                     <View style={styles.form}>
                         <View style={styles.inputGroup}>
                             <Text style={styles.label}>USERNAME OR EMAIL</Text>
+                            <NativeViewGestureHandler>
                             <View style={[styles.inputWrap, focusedField === 'email' && styles.inputWrapFocused]}>
                                 <TextInput
                                     style={styles.input}
@@ -77,10 +78,12 @@ export default function LoginScreen() {
                                     onBlur={() => setFocusedField(null)}
                                 />
                             </View>
+</NativeViewGestureHandler>
                         </View>
 
                         <View style={styles.inputGroup}>
                             <Text style={styles.label}>ACCESS CODE</Text>
+                            <NativeViewGestureHandler>
                             <View style={[styles.inputWrap, focusedField === 'password' && styles.inputWrapFocused]}>
                                 <TextInput
                                     style={styles.input}
@@ -93,6 +96,7 @@ export default function LoginScreen() {
                                     onBlur={() => setFocusedField(null)}
                                 />
                             </View>
+</NativeViewGestureHandler>
                         <Pressable
                                 onPress={() => router.push('/auth/forgot-password')}
                                 style={{ alignSelf: 'flex-end', marginTop: 4 }}
