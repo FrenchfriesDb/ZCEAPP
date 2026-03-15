@@ -472,7 +472,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             Alert.alert("Access Denied", msg);
             throw new Error(msg);
         } finally { setIsLoading(false); }
-    };
 
     const signOut = async () => {
         // Clear all local state first so UI reflects logged-out immediately
@@ -490,7 +489,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             console.warn('[signOut] Storage clear failed:', e);
         }
         setHasCompletedOnboarding(false);
-        router.replace('/auth/login');
+        router.replace('/auth/onboarding');
     };
 
     // --- GAMEPLAY ---
