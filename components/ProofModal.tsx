@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import {
     View, Text, StyleSheet, Modal, TextInput, Pressable,
-    Animated, Image, Alert, ScrollView, Platform, ActionSheetIOS,
+    Image, Alert, ScrollView, Platform, ActionSheetIOS,
     KeyboardAvoidingView
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
-import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
+import { Colors, Fonts, Radius } from '@/constants/theme';
 import GlassButton from './GlassButton';
 
 interface ProofModalProps {
@@ -18,7 +18,7 @@ interface ProofModalProps {
 
 export default function ProofModal({ visible, onClose, onComplete, questTitle }: ProofModalProps) {
     const [textProof, setTextProof] = useState('');
-    const [photoUri, setPhotoUri] = useState<string | null>(null);
+    const [photoUri, setPhotoUri] = useState<string | undefined>(undefined);
 
     const handleSubmit = () => {
         if (!textProof && !photoUri) {
@@ -27,7 +27,7 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
         }
         onComplete({ textProof, photoUri });
         setTextProof('');
-        setPhotoUri(null);
+        setPhotoUri(undefined);
         onClose();
     };
 
@@ -131,13 +131,12 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
 
                         <View style={styles.modalActions}>
                             <GlassButton
-                                title="CANCEL"
+                                label="CANCEL"
                                 onPress={onClose}
                                 style={styles.cancelButton}
-                                textStyle={styles.cancelText}
                             />
                             <GlassButton
-                                title="SUBMIT PROOF"
+                                label="SUBMIT PROOF"
                                 onPress={handleSubmit}
                                 style={styles.submitButton}
                             />
@@ -265,9 +264,6 @@ const styles = StyleSheet.create({
         backgroundColor: 'transparent',
         borderWidth: 1,
         borderColor: Colors.borderGlass,
-    },
-    cancelText: {
-        color: Colors.textSecondary,
     },
     submitButton: {
         flex: 2,
