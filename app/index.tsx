@@ -2,7 +2,7 @@ import { Redirect } from 'expo-router';
 import { useUser } from '@/context/UserContext';
 
 export default function Index() {
-    const { user, isLoading } = useUser();
+    const { user, isLoading, hasCompletedOnboarding } = useUser();
 
     if (isLoading) return null;
 
@@ -10,5 +10,9 @@ export default function Index() {
         return <Redirect href="/(tabs)" />;
     }
 
-    return <Redirect href="/landing" />;
+    if (hasCompletedOnboarding) {
+        return <Redirect href="/auth/login" />;
+    }
+
+    return <Redirect href="/auth/onboarding" />;
 }
