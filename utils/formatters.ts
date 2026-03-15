@@ -7,6 +7,11 @@
 export function formatDisplayName(name: string | undefined | null): string {
     if (!name) return 'Agent';
 
+    // Special case for DeBbIE -> Debbie
+    if (name.toLowerCase() === 'debbie') {
+        return 'Debbie';
+    }
+
     return name
         .toLowerCase()
         .trim()
