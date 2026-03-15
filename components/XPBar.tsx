@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Fonts, Radius, XPConfig } from '@/constants/theme';
-import { useTimeColors } from '@/hooks/useTimeColors';
+import { useXPBarColors } from '@/hooks/useXPBarColors';
 
 interface Props {
     xp: number;
@@ -25,7 +25,7 @@ export default function XPBar({ xp }: Props) {
     const levelInfo = XPConfig.getLevel(xp);
     const xpInLevel = XPConfig.getXpInCurrentLevel(xp);
     const progress = XPConfig.getProgress(xp); // 0–1
-    const palette = useTimeColors();
+    const palette = useXPBarColors();
     const themeColor = palette[0];
 
     const [barWidth, setBarWidth] = useState(0);

@@ -37,7 +37,7 @@ export const useXPBarColors = (): string[] => {
         };
 
         update();
-        const interval = setInterval(update, 60_000);
+        const interval = setInterval(update, 10_000);
         return () => clearInterval(interval);
     }, []);
 
