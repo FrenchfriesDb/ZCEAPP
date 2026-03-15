@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
     View, Text, ScrollView, Pressable, Animated, Dimensions,
-    KeyboardAvoidingView, Platform, TextInput, Modal, Alert, StyleSheet,
+    KeyboardAvoidingView, Platform, TextInput, Modal, Alert, StyleSheet, FlatList,
 } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,6 +20,9 @@ import {
     getDocs, writeBatch, Timestamp,
 } from 'firebase/firestore';
 import ProofModal from '@/components/ProofModal';
+import GlassCard from '@/components/GlassCard';
+import GlassButton from '@/components/GlassButton';
+import XPBar from '@/components/XPBar';
 import { getFirstName, formatDisplayName } from '@/utils/formatters';
 
 const ROASTS = [
@@ -466,7 +469,6 @@ export default function DojoScreen() {
           let log = `Verified: ${selectedItem.title}.`;
           if (proofData.text) log += ` Description: ${proofData.text}`;
           if (proofData.photoUri) log += ` [Photo Proof Attached]`;
-          if (proofData.voiceUri) log += ` [Voice Proof Attached]`;
 
           await completeQuest(selectedItem.id, selectedItem.xp, log);
           setModalVisible(false);
