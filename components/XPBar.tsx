@@ -27,6 +27,10 @@ export default function XPBar({ xp }: Props) {
     const progress = XPConfig.getProgress(xp); // 0–1
     const palette = useXPBarColors();
     const themeColor = palette[0];
+    
+    // Fix unreadable text during 9 PM Night Dive theme
+    const isNightDive = themeColor === '#020344';
+    const textColor = isNightDive ? '#00D4FF' : themeColor;
 
     const [barWidth, setBarWidth] = useState(0);
     const animatedProgress = useRef(new Animated.Value(0)).current;
@@ -49,12 +53,12 @@ export default function XPBar({ xp }: Props) {
     return (
         <View style={styles.container}>
             <View style={styles.topRow}>
-                <View style={[styles.levelBadge, { borderColor: themeColor + '66' }]}>
-                    <Text style={[styles.levelText, { color: themeColor }]}>LVL {levelInfo.level}</Text>
+                <View style={[styles.levelBadge, { borderColor: textColor + '66' }]}>
+                    <Text style={[styles.levelText, { color: textColor }]}>LVL {levelInfo.level}</Text>
                 </View>
-                <Text style={[styles.rankTitle, { color: themeColor }]} numberOfLines={1}>{levelInfo.title.toUpperCase()}</Text>
-                <Text style={[styles.xpCounts, { color: themeColor + '88' }]} numberOfLines={1}>
-                    {xpInLevel.toLocaleString()} <Text style={[styles.xpDivider, { color: themeColor + '44' }]}>/</Text> {levelInfo.xpToComplete.toLocaleString()}
+                <Text style={[styles.rankTitle, { color: textColor }]} numberOfLines={1}>{levelInfo.title.toUpperCase()}</Text>
+                <Text style={[styles.xpCounts, { color: textColor + '88' }]} numberOfLines={1}>
+                    {xpInLevel.toLocaleString()} <Text style={[styles.xpDivider, { color: textColor + '44' }]}>/</Text> {levelInfo.xpToComplete.toLocaleString()}
                 </Text>
             </View>
 
