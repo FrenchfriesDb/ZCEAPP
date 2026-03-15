@@ -19,7 +19,7 @@ import {
     query, where, orderBy, limit, onSnapshot,
     getDocs, writeBatch, Timestamp,
 } from 'firebase/firestore';
-import { ProofModal } from '@/components';
+import ProofModal from '@/components/ProofModal';
 import { getFirstName, formatDisplayName } from '@/utils/formatters';
 
 const ROASTS = [
