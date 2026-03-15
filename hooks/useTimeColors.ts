@@ -15,10 +15,10 @@ import { TimeColors } from '@/constants/theme';
  *   dusk          17:30–17:59 — rose mauve (#DD83AD → #C3E1FC)
  *   sunset        18–19:59  — fiery (#FF0F7B → #F89B29)
  *   twilight      19–19:59  — pink-cyan (7–8 PM) (#FF1B6B → #45CAFF)
- *   eveningNavy   20–20:59  — 8 PM (#9BAFD9 → #103783)
- *   nightDive     21–21:59  — Night Dive
- *   voidSpark     22–22:59  — Void Spark
- *   midnightMist  23–23:59  — Midnight Mist
+ *   eveningNavy   20–20:59  — 8-8:30 PM (#9BAFD9 → #103783)
+ *   nightDive     21–21:59  — 8:30-9 PM Night Dive
+ *   voidSpark     22–22:59  — 9-10 PM Void Spark
+ *   midnightMist  23–23:59  — 10-11 PM Midnight Mist
  */
 export const useTimeColors = () => {
     const [palette, setPalette] = useState<string[]>(TimeColors.day);
@@ -43,11 +43,11 @@ export const useTimeColors = () => {
             else if (time < 19) next = TimeColors.sunset;        // 6–7 PM
             else if (time < 19.5) next = TimeColors.twilight;      // 7–7:30 PM
             else if (time < 20) next = TimeColors.battleGlory;     // 7:30-8 PM
-            else if (time < 20.5) next = ['#000000', '#D46C76'];    // 8:30 PM - dark background with plum UI
-            else if (time < 21) next = TimeColors.eveningNavy;     // 8-9 PM
-            else if (time < 23) next = ['#00D4FF', '#28B8D5'];    // 9 PM - lighter blue for UI elements
-            else if (time < 24) next = TimeColors.voidSpark;    // 10 PM
-            else next = TimeColors.midnightMist;                // 11 PM
+            else if (time < 20.5) next = TimeColors.eveningNavy;     // 8-8:30 PM
+            else if (time < 21) next = TimeColors.nightDive;        // 8:30-9 PM
+            else if (time < 22) next = TimeColors.voidSpark;       // 9-10 PM
+            else if (time < 23) next = TimeColors.midnightMist;     // 10-11 PM
+            else next = TimeColors.deepAbyss;                       // 11 PM-12 AM
 
             setPalette(next);
         };
