@@ -76,14 +76,16 @@ export default function QuestsScreen() {
     const [isProofVisible, setIsProofVisible] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [questBatch, setQuestBatch] = useState(0);
-    const [shuffledQuests, setShuffledQuests] = useState(QUESTS);
+    const [shuffledQuests, setShuffledQuests] = useState(() => shuffleArray(QUESTS));
 
     const timePalette = useTimeColors();
     const systemColor = timePalette[0];
 
-    // Shuffle quests on first load and when batch changes
+    // Reshuffle when batch changes
     useMemo(() => {
-        setShuffledQuests(shuffleArray(QUESTS));
+        if (questBatch > 0) {
+            setShuffledQuests(shuffleArray(QUESTS));
+        }
     }, [questBatch]);
 
     // Filter and rotate quests
