@@ -83,6 +83,14 @@ export default function QuestsScreen() {
     const currentHour = new Date().getHours();
     const isMoonDustTheme = currentHour >= 21 && currentHour < 22; // 9-10 PM
     const systemColor = isMoonDustTheme ? '#CCB3D1' : timePalette[timePalette.length - 1];
+    // Convert hex to rgba for textShadowColor
+    const hexToRgba = (hex: string, alpha: number) => {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    };
+    const glowColor = hexToRgba(systemColor, 0.4);
 
     // Reshuffle when batch changes
     useMemo(() => {
@@ -156,7 +164,7 @@ export default function QuestsScreen() {
             <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 <View style={styles.heroSection}>
                     <View style={styles.heroProgressWrapper}>
-                        <Text style={[styles.heroNumber, { textShadowColor: systemColor + '66' }]}>{completedCount}</Text>
+                        <Text style={[styles.heroNumber, { textShadowColor: glowColor }]}>{completedCount}</Text>
                         <Text style={[styles.heroUnit, { color: systemColor }]}>OF {visibleQuests.length} QUESTS</Text>
                     </View>
                     <Text style={styles.welcomeText}>
