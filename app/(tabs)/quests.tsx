@@ -2,10 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Fonts, FontSizes, Spacing, Radius } from '@/constants/theme';
-import QuestCard from '../../components/QuestCard';
-import GlassCard from '../../components/GlassCard';
-import GlassButton from '../../components/GlassButton';
-import ProofModal from '../../components/ProofModal';
+import QuestCard from '@/components/QuestCard';
+import GlassCard from '@/components/GlassCard';
+import GlassButton from '@/components/GlassButton';
+import ProofModal from '@/components/ProofModal';
 import { useUser } from '@/context/UserContext';
 import { useTimeColors } from '@/hooks/useTimeColors';
 
