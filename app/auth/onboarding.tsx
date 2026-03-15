@@ -213,6 +213,23 @@ export default function OnboardingScreen() {
         router.replace('/auth/signup');
     };
 
+    const handleBack = () => {
+        if (stage > 1) {
+            Animated.parallel([
+                Animated.timing(pageOp, { toValue: 0, duration: 220, useNativeDriver: true }),
+                Animated.timing(pageTy, { toValue: 24, duration: 220, useNativeDriver: true }),
+            ]).start(() => {
+                pageTy.setValue(-24);
+                setStage(s => s - 1);
+                setStageKey(k => k + 1);
+                Animated.parallel([
+                    Animated.timing(pageOp, { toValue: 1, duration: 280, useNativeDriver: true }),
+                    Animated.timing(pageTy, { toValue: 0, duration: 280, useNativeDriver: true }),
+                ]).start();
+            });
+        }
+    };
+
     const canProceed = () => {
         if (stage === 2) return !!mission.level;
         if (stage === 3) return !!mission.goal;
@@ -247,6 +264,11 @@ export default function OnboardingScreen() {
             <SafeAreaView style={styles.safe}>
                 {/* Top bar */}
                 <View style={styles.topBar}>
+                    {stage > 1 && (
+                        <Pressable onPress={handleBack} style={styles.backBtn}>
+                            <Text style={styles.backText}>←</Text>
+                        </Pressable>
+                    )}
                     <View style={styles.dotsRow}>
                         {[1, 2, 3, 4, 5].map(n => (
                             <View key={n} style={[styles.dot, stage === n && styles.dotActive]} />
@@ -502,4 +524,13 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     frameBadgeText: { fontFamily: Fonts.monoBold, color: '#FFFFFF', fontSize: 10, letterSpacing: 4, fontWeight: '800' },
+
+    backBtn: {
+        paddingHorizontal: 12, paddingVertical: 8,
+        position: 'absolute', left: 0, top: 0,
+    },
+    backText: {
+        fontFamily: Fonts.monoBold, color: 'rgba(255,255,255,0.6)', 
+        fontSize: 16, fontWeight: '800',
+    },
 });
