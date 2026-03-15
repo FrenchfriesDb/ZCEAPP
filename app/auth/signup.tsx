@@ -316,13 +316,13 @@ export default function SignupScreen() {
 }
 
 const styles = StyleSheet.create({
-    scroll: { flexGrow: 1, paddingHorizontal: Spacing.xl, paddingVertical: 64 },
-    inner: { width: '100%', maxWidth: 420, alignSelf: 'center', gap: 28 },
+    scroll: { flexGrow: 1, paddingHorizontal: Spacing.xl, paddingVertical: 80 },
+    inner: { width: '100%', maxWidth: 420, alignSelf: 'center', gap: 36 },
 
     blob: { position: 'absolute', width: 320, height: 320, borderRadius: 160 },
 
     // ── HEADER
-    header: { alignItems: 'center', gap: 10 },
+    header: { alignItems: 'center', gap: 16 },
     logoBadge: {
         width: 80, height: 80, borderRadius: 0,
         backgroundColor: 'transparent',

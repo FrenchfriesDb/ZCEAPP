@@ -1,7 +1,7 @@
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Animated, Platform } from 'react-native';
+import { View, Text, StyleSheet, Animated, Platform, Image } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Font from 'expo-font';
@@ -29,6 +29,7 @@ function LoadingScreen() {
   const [fadeAnim] = useState(new Animated.Value(0));
   const [pulseAnim] = useState(new Animated.Value(0.5));
   const [textAnim] = useState(new Animated.Value(0));
+  const [glassShimmer] = useState(new Animated.Value(0));
 
   useEffect(() => {
     Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }).start();
@@ -39,28 +40,81 @@ function LoadingScreen() {
         Animated.timing(pulseAnim, { toValue: 0.3, duration: 1500, useNativeDriver: true }),
       ])
     ).start();
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(glassShimmer, { toValue: 1, duration: 3000, useNativeDriver: false }),
+        Animated.timing(glassShimmer, { toValue: 0, duration: 3000, useNativeDriver: false }),
+      ])
+    ).start();
   }, []);
 
   return (
     <View style={loadStyles.container}>
-      <LinearGradient colors={['#050508', '#080816', '#000000']} style={StyleSheet.absoluteFill} />
-      <View style={[loadStyles.glow, { top: -150, left: -100, backgroundColor: 'rgba(74, 158, 255, 0.05)' }]} />
-      <View style={[loadStyles.glow, { bottom: -150, right: -100, backgroundColor: 'rgba(123, 97, 255, 0.04)' }]} />
+      <LinearGradient 
+        colors={['#000000', '#1a1a1a', '#000000']} 
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill} 
+      />
+      
+      {/* Glass morphism background elements */}
+      <Animated.View 
+        style={[
+          loadStyles.glassBubble, 
+          { 
+            top: 100, 
+            left: 50,
+            opacity: pulseAnim,
+            transform: [{ scale: pulseAnim }]
+          }
+        ]} 
+      />
+      <Animated.View 
+        style={[
+          loadStyles.glassBubble, 
+          { 
+            bottom: 120, 
+            right: 80,
+            opacity: pulseAnim,
+            transform: [{ scale: pulseAnim.interpolate({ inputRange: [0.3, 1], outputRange: [0.8, 1.2] }) }]
+          }
+        ]} 
+      />
+      <Animated.View 
+        style={[
+          loadStyles.glassBubble, 
+          { 
+            top: '60%', 
+            left: '20%',
+            opacity: glassShimmer,
+            transform: [{ scale: glassShimmer.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1.5] }) }]
+          }
+        ]} 
+      />
 
       <Animated.View style={[loadStyles.content, { opacity: fadeAnim }]}>
-        <View style={loadStyles.icebergVisual}>
-          <View style={loadStyles.icebergTip} />
-          <View style={loadStyles.waterlineContainer}>
-            <View style={loadStyles.waterlineL} />
-            <Animated.View style={[loadStyles.waterDot, { opacity: pulseAnim }]} />
-            <View style={loadStyles.waterlineR} />
-          </View>
-          <Animated.View style={[loadStyles.icebergMass, { opacity: pulseAnim }]}>
-            <View style={loadStyles.massL1} />
-            <View style={loadStyles.massL2} />
-            <View style={loadStyles.massL3} />
-          </Animated.View>
-        </View>
+        {/* Glass morphism logo container */}
+        <Animated.View style={[
+          loadStyles.glassLogoContainer,
+          {
+            backgroundColor: glassShimmer.interpolate({
+              inputRange: [0, 0.5, 1],
+              outputRange: ['rgba(255, 255, 255, 0.05)', 'rgba(255, 255, 255, 0.1)', 'rgba(255, 255, 255, 0.05)']
+            }),
+            borderColor: glassShimmer.interpolate({
+              inputRange: [0, 0.5, 1],
+              outputRange: ['rgba(255, 255, 255, 0.1)', 'rgba(255, 255, 255, 0.3)', 'rgba(255, 255, 255, 0.1)']
+            }),
+          }
+        ]}>
+          <View style={loadStyles.logoReflection} />
+          <Image 
+            source={require('../assets/images/zcelogoloading.png')}
+            style={loadStyles.logoImage}
+            resizeMode="contain"
+          />
+          <View style={loadStyles.glassHighlight} />
+        </Animated.View>
 
         <Text style={loadStyles.title}>ZCE</Text>
         <Text style={loadStyles.subtitle}>NO ONE IS COMING.</Text>
@@ -74,29 +128,108 @@ function LoadingScreen() {
 }
 
 const loadStyles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#050508' },
-  glow: { position: 'absolute', width: 400, height: 400, borderRadius: 200 },
-  content: { alignItems: 'center', gap: 10 },
-  icebergVisual: { alignItems: 'center', marginBottom: 40 },
-  icebergTip: {
-    width: 0, height: 0,
-    borderLeftWidth: 30, borderRightWidth: 30, borderBottomWidth: 50,
-    borderLeftColor: 'transparent', borderRightColor: 'transparent',
-    borderBottomColor: 'rgba(255, 255, 255, 0.9)',
-    shadowColor: '#fff', shadowRadius: 20, shadowOpacity: 0.2,
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000000' },
+  content: { alignItems: 'center', gap: 16 },
+  
+  // Glass morphism elements
+  glassBubble: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    shadowColor: '#fff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
   },
-  waterlineContainer: { flexDirection: 'row', alignItems: 'center', gap: 0, marginVertical: 6 },
-  waterlineL: { width: 80, height: 1, backgroundColor: 'rgba(74, 158, 255, 0.4)' },
-  waterlineR: { width: 80, height: 1, backgroundColor: 'rgba(74, 158, 255, 0.4)' },
-  waterDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#4A9EFF', marginHorizontal: 6, shadowColor: '#4A9EFF', shadowRadius: 10, shadowOpacity: 1 },
-  icebergMass: { alignItems: 'center', gap: 4 },
-  massL1: { width: 90, height: 10, borderRadius: 2, backgroundColor: 'rgba(74, 158, 255, 0.08)' },
-  massL2: { width: 130, height: 10, borderRadius: 2, backgroundColor: 'rgba(74, 158, 255, 0.05)' },
-  massL3: { width: 170, height: 10, borderRadius: 2, backgroundColor: 'rgba(74, 158, 255, 0.02)' },
-  title: { fontSize: 64, fontWeight: '900', color: '#FFFFFF', letterSpacing: 8 },
-  subtitle: { fontSize: 14, fontWeight: '700', color: '#FF6B6B', letterSpacing: 4 },
-  mantra: { fontSize: 12, fontWeight: '500', color: 'rgba(255,255,255,0.6)', letterSpacing: 3, marginBottom: 8 },
-  loadingText: { fontSize: 9, fontWeight: '400', color: 'rgba(74, 158, 255, 0.4)', letterSpacing: 2 },
+  
+  glassLogoContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    shadowColor: '#fff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.2,
+    shadowRadius: 30,
+    elevation: 15,
+    backdropFilter: 'blur(20px)',
+  },
+  
+  logoImage: {
+    width: 80,
+    height: 80,
+  },
+  
+  logoReflection: {
+    position: 'absolute',
+    top: 10,
+    left: 20,
+    right: 20,
+    height: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 40,
+    transform: [{ skewY: '-10deg' }],
+    opacity: 0.3,
+  },
+  
+  glassHighlight: {
+    position: 'absolute',
+    top: 5,
+    left: 10,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    opacity: 0.6,
+  },
+  
+  title: { 
+    fontSize: 64, 
+    fontWeight: '900', 
+    color: '#FFFFFF', 
+    letterSpacing: 8,
+    textShadowColor: 'rgba(255, 255, 255, 0.3)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 20,
+  },
+  subtitle: { 
+    fontSize: 14, 
+    fontWeight: '700', 
+    color: '#FF6B6B', 
+    letterSpacing: 4,
+    textShadowColor: 'rgba(255, 107, 107, 0.3)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 10,
+  },
+  mantra: { 
+    fontSize: 12, 
+    fontWeight: '500', 
+    color: 'rgba(255,255,255,0.8)', 
+    letterSpacing: 3, 
+    marginBottom: 8,
+    textShadowColor: 'rgba(255, 255, 255, 0.2)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 5,
+  },
+  loadingText: { 
+    fontSize: 9, 
+    fontWeight: '400', 
+    color: 'rgba(255,255,255,0.6)', 
+    letterSpacing: 2,
+    textShadowColor: 'rgba(255, 255, 255, 0.1)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 3,
+  },
 });
 
 import { NotificationService } from '@/services/notifications';
