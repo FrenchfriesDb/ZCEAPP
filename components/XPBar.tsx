@@ -53,8 +53,8 @@ export default function XPBar({ xp }: Props) {
                     <Text style={[styles.levelText, { color: themeColor }]}>LVL {levelInfo.level}</Text>
                 </View>
                 <Text style={[styles.rankTitle, { color: themeColor }]} numberOfLines={1}>{levelInfo.title.toUpperCase()}</Text>
-                <Text style={styles.xpCounts} numberOfLines={1}>
-                    {xpInLevel.toLocaleString()} <Text style={styles.xpDivider}>/</Text> {levelInfo.xpToComplete.toLocaleString()}
+                <Text style={[styles.xpCounts, { color: themeColor + '88' }]} numberOfLines={1}>
+                    {xpInLevel.toLocaleString()} <Text style={[styles.xpDivider, { color: themeColor + '44' }]}>/</Text> {levelInfo.xpToComplete.toLocaleString()}
                 </Text>
             </View>
 

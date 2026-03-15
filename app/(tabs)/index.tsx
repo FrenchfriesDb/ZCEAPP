@@ -1,15 +1,25 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Animated, Modal, TextInput, KeyboardAvoidingView, Platform, FlatList, Alert } from 'react-native';
-import { BlurView } from 'expo-blur';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import {
+    View, Text, ScrollView, Pressable, Animated, Dimensions,
+    KeyboardAvoidingView, Platform, TextInput, Modal, Alert,
+} from 'react-native';
+import { router, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
-import { Colors, Fonts, FontSizes, Spacing, Radius } from '@/constants/theme';
-import XPBar from '@/components/XPBar';
-import GlassCard from '@/components/GlassCard';
-import GlassButton from '@/components/GlassButton';
-import ProofModal from '@/components/ProofModal';
+import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import { Audio } from 'expo-av';
+import * as Haptics from 'expo-haptics';
 import { useUser } from '@/context/UserContext';
+import { Colors, Fonts, FontSizes, Spacing, Radius, XPConfig } from '@/constants/theme';
 import { useTimeColors } from '@/hooks/useTimeColors';
+import { useXPBarColors } from '@/hooks/useXPBarColors';
+import { db } from '@/services/firebase';
+import {
+    collection, doc, setDoc, getDoc, updateDoc, deleteDoc,
+    query, where, orderBy, limit, onSnapshot,
+    getDocs, writeBatch, Timestamp,
+} from 'firebase/firestore';
+import { MissionRow, ProofModal } from '@/components';
 import { getFirstName, formatDisplayName } from '@/utils/formatters';
 
 const ROASTS = [
@@ -92,6 +102,7 @@ export default function DojoScreen() {
   const { user, completeQuest, resetQuests, recoverStreak, deploySystemBackup } = useUser();
   const timePalette = useTimeColors();
   const systemColor = timePalette[0];
+  const xpBarColors = useXPBarColors();
   const [roastIndex, setRoastIndex] = useState(() => Math.floor(Math.random() * ROASTS.length));
   const [quoteIndex, setQuoteIndex] = useState(() => Math.floor(Math.random() * ZANE_QUOTES.length));
 
@@ -194,7 +205,7 @@ export default function DojoScreen() {
     const isDone = completedIds.includes(item.id);
     const accentGradient = isDone
       ? ['rgba(255,255,255,0.2)', 'rgba(255,255,255,0.05)'] as const
-      : (timePalette.length >= 2 ? timePalette : [timePalette[0], timePalette[0]]) as string[];
+      : xpBarColors as any;
     const themeColor = systemColor;
     return (
       <GlassCard
@@ -843,7 +854,7 @@ const styles = StyleSheet.create({
     width: 3,
     height: '100%',
     borderRadius: 2,
-    backgroundColor: '#00F5FF',
+    backgroundColor: '#EF745C', // Will be overridden by inline style with XP bar colors
     opacity: 0.6,
   },
   missionIconBadge: {

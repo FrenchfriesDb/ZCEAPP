@@ -30,7 +30,8 @@ export const useXPBarColors = (): string[] => {
             else if (time < 19) next = TimeColors.sunset;
             else if (time < 19.5) next = TimeColors.twilight;
             else if (time < 20) next = TimeColors.battleGlory;     // 7:30-8 PM
-            else if (time < 21) next = TimeColors.nightDive;
+            else if (time < 21) next = TimeColors.eveningNavy;     // 8-9 PM
+            else if (time < 23) next = TimeColors.nightDive;    // 9-10 PM
             else if (time < 23) next = TimeColors.voidSpark;
             else next = TimeColors.midnightMist;
 
