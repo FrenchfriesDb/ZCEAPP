@@ -1,8 +1,8 @@
 import { View, Text, StyleSheet, TextInput, Pressable, KeyboardAvoidingView, Platform, Animated, ScrollView } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { PanGestureHandler, State, NativeViewGestureHandler } from 'react-native-gesture-handler';
 import { router } from 'expo-router';
 import { useState, useRef, useEffect } from 'react';
-import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
+import { Fonts, Spacing } from '@/constants/theme';
 import { useUser } from '@/context/UserContext';
 
 export default function ForgotPasswordScreen() {
@@ -10,7 +10,9 @@ export default function ForgotPasswordScreen() {
     const [email, setEmail] = useState('');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
+    const [focusedField, setFocusedField] = useState<string | null>(null);
 
+    const gestureX = useRef(new Animated.Value(0)).current;
     const fadeAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
@@ -32,96 +34,149 @@ export default function ForgotPasswordScreen() {
     };
 
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={{ flex: 1 }}
+        <PanGestureHandler
+            onGestureEvent={Animated.event([{ nativeEvent: { translationX: gestureX } }], { useNativeDriver: false })}
+            onHandlerStateChange={(event) => {
+                if (event.nativeEvent.state === State.END) {
+                    const { translationX } = event.nativeEvent;
+                    if (translationX > 50) {
+                        router.replace('/auth/login');
+                    }
+                }
+            }}
         >
-            <LinearGradient colors={['#050508', '#080816', '#000000']} style={StyleSheet.absoluteFill} />
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                style={{ flex: 1, backgroundColor: '#000000' }}
+            >
+                <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
 
-            <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-                <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
-                    <View style={styles.header}>
-                        <Text style={styles.title}>IDENTITY RECOVERY</Text>
-                        <Text style={styles.subtitle}>REQUEST ACCESS CODE RESET</Text>
-                    </View>
-
-                    {success ? (
-                        <View style={styles.successContainer}>
-                            <Text style={styles.successText}>PROTOCOL INITIATED.</Text>
-                            <Text style={styles.successSub}>An encrypted reset link has been dispatched to {email}. Check your inbox and follow the instructions to restore access.</Text>
-                            <Pressable onPress={() => router.replace('/auth/login')} style={styles.backButton}>
-                                <Text style={styles.backButtonText}>RETURN TO LOGIN</Text>
-                            </Pressable>
+                <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+                    <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
+                        <View style={styles.header}>
+                            <Text style={styles.title}>ZCE</Text>
+                            <Text style={styles.subtitle}>IDENTITY RECOVERY</Text>
+                            <Text style={{ color: 'rgba(255,255,255,0.15)', fontSize: 8, fontFamily: Fonts.mono, marginTop: 10 }}>FIRMWARE V2.0.1 (RECOVERY MODE)</Text>
                         </View>
-                    ) : (
-                        <View style={styles.form}>
-                            <View style={styles.inputGroup}>
-                                <Text style={styles.label}>AGENT ID / EMAIL</Text>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="agent@zce.io"
-                                    placeholderTextColor="rgba(255,255,255,0.3)"
-                                    value={email}
-                                    onChangeText={setEmail}
-                                    autoCapitalize="none"
-                                    keyboardType="email-address"
-                                />
+
+                        {success ? (
+                            <View style={styles.form}>
+                                <View style={styles.successContainer}>
+                                    <Text style={styles.successTitle}>PROTOCOL INITIATED</Text>
+                                    <Text style={styles.successText}>An encrypted reset link has been dispatched to your agent ID.</Text>
+                                    <Text style={styles.successSub}>Check your inbox and follow the instructions to restore access.</Text>
+                                </View>
+
+                                <Pressable onPress={() => router.replace('/auth/login')} style={styles.link}>
+                                    <Text style={styles.linkText}>RETURN TO LOGIN →</Text>
+                                </Pressable>
                             </View>
+                        ) : (
+                            <View style={styles.form}>
+                                <View style={styles.inputGroup}>
+                                    <Text style={styles.label}>AGENT ID / EMAIL</Text>
+                                    <NativeViewGestureHandler>
+                                        <View style={[styles.inputWrap, focusedField === 'email' && styles.inputWrapFocused]}>
+                                            <TextInput
+                                                style={styles.input}
+                                                placeholder="agent@zce.io"
+                                                placeholderTextColor="rgba(255, 255, 255, 0.3)"
+                                                value={email}
+                                                onChangeText={setEmail}
+                                                autoCapitalize="none"
+                                                autoCorrect={false}
+                                                keyboardType="email-address"
+                                                onFocus={() => setFocusedField('email')}
+                                                onBlur={() => setFocusedField(null)}
+                                            />
+                                        </View>
+                                    </NativeViewGestureHandler>
+                                </View>
 
-                            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+                                {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-                            <Pressable onPress={handleResetRequest} style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}>
-                                <LinearGradient
-                                    colors={['#4A9EFF', '#7B61FF']}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 0 }}
-                                    style={styles.buttonGradient}
-                                >
-                                    <Text style={styles.buttonText}>{isLoading ? 'TRANSMITTING...' : 'SEND RESET LINK'}</Text>
-                                </LinearGradient>
-                            </Pressable>
+                                <Pressable onPress={handleResetRequest} style={({ pressed }) => [styles.button, pressed && !isLoading && styles.buttonPressed]}>
+                                    <View style={styles.buttonInner}>
+                                        <Text style={styles.buttonText}>{isLoading ? 'TRANSMITTING...' : 'SEND RESET LINK'}</Text>
+                                    </View>
+                                </Pressable>
 
-                            <Pressable onPress={() => router.back()} style={styles.link}>
-                                <Text style={styles.linkText}>CANCEL PROTOCOL</Text>
-                            </Pressable>
-                        </View>
-                    )}
-                </Animated.View>
-            </ScrollView>
-        </KeyboardAvoidingView>
+                                <Pressable onPress={() => router.back()} style={styles.link}>
+                                    <Text style={styles.linkText}>CANCEL PROTOCOL</Text>
+                                </Pressable>
+                            </View>
+                        )}
+                    </Animated.View>
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </PanGestureHandler>
     );
 }
 
 const styles = StyleSheet.create({
     scrollContent: { flexGrow: 1, justifyContent: 'center', padding: Spacing.xl },
-    content: { width: '100%', maxWidth: 400, alignSelf: 'center', gap: 40 },
-    header: { alignItems: 'center', gap: 8 },
-    title: { fontFamily: Fonts.heading, fontSize: 32, color: '#fff', letterSpacing: 4, textAlign: 'center' },
-    subtitle: { fontFamily: Fonts.mono, fontSize: 10, color: Colors.accentPrimary, letterSpacing: 4, textAlign: 'center' },
+    content: { width: '100%', maxWidth: 420, alignSelf: 'center', gap: 28 },
+    header: { alignItems: 'center', gap: 10 },
+    title: { fontFamily: Fonts.heading, fontSize: 52, color: '#FFFFFF', letterSpacing: 10, fontWeight: '800' },
+    subtitle: { fontFamily: Fonts.monoBold, fontSize: 12, color: 'rgba(255,255,255,0.7)', letterSpacing: 4, textTransform: 'uppercase' },
     form: { gap: 24, paddingHorizontal: 16 },
-    inputGroup: { gap: 8 },
-    label: { fontFamily: Fonts.mono, fontSize: 10, color: 'rgba(255,255,255,0.5)', letterSpacing: 1 },
-    input: {
-        height: 50,
-        backgroundColor: 'rgba(255,255,255,0.05)',
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
-        borderRadius: Radius.md,
-        paddingHorizontal: 16,
-        color: '#fff',
-        fontFamily: Fonts.body,
-        fontSize: 14,
+    inputGroup: { gap: 10 },
+    label: { fontFamily: Fonts.mono, fontSize: 9, color: 'rgba(255,255,255,0.5)', letterSpacing: 2, fontWeight: '600' },
+    inputWrap: {
+        height: 52,
+        backgroundColor: 'rgba(255, 255, 255, 0.04)',
+        borderTopWidth: 1,
+        borderLeftWidth: 1,
+        borderBottomWidth: 1,
+        borderRightWidth: 1,
+        borderTopColor: 'rgba(255, 255, 255, 0.12)',
+        borderLeftColor: 'rgba(255, 255, 255, 0.12)',
+        borderBottomColor: 'rgba(0, 0, 0, 0.3)',
+        borderRightColor: 'rgba(0, 0, 0, 0.3)',
+        borderRadius: 10,
+        paddingHorizontal: 18,
+        justifyContent: 'center',
     },
-    button: { height: 50, borderRadius: Radius.md, overflow: 'hidden', marginTop: 16 },
-    buttonPressed: { opacity: 0.8 },
-    buttonGradient: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    buttonText: { fontFamily: Fonts.heading, fontSize: 14, color: '#fff', letterSpacing: 2 },
-    errorText: { color: Colors.danger, fontFamily: Fonts.mono, fontSize: 10, textAlign: 'center' },
+    input: {
+        flex: 1,
+        color: '#FFFFFF',
+        fontFamily: Fonts.body,
+        fontSize: 15,
+        padding: 0,
+    },
+    inputWrapFocused: {
+        borderTopColor: 'rgba(255, 255, 255, 0.5)',
+        borderLeftColor: 'rgba(255, 255, 255, 0.5)',
+        borderBottomColor: 'rgba(255, 255, 255, 0.5)',
+        borderRightColor: 'rgba(255, 255, 255, 0.5)',
+        shadowColor: 'rgba(255, 255, 255, 0.4)',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.6,
+        shadowRadius: 12,
+        elevation: 6,
+    },
+    button: {
+        height: 56,
+        borderRadius: 12,
+        overflow: 'hidden',
+        marginTop: 16,
+        borderWidth: 1.5,
+        borderColor: 'rgba(255, 255, 255, 0.9)',
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        shadowColor: 'rgba(255, 255, 255, 0.15)',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 1,
+        shadowRadius: 20,
+        elevation: 8,
+    },
+    buttonPressed: { borderColor: 'rgba(255, 255, 255, 0.9)', transform: [{ scale: 0.97 }] },
+    buttonInner: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'transparent' },
+    buttonText: { fontFamily: Fonts.heading, fontSize: 14, color: '#FFFFFF', letterSpacing: 3, fontWeight: '800', textTransform: 'uppercase' },
+    errorText: { color: 'rgba(255,255,255,0.7)', fontFamily: Fonts.mono, fontSize: 10, textAlign: 'center' },
     link: { alignItems: 'center', marginTop: 16 },
-    linkText: { fontFamily: Fonts.mono, fontSize: 10, color: 'rgba(255,255,255,0.4)', textDecorationLine: 'underline' },
-    successContainer: { gap: 20, alignItems: 'center', paddingHorizontal: 16 },
-    successText: { color: Colors.accentPrimary, fontFamily: Fonts.heading, fontSize: 24, letterSpacing: 2 },
-    successSub: { color: 'rgba(255,255,255,0.7)', fontFamily: Fonts.body, fontSize: 14, textAlign: 'center', lineHeight: 22 },
-    backButton: { marginTop: 20, padding: 12 },
-    backButtonText: { color: '#fff', fontFamily: Fonts.mono, fontSize: 12, textDecorationLine: 'underline' },
+    linkText: { fontFamily: Fonts.monoBold, fontSize: 10, color: 'rgba(255,255,255,0.4)', textDecorationLine: 'underline', letterSpacing: 1 },
+    successContainer: { gap: 16, alignItems: 'center', paddingHorizontal: 16 },
+    successTitle: { color: '#FFFFFF', fontFamily: Fonts.heading, fontSize: 20, letterSpacing: 2, textAlign: 'center', fontWeight: '800' },
+    successText: { color: 'rgba(255,255,255,0.8)', fontFamily: Fonts.body, fontSize: 14, textAlign: 'center', lineHeight: 20 },
+    successSub: { color: 'rgba(255,255,255,0.6)', fontFamily: Fonts.mono, fontSize: 11, textAlign: 'center', lineHeight: 18, marginTop: 8 },
 });
