@@ -118,16 +118,20 @@ function RootLayoutNav() {
     const isLandingOrRoot = !s0 || s0 === 'landing' || s0 === 'index';
 
     // --- NAVIGATION LOGIC ---
+    console.log('[NAV] User:', user, 'HasCompletedOnboarding:', hasCompletedOnboarding, 'IsOnboarding:', isOnboarding, 'IsLoginOrSignup:', isLoginOrSignup);
+    
     if (!user) {
       // 1. If we are on Login/Signup, STAY THERE (don't wipe errors)
       if (isLoginOrSignup) return;
 
       // 2. If we haven't finished onboarding, force to onboarding
       if (!hasCompletedOnboarding && !isOnboarding) {
+        console.log('[NAV] Redirecting to onboarding...');
         router.replace('/auth/onboarding');
       }
-      // 3. If we have finished onboarding but are not logged in, force to login
+      // 3. If we have finished onboarding but are not on login/signup, force to login
       else if (hasCompletedOnboarding && !isLoginOrSignup) {
+        console.log('[NAV] Redirecting to login...');
         router.replace('/auth/login');
       }
     }
@@ -135,14 +139,6 @@ function RootLayoutNav() {
       // We have a user. If they are in the auth flow, send to tabs.
       if (inAuthGroup) {
         router.replace('/(tabs)');
-      }
-
-      // Initialize all 7 notification types for this user (NATIVE ONLY)
-      if (Platform.OS !== 'web') {
-        const firstName = user.name?.split(' ')[0] ?? 'Agent';
-        const streak = user.streak ?? 0;
-        NotificationService.initForUser(firstName, streak);
-        NotificationService.touchReengagement(firstName);
       }
     }
   }, [user, isLoading, segments, hasCompletedOnboarding]);
