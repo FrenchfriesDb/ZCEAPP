@@ -23,6 +23,7 @@ const STEP2_FIELDS = [
 
 export default function SignupScreen() {
     const { signIn, signUp, setHasCompletedOnboarding, setReturnToOnboardingStage } = useUser();
+    const [showWarning, setShowWarning] = useState(false);
     const [name, setName] = useState('');
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
@@ -306,9 +307,23 @@ export default function SignupScreen() {
                         <Text style={[styles.loginLinkText, styles.loginLinkAccent]}>LOG IN →</Text>
                     </Pressable>
 
-                    <Pressable onPress={() => signIn()} style={styles.npcLink}>
-                        <Text style={styles.npcLinkText}>PROCEED AS NPC (DEMO MODE)</Text>
+                    <Pressable 
+                        onPress={() => {
+                            setShowWarning(true);
+                            setTimeout(() => {
+                                signIn();
+                            }, 2000);
+                        }} 
+                        style={styles.npcLink}
+                    >
+                        <Text style={styles.npcLinkText}>PROCEED AS NPC (Training Wheels Mode)</Text>
                     </Pressable>
+
+                    {showWarning && (
+                        <View style={styles.warningToast}>
+                            <Text style={styles.warningText}>Real growth requires blood. Demo = spectator sport.</Text>
+                        </View>
+                    )}
 
                 </Animated.View>
             </ScrollView>
@@ -447,4 +462,24 @@ const styles = StyleSheet.create({
     loginLinkAccent: { color: '#FFFFFF' },
     npcLink: { alignSelf: 'center', marginTop: 12, opacity: 0.7 },
     npcLinkText: { fontFamily: Fonts.mono, fontSize: 10, color: 'rgba(255,255,255,0.5)', letterSpacing: 1, textDecorationLine: 'underline' },
+    warningToast: {
+        position: 'absolute',
+        bottom: 100,
+        left: 20,
+        right: 20,
+        backgroundColor: 'rgba(255, 0, 0, 0.1)',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 0, 0, 0.3)',
+        borderRadius: 8,
+        padding: 12,
+        alignItems: 'center',
+    },
+    warningText: { 
+        fontFamily: Fonts.mono, 
+        fontSize: 11, 
+        color: 'rgba(255, 100, 100, 0.9)', 
+        textAlign: 'center',
+        letterSpacing: 1,
+        fontWeight: '600'
+    },
 });

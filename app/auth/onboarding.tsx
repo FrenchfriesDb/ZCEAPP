@@ -165,6 +165,7 @@ export default function OnboardingScreen() {
     const { signUp, signIn, setOnboardingData, onboardingData, completeOnboarding, returnToOnboardingStage, setReturnToOnboardingStage } = useUser();
     const [stage, setStage] = useState(1);
     const [stageKey, setStageKey] = useState(1);
+    const [showWarning, setShowWarning] = useState(false);
 
     // When user swipes back from login/signup, restore the auth stage (6 or 7) instead of showing stage 1
     useFocusEffect(
@@ -237,8 +238,11 @@ export default function OnboardingScreen() {
     };
 
     const handleSkip = async () => {
-        setOnboardingData({ level: 'NPC', goal: 'General', commitment: '30 days' });
-        setStage(6);
+        setShowWarning(true);
+        setTimeout(() => {
+            setOnboardingData({ level: 'NPC', goal: 'General', commitment: '30 days' });
+            setStage(6);
+        }, 2000);
     };
 
     const handleBack = () => {
@@ -316,7 +320,7 @@ export default function OnboardingScreen() {
                         ))}
                     </View>
                     <Pressable onPress={handleSkip} style={({ pressed }) => [styles.skipBtn, pressed && styles.skipBtnPressed]}>
-                        <Text style={styles.skipText}>SKIP →</Text>
+                        <Text style={styles.skipText}>SKIP (Training Wheels) →</Text>
                     </Pressable>
                 </View>
 
@@ -571,7 +575,13 @@ export default function OnboardingScreen() {
                         </ScrollView>
                     )}
                 </Animated.View>
-            </SafeAreaView>
+            
+            {showWarning && (
+                <View style={styles.warningToast}>
+                    <Text style={styles.warningText}>Real growth requires blood. Demo = spectator sport.</Text>
+                </View>
+            )}
+        </SafeAreaView>
         </View>
         </PanGestureHandler>
     );
@@ -787,5 +797,25 @@ const styles = StyleSheet.create({
     },
     inputPlaceholder: {
         color: 'rgba(255, 255, 255, 0.3)',
+    },
+    warningToast: {
+        position: 'absolute',
+        bottom: 100,
+        left: 20,
+        right: 20,
+        backgroundColor: 'rgba(255, 0, 0, 0.1)',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 0, 0, 0.3)',
+        borderRadius: 8,
+        padding: 12,
+        alignItems: 'center',
+    },
+    warningText: { 
+        fontFamily: Fonts.mono, 
+        fontSize: 11, 
+        color: 'rgba(255, 100, 100, 0.9)', 
+        textAlign: 'center',
+        letterSpacing: 1,
+        fontWeight: '600'
     },
 });
