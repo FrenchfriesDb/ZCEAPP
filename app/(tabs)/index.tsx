@@ -222,28 +222,14 @@ export default function DojoScreen() {
           { padding: 0, marginBottom: 8, borderWidth: 0, shadowOpacity: 0.08, shadowRadius: 8 },
         ]}
       >
-        {/* Left accent bar — solid bar + big glow extending right into card */}
-        <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 20 }}>
-          <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 16 }}>
-            <LinearGradient
-              colors={[
-                (accentGradient as string[])[0] + '80',
-                (accentGradient as string[])[accentGradient.length - 1] + '20',
-                'transparent',
-              ]}
-              start={{ x: 0, y: 0.5 }}
-              end={{ x: 1, y: 0.5 }}
-              style={StyleSheet.absoluteFill}
-            />
-          </View>
-          <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4 }}>
-            <LinearGradient
-              colors={accentGradient as any}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-              style={StyleSheet.absoluteFill}
-            />
-          </View>
+        {/* Left accent bar — clean vertical line */}
+        <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3 }}>
+          <LinearGradient
+            colors={accentGradient as any}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
         </View>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 12, paddingLeft: 20, gap: 10 }}>

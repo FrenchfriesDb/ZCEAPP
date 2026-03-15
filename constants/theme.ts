@@ -93,7 +93,7 @@ export const TimeColors = {
   // 9 PM — Night Dive
   nightDive: ['#020344', '#28B8D5'],
   // 10 PM — Void Spark
-  voidSpark: ['#000328', '#00458E'],
+  voidSpark: ['#00D4FF', '#00458E'],
   // 11 PM — Midnight Mist
   midnightMist: ['#211F2F', '#918CA9'],
   // 12 AM – 4 AM — Deep Abyss

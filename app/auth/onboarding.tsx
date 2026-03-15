@@ -10,8 +10,8 @@ import { Colors, Fonts } from '@/constants/theme';
 import { useUser } from '@/context/UserContext';
 
 const { width: W, height: H } = Dimensions.get('window');
-const CYAN = '#FFFFFF';
-const ACCENT = '#FFFFFF';
+const CYAN = '#00D4FF';
+const ACCENT = '#00D4FF';
 
 // ─── Wireframe Head ───────────────────────────────────────────────────────────
 function WireframeHead({ stage }: { stage: number }) {
@@ -111,7 +111,7 @@ function WireframeHead({ stage }: { stage: number }) {
                     position: 'absolute',
                     left: 15, right: 15,
                     height: 1,
-                    backgroundColor: '#FFFFFF',
+                    backgroundColor: '#00D4FF',
                     opacity: scanOp,
                     transform: [{ translateY: scanLineY }],
                 }} />
