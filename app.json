@@ -47,7 +47,8 @@
       "expo-font",
       "expo-secure-store",
       "expo-build-properties",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": true,
