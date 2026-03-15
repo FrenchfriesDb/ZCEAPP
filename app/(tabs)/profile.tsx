@@ -6,6 +6,7 @@ import GlassCard from '@/components/GlassCard';
 import { useUser } from '@/context/UserContext';
 import { router } from 'expo-router';
 import { useTimeColors } from '@/hooks/useTimeColors';
+import { formatDisplayName } from '@/utils/formatters';
 import StaticMap from '@/components/StaticMap';
 import ProgressGraph from '@/components/ProgressGraph';
 
@@ -57,7 +58,7 @@ export default function ProfileScreen() {
                             <View style={styles.nameRow}>
                                 <View style={styles.avatarContainer}>
                                     <View style={styles.avatar}>
-                                        <Text style={styles.avatarText}>{user.name.charAt(0)}</Text>
+                                        <Text style={styles.avatarText}>{formatDisplayName(user.name).charAt(0)}</Text>
                                     </View>
                                     <View style={[styles.onlineBadge, { backgroundColor: systemColor, shadowColor: systemColor }]} />
                                 </View>
@@ -67,7 +68,7 @@ export default function ProfileScreen() {
                                     adjustsFontSizeToFit
                                     minimumFontScale={0.8}
                                 >
-                                    {user.name.toUpperCase()}
+                                    {formatDisplayName(user.name).toUpperCase()}
                                 </Text>
                             </View>
                             <View style={styles.identityMetaWrapper}>

@@ -8,6 +8,7 @@ import { AIService, ZANE_SYSTEM_PROMPT } from '@/services/ai';
 import { useUser } from '@/context/UserContext';
 import { useNavigation, router } from 'expo-router';
 import { useTimeColors } from '@/hooks/useTimeColors';
+import { getFirstName } from '@/utils/formatters';
 
 interface Message {
     id: number;
@@ -84,7 +85,7 @@ export default function ChatScreen() {
                     }]);
                     addChatMessage({ role: 'assistant', content: welcomeText });
                 } catch (e) {
-                    const firstName = user?.name?.split(' ')[0] || 'AGENT';
+                    const firstName = getFirstName(user?.name);
                     const fallback = `${firstName}-la. Connection unstable. Go find a rep while I reboot.`;
                     setMessages([{ id: 0, text: fallback, sender: 'ai', timestamp: getTimeString() }]);
                 } finally {

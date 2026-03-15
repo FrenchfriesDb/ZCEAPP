@@ -7,6 +7,7 @@ import GlassCard from '@/components/GlassCard';
 import { db, auth } from '@/services/firebase';
 import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { useUser } from '@/context/UserContext';
+import { formatDisplayName, getFirstName } from '@/utils/formatters';
 
 const SIMULATED_DATA = [
     { rank: 1, name: 'DarkCEO_Zane', level: 9, title: 'Dark CEO', xp: 4200, aura: 9850, streak: 47 },
@@ -89,7 +90,7 @@ export default function LeaderboardScreen() {
     const myDisplayInfo = {
         rank: myRank || '>50',
         aura: ((XPConfig.getLevel(user?.xp || 0).level || 0) * 1000) + (user?.xp || 0),
-        username: `@${(user?.username || user?.name || 'INITIATE').replace(/\s+/g, '_').toLowerCase()}`
+        username: `@${(user?.username || formatDisplayName(user?.name) || 'INITIATE').replace(/\s+/g, '_').toLowerCase()}`
     };
 
     return (

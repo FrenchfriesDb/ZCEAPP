@@ -10,6 +10,7 @@ import GlassButton from '@/components/GlassButton';
 import ProofModal from '@/components/ProofModal';
 import { useUser } from '@/context/UserContext';
 import { useTimeColors } from '@/hooks/useTimeColors';
+import { getFirstName, formatDisplayName } from '@/utils/formatters';
 
 const ROASTS = [
   "You didn't talk to anyone today? Bro, I'm a robot and even I'm disappointed.",
@@ -309,7 +310,7 @@ export default function DojoScreen() {
           </View>
 
           <Text style={styles.welcomeText}>
-            Welcome back, {user?.name?.split(' ')[0] || 'Agent'}.
+            Welcome back, {getFirstName(user?.name)}.
           </Text>
 
           {/* XP Progression — Directly below streak as requested */}
