@@ -212,7 +212,6 @@ export default function DojoScreen() {
     const themeColor = systemColor;
     return (
       <GlassCard
-        themed
         darkGlass
         glowColor={themeColor}
         onPress={() => handlePress(item)}
