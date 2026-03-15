@@ -3,6 +3,7 @@ import {
     View, Text, StyleSheet, Pressable, Animated,
     Dimensions, ScrollView, SafeAreaView,
 } from 'react-native';
+import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import { router } from 'expo-router';
 import Svg, { Path, G, Circle, Line, Defs, LinearGradient as SvgGrad, Stop } from 'react-native-svg';
 import { Colors, Fonts } from '@/constants/theme';
@@ -165,6 +166,7 @@ export default function OnboardingScreen() {
     const pageTy = useRef(new Animated.Value(0)).current;
     const btnGlow = useRef(new Animated.Value(0.7)).current;
     const glowOp = useRef(new Animated.Value(0.4)).current;
+    const gestureX = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
         Animated.loop(Animated.sequence([
@@ -238,8 +240,20 @@ export default function OnboardingScreen() {
     };
 
     return (
-        <View style={styles.root}>
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
+        <PanGestureHandler
+            onGestureEvent={Animated.event([{ nativeEvent: { translationX: gestureX } }], { useNativeDriver: false })}
+            onHandlerStateChange={(event) => {
+                if (event.nativeEvent.state === State.END) {
+                    const { translationX } = event.nativeEvent;
+                    // Swipe right (positive translationX) to go back
+                    if (translationX > 50 && stage > 1) {
+                        handleBack();
+                    }
+                }
+            }}
+        >
+            <View style={styles.root}>
+                <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
 
             {/* Ambient glow blobs - white only */}
             <Animated.View style={[styles.blob, { top: -100, left: -60, opacity: glowOp }]} />
@@ -446,6 +460,7 @@ export default function OnboardingScreen() {
                 </Animated.View>
             </SafeAreaView>
         </View>
+        </PanGestureHandler>
     );
 }
 
