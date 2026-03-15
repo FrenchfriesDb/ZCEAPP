@@ -482,7 +482,15 @@ export default function OnboardingScreen() {
                             <View style={styles.authPrompt}>
                                 <Text style={styles.authTitle}>CREATE YOUR IDENTITY</Text>
                                 <Text style={styles.authSubtitle}>Choose your path to enter the system</Text>
-                                <Pressable onPress={() => router.replace('/auth/signup')} style={styles.authBtn}>
+                                <Pressable onPress={async () => {
+                                    setOnboardingData({
+                                        level: mission.level || 'NPC',
+                                        goal: mission.goal || 'General',
+                                        commitment: mission.commitment || '30 days',
+                                    });
+                                    await completeOnboarding();
+                                    router.replace('/auth/signup');
+                                }} style={styles.authBtn}>
                                     <Text style={styles.authBtnText}>CREATE NEW IDENTITY →</Text>
                                 </Pressable>
                                 <Pressable onPress={() => setStage(7)} style={styles.authLink}>
@@ -503,7 +511,15 @@ export default function OnboardingScreen() {
                             <View style={styles.authPrompt}>
                                 <Text style={styles.authTitle}>ACCESS RESTRICTED</Text>
                                 <Text style={styles.authSubtitle}>Enter your credentials to proceed</Text>
-                                <Pressable onPress={() => router.replace('/auth/login')} style={styles.authBtn}>
+                                <Pressable onPress={async () => {
+                                    setOnboardingData({
+                                        level: mission.level || 'NPC',
+                                        goal: mission.goal || 'General',
+                                        commitment: mission.commitment || '30 days',
+                                    });
+                                    await completeOnboarding();
+                                    router.replace('/auth/login');
+                                }} style={styles.authBtn}>
                                     <Text style={styles.authBtnText}>SIGN IN →</Text>
                                 </Pressable>
                                 <Pressable onPress={() => setStage(6)} style={styles.authLink}>
