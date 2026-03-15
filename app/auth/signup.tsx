@@ -161,7 +161,7 @@ export default function SignupScreen() {
                         {/* ZCE badge */}
                         <View style={styles.logoBadge}>
                             <Image 
-                                source={require('../assets/images/zce-logo.png')}
+                                source={require('../assets/images/ZCELOGO1.png')}
                                 style={styles.logoImage}
                                 resizeMode="contain"
                             />
