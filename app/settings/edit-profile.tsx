@@ -716,6 +716,7 @@ const styles = StyleSheet.create({
         width: 28,
         textAlign: 'center',
         marginRight: 12,
+        color: '#fff',
     },
     rowLabel: {
         flex: 1,

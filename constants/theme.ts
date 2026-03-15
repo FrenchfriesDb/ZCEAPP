@@ -86,8 +86,8 @@ export const TimeColors = {
   sunset: ['#FF0F7B', '#F89B29'],
   // 7–8 PM — neon pink-cyan
   twilight: ['#FF1B6B', '#45CAFF'],
-  // 7:30–8 PM — Battle glory (deep blue to red to gold)
-  battleGlory: ['#1A2766', '#AE1B1E', '#FC9F32'],
+  // 7:30–8 PM — Battle glory (gold → red → deep blue)
+  battleGlory: ['#FC9F32', '#AE1B1E', '#1A2766'],
   // 8 PM — soft lavender-blue to deep navy
   eveningNavy: ['#9BAFD9', '#103783'],
   // 9 PM — Night Dive
