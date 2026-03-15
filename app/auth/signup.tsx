@@ -1,14 +1,11 @@
 import {
-    View, Text, StyleSheet, TextInput, Pressable,
+    View, Text, StyleSheet, TextInput, Pressable, Animated,
     KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import { router } from 'expo-router';
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
+import { Colors, Fonts, Spacing } from '@/constants/theme';
 import { useUser } from '@/context/UserContext';
-import { Animated } from 'react-native';
 import { db } from '@/services/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 
@@ -74,10 +71,10 @@ export default function SignupScreen() {
     };
 
     const usernameColor = () => {
-        if (usernameStatus === 'available') return '#00C853';
-        if (usernameStatus === 'taken') return '#FF3B30';
-        if (usernameStatus === 'invalid') return '#FF9500';
-        return Colors.accentPrimary;
+        if (usernameStatus === 'available') return '#FFFFFF';
+        if (usernameStatus === 'taken') return 'rgba(255,255,255,0.5)';
+        if (usernameStatus === 'invalid') return 'rgba(255,255,255,0.5)';
+        return '#FFFFFF';
     };
 
     const usernameMessage = () => {
@@ -128,13 +125,13 @@ export default function SignupScreen() {
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={{ flex: 1 }}
+            style={{ flex: 1, backgroundColor: '#000000' }}
         >
-            <LinearGradient colors={['#030305', '#060610', '#000000']} style={StyleSheet.absoluteFill} />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
 
-            {/* Ambient glow blobs */}
-            <View style={[styles.blob, { top: -80, left: -60, backgroundColor: 'rgba(74,158,255,0.06)' }]} />
-            <View style={[styles.blob, { bottom: 60, right: -80, backgroundColor: 'rgba(123,97,255,0.05)' }]} />
+            {/* Ambient glow blobs - white */}
+            <View style={[styles.blob, { top: -80, left: -60, backgroundColor: 'rgba(255,255,255,0.03)' }]} />
+            <View style={[styles.blob, { bottom: 60, right: -80, backgroundColor: 'rgba(255,255,255,0.02)' }]} />
 
             <ScrollView
                 ref={scrollRef}
@@ -163,7 +160,7 @@ export default function SignupScreen() {
                     </View>
 
                     {/* ── FORM CARD ── */}
-                    <BlurView intensity={10} tint="dark" style={styles.card}>
+                    <View style={styles.card}>
                         <View style={styles.cardInner}>
                             {FIELDS.map((field) => {
                                 const isFocused = focusedField === field.key;
@@ -177,14 +174,14 @@ export default function SignupScreen() {
                                         onLayout={e => { fieldY.current[field.key] = e.nativeEvent.layout.y; }}
                                     >
                                         <View style={styles.labelRow}>
-                                            <Text style={[styles.labelIcon, isFocused && { color: Colors.accentPrimary }]}>
+                                            <Text style={[styles.labelIcon, isFocused && { color: '#FFFFFF' }]}>
                                                 {field.key === 'username' ? `@` : field.icon}
                                             </Text>
-                                            <Text style={[styles.label, isFocused && { color: Colors.accentPrimary }]}>
+                                            <Text style={[styles.label, isFocused && { color: '#FFFFFF' }]}>
                                                 {field.label}
                                             </Text>
                                             {isUsername && usernameStatus === 'checking' && (
-                                                <ActivityIndicator size="small" color={Colors.accentPrimary} style={{ marginLeft: 6 }} />
+                                                <ActivityIndicator size="small" color="#FFFFFF" style={{ marginLeft: 6 }} />
                                             )}
                                         </View>
 
@@ -239,20 +236,16 @@ export default function SignupScreen() {
                                 disabled={loading}
                                 style={({ pressed }) => [styles.submitBtn, pressed && { opacity: 0.85 }]}
                             >
-                                <LinearGradient
-                                    colors={['#4A9EFF', '#7B61FF', '#B44FFF']}
-                                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                                    style={styles.submitGradient}
-                                >
+                                <View style={styles.submitInner}>
                                     {loading ? (
-                                        <ActivityIndicator color="#fff" />
+                                        <ActivityIndicator color="#000" />
                                     ) : (
                                         <Text style={styles.submitText}>BEGIN PROTOCOL</Text>
                                     )}
-                                </LinearGradient>
+                                </View>
                             </Pressable>
                         </View>
-                    </BlurView>
+                    </View>
 
                     {/* ── FOOTER ── */}
                     <Pressable onPress={() => router.replace('/auth/login')} style={styles.loginLink}>
@@ -275,13 +268,13 @@ const styles = StyleSheet.create({
     // ── HEADER
     header: { alignItems: 'center', gap: 10 },
     logoBadge: {
-        width: 52, height: 52, borderRadius: 14,
-        backgroundColor: 'rgba(74,158,255,0.08)',
-        borderWidth: 1, borderColor: 'rgba(74,158,255,0.25)',
+        width: 52, height: 52, borderRadius: 0,
+        backgroundColor: 'transparent',
+        borderWidth: 1, borderColor: '#FFFFFF',
         alignItems: 'center', justifyContent: 'center',
         marginBottom: 6,
     },
-    logoText: { fontFamily: Fonts.heading, fontSize: 16, color: '#fff', letterSpacing: 3 },
+    logoText: { fontFamily: Fonts.heading, fontSize: 16, color: '#FFFFFF', letterSpacing: 3 },
     title: {
         fontFamily: Fonts.heading,
         fontSize: 40,
@@ -292,7 +285,7 @@ const styles = StyleSheet.create({
     subtitle: {
         fontFamily: Fonts.monoBold,
         fontSize: 10,
-        color: Colors.accentPrimary,
+        color: 'rgba(255,255,255,0.6)',
         letterSpacing: 4,
     },
     tagRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
@@ -301,31 +294,31 @@ const styles = StyleSheet.create({
     tag: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.25)', letterSpacing: 1.5 },
 
     // ── CARD
-    card: { borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)' },
+    card: { borderRadius: 0, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' },
     cardInner: { padding: 24, gap: 18, backgroundColor: 'rgba(255,255,255,0.02)' },
 
     // ── FIELDS
     fieldGroup: { gap: 7 },
     labelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    labelIcon: { fontFamily: Fonts.mono, fontSize: 12, color: 'rgba(255,255,255,0.25)', width: 14, textAlign: 'center' },
-    label: { fontFamily: Fonts.monoBold, fontSize: 9, color: 'rgba(255,255,255,0.35)', letterSpacing: 1.5 },
+    labelIcon: { fontFamily: Fonts.mono, fontSize: 12, color: 'rgba(255,255,255,0.4)', width: 14, textAlign: 'center' },
+    label: { fontFamily: Fonts.monoBold, fontSize: 9, color: 'rgba(255,255,255,0.5)', letterSpacing: 1.5 },
 
     inputWrap: {
         flexDirection: 'row',
         alignItems: 'center',
         height: 52,
-        backgroundColor: 'rgba(255,255,255,0.04)',
+        backgroundColor: 'transparent',
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.09)',
-        borderRadius: 14,
+        borderColor: 'rgba(255,255,255,0.15)',
+        borderRadius: 0,
         paddingHorizontal: 16,
     },
     inputWrapFocused: {
-        borderColor: 'rgba(74,158,255,0.5)',
-        backgroundColor: 'rgba(74,158,255,0.04)',
+        borderColor: '#FFFFFF',
+        backgroundColor: 'rgba(255,255,255,0.05)',
     },
-    inputWrapGreen: { borderColor: 'rgba(0,200,83,0.4)', backgroundColor: 'rgba(0,200,83,0.03)' },
-    inputWrapRed: { borderColor: 'rgba(255,59,48,0.4)', backgroundColor: 'rgba(255,59,48,0.03)' },
+    inputWrapGreen: { borderColor: 'rgba(255,255,255,0.4)', backgroundColor: 'rgba(255,255,255,0.03)' },
+    inputWrapRed: { borderColor: 'rgba(255,255,255,0.25)', backgroundColor: 'rgba(255,255,255,0.02)' },
     input: {
         flex: 1,
         color: '#FFFFFF',
@@ -342,28 +335,28 @@ const styles = StyleSheet.create({
 
     // ── ERROR
     errorBox: {
-        backgroundColor: 'rgba(255,59,48,0.08)',
+        backgroundColor: 'rgba(255,255,255,0.05)',
         borderWidth: 1,
-        borderColor: 'rgba(255,59,48,0.3)',
-        borderRadius: 10,
+        borderColor: 'rgba(255,255,255,0.2)',
+        borderRadius: 0,
         paddingVertical: 10,
         paddingHorizontal: 14,
     },
-    errorText: { fontFamily: Fonts.mono, fontSize: 10, color: '#FF3B30', letterSpacing: 0.3, textAlign: 'center' },
+    errorText: { fontFamily: Fonts.mono, fontSize: 10, color: 'rgba(255,255,255,0.7)', letterSpacing: 0.3, textAlign: 'center' },
 
     // ── SUBMIT
-    submitBtn: { borderRadius: 14, overflow: 'hidden', marginTop: 4 },
-    submitGradient: { height: 56, justifyContent: 'center', alignItems: 'center' },
+    submitBtn: { borderRadius: 0, overflow: 'hidden', marginTop: 4, borderWidth: 1, borderColor: '#FFFFFF', backgroundColor: '#FFFFFF' },
+    submitInner: { height: 56, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' },
     submitText: {
         fontFamily: Fonts.heading,
         fontSize: 14,
-        color: '#FFFFFF',
+        color: '#000000',
         letterSpacing: 3,
         fontWeight: '800',
     },
 
     // ── FOOTER
     loginLink: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
-    loginLinkText: { fontFamily: Fonts.mono, fontSize: 10, color: 'rgba(255,255,255,0.3)', letterSpacing: 1 },
-    loginLinkAccent: { color: Colors.accentPrimary },
+    loginLinkText: { fontFamily: Fonts.mono, fontSize: 10, color: 'rgba(255,255,255,0.4)', letterSpacing: 1 },
+    loginLinkAccent: { color: '#FFFFFF' },
 });

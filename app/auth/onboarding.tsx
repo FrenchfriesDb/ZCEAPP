@@ -3,14 +3,14 @@ import {
     View, Text, StyleSheet, Pressable, Animated,
     Dimensions, ScrollView, SafeAreaView,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import Svg, { Path, G, Circle, Line, Defs, LinearGradient as SvgGrad, Stop } from 'react-native-svg';
-import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
+import { Colors, Fonts } from '@/constants/theme';
 import { useUser } from '@/context/UserContext';
 
 const { width: W, height: H } = Dimensions.get('window');
-const CYAN = '#00E5FF';
+const CYAN = '#FFFFFF';
+const ACCENT = '#FFFFFF';
 
 // ─── Wireframe Head ───────────────────────────────────────────────────────────
 function WireframeHead({ stage }: { stage: number }) {
@@ -48,53 +48,53 @@ function WireframeHead({ stage }: { stage: number }) {
             <Svg width={200} height={260} viewBox="0 0 200 260">
                 <Defs>
                     <SvgGrad id="hg" x1="0" y1="0" x2="0" y2="1">
-                        <Stop offset="0" stopColor={Colors.accentPrimary} stopOpacity="0.9" />
-                        <Stop offset="1" stopColor={CYAN} stopOpacity="0.4" />
+                        <Stop offset="0" stopColor="#FFFFFF" stopOpacity="0.9" />
+                        <Stop offset="1" stopColor="#FFFFFF" stopOpacity="0.4" />
                     </SvgGrad>
                 </Defs>
                 {/* Outer glow */}
                 <Path d="M100,35 C145,35 175,70 175,125 C175,175 148,225 100,230 C52,225 25,175 25,125 C25,70 55,35 100,35 Z"
-                    stroke={Colors.accentPrimary} strokeWidth="3" fill="none" strokeOpacity="0.06" />
+                    stroke="#FFFFFF" strokeWidth="3" fill="none" strokeOpacity="0.08" />
                 {/* Head outline */}
                 <Path d="M100,40 C140,40 170,72 170,122 C170,172 142,220 100,224 C58,220 30,172 30,122 C30,72 60,40 100,40 Z"
                     stroke="url(#hg)" strokeWidth="1.2" fill="none" strokeOpacity="0.8" />
                 {/* Grid */}
                 {[80, 100, 120, 140, 160, 180, 200].map((y, i) => (
-                    <Line key={`h${i}`} x1="30" y1={y} x2="170" y2={y} stroke={Colors.accentPrimary} strokeOpacity="0.06" strokeWidth="0.5" />
+                    <Line key={`h${i}`} x1="30" y1={y} x2="170" y2={y} stroke="#FFFFFF" strokeOpacity="0.08" strokeWidth="0.5" />
                 ))}
                 {[55, 75, 100, 125, 145].map((x, i) => (
-                    <Line key={`v${i}`} x1={x} y1="42" x2={x} y2="222" stroke={Colors.accentPrimary} strokeOpacity="0.06" strokeWidth="0.5" />
+                    <Line key={`v${i}`} x1={x} y1="42" x2={x} y2="222" stroke="#FFFFFF" strokeOpacity="0.08" strokeWidth="0.5" />
                 ))}
                 {/* Jaw */}
-                <Path d="M65,200 Q100,228 135,200" stroke={Colors.accentPrimary} strokeWidth="0.8" fill="none" strokeOpacity="0.5" />
+                <Path d="M65,200 Q100,228 135,200" stroke="#FFFFFF" strokeWidth="0.8" fill="none" strokeOpacity="0.5" />
                 {/* Nose */}
-                <Path d="M95,130 L90,155 L100,160 L110,155 L105,130" stroke={Colors.accentPrimary} strokeWidth="0.7" fill="none" strokeOpacity="0.4" />
+                <Path d="M95,130 L90,155 L100,160 L110,155 L105,130" stroke="#FFFFFF" strokeWidth="0.7" fill="none" strokeOpacity="0.4" />
                 {/* Eyes */}
-                <Path d="M62,108 C70,100 80,98 90,104 C80,112 70,112 62,108 Z" stroke={Colors.accentPrimary} strokeWidth="1" fill="none" strokeOpacity="0.85" />
-                <Path d="M138,108 C130,100 120,98 110,104 C120,112 130,112 138,108 Z" stroke={Colors.accentPrimary} strokeWidth="1" fill="none" strokeOpacity="0.85" />
-                <Circle cx="76" cy="105" r="2" stroke={Colors.accentPrimary} strokeWidth="0.8" fill="none" strokeOpacity="0.6" />
-                <Circle cx="124" cy="105" r="2" stroke={Colors.accentPrimary} strokeWidth="0.8" fill="none" strokeOpacity="0.6" />
+                <Path d="M62,108 C70,100 80,98 90,104 C80,112 70,112 62,108 Z" stroke="#FFFFFF" strokeWidth="1" fill="none" strokeOpacity="0.85" />
+                <Path d="M138,108 C130,100 120,98 110,104 C120,112 130,112 138,108 Z" stroke="#FFFFFF" strokeWidth="1" fill="none" strokeOpacity="0.85" />
+                <Circle cx="76" cy="105" r="2" stroke="#FFFFFF" strokeWidth="0.8" fill="none" strokeOpacity="0.6" />
+                <Circle cx="124" cy="105" r="2" stroke="#FFFFFF" strokeWidth="0.8" fill="none" strokeOpacity="0.6" />
                 {/* Mouth */}
                 <Path d={stage >= 3 ? "M78,172 Q100,185 122,172" : "M80,172 Q100,180 120,172"}
-                    stroke={stage >= 3 ? CYAN : Colors.accentPrimary}
+                    stroke={stage >= 3 ? "#FFFFFF" : "#FFFFFF"}
                     strokeWidth={stage >= 3 ? "1.5" : "0.9"} fill="none" strokeOpacity="0.8" />
                 {/* Circuits stage 2+ */}
                 {stage >= 2 && (
                     <G opacity={1}>
                         <Path d="M100,40 L100,70 M76,105 L55,105 L55,88 M124,105 L145,105 L145,88"
-                            stroke={CYAN} strokeWidth="0.8" fill="none" strokeOpacity="0.85" />
-                        <Circle cx="100" cy="40" r="2" fill={CYAN} />
-                        <Circle cx="55" cy="88" r="1.5" fill={CYAN} />
-                        <Circle cx="145" cy="88" r="1.5" fill={CYAN} />
+                            stroke="#FFFFFF" strokeWidth="0.8" fill="none" strokeOpacity="0.85" />
+                        <Circle cx="100" cy="40" r="2" fill="#FFFFFF" />
+                        <Circle cx="55" cy="88" r="1.5" fill="#FFFFFF" />
+                        <Circle cx="145" cy="88" r="1.5" fill="#FFFFFF" />
                     </G>
                 )}
                 {/* Glowing eyes stage 3 */}
                 {stage >= 3 && (
                     <G>
-                        <Circle cx="76" cy="105" r="5" fill={CYAN} fillOpacity="0.9" />
-                        <Circle cx="124" cy="105" r="5" fill={CYAN} fillOpacity="0.9" />
-                        <Circle cx="76" cy="105" r="10" fill={CYAN} fillOpacity="0.12" />
-                        <Circle cx="124" cy="105" r="10" fill={CYAN} fillOpacity="0.12" />
+                        <Circle cx="76" cy="105" r="5" fill="#FFFFFF" fillOpacity="0.9" />
+                        <Circle cx="124" cy="105" r="5" fill="#FFFFFF" fillOpacity="0.9" />
+                        <Circle cx="76" cy="105" r="10" fill="#FFFFFF" fillOpacity="0.12" />
+                        <Circle cx="124" cy="105" r="10" fill="#FFFFFF" fillOpacity="0.12" />
                     </G>
                 )}
             </Svg>
@@ -110,7 +110,7 @@ function WireframeHead({ stage }: { stage: number }) {
                     position: 'absolute',
                     left: 15, right: 15,
                     height: 1,
-                    backgroundColor: CYAN,
+                    backgroundColor: '#FFFFFF',
                     opacity: scanOp,
                     transform: [{ translateY: scanLineY }],
                 }} />
@@ -222,25 +222,25 @@ export default function OnboardingScreen() {
 
     return (
         <View style={styles.root}>
-            <LinearGradient colors={['#000005', '#04040E', '#080818']} style={StyleSheet.absoluteFill} />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
 
-            {/* Ambient glow blobs */}
+            {/* Ambient glow blobs - white only */}
             <Animated.View style={[styles.blob, { top: -100, left: -60, opacity: glowOp }]} />
-            <Animated.View style={[styles.blob, { bottom: -80, right: -60, backgroundColor: 'rgba(0,229,255,0.07)', opacity: glowOp }]} />
+            <Animated.View style={[styles.blob, { bottom: -80, right: -60, backgroundColor: 'rgba(255,255,255,0.03)', opacity: glowOp }]} />
 
-            {/* Neon grid overlay */}
+            {/* Grid overlay - white lines */}
             <View style={StyleSheet.absoluteFill} pointerEvents="none">
                 <Svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
                     {Array.from({ length: 9 }).map((_, i) => (
                         <Line key={`gc${i}`} x1={i * (W / 8)} y1={0} x2={i * (W / 8)} y2={H}
-                            stroke={Colors.accentPrimary} strokeOpacity="0.04" strokeWidth="1" />
+                            stroke="#FFFFFF" strokeOpacity="0.03" strokeWidth="1" />
                     ))}
                     {Array.from({ length: 16 }).map((_, i) => (
                         <Line key={`gr${i}`} x1={0} y1={i * 60} x2={W} y2={i * 60}
-                            stroke={Colors.accentPrimary} strokeOpacity="0.04" strokeWidth="1" />
+                            stroke="#FFFFFF" strokeOpacity="0.03" strokeWidth="1" />
                     ))}
-                    <Path d="M0,0 L50,0 M0,0 L0,50" stroke={CYAN} strokeOpacity="0.35" strokeWidth="1" />
-                    <Path d={`M${W},0 L${W - 50},0 M${W},0 L${W},50`} stroke={CYAN} strokeOpacity="0.35" strokeWidth="1" />
+                    <Path d="M0,0 L50,0 M0,0 L0,50" stroke="#FFFFFF" strokeOpacity="0.25" strokeWidth="1" />
+                    <Path d={`M${W},0 L${W - 50},0 M${W},0 L${W},50`} stroke="#FFFFFF" strokeOpacity="0.25" strokeWidth="1" />
                 </Svg>
             </View>
 
@@ -277,20 +277,19 @@ export default function OnboardingScreen() {
                     {stage === 1 && (
                         <View style={styles.stageBox}>
                             <View style={styles.termBlock}>
-                                <TerminalLine text="> Scanning environment..." delay={0} color="rgba(74,158,255,0.45)" />
+                                <TerminalLine text="> Scanning environment..." delay={0} color="rgba(255,255,255,0.5)" />
                                 <TerminalLine text="> Frame detected." delay={700} />
                                 <TerminalLine text="> Weakness: visible." delay={1400} />
-                                <TerminalLine text="> You just plugged into the Z.A.N.E. Engine." delay={2100} color={CYAN} />
-                                <TerminalLine text="> No excuses allowed after this point." delay={2800} color="#FF6B6B" />
+                                <TerminalLine text="> You just plugged into the Z.A.N.E. Engine." delay={2100} color="#FFFFFF" />
+                                <TerminalLine text="> No excuses allowed after this point." delay={2800} color="rgba(255,255,255,0.7)" />
                             </View>
                             <Text style={styles.versionTag}>ZCE — Confidence Engine v1.0  ·  FRAME INJECTION READY</Text>
                             <Animated.View style={{ width: '100%', opacity: btnGlow }}>
                                 <Pressable onPress={handleNext} style={styles.ctaBtn}>
-                                    <LinearGradient colors={[Colors.accentPrimary, CYAN]}
-                                        start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.ctaInner}>
+                                    <View style={styles.ctaInner}>
                                         <Text style={styles.ctaText}>INITIATE UPGRADE</Text>
                                         <Text style={styles.ctaArrow}>→</Text>
-                                    </LinearGradient>
+                                    </View>
                                 </Pressable>
                             </Animated.View>
                         </View>
@@ -321,11 +320,10 @@ export default function OnboardingScreen() {
                             <Pressable onPress={handleNext}
                                 style={[styles.ctaBtn, !canProceed() && { opacity: 0.38 }]}
                                 disabled={!canProceed()}>
-                                <LinearGradient colors={[Colors.accentPrimary, CYAN]}
-                                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.ctaInner}>
+                                <View style={styles.ctaInner}>
                                     <Text style={styles.ctaText}>CONFIRM LEVEL</Text>
                                     <Text style={styles.ctaArrow}>→</Text>
-                                </LinearGradient>
+                                </View>
                             </Pressable>
                             <View style={{ height: 32 }} />
                         </ScrollView>
@@ -357,11 +355,10 @@ export default function OnboardingScreen() {
                             <Pressable onPress={handleNext}
                                 style={[styles.ctaBtn, !canProceed() && { opacity: 0.38 }]}
                                 disabled={!canProceed()}>
-                                <LinearGradient colors={[Colors.accentPrimary, CYAN]}
-                                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.ctaInner}>
+                                <View style={styles.ctaInner}>
                                     <Text style={styles.ctaText}>LOCK OBJECTIVE</Text>
                                     <Text style={styles.ctaArrow}>→</Text>
-                                </LinearGradient>
+                                </View>
                             </Pressable>
                             <View style={{ height: 32 }} />
                         </ScrollView>
@@ -392,11 +389,10 @@ export default function OnboardingScreen() {
                             <Pressable onPress={handleNext}
                                 style={[styles.ctaBtn, !canProceed() && { opacity: 0.38 }]}
                                 disabled={!canProceed()}>
-                                <LinearGradient colors={[Colors.accentPrimary, CYAN]}
-                                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.ctaInner}>
+                                <View style={styles.ctaInner}>
                                     <Text style={styles.ctaText}>LOCK COMMITMENT</Text>
                                     <Text style={styles.ctaArrow}>→</Text>
-                                </LinearGradient>
+                                </View>
                             </Pressable>
                             <View style={{ height: 32 }} />
                         </ScrollView>
@@ -409,20 +405,19 @@ export default function OnboardingScreen() {
                                 <Text style={styles.frameBadgeText}>FRAME ACCEPTED</Text>
                             </View>
                             <View style={styles.termBlock}>
-                                <TerminalLine text="> Mission locked." delay={100} color={CYAN} />
+                                <TerminalLine text="> Mission locked." delay={100} color="#FFFFFF" />
                                 <TerminalLine text="> Level: {mission.level?.split(' — ')[0] || 'NPC'}" delay={600} />
                                 <TerminalLine text="> Objective: {mission.goal || 'General'}" delay={1100} />
                                 <TerminalLine text="> Commitment: {mission.commitment?.split(' — ')[0] || '30 days'}" delay={1600} />
-                                <TerminalLine text="> Daily reps required." delay={2300} color="#FF6B6B" />
-                                <TerminalLine text="> Miss a day = streak dies." delay={2800} color="#FF6B6B" />
-                                <TerminalLine text="> Welcome to the Engine." delay={3500} color={CYAN} />
+                                <TerminalLine text="> Daily reps required." delay={2300} color="rgba(255,255,255,0.6)" />
+                                <TerminalLine text="> Miss a day = streak dies." delay={2800} color="rgba(255,255,255,0.6)" />
+                                <TerminalLine text="> Welcome to the Engine." delay={3500} color="#FFFFFF" />
                             </View>
                             <Pressable onPress={handleNext} style={styles.ctaBtn}>
-                                <LinearGradient colors={[CYAN, Colors.accentPrimary]}
-                                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.ctaInner}>
+                                <View style={styles.ctaInner}>
                                     <Text style={styles.ctaText}>ENTER THE ENGINE</Text>
                                     <Text style={styles.ctaArrow}>→</Text>
-                                </LinearGradient>
+                                </View>
                             </Pressable>
                         </View>
                     )}
@@ -438,7 +433,7 @@ const styles = StyleSheet.create({
 
     blob: {
         position: 'absolute', width: 300, height: 300, borderRadius: 150,
-        backgroundColor: 'rgba(96, 165, 250, 0.05)',
+        backgroundColor: 'rgba(255, 255, 255, 0.02)',
     },
 
     topBar: {
@@ -446,63 +441,65 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20, paddingTop: 12, paddingBottom: 4,
     },
     dotsRow: { flexDirection: 'row', gap: 10, flex: 1, justifyContent: 'center' },
-    dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.1)' },
-    dotActive: { width: 22, borderRadius: 3, backgroundColor: Colors.accentPrimary },
+    dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.15)' },
+    dotActive: { width: 22, borderRadius: 3, backgroundColor: '#FFFFFF' },
     skipBtn: { position: 'absolute', right: 20, paddingVertical: 6, paddingHorizontal: 10 },
-    skipText: { fontFamily: Fonts.mono, color: Colors.textTertiary, fontSize: 10, textDecorationLine: 'underline', letterSpacing: 1 },
+    skipText: { fontFamily: Fonts.mono, color: 'rgba(255,255,255,0.4)', fontSize: 10, textDecorationLine: 'underline', letterSpacing: 1 },
 
     headArea: { alignItems: 'center', paddingVertical: 12 },
     scanBadge: {
-        marginTop: 10, borderWidth: 1, borderColor: 'rgba(96, 165, 250, 0.2)',
-        paddingHorizontal: 16, paddingVertical: 5, borderRadius: 8,
-        backgroundColor: 'rgba(96, 165, 250, 0.04)',
+        marginTop: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
+        paddingHorizontal: 16, paddingVertical: 5, borderRadius: 0,
+        backgroundColor: 'rgba(255,255,255,0.03)',
     },
-    scanBadgeText: { fontFamily: Fonts.monoBold, fontSize: 9, color: Colors.accentPrimary, letterSpacing: 3, fontWeight: '700' },
+    scanBadgeText: { fontFamily: Fonts.monoBold, fontSize: 9, color: '#FFFFFF', letterSpacing: 3, fontWeight: '700' },
 
     content: { flex: 1, paddingHorizontal: 24, justifyContent: 'center' },
 
     stageBox: { gap: 24, paddingBottom: 40 },
 
     termBlock: { gap: 12, minHeight: 140 },
-    termLine: { fontFamily: Fonts.mono, color: Colors.textSecondary, fontSize: 13, letterSpacing: 0.5, lineHeight: 22 },
-    versionTag: { fontFamily: Fonts.mono, color: Colors.textTertiary, fontSize: 8, letterSpacing: 2, opacity: 0.6 },
+    termLine: { fontFamily: Fonts.mono, color: 'rgba(255,255,255,0.7)', fontSize: 13, letterSpacing: 0.5, lineHeight: 22 },
+    versionTag: { fontFamily: Fonts.mono, color: 'rgba(255,255,255,0.35)', fontSize: 8, letterSpacing: 2, opacity: 0.6 },
 
     ctaBtn: {
-        width: '100%', borderRadius: 16, overflow: 'hidden',
-        borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.08)',
+        width: '100%', borderRadius: 0, overflow: 'hidden',
+        borderWidth: 1, borderColor: '#FFFFFF',
+        backgroundColor: '#FFFFFF',
     },
     ctaInner: {
         paddingVertical: 18, paddingHorizontal: 28,
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12,
+        backgroundColor: '#FFFFFF',
     },
-    ctaText: { fontFamily: Fonts.heading, color: '#fff', fontSize: 14, letterSpacing: 2.5, fontWeight: '800' },
-    ctaArrow: { color: 'rgba(255,255,255,0.6)', fontSize: 18, fontWeight: '800' },
+    ctaText: { fontFamily: Fonts.heading, color: '#000000', fontSize: 14, letterSpacing: 2.5, fontWeight: '800' },
+    ctaArrow: { color: 'rgba(0,0,0,0.6)', fontSize: 18, fontWeight: '800' },
 
     scrollFlex: { flex: 1 },
     scrollContent: { gap: 24, paddingBottom: 40 },
-    intakeTitle: { fontFamily: Fonts.heading, color: Colors.textPrimary, fontSize: 24, letterSpacing: 1, fontWeight: '800' },
-    intakeSub: { fontFamily: Fonts.monoBold, color: Colors.accentPrimary, fontSize: 10, letterSpacing: 3, marginTop: -12, textTransform: 'uppercase' },
+    intakeTitle: { fontFamily: Fonts.heading, color: '#FFFFFF', fontSize: 24, letterSpacing: 1, fontWeight: '800' },
+    intakeSub: { fontFamily: Fonts.monoBold, color: 'rgba(255,255,255,0.5)', fontSize: 10, letterSpacing: 3, marginTop: -12, textTransform: 'uppercase' },
 
     qBlock: { gap: 10 },
-    qLabel: { fontFamily: Fonts.mono, color: Colors.textTertiary, fontSize: 9, letterSpacing: 2, marginBottom: 4, fontWeight: '600' },
+    qLabel: { fontFamily: Fonts.mono, color: 'rgba(255,255,255,0.4)', fontSize: 9, letterSpacing: 2, marginBottom: 4, fontWeight: '600' },
     optPressable: { width: '100%' },
     optBtn: {
         width: '100%', flexDirection: 'row', alignItems: 'center', gap: 14,
-        padding: 16, borderRadius: 14,
-        borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
-        backgroundColor: 'rgba(255,255,255,0.03)',
+        padding: 16, borderRadius: 0,
+        borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
+        backgroundColor: 'transparent',
     },
-    optBtnActive: { borderColor: Colors.accentPrimary, backgroundColor: 'rgba(96, 165, 250, 0.08)' },
-    optIcon: { fontSize: 18, opacity: 0.9 },
-    optText: { fontFamily: Fonts.body, color: Colors.textSecondary, fontSize: 14, flex: 1, fontWeight: '500' },
-    optTextActive: { color: Colors.textPrimary, fontWeight: '700' },
-    optCheck: { color: Colors.accentPrimary, fontSize: 12, fontWeight: '800' },
+    optBtnActive: { borderColor: '#FFFFFF', backgroundColor: 'rgba(255,255,255,0.08)' },
+    optIcon: { fontSize: 18, opacity: 0.9, color: '#FFFFFF' },
+    optText: { fontFamily: Fonts.body, color: 'rgba(255,255,255,0.6)', fontSize: 14, flex: 1, fontWeight: '500' },
+    optTextActive: { color: '#FFFFFF', fontWeight: '700' },
+    optCheck: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
 
     frameBadge: {
-        alignSelf: 'center', borderWidth: 1, borderColor: Colors.accentPrimary,
-        paddingHorizontal: 20, paddingVertical: 8, borderRadius: 8,
-        backgroundColor: 'rgba(96, 165, 250, 0.06)',
+        alignSelf: 'center', borderWidth: 1, borderColor: '#FFFFFF',
+        paddingHorizontal: 20, paddingVertical: 8, borderRadius: 0,
+        backgroundColor: 'rgba(255,255,255,0.05)',
         marginBottom: 10,
     },
-    frameBadgeText: { fontFamily: Fonts.monoBold, color: Colors.accentPrimary, fontSize: 10, letterSpacing: 4, fontWeight: '800' },
+    frameBadgeText: { fontFamily: Fonts.monoBold, color: '#FFFFFF', fontSize: 10, letterSpacing: 4, fontWeight: '800' },
 });
