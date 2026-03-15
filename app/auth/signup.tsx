@@ -1,7 +1,5 @@
-import {
-    View, Text, StyleSheet, TextInput, Pressable, Animated,
-    KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Image
-} from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable, Animated,
+    KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Image } from 'react-native';
 import { PanGestureHandler, State, NativeViewGestureHandler } from 'react-native-gesture-handler';
 import { router } from 'expo-router';
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -24,7 +22,7 @@ const STEP2_FIELDS = [
 ];
 
 export default function SignupScreen() {
-    const { signUp, setHasCompletedOnboarding, setReturnToOnboardingStage } = useUser();
+    const { signIn, signUp, setHasCompletedOnboarding, setReturnToOnboardingStage } = useUser();
     const [name, setName] = useState('');
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
@@ -308,7 +306,7 @@ export default function SignupScreen() {
                         <Text style={[styles.loginLinkText, styles.loginLinkAccent]}>LOG IN →</Text>
                     </Pressable>
 
-                    <Pressable onPress={() => router.replace('/(tabs)')} style={styles.npcLink}>
+                    <Pressable onPress={() => signIn()} style={styles.npcLink}>
                         <Text style={styles.npcLinkText}>PROCEED AS NPC (DEMO MODE)</Text>
                     </Pressable>
 

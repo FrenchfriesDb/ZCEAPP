@@ -300,6 +300,7 @@ function RootLayoutNav() {
       <Stack.Screen name="auth/onboarding" options={{ headerShown: false, gestureEnabled: false }} />
       <Stack.Screen name="auth/signup" options={{ headerShown: false, gestureEnabled: false }} />
       <Stack.Screen name="auth/login" options={{ headerShown: false, gestureEnabled: false }} />
+      <Stack.Screen name="auth/forgot-password" options={{ headerShown: false, gestureEnabled: false }} />
       <Stack.Screen name="settings/edit-profile" options={{ presentation: 'modal', headerShown: false }} />
       <Stack.Screen name="settings/notification-settings" options={{ presentation: 'modal', headerShown: false }} />
     </Stack>
