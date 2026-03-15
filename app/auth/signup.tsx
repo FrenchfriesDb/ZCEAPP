@@ -2,6 +2,7 @@ import {
     View, Text, StyleSheet, TextInput, Pressable, Animated,
     KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator
 } from 'react-native';
+import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import { router } from 'expo-router';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Colors, Fonts, Spacing } from '@/constants/theme';
@@ -35,6 +36,7 @@ export default function SignupScreen() {
 
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(24)).current;
+    const gestureX = useRef(new Animated.Value(0)).current;
     const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const scrollRef = useRef<ScrollView>(null);
     const fieldY = useRef<Record<string, number>>({});
@@ -123,10 +125,22 @@ export default function SignupScreen() {
     };
 
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={{ flex: 1, backgroundColor: '#000000' }}
+        <PanGestureHandler
+            onGestureEvent={Animated.event([{ nativeEvent: { translationX: gestureX } }], { useNativeDriver: false })}
+            onHandlerStateChange={(event) => {
+                if (event.nativeEvent.state === State.END) {
+                    const { translationX } = event.nativeEvent;
+                    // Swipe right (positive translationX) to go back to onboarding
+                    if (translationX > 50) {
+                        router.replace('/auth/onboarding');
+                    }
+                }
+            }}
         >
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={{ flex: 1, backgroundColor: '#000000' }}
+            >
             <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
 
             {/* Ambient glow blobs - white */}
@@ -256,6 +270,7 @@ export default function SignupScreen() {
                 </Animated.View>
             </ScrollView>
         </KeyboardAvoidingView>
+        </PanGestureHandler>
     );
 }
 
