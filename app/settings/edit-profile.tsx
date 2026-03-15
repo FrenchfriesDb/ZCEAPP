@@ -382,17 +382,17 @@ export default function EditProfileScreen() {
                     <SettingRow
                         icon={ICONS.restore}
                         label="RESTORE PURCHASES"
-                        onPress={() => Alert.alert('RESTORE PURCHASES', 'Contact support@zce.io to restore your purchases.')}
+                        onPress={() => Alert.alert('RESTORE PURCHASES', 'Contact zaneprotocol@gmail.com to restore your purchases. We respond within 24 hours.')}
                     />
                     <SettingRow
                         icon={ICONS.privacy}
                         label="PRIVACY POLICY"
-                        onPress={() => Alert.alert('PRIVACY POLICY', 'Your data is secure. We never share your information with third parties. Full privacy policy available at zce.io/privacy')}
+                        onPress={() => Alert.alert('PRIVACY PROTOCOL', 'Your data is locked in a vault. We do not sell, trade, or share your information. This is your war. Your data stays yours. No third parties. No leaks. No excuses.')}
                     />
                     <SettingRow
                         icon={ICONS.terms}
                         label="TERMS OF SERVICE"
-                        onPress={() => Alert.alert('TERMS OF SERVICE', 'By using this app, you agree to our terms. Full terms available at zce.io/terms')}
+                        onPress={() => Alert.alert('TERMS OF WAR', 'By using this app, you commit to forging yourself without excuses. You will show up daily. You will do the work. You will not quit when it gets hard. This is a binding contract with yourself. We are simply the mirror.')}
                         isLast
                     />
                 </SectionCard>
