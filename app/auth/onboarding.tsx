@@ -442,9 +442,9 @@ export default function OnboardingScreen() {
                             </View>
                             <View style={styles.termBlock}>
                                 <TerminalLine text="> Mission locked." delay={100} color="#FFFFFF" />
-                                <TerminalLine text="> Level: {mission.level?.split(' — ')[0] || 'NPC'}" delay={600} />
-                                <TerminalLine text="> Objective: {mission.goal || 'General'}" delay={1100} />
-                                <TerminalLine text="> Commitment: {mission.commitment?.split(' — ')[0] || '30 days'}" delay={1600} />
+                                <TerminalLine text={`> Level: ${mission.level?.split(' — ')[0] || 'NPC'}`} delay={600} />
+                                <TerminalLine text={`> Objective: ${mission.goal || 'General'}`} delay={1100} />
+                                <TerminalLine text={`> Commitment: ${mission.commitment?.split(' — ')[0] || '30 days'}`} delay={1600} />
                                 <TerminalLine text="> Daily reps required." delay={2300} color="rgba(255,255,255,0.6)" />
                                 <TerminalLine text="> Miss a day = streak dies." delay={2800} color="rgba(255,255,255,0.6)" />
                                 <TerminalLine text="> Welcome to the Engine." delay={3500} color="#FFFFFF" />
