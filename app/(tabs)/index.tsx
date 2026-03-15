@@ -322,7 +322,7 @@ export default function DojoScreen() {
               { 
                 textShadowColor: glowColor,
                 textShadowOffset: { width: 0, height: 0 },
-                textShadowRadius: 15
+                textShadowRadius: 25
               },
               (user?.streakAtRisk && streakCount > 0) && { color: Colors.accentDanger }
             ]}>
@@ -650,9 +650,10 @@ const styles = StyleSheet.create({
     paddingTop: 10,  // Added padding to ensure top isn't sliced
     letterSpacing: -8,
     textAlignVertical: 'center',
-    textShadowColor: 'rgba(255, 255, 255, 0.4)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 40,
+    textAlign: 'center',
+    marginBottom: 40,
+    marginTop: -10,
+    // Removed hardcoded textShadow to use dynamic theme glow
   },
   heroUnit: {
     fontFamily: Fonts.monoBold,
