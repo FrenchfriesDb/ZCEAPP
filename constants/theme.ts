@@ -86,6 +86,8 @@ export const TimeColors = {
   sunset: ['#FF0F7B', '#F89B29'],
   // 7–8 PM — neon pink-cyan
   twilight: ['#FF1B6B', '#45CAFF'],
+  // 8 PM — soft lavender-blue to deep navy
+  eveningNavy: ['#9BAFD9', '#103783'],
   // 9 PM — Night Dive
   nightDive: ['#020344', '#28B8D5'],
   // 10 PM — Void Spark

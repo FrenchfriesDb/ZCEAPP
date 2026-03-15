@@ -2,8 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Fonts, Radius, XPConfig } from '@/constants/theme';
-import { useXPBarColors } from '@/hooks/useXPBarColors';
-import { getTimeAccent } from '@/constants/theme';
+import { useTimeColors } from '@/hooks/useTimeColors';
 
 interface Props {
     xp: number;
@@ -26,7 +25,8 @@ export default function XPBar({ xp }: Props) {
     const levelInfo = XPConfig.getLevel(xp);
     const xpInLevel = XPConfig.getXpInCurrentLevel(xp);
     const progress = XPConfig.getProgress(xp); // 0–1
-    const palette = useXPBarColors();
+    const palette = useTimeColors();
+    const themeColor = palette[0];
 
     const [barWidth, setBarWidth] = useState(0);
     const animatedProgress = useRef(new Animated.Value(0)).current;
@@ -49,10 +49,10 @@ export default function XPBar({ xp }: Props) {
     return (
         <View style={styles.container}>
             <View style={styles.topRow}>
-                <View style={styles.levelBadge}>
-                    <Text style={styles.levelText}>LVL {levelInfo.level}</Text>
+                <View style={[styles.levelBadge, { borderColor: themeColor + '66' }]}>
+                    <Text style={[styles.levelText, { color: themeColor }]}>LVL {levelInfo.level}</Text>
                 </View>
-                <Text style={styles.rankTitle} numberOfLines={1}>{levelInfo.title.toUpperCase()}</Text>
+                <Text style={[styles.rankTitle, { color: themeColor }]} numberOfLines={1}>{levelInfo.title.toUpperCase()}</Text>
                 <Text style={styles.xpCounts} numberOfLines={1}>
                     {xpInLevel.toLocaleString()} <Text style={styles.xpDivider}>/</Text> {levelInfo.xpToComplete.toLocaleString()}
                 </Text>

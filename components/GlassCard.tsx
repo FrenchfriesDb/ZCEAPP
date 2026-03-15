@@ -14,6 +14,7 @@ interface GlassCardProps {
     danger?: boolean;  // Red glow variant (streaks)
     accent?: boolean;  // Blue glow variant (CTAs)
     themed?: boolean;  // True = uses current time-of-day gradient for fill
+    darkGlass?: boolean;  // Darker liquid glass, more morphism (e.g. standing order cards)
     onPress?: () => void;
 }
 
@@ -26,6 +27,7 @@ export default function GlassCard({
     danger = false,
     accent = false,
     themed = false,
+    darkGlass = false,
     onPress,
 }: GlassCardProps) {
     const timePalette = useTimeColors();
@@ -34,6 +36,11 @@ export default function GlassCard({
     const themedColors = themed
         ? timePalette.map(c => `${c}26`) // ~15% opacity for colors
         : Colors.gradientCard;
+
+    const blurIntensity = darkGlass ? 90 : intensity;
+    const gradientColors = darkGlass
+        ? (['rgba(0, 0, 0, 0.82)', 'rgba(0, 0, 0, 0.45)'] as const)
+        : (['rgba(0, 0, 0, 0.6)', 'rgba(0, 0, 0, 0.1)'] as const);
 
     const resolvedGlow = glowColor
         ? glowColor
@@ -66,9 +73,9 @@ export default function GlassCard({
                 style,
             ]}
         >
-            <BlurView intensity={intensity} tint="dark" style={StyleSheet.absoluteFill} />
+            <BlurView intensity={blurIntensity} tint="dark" style={StyleSheet.absoluteFill} />
             <LinearGradient
-                colors={['rgba(0, 0, 0, 0.6)', 'rgba(0, 0, 0, 0.1)'] as any} // High-Transparency Liquid Glass
+                colors={gradientColors as any}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={[styles.gradient, noPadding && { padding: 0 }]}

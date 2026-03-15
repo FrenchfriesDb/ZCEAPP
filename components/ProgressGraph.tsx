@@ -1,18 +1,33 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, StyleSheet, useWindowDimensions, Pressable } from 'react-native';
 import Svg, { Polyline, Circle, Defs, LinearGradient, Stop, G, Line } from 'react-native-svg';
-import { Colors, Fonts, Radius } from '@/constants/theme';
+import { Colors, Fonts, Radius, Spacing } from '@/constants/theme';
+
+type TimeRange = '1W' | '1M' | 'ALL';
 
 interface ProgressGraphProps {
     dailyXp: { [date: string]: number };
-    days?: number;
     color?: string;
 }
 
-const CHART_WIDTH = Dimensions.get('window').width - 80;
 const CHART_HEIGHT = 80;
 
-export default function ProgressGraph({ dailyXp, days = 14, color = Colors.accentPrimary }: ProgressGraphProps) {
+function getDaysForRange(range: TimeRange, dailyXp: { [date: string]: number }): number {
+    if (range === '1W') return 7;
+    if (range === '1M') return 30;
+    const dates = Object.keys(dailyXp);
+    if (dates.length === 0) return 90;
+    const today = new Date();
+    const oldest = new Date(Math.min(...dates.map(d => new Date(d).getTime())));
+    const diffDays = Math.floor((today.getTime() - oldest.getTime()) / (1000 * 60 * 60 * 24));
+    return Math.min(Math.max(diffDays + 1, 30), 365);
+}
+
+export default function ProgressGraph({ dailyXp, color = Colors.accentPrimary }: ProgressGraphProps) {
+    const [range, setRange] = useState<TimeRange>('1M');
+    const days = getDaysForRange(range, dailyXp);
+    const { width: screenWidth } = useWindowDimensions();
+    const CHART_WIDTH = Math.max(200, screenWidth - (Spacing.lg * 2) - 64);
     const data = useMemo(() => {
         const today = new Date();
         const results = [];
@@ -30,7 +45,7 @@ export default function ProgressGraph({ dailyXp, days = 14, color = Colors.accen
     }, [dailyXp, days]);
 
     const maxXP = Math.max(...data.map(d => d.xp), 150);
-    const stepX = CHART_WIDTH / (days - 1);
+    const stepX = days > 1 ? CHART_WIDTH / (days - 1) : CHART_WIDTH;
 
     // Generate points for the Polyline
     const points = data.map((item, i) => {
@@ -46,7 +61,19 @@ export default function ProgressGraph({ dailyXp, days = 14, color = Colors.accen
                     <Text style={styles.title}>VELOCITY MONITOR</Text>
                     <Text style={styles.subtitle}>{days} DAY PERFORMANCE</Text>
                 </View>
-                <Text style={styles.peakText}>PEAK: {Math.max(...data.map(d => d.xp))} XP</Text>
+                <Text style={styles.peakText}>PEAK: {Math.max(...data.map(d => d.xp), 0)} XP</Text>
+            </View>
+
+            <View style={styles.toggleRow}>
+                {(['1W', '1M', 'ALL'] as const).map(r => (
+                    <Pressable
+                        key={r}
+                        onPress={() => setRange(r)}
+                        style={[styles.toggleBtn, range === r && [styles.toggleBtnActive, { borderColor: color + '66', backgroundColor: color + '22' }]]}
+                    >
+                        <Text style={[styles.toggleText, range === r && [styles.toggleTextActive, { color }]]}>{r}</Text>
+                    </Pressable>
+                ))}
             </View>
 
             <View style={styles.chartWrapper}>
@@ -126,8 +153,34 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
-        marginBottom: 20,
+        marginBottom: 12,
         paddingHorizontal: 4,
+    },
+    toggleRow: {
+        flexDirection: 'row',
+        gap: 8,
+        marginBottom: 16,
+    },
+    toggleBtn: {
+        paddingVertical: 6,
+        paddingHorizontal: 14,
+        borderRadius: Radius.pill,
+        backgroundColor: 'rgba(255,255,255,0.04)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.08)',
+    },
+    toggleBtnActive: {
+        backgroundColor: 'rgba(255,255,255,0.12)',
+        borderColor: 'rgba(255,255,255,0.2)',
+    },
+    toggleText: {
+        fontFamily: Fonts.monoBold,
+        fontSize: 11,
+        color: 'rgba(255,255,255,0.5)',
+        letterSpacing: 1,
+    },
+    toggleTextActive: {
+        color: '#FFFFFF',
     },
     title: {
         fontFamily: Fonts.monoBold,

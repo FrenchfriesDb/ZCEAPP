@@ -56,20 +56,18 @@ const ROASTS = {
 };
 
 const StaticMap: React.FC<StaticMapProps> = ({ dailyXp, drillLogs = [] }) => {
-    const pageWidth = Dimensions.get('window').width - 64; // Account for screen (16*2) + card (16*2) margins
+    const pageWidth = Dimensions.get('window').width - 64;
     const gridDim = GRID_SIZE * (SQUARE_SIZE + GAPPING) - GAPPING;
 
-    // Current date logic - Reactive to ensure 'Today' is always visible
     const todayStr = useMemo(() => {
         const d = new Date();
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    }, [dailyXp]); // Re-calculate when XP updates to catch date shifts
+    }, [dailyXp]);
 
     const [selectedDate, setSelectedDate] = useState<string | null>(todayStr);
     const [activePage, setActivePage] = useState(PAGES_IN_PAST);
     const scrollRef = useRef<FlatList>(null);
 
-    // Initial Scroll to Current Block
     useEffect(() => {
         const timer = setTimeout(() => {
             scrollRef.current?.scrollToIndex({ index: PAGES_IN_PAST, animated: false });
@@ -79,13 +77,11 @@ const StaticMap: React.FC<StaticMapProps> = ({ dailyXp, drillLogs = [] }) => {
 
     const pagesData = useMemo(() => {
         const pages: any[] = [];
-        // Epoch: Monday, Dec 22, 2025. This ensures rows start on Monday.
         const epoch = new Date(2025, 11, 22);
         const today = new Date();
         const diffDays = Math.round((new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime() - epoch.getTime()) / (1000 * 3600 * 24));
         const currentBlockIndex = Math.floor(diffDays / DAYS_PER_PAGE);
 
-        // Timeline flows Left (Past) -> Right (Future)
         for (let p = -PAGES_IN_PAST; p <= PAGES_IN_FUTURE; p++) {
             const blockIndex = currentBlockIndex + p;
             const pageGrid: { date: string, xp: number, x: number, y: number }[] = [];
@@ -121,14 +117,13 @@ const StaticMap: React.FC<StaticMapProps> = ({ dailyXp, drillLogs = [] }) => {
 
         if (xp === 0) return isSelected ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.02)';
 
-        // High Intensity Ramp (Max Signal at 1000 XP)
-        if (xp >= 1000) return '#D3321D'; // MAXIMUM AURA
-        if (xp >= 500) return '#FF9500';  // High Intensity
-        if (xp >= 151) return '#FFCF67';  // Peak Citrus
-        if (xp >= 51) return '#8E8651';   // Signal Lock
-        if (xp >= 1) return '#2A291E';    // Low Flux (Darkened from #4A4730)
+        if (xp >= 1000) return '#D3321D';
+        if (xp >= 500) return '#FF9500';
+        if (xp >= 151) return '#FFCF67';
+        if (xp >= 51) return '#8E8651';
+        if (xp >= 1) return '#2A291E';
 
-        return '#0A0A0A'; // Darkened from #1a1a1a
+        return '#0A0A0A';
     };
 
     const analysis = useMemo(() => {
@@ -154,7 +149,6 @@ const StaticMap: React.FC<StaticMapProps> = ({ dailyXp, drillLogs = [] }) => {
         const seed = selectedDate.split('-').reduce((a, b) => a + parseInt(b), 0);
         const comment = pool[seed % pool.length];
 
-        // Deterministic Manual Format: Parse YYYY-MM-DD directly for absolute consistency
         const parts = selectedDate.split('-');
         const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
         const formattedDate = `${months[parseInt(parts[1]) - 1]} ${parseInt(parts[2])}, ${parts[0]}`;
@@ -209,7 +203,7 @@ const StaticMap: React.FC<StaticMapProps> = ({ dailyXp, drillLogs = [] }) => {
                         offset: pageWidth * index,
                         index,
                     })}
-                    initialScrollIndex={PAGES_IN_PAST} // Start on current day block
+                    initialScrollIndex={PAGES_IN_PAST}
                     snapToInterval={pageWidth}
                     decelerationRate="fast"
                     showsHorizontalScrollIndicator={false}

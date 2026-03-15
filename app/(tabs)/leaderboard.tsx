@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import { Colors, Fonts, FontSizes, Spacing, Radius } from '@/constants/theme';
+import { Colors, Fonts, FontSizes, Spacing, Radius, XPConfig } from '@/constants/theme';
 import GlassCard from '@/components/GlassCard';
-import { db } from '@/services/firebase';
+import { db, auth } from '@/services/firebase';
 import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { useUser } from '@/context/UserContext';
 
@@ -33,13 +33,11 @@ const getRankLabel = (rank: number) => {
     return `${rank}`;
 };
 
-// Detect if this is the current user's row (simulated = last rank)
-const isUserRow = (rank: number, data: any[]) => rank === data.length;
-
 export default function LeaderboardScreen() {
     const { user } = useUser();
     const [activeTab, setActiveTab] = useState<'TACTICAL' | 'GLOBAL'>('TACTICAL');
     const [globalData, setGlobalData] = useState<any[]>([]);
+    const [myRank, setMyRank] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
@@ -49,14 +47,21 @@ export default function LeaderboardScreen() {
     const fetchGlobalRankings = async () => {
         setIsLoading(true);
         try {
-            const q = query(collection(db, 'users'), orderBy('xp', 'desc'), limit(20));
+            const q = query(collection(db, 'users'), orderBy('xp', 'desc'), limit(50));
             const snapshot = await getDocs(q);
             const rankings: any[] = [];
             let r = 1;
+            let identifiedRank = null;
+
             snapshot.forEach((doc) => {
                 const data = doc.data();
-                // Prioritize username for competitive identity, fallback to name
-                const displayName = (data.username || data.name || 'Anonymous Agent').toUpperCase();
+                // Prioritize username, fallback to agent tag if empty
+                const rawUsername = data.username || data.name || 'ANON';
+                const displayName = `@${rawUsername.replace(/\s+/g, '_').toLowerCase()}`;
+
+                const isMe = doc.id === auth.currentUser?.uid;
+
+                if (isMe) identifiedRank = r;
 
                 rankings.push({
                     rank: r++,
@@ -66,10 +71,11 @@ export default function LeaderboardScreen() {
                     xp: data.xp || 0,
                     aura: ((data.level || 0) * 1000) + (data.xp || 0),
                     streak: data.streak || 0,
-                    isMe: doc.id === user?.email,
+                    isMe,
                 });
             });
             setGlobalData(rankings);
+            setMyRank(identifiedRank);
         } catch (e: any) {
             console.error('GLOBAL RANKINGS ERROR:', e.message);
         } finally {
@@ -78,6 +84,13 @@ export default function LeaderboardScreen() {
     };
 
     const currentData = activeTab === 'TACTICAL' ? SIMULATED_DATA : globalData;
+
+    // My Display Info for Sticky (LIVE TAB ONLY)
+    const myDisplayInfo = {
+        rank: myRank || '>50',
+        aura: ((XPConfig.getLevel(user?.xp || 0).level || 0) * 1000) + (user?.xp || 0),
+        username: `@${(user?.username || user?.name || 'INITIATE').replace(/\s+/g, '_').toLowerCase()}`
+    };
 
     return (
         <View style={styles.container}>
@@ -111,8 +124,7 @@ export default function LeaderboardScreen() {
                         {[currentData[1], currentData[0], currentData[2]].map((entry, i) => {
                             const podiumColors = ['#C0C0C0', '#FFD700', '#CD7F32'];
                             const heights = [80, 110, 60];
-                            // Podium names in BOLD ALL CAPS username
-                            const displayName = (entry.name || '').toUpperCase();
+                            const displayName = entry.name;
                             return (
                                 <View key={entry.rank} style={styles.podiumSlot}>
                                     <Text style={styles.podiumName} numberOfLines={1}>{displayName.split('_')[0]}</Text>
@@ -142,13 +154,9 @@ export default function LeaderboardScreen() {
                 ) : (
                     <View style={styles.listContainer}>
                         {currentData.map((entry, i) => {
-                            const isMe = entry.isMe || (activeTab === 'TACTICAL' && i === currentData.length - 1);
+                            const isMe = activeTab === 'GLOBAL' && entry.isMe;
                             const isTop3 = entry.rank <= 3;
-                            const rankColor = isMe ? Colors.accentDanger : getRankColor(entry.rank);
-
-                            // For Me row in SIM, use current user's username
-                            let rowName = entry.name.toUpperCase();
-                            if (isMe && user?.username) rowName = user.username.toUpperCase();
+                            const rankColor = isMe ? '#B3E0FF' : getRankColor(entry.rank);
 
                             return (
                                 <View
@@ -159,10 +167,10 @@ export default function LeaderboardScreen() {
                                         isTop3 && { borderColor: `${rankColor}30` },
                                     ]}
                                 >
-                                    <BlurView intensity={isMe ? 20 : 12} tint="dark" style={StyleSheet.absoluteFill} />
+                                    <BlurView intensity={isMe ? 30 : 12} tint="dark" style={StyleSheet.absoluteFill} />
 
                                     {/* Left accent line */}
-                                    {isMe && <View style={[styles.meAccent, { backgroundColor: Colors.accentDanger }]} />}
+                                    {isMe && <View style={[styles.meAccent, { backgroundColor: '#B3E0FF' }]} />}
 
                                     {/* Rank badge */}
                                     <View style={[styles.rankBadge, { borderColor: `${rankColor}50` }]}>
@@ -173,9 +181,9 @@ export default function LeaderboardScreen() {
 
                                     {/* User info */}
                                     <View style={styles.rowContent}>
-                                        <Text style={[styles.rowName, isMe && { color: Colors.accentPrimary }]}>
-                                            {rowName}
-                                            {isMe ? '  ◈ YOU' : ''}
+                                        <Text style={[styles.rowName, isMe && { color: '#B3E0FF' }]}>
+                                            {entry.name}
+                                            {isMe ? ' ◈ YOU' : ''}
                                         </Text>
                                         <View style={styles.rowMeta}>
                                             <Text style={styles.rowTitle}>{entry.title}</Text>
@@ -187,7 +195,7 @@ export default function LeaderboardScreen() {
 
                                     {/* Aura score */}
                                     <View style={styles.rowRight}>
-                                        <Text style={[styles.auraScore, { color: isMe ? Colors.accentDanger : (isTop3 ? rankColor : Colors.accentPrimary) }]}>
+                                        <Text style={[styles.auraScore, { color: isMe ? '#B3E0FF' : (isTop3 ? rankColor : Colors.accentPrimary) }]}>
                                             {entry.aura.toLocaleString()}
                                         </Text>
                                         <Text style={styles.auraLabel}>AURA</Text>
@@ -200,8 +208,41 @@ export default function LeaderboardScreen() {
                         )}
                     </View>
                 )}
-                <View style={{ height: 120 }} />
+                <View style={{ height: activeTab === 'GLOBAL' ? 160 : 120 }} />
             </ScrollView>
+
+            {/* Floating Personal Rank Indicator (LIVE TAB ONLY) */}
+            {!isLoading && activeTab === 'GLOBAL' && (
+                <View style={styles.floatingContainer}>
+                    <View style={styles.floatingRankBubble}>
+                        <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
+                        <LinearGradient
+                            colors={['rgba(179, 224, 255, 0.15)', 'rgba(255, 255, 255, 0.03)']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={StyleSheet.absoluteFill}
+                        />
+                        <View style={styles.floatingContent}>
+                            <View style={styles.floatingInfo}>
+                                <Text style={styles.floatingLabel}>YOUR STANDING</Text>
+                                <Text style={styles.floatingUser} numberOfLines={1}>{myDisplayInfo.username}</Text>
+                            </View>
+
+                            <View style={styles.floatingDivider} />
+
+                            <View style={styles.floatingStats}>
+                                <View style={styles.rankPill}>
+                                    <Text style={styles.rankPillValue}>#{myDisplayInfo.rank}</Text>
+                                </View>
+                                <View style={styles.auraBox}>
+                                    <Text style={styles.auraVal}>{myDisplayInfo.aura.toLocaleString()}</Text>
+                                    <Text style={styles.auraSub}>AURA</Text>
+                                </View>
+                            </View>
+                        </View>
+                    </View>
+                </View>
+            )}
         </View>
     );
 }
@@ -246,7 +287,6 @@ const styles = StyleSheet.create({
     tabPillText: { fontFamily: Fonts.monoBold, fontSize: 9, color: Colors.textTertiary, letterSpacing: 1 },
     tabPillTextActive: { color: Colors.accentPrimary },
 
-    // Podium
     podium: {
         flexDirection: 'row',
         alignItems: 'flex-end',
@@ -278,7 +318,6 @@ const styles = StyleSheet.create({
     podiumRank: { fontFamily: Fonts.monoBold, fontSize: FontSizes.xl, fontWeight: '800' },
     podiumAura: { fontFamily: Fonts.mono, fontSize: 9, color: Colors.textTertiary, letterSpacing: 1 },
 
-    // List rows
     listContainer: { gap: 8 },
     row: {
         flexDirection: 'row',
@@ -292,8 +331,8 @@ const styles = StyleSheet.create({
         position: 'relative',
     },
     rowMe: {
-        borderColor: Colors.borderDanger,
-        shadowColor: Colors.accentDanger,
+        borderColor: 'rgba(179, 224, 255, 0.5)',
+        shadowColor: '#B3E0FF',
         shadowOffset: { width: 0, height: 0 },
         shadowRadius: 16,
         shadowOpacity: 0.25,
@@ -332,4 +371,52 @@ const styles = StyleSheet.create({
     loader: { padding: 40, alignItems: 'center', gap: 15 },
     loaderText: { fontFamily: Fonts.mono, fontSize: 10, color: Colors.textTertiary, letterSpacing: 2 },
     emptyText: { textAlign: 'center', color: Colors.textTertiary, fontFamily: Fonts.mono, fontSize: 10, marginTop: 40 },
+
+    floatingContainer: {
+        position: 'absolute',
+        bottom: 95, // Lifted higher to clear tab bar
+        left: 0,
+        right: 0,
+        alignItems: 'center',
+        paddingHorizontal: 20,
+    },
+    floatingRankBubble: {
+        width: '100%',
+        maxWidth: 400,
+        height: 72,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(179, 224, 255, 0.4)',
+        overflow: 'hidden',
+        shadowColor: '#B3E0FF',
+        shadowOffset: { width: 0, height: 8 },
+        shadowRadius: 20,
+        shadowOpacity: 0.15,
+    },
+    floatingContent: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 18,
+    },
+    floatingInfo: { flex: 1, gap: 2 },
+    floatingLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.5)', letterSpacing: 1.5 },
+    floatingUser: { fontFamily: Fonts.heading, fontSize: 16, color: '#fff', fontWeight: '800' },
+    floatingDivider: {
+        width: 1,
+        height: 30,
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        marginHorizontal: 15,
+    },
+    floatingStats: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    rankPill: {
+        backgroundColor: '#B3E0FF',
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 10,
+    },
+    rankPillValue: { fontFamily: Fonts.monoBold, fontSize: 18, color: '#000' },
+    auraBox: { alignItems: 'flex-end' },
+    auraVal: { fontFamily: Fonts.monoBold, fontSize: 15, color: '#B3E0FF' },
+    auraSub: { fontFamily: Fonts.mono, fontSize: 7, color: 'rgba(255,255,255,0.4)', letterSpacing: 1 },
 });

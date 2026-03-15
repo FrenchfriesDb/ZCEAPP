@@ -3,21 +3,22 @@ import { TimeColors } from '@/constants/theme';
 
 /**
  * Returns a time-of-day gradient palette (string[]) that cycles through
- * 9 cinematic sky themes across the day. Updates every minute.
+ * cinematic sky themes across the day. Updates every minute.
  *
  * Palette slots and their hours:
- *   preDawn       0–4:59    — deep navy / deep abyss
+ *   deepAbyss     0–4:59    — Deep Abyss
  *   earlierDawn   5–5:59    — steel blue
- *   morning       6–7:59    — sunrise
- *   day           8–16:59   — electric daylight
- *   goldenHour    17–17:29  — warm golden
- *   dusk          17:30–17:59 — rose mauve
- *   sunset        18–19:59  — fiery
- *   twilight      20–20:59  — pink-cyan
+ *   morning       6–7:09, 7:31–8:29  — sunrise
+ *   sunriseCitrus 7:10–7:30 — Citrus Sunrise
+ *   cloudDrift    8:30–15:59 — electric daylight
+ *   goldenHour    17–17:29  — warm golden (#FFA585 → #FFEDA0)
+ *   dusk          17:30–17:59 — rose mauve (#DD83AD → #C3E1FC)
+ *   sunset        18–19:59  — fiery (#FF0F7B → #F89B29)
+ *   twilight      19–19:59  — pink-cyan (7–8 PM) (#FF1B6B → #45CAFF)
+ *   eveningNavy   20–20:59  — 8 PM (#9BAFD9 → #103783)
  *   nightDive     21–21:59  — Night Dive
  *   voidSpark     22–22:59  — Void Spark
  *   midnightMist  23–23:59  — Midnight Mist
- *   deepAbyss     0–4:59    — Deep Abyss
  */
 export const useTimeColors = () => {
     const [palette, setPalette] = useState<string[]>(TimeColors.day);
@@ -27,23 +28,24 @@ export const useTimeColors = () => {
             const now = new Date();
             const h = now.getHours();
             const m = now.getMinutes();
-            const time = h + m / 60; // e.g. 5:30 = 5.5
+            const time = h + m / 60;
 
             let next: string[];
 
-            const silver = ['#727A9A', '#D8DBE9'];
-
-            if (time < 5) next = silver;
+            if (time < 5) next = TimeColors.deepAbyss;
             else if (time < 6) next = TimeColors.earlierDawn;
-            else if (time >= 7.166 && time <= 7.5) next = TimeColors.sunriseCitrus; // 7:10 AM - 7:30 AM
+            else if (time >= 7.166 && time <= 7.5) next = TimeColors.sunriseCitrus;
             else if (time < 8.5) next = TimeColors.morning;
-            else if (time < 16) next = TimeColors.cloudDrift; // 8:30 AM - 4:00 PM
-            else if (time < 17) next = TimeColors.morning; // Buffer between day and sunset
+            else if (time < 16) next = TimeColors.cloudDrift;
+            else if (time < 17) next = TimeColors.morning;
             else if (time < 17.5) next = TimeColors.goldenHour;
             else if (time < 18) next = TimeColors.dusk;
             else if (time < 20) next = TimeColors.sunset;
-            else if (time < 21) next = TimeColors.twilight;
-            else next = silver;
+            else if (time < 21) next = TimeColors.twilight;      // 7–8 PM
+            else if (time < 22) next = TimeColors.eveningNavy;  // 8 PM
+            else if (time < 23) next = TimeColors.nightDive;    // 9 PM
+            else if (time < 24) next = TimeColors.voidSpark;    // 10 PM
+            else next = TimeColors.midnightMist;                // 11 PM
 
             setPalette(next);
         };

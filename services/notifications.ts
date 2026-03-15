@@ -421,9 +421,9 @@ export const NotificationService = {
                             data: { type: 'recurring', subtype: 'streak_protector' },
                         },
                         trigger: {
+                            type: Notifications.SchedulableTriggerInputTypes.DAILY,
                             hour: 19,
                             minute: 0,
-                            repeats: true,
                         },
                     });
                 }

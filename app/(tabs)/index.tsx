@@ -191,40 +191,60 @@ export default function DojoScreen() {
   // ── MISSION ROW ──────────────────────────────────────────────────────────────
   const MissionRow = ({ item }: { item: any }) => {
     const isDone = completedIds.includes(item.id);
+    const accentGradient = isDone
+      ? ['rgba(255,255,255,0.2)', 'rgba(255,255,255,0.05)'] as const
+      : (timePalette.length >= 2 ? timePalette : [timePalette[0], timePalette[0]]) as string[];
+    const themeColor = systemColor;
     return (
       <GlassCard
         themed
+        darkGlass
+        glowColor={themeColor}
         onPress={() => handlePress(item)}
-        style={[styles.missionCard, isDone && styles.missionCardDone, { padding: 0 }, { marginBottom: 12 }]}
+        style={[
+          styles.missionCard,
+          isDone && styles.missionCardDone,
+          { padding: 0, marginBottom: 8, borderWidth: 0, shadowOpacity: 0.08, shadowRadius: 8 },
+        ]}
       >
-        {/* Left accent bar — Smooth White -> Base gradient */}
-        <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, overflow: 'hidden' }}>
-          <LinearGradient
-            colors={isDone
-              ? ['rgba(255,255,255,0.2)', 'rgba(255,255,255,0.05)']
-              : ['#FFFFFF', timePalette[0]] as any // Pure White top to themed base
-            }
-            style={StyleSheet.absoluteFill}
-          />
+        {/* Left accent bar — solid bar + big glow extending right into card */}
+        <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 20 }}>
+          <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 16 }}>
+            <LinearGradient
+              colors={[
+                (accentGradient as string[])[0] + '80',
+                (accentGradient as string[])[accentGradient.length - 1] + '20',
+                'transparent',
+              ]}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
+              style={StyleSheet.absoluteFill}
+            />
+          </View>
+          <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4 }}>
+            <LinearGradient
+              colors={accentGradient as any}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
+          </View>
         </View>
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', padding: 18, gap: 14 }}>
-          {/* Icon badge */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 12, paddingLeft: 20, gap: 10 }}>
           <View style={[styles.missionIconBadge, isDone && styles.missionIconBadgeDone]}>
-            <Text allowFontScaling={false} style={[styles.missionIcon, { color: '#FFFFFF', fontSize: 18 }, isDone && { opacity: 0.5 }]}>{isDone ? '✓' : item.icon}</Text>
+            <Text allowFontScaling={false} style={[styles.missionIcon, { color: '#FFFFFF', fontSize: 16 }, isDone && { opacity: 0.5 }]}>{isDone ? '✓' : item.icon}</Text>
           </View>
 
-          {/* Info */}
-          <View style={{ flex: 1, gap: 2 }}>
-            <Text style={[styles.missionTitle, isDone && styles.missionTitleDone, { fontFamily: Fonts.monoBold, fontSize: 13, color: '#B3E0FF', letterSpacing: 0.5 }]}>
+          <View style={{ flex: 1, gap: 1 }}>
+            <Text style={[styles.missionTitle, isDone && styles.missionTitleDone, { color: '#FFFFFF' }]}>
               {item.title.toUpperCase()}
             </Text>
-            <Text style={[styles.missionId, { fontFamily: Fonts.body, fontSize: 11, color: '#FFFFFF', opacity: 1.0 }]}>{item.desc}</Text>
+            <Text style={[styles.missionId, isDone && styles.missionTitleDone]}>{item.desc}</Text>
           </View>
 
-          {/* XP pill */}
-          <View style={[styles.xpPill, { borderWidth: 1, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4, borderColor: 'rgba(255,255,255,0.4)' }, isDone && { backgroundColor: 'rgba(255, 255, 255, 0.05)', borderColor: 'rgba(255,255,255,0.1)' }]}>
-            <Text style={[styles.xpPillText, { fontFamily: Fonts.monoBold, fontSize: 10, color: '#FFFFFF' }, isDone && { color: 'rgba(255,255,255,0.3)' }]}>
+          <View style={[styles.xpPill, { borderWidth: 1, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3, borderColor: 'rgba(255,255,255,0.2)' }, isDone && { backgroundColor: 'rgba(255, 255, 255, 0.05)', borderColor: 'rgba(255,255,255,0.1)' }]}>
+            <Text style={[styles.xpPillText, { fontFamily: Fonts.monoBold, fontSize: 9, color: themeColor }, isDone && { color: 'rgba(255,255,255,0.3)' }]}>
               {isDone ? 'DONE' : `+${item.xp}`}
             </Text>
           </View>
@@ -812,14 +832,8 @@ const styles = StyleSheet.create({
   missionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: Colors.borderGlass,
+    borderRadius: 16,
     overflow: 'hidden',
-    paddingVertical: 14,
-    paddingRight: 14,
-    marginBottom: 8,
   },
   missionCardDone: {
     borderColor: 'rgba(255,255,255,0.15)',
@@ -859,21 +873,23 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
   },
   missionTitle: {
-    fontFamily: Fonts.headingSemi,
-    fontSize: FontSizes.md,
-    color: Colors.textPrimary,
+    fontFamily: Fonts.heading,
+    fontSize: 15,
+    color: '#FFFFFF',
     fontWeight: '700',
     letterSpacing: 0.3,
+    lineHeight: 20,
   },
   missionTitleDone: {
     color: Colors.textTertiary,
     textDecorationLine: 'line-through',
   },
   missionId: {
-    fontFamily: Fonts.mono,
-    fontSize: 9,
-    color: Colors.textTertiary,
-    letterSpacing: 0.5,
+    fontFamily: Fonts.headingSemi,
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.85)',
+    letterSpacing: 0.3,
+    lineHeight: 18,
   },
   xpPill: {
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
