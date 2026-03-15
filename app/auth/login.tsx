@@ -118,7 +118,7 @@ export default function LoginScreen() {
                         </Pressable>
 
                         <Pressable onPress={() => signIn()} style={[styles.link, { marginTop: 24 }]}>
-                            <Text style={[styles.linkText, { color: 'rgba(255,255,255,0.7)', opacity: 0.8 }]}>PROCEED AS GUEST (DEMO MODE)</Text>
+                            <Text style={[styles.linkText, { color: 'rgba(255,255,255,0.9)', opacity: 1.0 }]}>PROCEED AS GUEST (DEMO MODE)</Text>
                         </Pressable>
                     </View>
                 </Animated.View>
