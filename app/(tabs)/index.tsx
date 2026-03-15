@@ -379,7 +379,6 @@ export default function DojoScreen() {
         <GlassCard
           onPress={() => setRoastIndex((roastIndex + 1) % ROASTS.length)}
           style={styles.roastCard}
-          themed
         >
           <View style={styles.roastHeader}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -395,7 +394,6 @@ export default function DojoScreen() {
         <GlassCard
           onPress={() => setQuoteIndex((quoteIndex + 1) % ZANE_QUOTES.length)}
           style={styles.quoteCard}
-          themed
         >
           <View style={styles.quoteHeader}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
