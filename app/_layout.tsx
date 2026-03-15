@@ -126,14 +126,14 @@ function RootLayoutNav() {
       if (!hasCompletedOnboarding && !isOnboarding) {
         router.replace('/auth/onboarding');
       }
-      // 3. If we are anywhere else (Tabs, Settings, etc) and not on Landing, force to Login
-      else if (hasCompletedOnboarding && isTabsGroup) {
+      // 3. If we have finished onboarding but are not logged in, force to login
+      else if (hasCompletedOnboarding && !isLoginOrSignup) {
         router.replace('/auth/login');
       }
     }
     else {
-      // We have a user. If they are in the auth flow or on landing, send to tabs.
-      if (inAuthGroup || (isLandingOrRoot && s0 !== '(tabs)')) {
+      // We have a user. If they are in the auth flow, send to tabs.
+      if (inAuthGroup) {
         router.replace('/(tabs)');
       }
 
