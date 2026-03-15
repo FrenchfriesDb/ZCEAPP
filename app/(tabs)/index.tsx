@@ -104,7 +104,10 @@ const pick8 = (pool: any[]) => [...pool].sort(() => 0.5 - Math.random()).slice(0
 export default function DojoScreen() {
   const { user, completeQuest, resetQuests, recoverStreak, deploySystemBackup } = useUser();
   const timePalette = useTimeColors();
-  const systemColor = timePalette[timePalette.length - 1]; // Use lightest color for glow
+  // Special handling for 9 PM Moon Dust theme - force lavender color
+  const currentHour = new Date().getHours();
+  const isMoonDustTheme = currentHour >= 21 && currentHour < 22; // 9-10 PM
+  const systemColor = isMoonDustTheme ? '#CCB3D1' : timePalette[timePalette.length - 1];
   const xpBarColors = useXPBarColors();
   const [roastIndex, setRoastIndex] = useState(() => Math.floor(Math.random() * ROASTS.length));
   const [quoteIndex, setQuoteIndex] = useState(() => Math.floor(Math.random() * ZANE_QUOTES.length));

@@ -28,8 +28,10 @@ export default function XPBar({ xp }: Props) {
     const palette = useXPBarColors();
     const themeColor = palette[palette.length - 1]; // Use the lightest color for text
     
-    // Fix unreadable text during dark themes by using the lighter color
-    const textColor = themeColor;
+    // Special handling for 9 PM Moon Dust theme - force lavender color
+    const currentHour = new Date().getHours();
+    const isMoonDustTheme = currentHour >= 21 && currentHour < 22; // 9-10 PM
+    const textColor = isMoonDustTheme ? '#CCB3D1' : themeColor;
 
     const [barWidth, setBarWidth] = useState(0);
     const animatedProgress = useRef(new Animated.Value(0)).current;
