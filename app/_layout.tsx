@@ -122,10 +122,10 @@ function RootLayoutNav() {
     console.log('[NAV] User:', user, 'HasCompletedOnboarding:', hasCompletedOnboarding, 'IsOnboarding:', isOnboarding, 'IsLoginOrSignup:', isLoginOrSignup);
     
     if (!user) {
-      // 1. If we are on Login/Signup as standalone screens (not through onboarding), redirect to onboarding
+      // 1. If we are on Login/Signup, check if they came from onboarding
       if (isLoginOrSignup) {
-        console.log('[NAV] Redirecting to onboarding flow...');
-        router.replace('/auth/onboarding');
+        // Allow users to stay on auth pages if they came from onboarding flow
+        // Don't redirect them back to onboarding
         return;
       }
 

@@ -157,13 +157,25 @@ function OptionBtn({ label, icon, selected, onPress }: {
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function OnboardingScreen() {
-    const { setOnboardingData, completeOnboarding } = useUser();
+    const { signUp, signIn, setOnboardingData, onboardingData, completeOnboarding } = useUser();
     const [stage, setStage] = useState(1);
-    const [stageKey, setStageKey] = useState(0);
+    const [stageKey, setStageKey] = useState(1);
     const [mission, setMission] = useState({ level: '', goal: '', commitment: '' });
+    const [pageOp] = useState(new Animated.Value(1));
+    const [pageTy] = useState(new Animated.Value(0));
+    const [gestureX] = useState(new Animated.Value(0));
 
-    const pageOp = useRef(new Animated.Value(1)).current;
-    const pageTy = useRef(new Animated.Value(0)).current;
+    // Auth form states
+    const [name, setName] = useState('');
+    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [loginEmail, setLoginEmail] = useState('');
+    const [loginPassword, setLoginPassword] = useState('');
+    const [authError, setAuthError] = useState('');
+    const [authLoading, setAuthLoading] = useState(false);
+
     const btnGlow = useRef(new Animated.Value(0.7)).current;
     const glowOp = useRef(new Animated.Value(0.4)).current;
     const gestureX = useRef(new Animated.Value(0)).current;
