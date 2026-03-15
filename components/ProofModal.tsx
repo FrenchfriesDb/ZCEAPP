@@ -121,7 +121,7 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                     allowsRecordingIOS: true,
                     playsInSilentModeIOS: true,
                 });
-                const { recording: rec } = await Audio.createAsync(
+                const { recording: rec } = await Audio.Recorder.createAsync(
                     Audio.RecordingOptionsPresets.HIGH_QUALITY
                 );
                 recordingRef.current = rec;
