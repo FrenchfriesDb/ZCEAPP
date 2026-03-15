@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, TextInput, Pressable, KeyboardAvoidingView, Platform, Animated, ScrollView } from 'react-native';
+import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import { router } from 'expo-router';
 import { useState, useRef, useEffect } from 'react';
 import { Fonts, Spacing } from '@/constants/theme';
@@ -11,6 +12,7 @@ export default function LoginScreen() {
     const [error, setError] = useState('');
 
     const fadeAnim = useRef(new Animated.Value(0)).current;
+    const gestureX = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
         Animated.timing(fadeAnim, { toValue: 1, duration: 1000, useNativeDriver: true }).start();
@@ -30,10 +32,22 @@ export default function LoginScreen() {
     };
 
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={{ flex: 1, backgroundColor: '#000000' }}
+        <PanGestureHandler
+            onGestureEvent={Animated.event([{ nativeEvent: { translationX: gestureX } }], { useNativeDriver: false })}
+            onHandlerStateChange={(event) => {
+                if (event.nativeEvent.state === State.END) {
+                    const { translationX } = event.nativeEvent;
+                    // Swipe right (positive translationX) to go back to onboarding
+                    if (translationX > 50) {
+                        router.replace('/auth/onboarding');
+                    }
+                }
+            }}
         >
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                style={{ flex: 1, backgroundColor: '#000000' }}
+            >
             <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
 
             <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
@@ -96,6 +110,7 @@ export default function LoginScreen() {
                 </Animated.View>
             </ScrollView>
         </KeyboardAvoidingView>
+        </PanGestureHandler>
     );
 }
 
