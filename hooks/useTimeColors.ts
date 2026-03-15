@@ -43,7 +43,7 @@ export const useTimeColors = () => {
             else if (time < 19) next = TimeColors.sunset;        // 6–7 PM
             else if (time < 19.5) next = TimeColors.twilight;      // 7–7:30 PM
             else if (time < 20) next = TimeColors.battleGlory;     // 7:30-8 PM
-            else if (time < 20.5) next = TimeColors.plumGlow;    // 8:30 PM
+            else if (time < 20.5) next = ['#000000', '#D46C76'];    // 8:30 PM - dark background with plum UI
             else if (time < 21) next = TimeColors.eveningNavy;     // 8-9 PM
             else if (time < 23) next = ['#00D4FF', '#28B8D5'];    // 9 PM - lighter blue for UI elements
             else if (time < 24) next = TimeColors.voidSpark;    // 10 PM
