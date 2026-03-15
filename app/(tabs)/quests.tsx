@@ -79,7 +79,10 @@ export default function QuestsScreen() {
     const [shuffledQuests, setShuffledQuests] = useState(() => shuffleArray(QUESTS));
 
     const timePalette = useTimeColors();
-    const systemColor = timePalette[0];
+    // Special handling for 9 PM Moon Dust theme - force lavender color
+    const currentHour = new Date().getHours();
+    const isMoonDustTheme = currentHour >= 21 && currentHour < 22; // 9-10 PM
+    const systemColor = isMoonDustTheme ? '#CCB3D1' : timePalette[timePalette.length - 1];
 
     // Reshuffle when batch changes
     useMemo(() => {

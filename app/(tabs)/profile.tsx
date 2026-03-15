@@ -23,7 +23,10 @@ export default function ProfileScreen() {
     // Derived Constants
     const levelInfo = XPConfig.getLevel(user?.xp || 0);
     const timePalette = useTimeColors();
-    const systemColor = timePalette[0];
+    // Special handling for 9 PM Moon Dust theme - force lavender color
+    const currentHour = new Date().getHours();
+    const isMoonDustTheme = currentHour >= 21 && currentHour < 22; // 9-10 PM
+    const systemColor = isMoonDustTheme ? '#CCB3D1' : timePalette[timePalette.length - 1];
 
     if (!user) return (
         <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', gap: 24, padding: 32 }]}>
