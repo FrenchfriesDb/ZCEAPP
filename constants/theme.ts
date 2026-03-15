@@ -90,6 +90,8 @@ export const TimeColors = {
   battleGlory: ['#FC9F32', '#AE1B1E', '#1A2766'],
   // 8 PM — brutalist orange to deep purple
   eveningNavy: ['#EF745C', '#34073D'],
+  // 8:30 PM — Plum Glow
+  plumGlow: ['#3E196E', '#D46C76', '#FFC07C'],
   // 9 PM — Night Dive
   nightDive: ['#020344', '#28B8D5'],
   // 10 PM — Void Spark
