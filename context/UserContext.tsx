@@ -38,7 +38,7 @@ const getRecentLoginError = () => "CRITICAL: Re-authentication Required. For sec
 
 
 // --- DEFAULT STATE ---
-const DEFAULT_USER = {
+const DEFAULT_USER: Partial<UserData> = {
     email: '',
     name: 'Agent 808',
     title: 'Initiate',
@@ -50,20 +50,23 @@ const DEFAULT_USER = {
     previousStreak: 0,
     streakAtRisk: false,
     joinDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-    lastActivityDate: null as string | null,
-    journalLogs: [] as any[],
-    drillLogs: [] as any[],
-    completedQuests: [] as string[],
-    chatLogs: [] as { role: 'user' | 'assistant', content: string, timestamp: string }[],
-    dailyXp: {} as { [date: string]: number },
-    username: '' as string,
-    usernameLastChanged: null as string | null,
-    systemBackups: 1, // Start with one
-    lastBackupMonth: '' as string, // YYYY-MM
+    lastActivityDate: null,
+    journalLogs: [],
+    drillLogs: [],
+    completedQuests: [],
+    chatLogs: [],
+    dailyXp: {},
+    username: '',
+    usernameLastChanged: null,
+    systemBackups: 1,
+    lastBackupMonth: '',
+    socialLevel: 'NPC',
+    primaryMission: 'General',
+    commitment: '30 days',
+    lastDrillDate: null,
 };
 
-// --- TYPES ---
-export interface UserData {
+interface UserData {
     email: string;
     name: string;
     title: string;
@@ -85,6 +88,10 @@ export interface UserData {
     usernameLastChanged: string | null;
     systemBackups: number;
     lastBackupMonth: string;
+    // Onboarding data - saved permanently to profile
+    socialLevel: string; // NPC, Side Character, Lead
+    primaryMission: string; // Social anxiety, Dating, etc.
+    commitment: string; // 30 days, 90 days, Forever
     // Keep backward compat
     lastDrillDate?: string | null;
 }
@@ -196,10 +203,32 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                         // AUTO-INITIALIZE: If they've authenticated but have no data, 
                         // we create a default profile instead of signing them out.
                         console.log('[UserContext] Auto-creating default doc for uid:', firebaseUser.uid);
-                        const defaultData = {
-                            ...DEFAULT_USER,
+                        const defaultData: UserData = {
                             email: firebaseUser.email || 'anonymous',
                             name: firebaseUser.isAnonymous ? 'Guest Agent' : (firebaseUser.displayName || 'Agent ' + firebaseUser.uid.slice(0, 4)),
+                            title: 'Initiate',
+                            bio: 'Reprogramming social instincts.',
+                            level: 0,
+                            xp: 0,
+                            nextLevelXp: 100,
+                            streak: 0,
+                            previousStreak: 0,
+                            streakAtRisk: false,
+                            joinDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+                            lastActivityDate: null,
+                            journalLogs: [],
+                            drillLogs: [],
+                            completedQuests: [],
+                            chatLogs: [],
+                            dailyXp: {},
+                            username: '',
+                            usernameLastChanged: null,
+                            systemBackups: 1,
+                            lastBackupMonth: '',
+                            socialLevel: 'NPC',
+                            primaryMission: 'General',
+                            commitment: '30 days',
+                            lastDrillDate: null,
                         };
                         await setDoc(docRef, defaultData);
                         setUser(defaultData);
@@ -396,15 +425,32 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         try {
             const cred = await createUserWithEmailAndPassword(auth, cleanEmail, password);
             const initialData: UserData = {
-                ...DEFAULT_USER,
                 email: cleanEmail,
                 name: name || 'Agent 808',
                 username: username || name.toLowerCase().replace(/\s+/g, '_').slice(0, 20),
                 usernameLastChanged: new Date().toISOString(),
-                title: onboardingData.level.split(' (')[0],
-                bio: `Mission: ${onboardingData.goal}. Reprogramming social instincts.`,
+                title: onboardingData.level.split(' — ')[0],
+                bio: `Mission: ${onboardingData.goal}. Weakness dies here.`,
                 joinDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
                 lastActivityDate: null,
+                level: 0,
+                xp: 0,
+                nextLevelXp: 100,
+                streak: 0,
+                previousStreak: 0,
+                streakAtRisk: false,
+                journalLogs: [],
+                drillLogs: [],
+                completedQuests: [],
+                chatLogs: [],
+                dailyXp: {},
+                systemBackups: 1,
+                lastBackupMonth: '',
+                // Save onboarding data permanently to profile
+                socialLevel: onboardingData.level,
+                primaryMission: onboardingData.goal,
+                commitment: onboardingData.commitment,
+                lastDrillDate: null,
             };
             await setDoc(doc(db, 'users', cred.user.uid), initialData);
             setUser(initialData);
