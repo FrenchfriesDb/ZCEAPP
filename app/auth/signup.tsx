@@ -130,9 +130,11 @@ export default function SignupScreen() {
             onHandlerStateChange={(event) => {
                 if (event.nativeEvent.state === State.END) {
                     const { translationX } = event.nativeEvent;
-                    // Swipe right (positive translationX) to go back to onboarding
-                    if (translationX > 50) {
-                        router.replace('/auth/onboarding');
+                    console.log('[SIGNUP SWIPE] translationX:', translationX);
+                    // Swipe right (positive translationX) to go back
+                    if (translationX > 30) {
+                        console.log('[SIGNUP SWIPE] Going back...');
+                        router.back();
                     }
                 }
             }}
