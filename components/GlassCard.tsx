@@ -73,7 +73,7 @@ export default function GlassCard({
                 style,
             ]}
         >
-            <BlurView intensity={blurIntensity} tint="dark" style={StyleSheet.absoluteFill} />
+            <BlurView intensity={blurIntensity} tint="dark" style={[StyleSheet.absoluteFill, { borderRadius: 16 }]} />
             <View style={[styles.content, noPadding && { padding: 0 }]}>
                 {/* Shine gradient across top edge */}
                 <LinearGradient
