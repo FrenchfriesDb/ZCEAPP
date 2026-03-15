@@ -90,7 +90,7 @@ export default function QuestsScreen() {
         const b = parseInt(hex.slice(5, 7), 16);
         return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     };
-    const glowColor = hexToRgba(systemColor, 0.8);
+    const glowColor = hexToRgba(systemColor, 1.0);
 
     // Reshuffle when batch changes
     useMemo(() => {
@@ -167,7 +167,7 @@ export default function QuestsScreen() {
                         <Text style={[styles.heroNumber, { 
                             textShadowColor: glowColor,
                             textShadowOffset: { width: 0, height: 0 },
-                            textShadowRadius: 15
+                            textShadowRadius: 40
                         }]}>{completedCount}</Text>
                         <Text style={[styles.heroUnit, { color: systemColor }]}>OF {visibleQuests.length} QUESTS</Text>
                     </View>
