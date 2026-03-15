@@ -7,6 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { UserProvider, useUser } from '@/context/UserContext';
+import CustomSplashScreen from '@/components/SplashScreen';
 import {
   Poppins_500Medium,
   Poppins_600SemiBold,
@@ -238,6 +239,11 @@ function RootLayoutNav() {
   const { user, isLoading, hasCompletedOnboarding } = useUser();
   const segments = useSegments();
   const router = useRouter();
+  const [showSplash, setShowSplash] = useState(true);
+
+  const handleSplashFinish = () => {
+    setShowSplash(false);
+  };
 
   useEffect(() => {
     if (isLoading) return;
@@ -248,8 +254,6 @@ function RootLayoutNav() {
     const inAuthGroup = s0 === 'auth';
     const isOnboarding = inAuthGroup && s1 === 'onboarding';
     const isLoginOrSignup = inAuthGroup && (s1 === 'login' || s1 === 'signup');
-    const isTabsGroup = s0 === '(tabs)';
-    const isLandingOrRoot = !s0 || s0 === 'landing' || s0 === 'index';
 
     // --- NAVIGATION LOGIC ---
     console.log('[NAV] User:', user, 'HasCompletedOnboarding:', hasCompletedOnboarding, 'IsOnboarding:', isOnboarding, 'IsLoginOrSignup:', isLoginOrSignup);
@@ -280,7 +284,11 @@ function RootLayoutNav() {
         router.replace('/(tabs)');
       }
     }
-  }, [user, isLoading, segments, hasCompletedOnboarding]);
+  }, [user, isLoading, segments, hasCompletedOnboarding, router]);
+
+  if (showSplash) {
+    return <CustomSplashScreen onFinish={handleSplashFinish} />;
+  }
 
   if (isLoading) {
     return <LoadingScreen />;
@@ -325,7 +333,7 @@ export default function RootLayout() {
   }, []);
 
   if (!fontsLoaded) {
-    return <LoadingScreen />;
+    return <CustomSplashScreen onFinish={() => {}} />;
   }
 
   return (
