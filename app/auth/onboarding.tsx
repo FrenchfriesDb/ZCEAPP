@@ -8,6 +8,7 @@ import { router, useFocusEffect } from 'expo-router';
 import Svg, { Path, G, Circle, Line, Defs, LinearGradient as SvgGrad, Stop } from 'react-native-svg';
 import { Colors, Fonts } from '@/constants/theme';
 import { useUser } from '@/context/UserContext';
+import SwipeSlider from '@/components/SwipeSlider';
 
 const { width: W, height: H } = Dimensions.get('window');
 const CYAN = '#333333';
@@ -488,12 +489,12 @@ export default function OnboardingScreen() {
                                 <TerminalLine text="> Miss a day = streak dies." delay={2800} color="rgba(255,255,255,0.6)" />
                                 <TerminalLine text="> Welcome to the Engine." delay={3500} color="#FFFFFF" />
                             </View>
-                            <Pressable onPress={handleNext} style={({ pressed }) => [styles.ctaBtn, pressed && styles.ctaBtnPressed]}>
-                                <View style={styles.ctaInner}>
-                                    <Text style={styles.ctaText}>ENTER THE ENGINE</Text>
-                                    <Text style={styles.ctaArrow}>→</Text>
-                                </View>
-                            </Pressable>
+                            <SwipeSlider 
+                                onSwipeComplete={handleNext}
+                                label="SLIDE TO ENTER THE ENGINE →"
+                                width={320}
+                                height={60}
+                            />
                         </View>
                         </ScrollView>
                     )}
