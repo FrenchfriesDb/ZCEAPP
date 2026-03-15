@@ -90,7 +90,7 @@ export default function QuestsScreen() {
         const b = parseInt(hex.slice(5, 7), 16);
         return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     };
-    const glowColor = hexToRgba(systemColor, 0.4);
+    const glowColor = hexToRgba(systemColor, 0.8);
 
     // Reshuffle when batch changes
     useMemo(() => {
@@ -164,7 +164,11 @@ export default function QuestsScreen() {
             <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 <View style={styles.heroSection}>
                     <View style={styles.heroProgressWrapper}>
-                        <Text style={[styles.heroNumber, { textShadowColor: glowColor }]}>{completedCount}</Text>
+                        <Text style={[styles.heroNumber, { 
+                            textShadowColor: glowColor,
+                            textShadowOffset: { width: 0, height: 0 },
+                            textShadowRadius: 15
+                        }]}>{completedCount}</Text>
                         <Text style={[styles.heroUnit, { color: systemColor }]}>OF {visibleQuests.length} QUESTS</Text>
                     </View>
                     <Text style={styles.welcomeText}>

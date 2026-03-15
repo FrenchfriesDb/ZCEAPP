@@ -115,7 +115,7 @@ export default function DojoScreen() {
     const b = parseInt(hex.slice(5, 7), 16);
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   };
-  const glowColor = hexToRgba(systemColor, 0.4);
+  const glowColor = hexToRgba(systemColor, 0.8);
   const xpBarColors = useXPBarColors();
   const [roastIndex, setRoastIndex] = useState(() => Math.floor(Math.random() * ROASTS.length));
   const [quoteIndex, setQuoteIndex] = useState(() => Math.floor(Math.random() * ZANE_QUOTES.length));
@@ -319,7 +319,11 @@ export default function DojoScreen() {
           <View style={styles.heroStreakWrapper}>
             <Text style={[
               styles.heroNumber,
-              { textShadowColor: glowColor },
+              { 
+                textShadowColor: glowColor,
+                textShadowOffset: { width: 0, height: 0 },
+                textShadowRadius: 15
+              },
               (user?.streakAtRisk && streakCount > 0) && { color: Colors.accentDanger }
             ]}>
               {streakCount}
