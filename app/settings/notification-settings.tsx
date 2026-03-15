@@ -75,7 +75,9 @@ export default function NotificationSettingsScreen() {
     const [saved, setSaved] = useState(false);
 
     useEffect(() => {
-        loadNotifSettings().then(setSettings);
+        loadNotifSettings().then(loaded => {
+            if (loaded) setSettings(loaded);
+        });
     }, []);
 
     const toggle = async (key: keyof NotifSettings) => {
@@ -160,7 +162,7 @@ export default function NotificationSettingsScreen() {
                             <View style={styles.rowText}>
                                 <Text style={[
                                     styles.rowTitle,
-                                    !settings[item.key] && styles.rowTitleOff
+                                    !settings?.[item.key] && styles.rowTitleOff
                                 ]}>
                                     {item.title}
                                 </Text>
@@ -171,10 +173,10 @@ export default function NotificationSettingsScreen() {
                             </View>
                         </View>
                         <Switch
-                            value={settings[item.key]}
+                            value={settings?.[item.key] ?? false}
                             onValueChange={() => toggle(item.key)}
                             trackColor={{ false: 'rgba(255,255,255,0.08)', true: systemColor + '55' }}
-                            thumbColor={settings[item.key] ? systemColor : 'rgba(255,255,255,0.3)'}
+                            thumbColor={settings?.[item.key] ? systemColor : 'rgba(255,255,255,0.3)'}
                             ios_backgroundColor="rgba(255,255,255,0.08)"
                         />
                     </Pressable>
