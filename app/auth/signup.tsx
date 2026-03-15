@@ -308,6 +308,10 @@ export default function SignupScreen() {
                         <Text style={[styles.loginLinkText, styles.loginLinkAccent]}>LOG IN →</Text>
                     </Pressable>
 
+                    <Pressable onPress={() => router.replace('/(tabs)')} style={styles.npcLink}>
+                        <Text style={styles.npcLinkText}>PROCEED AS NPC</Text>
+                    </Pressable>
+
                 </Animated.View>
             </ScrollView>
         </KeyboardAvoidingView>
@@ -443,4 +447,6 @@ const styles = StyleSheet.create({
     loginLink: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
     loginLinkText: { fontFamily: Fonts.mono, fontSize: 10, color: 'rgba(255,255,255,0.4)', letterSpacing: 1 },
     loginLinkAccent: { color: '#FFFFFF' },
+    npcLink: { alignSelf: 'center', marginTop: 8, opacity: 0.3 },
+    npcLinkText: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.2)', letterSpacing: 1, textDecorationLine: 'underline' },
 });

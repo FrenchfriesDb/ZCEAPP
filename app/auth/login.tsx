@@ -116,10 +116,6 @@ export default function LoginScreen() {
                         <Pressable onPress={() => router.push('/auth/signup')} style={styles.link}>
                             <Text style={styles.linkText}>INITIATE NEW PROTOCOL (SIGN UP)</Text>
                         </Pressable>
-
-                        <Pressable onPress={() => signIn()} style={[styles.link, { marginTop: 24 }]}>
-                            <Text style={[styles.linkText, { color: 'rgba(255,255,255,0.9)', opacity: 1.0 }]}>PROCEED AS GUEST (DEMO MODE)</Text>
-                        </Pressable>
                     </View>
                 </Animated.View>
             </ScrollView>
