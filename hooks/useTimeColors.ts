@@ -16,7 +16,7 @@ import { TimeColors } from '@/constants/theme';
  *   sunset        18–19:59  — fiery (#FF0F7B → #F89B29)
  *   twilight      19–19:59  — pink-cyan (7–8 PM) (#FF1B6B → #45CAFF)
  *   eveningNavy   20–20:59  — 8-8:30 PM (#9BAFD9 → #103783)
- *   nightDive     21–21:59  — 8:30-9 PM Night Dive
+ *   nightDive     21–21:59  — 8:30-9 PM Moon Dust
  *   voidSpark     22–22:59  — 9-10 PM Void Spark
  *   midnightMist  23–23:59  — 10-11 PM Midnight Mist
  */

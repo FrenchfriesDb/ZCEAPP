@@ -92,8 +92,8 @@ export const TimeColors = {
   eveningNavy: ['#EF745C', '#34073D'],
   // 8:30 PM — Plum Glow
   plumGlow: ['#3E196E', '#D46C76', '#FFC07C'],
-  // 9 PM — Night Dive
-  nightDive: ['#020344', '#28B8D5'],
+  // 9 PM — Moon Dust
+  nightDive: ['#22052D', '#CCB3D1'],
   // 10 PM — Void Spark
   voidSpark: ['#000328', '#00458E'],
   // 11 PM — Midnight Mist
