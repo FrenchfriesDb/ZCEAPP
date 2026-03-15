@@ -1,7 +1,8 @@
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Animated, Platform } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
@@ -190,9 +191,11 @@ export default function RootLayout() {
   }
 
   return (
-    <UserProvider>
-      <RootLayoutNav />
-      <StatusBar style="light" />
-    </UserProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <UserProvider>
+        <RootLayoutNav />
+        <StatusBar style="light" />
+      </UserProvider>
+    </GestureHandlerRootView>
   );
 }
