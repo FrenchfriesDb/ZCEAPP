@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import {
     View, Text, StyleSheet, Modal, TextInput, Pressable,
-    Image, Alert, ScrollView, Platform, ActionSheetIOS,
+    Animated, Image, Alert, ScrollView, Platform, ActionSheetIOS,
     KeyboardAvoidingView
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
-import { Colors, Fonts, Radius } from '@/constants/theme';
-import { useTimeColors } from '@/hooks/useTimeColors';
+import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
 import GlassButton from './GlassButton';
 
 interface ProofModalProps {
@@ -19,9 +18,7 @@ interface ProofModalProps {
 
 export default function ProofModal({ visible, onClose, onComplete, questTitle }: ProofModalProps) {
     const [textProof, setTextProof] = useState('');
-    const [photoUri, setPhotoUri] = useState<string | undefined>(undefined);
-    const timePalette = useTimeColors();
-    const systemColor = timePalette[timePalette.length - 1];
+    const [photoUri, setPhotoUri] = useState<string | null>(null);
 
     const handleSubmit = () => {
         if (!textProof && !photoUri) {
@@ -30,7 +27,7 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
         }
         onComplete({ textProof, photoUri });
         setTextProof('');
-        setPhotoUri(undefined);
+        setPhotoUri(null);
         onClose();
     };
 
@@ -38,13 +35,12 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
         if (Platform.OS === 'ios') {
             ActionSheetIOS.showActionSheetWithOptions(
                 {
-                    title: 'PHOTO PROOF',
-                    options: ['Cancel', '📷  Take Photo', '🖼️  Choose from Library'],
-                    cancelButtonIndex: 0,
+                    options: ['Take Photo', 'Choose from Library', 'Cancel'],
+                    cancelButtonIndex: 2,
                 },
                 (buttonIndex) => {
-                    if (buttonIndex === 1) takePhoto();
-                    else if (buttonIndex === 2) pickImage();
+                    if (buttonIndex === 0) takePhoto();
+                    else if (buttonIndex === 1) pickImage();
                 }
             );
         } else {
@@ -133,11 +129,18 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                             </View>
                         </ScrollView>
 
-                        <View style={styles.footer}>
-                            <Pressable onPress={onClose} style={styles.cancelBtn}>
-                                <Text style={styles.cancelText}>ABANDON</Text>
-                            </Pressable>
-                            <GlassButton label="VERIFY & COMPLETE" onPress={handleSubmit} tint={systemColor as any} size="md" glow />
+                        <View style={styles.modalActions}>
+                            <GlassButton
+                                title="CANCEL"
+                                onPress={onClose}
+                                style={styles.cancelButton}
+                                textStyle={styles.cancelText}
+                            />
+                            <GlassButton
+                                title="SUBMIT PROOF"
+                                onPress={handleSubmit}
+                                style={styles.submitButton}
+                            />
                         </View>
                     </View>
                 </KeyboardAvoidingView>
@@ -252,25 +255,21 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         letterSpacing: 1,
     },
-    footer: {
+    modalActions: {
         flexDirection: 'row',
         gap: 12,
         marginTop: 20,
     },
-    cancelBtn: {
+    cancelButton: {
         flex: 1,
         backgroundColor: 'transparent',
         borderWidth: 1,
         borderColor: Colors.borderGlass,
-        padding: 12,
-        borderRadius: Radius.md,
-        alignItems: 'center',
-        justifyContent: 'center',
     },
     cancelText: {
-        fontFamily: Fonts.monoBold,
-        fontSize: 14,
         color: Colors.textSecondary,
-        letterSpacing: 1,
+    },
+    submitButton: {
+        flex: 2,
     },
 });

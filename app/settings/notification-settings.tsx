@@ -70,7 +70,8 @@ const NOTIFICATION_ITEMS: {
 
 export default function NotificationSettingsScreen() {
     const timePalette = useTimeColors();
-    const systemColor = timePalette[0];
+    // Use the lightest color for text visibility on dark themes
+    const systemColor = timePalette[timePalette.length - 1];
     const [settings, setSettings] = useState<NotifSettings>(DEFAULT_SETTINGS);
     const [saved, setSaved] = useState(false);
 

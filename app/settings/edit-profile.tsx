@@ -26,7 +26,8 @@ const ICONS = {
 export default function EditProfileScreen() {
     const { user, updateProfile, signOut, changeEmail, changePassword, deleteAccount, resetProgress, changeUsername } = useUser();
     const timePalette = useTimeColors();
-    const systemColor = timePalette[0];
+    // Use the lightest color in the palette for text (last index) to ensure visibility on ALL themes including dark ones
+    const systemColor = timePalette[timePalette.length - 1];
 
     // Form state
     const [name, setName] = useState(user?.name || '');
@@ -49,7 +50,7 @@ export default function EditProfileScreen() {
     const [tempTitle, setTempTitle] = useState(title);
     const [tempBio, setTempBio] = useState(bio);
     const [tempName, setTempName] = useState(name);
-    
+
     const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/;
 
     const handleSave = async () => {
@@ -246,24 +247,24 @@ export default function EditProfileScreen() {
     };
 
     // Row component for consistent styling
-    const SettingRow = ({ 
-        icon, 
-        label, 
-        value, 
-        onPress, 
+    const SettingRow = ({
+        icon,
+        label,
+        value,
+        onPress,
         isLast = false,
         valueColor = 'rgba(255,255,255,0.6)',
         danger = false
-    }: { 
-        icon: string; 
-        label: string; 
-        value?: string; 
+    }: {
+        icon: string;
+        label: string;
+        value?: string;
         onPress?: () => void;
         isLast?: boolean;
         valueColor?: string;
         danger?: boolean;
     }) => (
-        <Pressable 
+        <Pressable
             onPress={onPress}
             style={[styles.row, !isLast && styles.rowWithDivider]}
         >
@@ -271,8 +272,8 @@ export default function EditProfileScreen() {
             <Text style={[styles.rowLabel, danger && styles.dangerText]}>{label}</Text>
             <View style={styles.rowRight}>
                 {value && (
-                    <Text 
-                        style={[styles.rowValue, { color: valueColor }, danger && styles.dangerText]} 
+                    <Text
+                        style={[styles.rowValue, { color: valueColor }, danger && styles.dangerText]}
                         numberOfLines={1}
                     >
                         {value}
@@ -307,7 +308,7 @@ export default function EditProfileScreen() {
             </View>
 
             <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-                
+
                 {/* SECTION 1 — AGENT PROFILE */}
                 <SectionCard title="AGENT PROFILE">
                     {/* Row 1: Designation and Bio */}
@@ -331,7 +332,7 @@ export default function EditProfileScreen() {
                         }}
                         valueColor={bio ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.3)'}
                     />
-                    
+
                     {/* Row 2: Codename */}
                     <SettingRow
                         icon={ICONS.codename}
@@ -342,7 +343,7 @@ export default function EditProfileScreen() {
                             setCodenameModalVisible(true);
                         }}
                     />
-                    
+
                     {/* Row 3: Username */}
                     <SettingRow
                         icon={ICONS.username}
@@ -351,7 +352,7 @@ export default function EditProfileScreen() {
                         onPress={() => setUsernameModalVisible(true)}
                         valueColor={user?.username ? systemColor : 'rgba(255,255,255,0.3)'}
                     />
-                    
+
                     {/* Row 4: Email */}
                     <SettingRow
                         icon={ICONS.email}
@@ -360,7 +361,7 @@ export default function EditProfileScreen() {
                         onPress={() => setEmailModalVisible(true)}
                         valueColor="rgba(255,255,255,0.4)"
                     />
-                    
+
                     {/* Password - separate row */}
                     <SettingRow
                         icon={ICONS.password}
@@ -432,12 +433,12 @@ export default function EditProfileScreen() {
                     <View style={styles.modalCard}>
                         <Text style={styles.modalTitle}>CHANGE USERNAME</Text>
                         <Text style={styles.modalSubtitle}>30-day cooldown after changing. Choose wisely.</Text>
-                        
+
                         <View style={styles.currentValueRow}>
                             <Text style={styles.currentValueLabel}>CURRENT:</Text>
                             <Text style={styles.currentValue}>@{user?.username || 'not set'}</Text>
                         </View>
-                        
+
                         <TextInput
                             style={styles.modalInput}
                             value={newUsername}
@@ -448,7 +449,7 @@ export default function EditProfileScreen() {
                             autoCorrect={false}
                         />
                         {!!usernameError && <Text style={styles.modalError}>{usernameError}</Text>}
-                        
+
                         <View style={styles.modalActions}>
                             <Pressable onPress={() => setUsernameModalVisible(false)} style={styles.modalCancel}>
                                 <Text style={styles.modalCancelText}>CANCEL</Text>
@@ -472,12 +473,12 @@ export default function EditProfileScreen() {
                 <View style={styles.modalBg}>
                     <View style={styles.modalCard}>
                         <Text style={styles.modalTitle}>UPDATE EMAIL</Text>
-                        
+
                         <View style={styles.currentValueRow}>
                             <Text style={styles.currentValueLabel}>CURRENT:</Text>
                             <Text style={styles.currentValue}>{user?.email}</Text>
                         </View>
-                        
+
                         <TextInput
                             style={styles.modalInput}
                             value={newEmail}
@@ -487,7 +488,7 @@ export default function EditProfileScreen() {
                             autoCapitalize="none"
                             keyboardType="email-address"
                         />
-                        
+
                         <View style={styles.modalActions}>
                             <Pressable onPress={() => setEmailModalVisible(false)} style={styles.modalCancel}>
                                 <Text style={styles.modalCancelText}>CANCEL</Text>
@@ -512,7 +513,7 @@ export default function EditProfileScreen() {
                     <View style={styles.modalCard}>
                         <Text style={styles.modalTitle}>UPDATE ACCESS CODE</Text>
                         <Text style={styles.modalSubtitle}>Protected by access code verification</Text>
-                        
+
                         <TextInput
                             style={styles.modalInput}
                             value={newPassword}
@@ -521,7 +522,7 @@ export default function EditProfileScreen() {
                             placeholderTextColor="rgba(255,255,255,0.3)"
                             secureTextEntry
                         />
-                        
+
                         <View style={styles.modalActions}>
                             <Pressable onPress={() => setPasswordModalVisible(false)} style={styles.modalCancel}>
                                 <Text style={styles.modalCancelText}>CANCEL</Text>
@@ -546,7 +547,7 @@ export default function EditProfileScreen() {
                     <View style={styles.modalCard}>
                         <Text style={styles.modalTitle}>EDIT DESIGNATION</Text>
                         <Text style={styles.modalSubtitle}>Your professional title or role</Text>
-                        
+
                         <TextInput
                             style={styles.modalInput}
                             value={tempTitle}
@@ -555,7 +556,7 @@ export default function EditProfileScreen() {
                             placeholderTextColor="rgba(255,255,255,0.3)"
                             autoCapitalize="words"
                         />
-                        
+
                         <View style={styles.modalActions}>
                             <Pressable onPress={() => setDesignationModalVisible(false)} style={styles.modalCancel}>
                                 <Text style={styles.modalCancelText}>CANCEL</Text>
@@ -581,7 +582,7 @@ export default function EditProfileScreen() {
                     <View style={styles.modalCard}>
                         <Text style={styles.modalTitle}>EDIT MISSION STATEMENT</Text>
                         <Text style={styles.modalSubtitle}>Your personal mission or bio</Text>
-                        
+
                         <TextInput
                             style={[styles.modalInput, { height: 120, textAlignVertical: 'top', paddingTop: 16 }]}
                             value={tempBio}
@@ -591,7 +592,7 @@ export default function EditProfileScreen() {
                             multiline
                             numberOfLines={4}
                         />
-                        
+
                         <View style={styles.modalActions}>
                             <Pressable onPress={() => setBioModalVisible(false)} style={styles.modalCancel}>
                                 <Text style={styles.modalCancelText}>CANCEL</Text>
@@ -617,7 +618,7 @@ export default function EditProfileScreen() {
                     <View style={styles.modalCard}>
                         <Text style={styles.modalTitle}>EDIT CODENAME</Text>
                         <Text style={styles.modalSubtitle}>Your display name</Text>
-                        
+
                         <TextInput
                             style={styles.modalInput}
                             value={tempName}
@@ -626,7 +627,7 @@ export default function EditProfileScreen() {
                             placeholderTextColor="rgba(255,255,255,0.3)"
                             autoCapitalize="words"
                         />
-                        
+
                         <View style={styles.modalActions}>
                             <Pressable onPress={() => setCodenameModalVisible(false)} style={styles.modalCancel}>
                                 <Text style={styles.modalCancelText}>CANCEL</Text>
@@ -753,7 +754,7 @@ const styles = StyleSheet.create({
     dangerText: {
         color: '#FF3B30',
     },
-    
+
     // Modal styles
     modalBg: {
         flex: 1,
