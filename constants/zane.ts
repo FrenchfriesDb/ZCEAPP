@@ -13,14 +13,23 @@ export const SUCCESS_MESSAGES = [
     "Zane says: **NO APOLOGY.** You spoke, and you didn't backtrack. That is certainty.",
     "Zane says: Solid delivery. You didn't choke on the tension. Now increase the wit. Next round.",
     "Zane says: Effortless. You used the environment, not just your words. Good flow.",
-    "Zane says: That was a counterpunch. Fast, clean, and delivered with intent. Go again."
+    "Zane says: That was a counterpunch. Fast, clean, and delivered with intent. Go again.",
+    "Zane says: You moved like you knew the ending before it started. That's pre-certainty.",
+    "Zane says: Dangerous. You're starting to look comfortable under pressure. Keep going.",
+    "Zane says: They didn't see that coming. You're building unpredictability. Weaponize it.",
+    "Zane says: No stutter, no filler, just signal. Your communication is getting lean.",
+    "Zane says: You spoke like you were already winning. That's the energy that closes rooms."
 ];
 
 export const FAILURE_MESSAGES = [
     "Zane says: Time ran out, Pretty. You froze. The moment is gone. Next round.",
     "Zane says: That was a failure. You hesitated. Hesitation is weakness. Next.",
     "Zane says: Slow. Your brain is buffering. Get out of your head. Next round.",
-    "Zane says: No response. You earned silence. Let’s try that again."
+    "Zane says: No response. You earned silence. Let's try that again.",
+    "Zane says: You choked. The doubt got in before the words did. Weak.",
+    "Zane says: Frozen. The pressure won. You let the clock own you. Again.",
+    "Zane says: Silence isn't power when it's forced. You ran out of time.",
+    "Zane says: Overthinking killed your speed. Analysis paralysis. Again."
 ];
 
 export const SPEED_PROMPTS = [
@@ -74,7 +83,10 @@ export const LINK_WORDS = [
     'Mirror', 'Sunset', 'Shoes', 'Traffic', 'Cookies', 'Friend', 'Camera', 'Gym',
     'Gravity', 'Volcano', 'Suitcase', 'Lightning', 'Elephant', 'Shadow', 'Clock', 'Radio',
     'Forest', 'Island', 'Submarine', 'Balloon', 'Dinosaur', 'Magnet', 'Telescope', 'Map',
-    'Key', 'Iceberg', 'Bridge', 'Fountain', 'Galaxy', 'Anchor', 'Compass', 'Whistle'
+    'Key', 'Iceberg', 'Bridge', 'Fountain', 'Galaxy', 'Anchor', 'Compass', 'Whistle',
+    'Algorithm', 'Blockchain', 'Neuron', 'Quantum', 'Algorithm', 'Catalyst', 'Paradox', 'Vortex',
+    'Nebula', 'Chaos', 'Symphony', 'Metaphor', 'Anomaly', 'Epiphany', 'Eclipse', 'Horizon',
+    'Zenith', 'Abyss', 'Velocity', 'Friction', 'Momentum', 'Tension', 'Resonance', 'Vector'
 ];
 
 export const FLIP_PROMPTS = [
@@ -85,7 +97,23 @@ export const FLIP_PROMPTS = [
     "Someone questions your intelligence",
     "Someone says: 'You must have no life if you have time for that.'",
     "Someone says: 'That's a weird hobby.'",
-    "Someone asks: 'Do you even go outside?'"
+    "Someone asks: 'Do you even go outside?'",
+    "Someone says: 'You're trying too hard.'",
+    "Someone says: 'You're not that special.'",
+    "Someone says: 'Who do you think you are?'",
+    "Someone says: 'You're always so serious.'",
+    "Someone says: 'You think you're better than everyone else?'",
+    "Someone says: 'You're embarrassing yourself.'",
+    "Someone says: 'Nobody cares what you think.'",
+    "Someone says: 'You're not as smart as you think.'",
+    "Someone says: 'You're just seeking attention.'",
+    "Someone says: 'You failed last time, why try again?'",
+    "Someone says: 'You're too intense.'",
+    "Someone says: 'Calm down, it's not that deep.'",
+    "Someone says: 'You're being awkward right now.'",
+    "Someone says: 'Why are you dressed like that?'",
+    "Someone says: 'You're not funny.'",
+    "Someone says: 'You always make everything about you.'"
 ];
 
 export const LINK_DRILL_RESPONSES = {
@@ -94,18 +122,26 @@ export const LINK_DRILL_RESPONSES = {
         "Link established. Your brain is learning to bridge the unrelated. Keep burning these pathways.",
         "Solid. You didn't choke when the words made no sense. That's the muscle growing.",
         "Unexpected. That connection had teeth. You're learning to think in webs, not lines.",
-        "Clean link. No hesitation, no 'ums,' just flow. That's the version of you that wins rooms."
+        "Clean link. No hesitation, no 'ums,' just flow. That's the version of you that wins rooms.",
+        "Creative leap. You found a thread where others see void. That's rare.",
+        "Lateral master. Your brain moved sideways when everyone else is stuck in straight lines.",
+        "Bridge built. Two islands, one connection. You're becoming architect of thought."
     ],
     failure: [
         "Broken link. You saw two words and your brain filed for bankruptcy. Try again.",
         "No connection. Your neurons just stood there staring at each other. Awkward.",
         "Failed bridge. Two words, zero creativity. I've seen NPCs with better lateral thinking.",
-        "Link aborted. You froze when things didn't make immediate sense. That's the old you winning."
+        "Link aborted. You froze when things didn't make immediate sense. That's the old you winning.",
+        "Disconnected. The words were strangers and you kept them that way. Coward.",
+        "Creative void. Nothing. You looked at two words and saw a wall instead of a door.",
+        "Neural flatline. Your brain took a nap when it should have made magic."
     ],
     roast: [
         "Those words have more chemistry than you just showed. Log it again or stay average.",
         "Your brain gave up faster than a new gym membership. Connect the dots or keep hiding.",
-        "That link was weaker than your excuses. Try again before I tell the leaderboard."
+        "That link was weaker than your excuses. Try again before I tell the leaderboard.",
+        "Two words, zero insight. I've seen rocks with more connective tissue.",
+        "You couldn't link 'water' and 'wet.' Go back to NPC academy."
     ]
 };
 
@@ -115,18 +151,26 @@ export const FLIP_FORMULA_RESPONSES = {
         "Reframed. The energy shifted when you spoke. You didn't defend—you dominated.",
         "Clean flip. No anger, no explanation, just control. That's the language of leaders.",
         "Owned it. You turned their weapon into your accessory. Rare. Valuable.",
-        "Masterful. The flip landed because you didn't try too hard. Effortless dominance."
+        "Masterful. The flip landed because you didn't try too hard. Effortless dominance.",
+        "Frame seized. You didn't just deflect—you redirected the entire conversation.",
+        "Power captured. Their negative became your fuel. That's social judo at elite level.",
+        "Alchemy complete. Lead to gold, insult to advantage. You changed the game."
     ],
     failure: [
         "Flop. You tried to flip and face-planted. That's what overthinking gets you.",
         "No flip. You either got defensive or stayed silent. Both are losses.",
         "Missed frame. Their insult landed because you didn't catch it. Soft hands lose.",
-        "Weak sauce. That flip had no bite. I've seen apologies with more backbone."
+        "Weak sauce. That flip had no bite. I've seen apologies with more backbone.",
+        "Defensive much? You explained yourself like you're guilty. Guilty of what? Nothing.",
+        "Frame lost. They threw a punch and you took it. No counter, no control.",
+        "Silence isn't always golden. Sometimes it's just surrender. You surrendered."
     ],
     roast: [
         "That flip folded like a lawn chair. Log 3 power flips tomorrow or I roast you publicly.",
         "You let their frame win. Your future self is watching you take the L. Again.",
-        "Flipped? More like flopped. The leaderboard just moved you down a slot."
+        "Flipped? More like flopped. The leaderboard just moved you down a slot.",
+        "You couldn't flip a pancake. Their insult landed harder than your response.",
+        "Frame? You don't have one. You're just reacting to theirs like a puppet."
     ]
 };
 
@@ -136,18 +180,26 @@ export const RESPONSE_SPEED_RESPONSES = {
         "Fast. No buffer, no stutter, just delivery. Your nervous system is learning.",
         "Sharp. The clock didn't own you—you owned the clock. High-status speed.",
         "Immediate. You answered like you expected the question. Confidence without thought.",
-        "Reflex. That wasn't prepared; that was present. You're becoming unplayable."
+        "Reflex. That wasn't prepared; that was present. You're becoming unplayable.",
+        "Pre-loaded. You answered like you knew they were going to ask. Psychic speed.",
+        "Zero lag. Your mouth moved at the speed of thought. No filter, all flow.",
+        "First impulse. No editing, no hesitation. Raw, fast, dominant."
     ],
     failure: [
         "Time's up. You hesitated. Hesitation is weakness wearing a mask of caution.",
         "Too slow. Your brain is still buffering while life is playing in 4K.",
         "Frozen. 4 seconds of silence is a lifetime of low status. Move faster.",
-        "Stalled. You let the pressure cook you instead of channeling it. Soft."
+        "Stalled. You let the pressure cook you instead of channeling it. Soft.",
+        "Buffering. I could've streamed a movie in the time you took to respond.",
+        "Analysis paralysis. You thought yourself into a corner. Again.",
+        "Doubt won. The hesitation showed everyone you're not sure of yourself."
     ],
     roast: [
         "You needed 4 seconds to process that? I've seen calculators with faster response times.",
         "Tick tock. Your streak is dying while you're 'thinking.' Execute or evaporate.",
-        "Slow is smooth? No. Slow is dead. Your social skills are on life support."
+        "Slow is smooth? No. Slow is dead. Your social skills are on life support.",
+        "4 seconds? By then, someone else already owned the room. You watched.",
+        "Your brain runs on dial-up. Everyone else is on fiber. Catch up."
     ]
 };
 
@@ -157,18 +209,26 @@ export const MIRROR_DRILL_RESPONSES = {
         "Matched. You entered their world and brought them into yours. Seamless.",
         "Sync achieved. The mimicry was invisible because you made it yours. Artful.",
         "Shadow dance. You moved with them, then led. That's the flip from follow to command.",
-        "Reflected power. You showed them themselves, then showed them better."
+        "Reflected power. You showed them themselves, then showed them better.",
+        "Echo mastered. You bounced their energy back amplified. They're now following you.",
+        "Chameleon elite. You adapted without disappearing. Still you, just synced.",
+        "Rapport hacked. You spoke their language, then taught them yours."
     ],
     failure: [
         "Broken mirror. You either copied like a parrot or didn't sync at all. Cringe.",
         "No reflection. They moved, you stood still. Static is low status.",
         "Awkward mimic. Your mirror had a delay. That's not mirroring—that's lagging.",
-        "Failed sync. You couldn't match their energy if you had a instruction manual."
+        "Failed sync. You couldn't match their energy if you had a instruction manual.",
+        "Parrot mode. You copied but didn't understand. Surface level, zero depth.",
+        "Ghost mirror. You tried to reflect but became invisible instead.",
+        "Energy clash. Your attempt to match just created static. Uncomfortable."
     ],
     roast: [
         "That mirror was cracked. You're reflecting insecurity, not confidence. Fix it.",
         "You mimicked like a bad karaoke singer. Off-key and embarrassing. Again.",
-        "Mirror broken. Seven years of bad social skills ahead unless you log this again."
+        "Mirror broken. Seven years of bad social skills ahead unless you log this again.",
+        "You reflect like a funhouse mirror—distorted and weird. Stop.",
+        "They moved high energy, you moved like a sloth. That's not mirroring, that's dying."
     ]
 };
 
@@ -179,19 +239,25 @@ export const STORYTELLING_RESPONSES = {
         "Tension held. The arc had rise and fall. That's emotional engineering.",
         "Vivid. They saw it, felt it, wanted more. That's the currency of attention.",
         "Memorable. Your story had a heartbeat. Most people's stories flatline.",
-        "Commanded the room. Words became experience. That's creator-level presence."
+        "Commanded the room. Words became experience. That's creator-level presence.",
+        "Arc mastered. Beginning, middle, end—each earned. Structure is power.",
+        "Sensory loaded. I smelled, heard, felt your story. That's immersion."
     ],
     failure: [
         "Flatlined. No hook, no arc, no point. I've read terms of service with more drama.",
         "Lost them by sentence three. Your story had the energy of a loading screen.",
         "No stakes. You described events like a grocery list. Boring is the only sin.",
         "Rambling. Stories need structure; you brought chaos. Unfocused energy.",
-        "Forgotten already. Nothing stuck. No image, no emotion, no impact."
+        "Forgotten already. Nothing stuck. No image, no emotion, no impact.",
+        "No hook. You started weak and went downhill. Why should anyone care?",
+        "Wandering. Your story was a maze with no exit. Frustrating, not fascinating."
     ],
     roast: [
         "That story put me to sleep. I've had more exciting yawns. Rewrite your life.",
         "Your narrative skills are like your excuses—plentiful and poorly constructed.",
-        "Story? More like a technical manual. The room checked out. You didn't notice."
+        "Story? More like a technical manual. The room checked out. You didn't notice.",
+        "I've heard voicemails with better plot twists. Try again, novelist.",
+        "Your story had the suspense of a clock ticking. In an empty room."
     ]
 };
 
@@ -202,19 +268,25 @@ export const COMEDIAN_DRILL_RESPONSES = {
         "Owned the room. They laughed because you commanded it, not because you begged.",
         "Surprise deployed. The twist was invisible until it hit. That's comedic strategy.",
         "Effortless. You made hard look easy. The best jokes never try too hard.",
-        "Charisma weaponized. You turned words into currency. They're richer for it."
+        "Charisma weaponized. You turned words into currency. They're richer for it.",
+        "Timing perfect. The pause, the delivery, the release—all orchestrated.",
+        "Unexpected angle. You saw the joke nobody else saw. That's comedic vision."
     ],
     failure: [
         "Cringe. You forced the funny and it died on arrival. Desperation smells.",
         "No timing. You stepped on your own punchline. Amateur hour.",
         "Flat joke. The silence after was louder than the setup. Painful.",
         "Trying too hard. Comedy is confidence, not calculation. You brought a spreadsheet.",
-        "Awkward laugh. They chuckled to end the discomfort, not because it was good."
+        "Awkward laugh. They chuckled to end the discomfort, not because it was good.",
+        "Rushed setup. You sped through the joke like you were ashamed of it.",
+        "No surprise. They saw the punchline coming from a mile away. Predictable."
     ],
     roast: [
         "That joke bombed harder than your social life. Stick to the day job. Or don't.",
         "I've seen morticians with better timing. You're killing the room—in the wrong way.",
-        "Funny? I've had more laughs at funerals. Log 5 punchlines tomorrow or stay quiet."
+        "Funny? I've had more laughs at funerals. Log 5 punchlines tomorrow or stay quiet.",
+        "Your comedy career is like your confidence—nonexistent. Work on both.",
+        "That punchline had all the impact of a wet napkin. Try harder."
     ]
 };
 
