@@ -76,17 +76,23 @@ export default function QuestsScreen() {
     const [isProofVisible, setIsProofVisible] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [questBatch, setQuestBatch] = useState(0);
+    const [shuffledQuests, setShuffledQuests] = useState(QUESTS);
 
     const timePalette = useTimeColors();
     const systemColor = timePalette[0];
 
+    // Shuffle quests on first load and when batch changes
+    useMemo(() => {
+        setShuffledQuests(shuffleArray(QUESTS));
+    }, [questBatch]);
+
     // Filter and rotate quests
     const filteredQuests = useMemo(() => {
         let quests = selectedCategory === 'all'
-            ? QUESTS
-            : QUESTS.filter(q => q.category === selectedCategory);
+            ? shuffledQuests
+            : shuffledQuests.filter(q => q.category === selectedCategory);
         return quests;
-    }, [selectedCategory]);
+    }, [selectedCategory, shuffledQuests]);
 
     // Show 8 quests at a time, rotating through the pool
     const visibleQuests = useMemo(() => {
