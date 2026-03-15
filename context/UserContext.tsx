@@ -472,6 +472,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             Alert.alert("Access Denied", msg);
             throw new Error(msg);
         } finally { setIsLoading(false); }
+    };
 
     const signOut = async () => {
         // Clear all local state first so UI reflects logged-out immediately
