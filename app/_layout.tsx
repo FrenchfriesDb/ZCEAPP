@@ -5,7 +5,6 @@ import { View, Text, StyleSheet, Animated, Platform, Image } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Font from 'expo-font';
-import * as SplashScreen from 'expo-splash-screen';
 import { UserProvider, useUser } from '@/context/UserContext';
 import CustomSplashScreen from '@/components/SplashScreen';
 import {
@@ -23,8 +22,6 @@ import {
   JetBrainsMono_700Bold,
 } from '@expo-google-fonts/jetbrains-mono';
 import 'react-native-reanimated';
-
-SplashScreen.preventAutoHideAsync();
 
 function LoadingScreen() {
   const [fadeAnim] = useState(new Animated.Value(0));
@@ -254,13 +251,14 @@ function RootLayoutNav() {
     const inAuthGroup = s0 === 'auth';
     const isOnboarding = inAuthGroup && s1 === 'onboarding';
     const isLoginOrSignup = inAuthGroup && (s1 === 'login' || s1 === 'signup');
+    const isForgotPassword = inAuthGroup && s1 === 'forgot-password';
 
     // --- NAVIGATION LOGIC ---
     console.log('[NAV] User:', user, 'HasCompletedOnboarding:', hasCompletedOnboarding, 'IsOnboarding:', isOnboarding, 'IsLoginOrSignup:', isLoginOrSignup);
     
     if (!user) {
-      // 1. If we are on Login/Signup, check if they came from onboarding
-      if (isLoginOrSignup) {
+      // 1. If we are on Login/Signup/ForgotPassword, allow access
+      if (isLoginOrSignup || isForgotPassword) {
         // Allow users to stay on auth pages if they came from onboarding flow
         // Don't redirect them back to onboarding
         return;
@@ -327,7 +325,6 @@ export default function RootLayout() {
         console.warn('Font loading error:', e);
       } finally {
         setFontsLoaded(true);
-        SplashScreen.hideAsync();
       }
     }
     loadFonts();
