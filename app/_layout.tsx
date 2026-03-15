@@ -122,16 +122,20 @@ function RootLayoutNav() {
     console.log('[NAV] User:', user, 'HasCompletedOnboarding:', hasCompletedOnboarding, 'IsOnboarding:', isOnboarding, 'IsLoginOrSignup:', isLoginOrSignup);
     
     if (!user) {
-      // 1. If we are on Login/Signup, STAY THERE (don't wipe errors)
-      if (isLoginOrSignup) return;
+      // 1. If we are on Login/Signup as standalone screens (not through onboarding), redirect to onboarding
+      if (isLoginOrSignup) {
+        console.log('[NAV] Redirecting to onboarding flow...');
+        router.replace('/auth/onboarding');
+        return;
+      }
 
       // 2. If we haven't finished onboarding, force to onboarding
       if (!hasCompletedOnboarding && !isOnboarding) {
         console.log('[NAV] Redirecting to onboarding...');
         router.replace('/auth/onboarding');
       }
-      // 3. If we have finished onboarding but are not on login/signup, force to login
-      else if (hasCompletedOnboarding && !isLoginOrSignup) {
+      // 3. If we have finished onboarding but are not authenticated, go to login
+      else if (hasCompletedOnboarding && !isOnboarding) {
         console.log('[NAV] Redirecting to login...');
         router.replace('/auth/login');
       }

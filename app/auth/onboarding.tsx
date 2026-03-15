@@ -195,15 +195,15 @@ export default function OnboardingScreen() {
     };
 
     const handleNext = async () => {
-        if (stage === 5) {
-            // Save onboarding data and go to signup
+        if (stage === 7) {
+            // Complete onboarding and go to main app
             setOnboardingData({ 
                 level: mission.level || 'NPC', 
                 goal: mission.goal || 'General',
                 commitment: mission.commitment || '30 days'
             });
             await completeOnboarding();
-            router.replace('/auth/signup');
+            router.replace('/(tabs)');
         } else {
             advance();
         }
@@ -211,8 +211,7 @@ export default function OnboardingScreen() {
 
     const handleSkip = async () => {
         setOnboardingData({ level: 'NPC', goal: 'General', commitment: '30 days' });
-        await completeOnboarding();
-        router.replace('/auth/signup');
+        setStage(6);
     };
 
     const handleBack = () => {
@@ -236,6 +235,7 @@ export default function OnboardingScreen() {
         if (stage === 2) return !!mission.level;
         if (stage === 3) return !!mission.goal;
         if (stage === 4) return !!mission.commitment;
+        // Stages 5, 6, 7 can always proceed (they have their own navigation)
         return true;
     };
 
@@ -284,7 +284,7 @@ export default function OnboardingScreen() {
                         </Pressable>
                     )}
                     <View style={styles.dotsRow}>
-                        {[1, 2, 3, 4, 5].map(n => (
+                        {[1, 2, 3, 4, 5, 6, 7].map(n => (
                             <View key={n} style={[styles.dot, stage === n && styles.dotActive]} />
                         ))}
                     </View>
@@ -300,6 +300,8 @@ export default function OnboardingScreen() {
                         <Text style={[styles.scanBadgeText, stage >= 5 && { color: CYAN }]}>
                             {stage === 1 ? 'SCANNING . . .' : 
                              stage === 5 ? 'UPGRADE COMPLETE' : 
+                             stage === 6 ? 'CREATE IDENTITY' :
+                             stage === 7 ? 'ACCESS RESTRICTED' :
                              'CONFIRM MISSION'}
                         </Text>
                     </View>
@@ -457,6 +459,48 @@ export default function OnboardingScreen() {
                             </Pressable>
                         </View>
                     )}
+
+                    {/* ── STAGE 6: SIGNUP ── */}
+                    {stage === 6 && (
+                        <View style={styles.stageBox}>
+                            <View style={styles.termBlock}>
+                                <TerminalLine text="> Creating identity..." delay={0} color="rgba(255,255,255,0.5)" />
+                                <TerminalLine text="> Initialize neural signature..." delay={500} color="rgba(255,255,255,0.5)" />
+                                <TerminalLine text="> Establish agent credentials..." delay={1000} color="rgba(255,255,255,0.5)" />
+                            </View>
+                            <View style={styles.authPrompt}>
+                                <Text style={styles.authTitle}>CREATE YOUR IDENTITY</Text>
+                                <Text style={styles.authSubtitle}>Choose your path to enter the system</Text>
+                                <Pressable onPress={() => router.replace('/auth/signup')} style={styles.authBtn}>
+                                    <Text style={styles.authBtnText}>CREATE NEW IDENTITY →</Text>
+                                </Pressable>
+                                <Pressable onPress={() => setStage(7)} style={styles.authLink}>
+                                    <Text style={styles.authLinkText}>Already have access? Sign In</Text>
+                                </Pressable>
+                            </View>
+                        </View>
+                    )}
+
+                    {/* ── STAGE 7: LOGIN ── */}
+                    {stage === 7 && (
+                        <View style={styles.stageBox}>
+                            <View style={styles.termBlock}>
+                                <TerminalLine text="> Authenticating agent..." delay={0} color="rgba(255,255,255,0.5)" />
+                                <TerminalLine text="> Verifying credentials..." delay={500} color="rgba(255,255,255,0.5)" />
+                                <TerminalLine text="> Granting system access..." delay={1000} color="rgba(255,255,255,0.5)" />
+                            </View>
+                            <View style={styles.authPrompt}>
+                                <Text style={styles.authTitle}>ACCESS RESTRICTED</Text>
+                                <Text style={styles.authSubtitle}>Enter your credentials to proceed</Text>
+                                <Pressable onPress={() => router.replace('/auth/login')} style={styles.authBtn}>
+                                    <Text style={styles.authBtnText}>SIGN IN →</Text>
+                                </Pressable>
+                                <Pressable onPress={() => setStage(6)} style={styles.authLink}>
+                                    <Text style={styles.authLinkText}>← Back to Create Identity</Text>
+                                </Pressable>
+                            </View>
+                        </View>
+                    )}
                 </Animated.View>
             </SafeAreaView>
         </View>
@@ -547,5 +591,34 @@ const styles = StyleSheet.create({
     backText: {
         fontFamily: Fonts.monoBold, color: 'rgba(255,255,255,0.6)', 
         fontSize: 16, fontWeight: '800',
+    },
+
+    // Auth prompt styles for stages 6 & 7
+    authPrompt: {
+        alignItems: 'center', gap: 20, marginTop: 20,
+    },
+    authTitle: {
+        fontFamily: Fonts.heading, color: '#FFFFFF', fontSize: 28,
+        letterSpacing: 6, fontWeight: '800', textAlign: 'center',
+    },
+    authSubtitle: {
+        fontFamily: Fonts.mono, color: 'rgba(255,255,255,0.7)', fontSize: 14,
+        textAlign: 'center', paddingHorizontal: 40,
+    },
+    authBtn: {
+        backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
+        borderColor: '#FFFFFF', paddingHorizontal: 32, paddingVertical: 16,
+        borderRadius: 0, marginTop: 10,
+    },
+    authBtnText: {
+        fontFamily: Fonts.monoBold, color: '#FFFFFF', fontSize: 16,
+        letterSpacing: 2, fontWeight: '800',
+    },
+    authLink: {
+        marginTop: 10,
+    },
+    authLinkText: {
+        fontFamily: Fonts.mono, color: 'rgba(255,255,255,0.6)', fontSize: 14,
+        letterSpacing: 1,
     },
 });
