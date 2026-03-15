@@ -107,8 +107,8 @@ interface UserContextType {
     changePassword: (newPassword: string) => Promise<void>;
     changeUsername: (newUsername: string) => Promise<void>;
     deleteAccount: () => Promise<void>;
-    setOnboardingData: (data: { level: string, goal: string }) => void;
-    onboardingData: { level: string, goal: string };
+    setOnboardingData: (data: { level: string, goal: string, commitment: string }) => void;
+    onboardingData: { level: string, goal: string, commitment: string };
     hasCompletedOnboarding: boolean;
     completeOnboarding: () => Promise<void>;
     resetQuests: (questIds: string[]) => Promise<void>;
@@ -144,7 +144,7 @@ const getLocalDateStr = (offset = 0) => {
 export function UserProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<UserData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [onboardingData, setOnboardingData] = useState({ level: 'NPC', goal: 'General' });
+    const [onboardingData, setOnboardingData] = useState({ level: 'NPC', goal: 'General', commitment: '30 days' });
     const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
 
     // KEY FIX: userRef always holds the LATEST user — eliminates stale closures.

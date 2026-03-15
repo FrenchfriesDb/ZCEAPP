@@ -193,17 +193,32 @@ export default function OnboardingScreen() {
     };
 
     const handleNext = async () => {
-        if (stage === 2) setOnboardingData({ level: mission.level || 'NPC', goal: mission.goal || 'General' });
-        if (stage < 3) { advance(); } else { await completeOnboarding(); router.replace('/auth/signup'); }
+        if (stage === 5) {
+            // Save onboarding data and go to signup
+            setOnboardingData({ 
+                level: mission.level || 'NPC', 
+                goal: mission.goal || 'General',
+                commitment: mission.commitment || '30 days'
+            });
+            await completeOnboarding();
+            router.replace('/auth/signup');
+        } else {
+            advance();
+        }
     };
 
     const handleSkip = async () => {
-        setOnboardingData({ level: 'NPC', goal: 'General' });
+        setOnboardingData({ level: 'NPC', goal: 'General', commitment: '30 days' });
         await completeOnboarding();
         router.replace('/auth/signup');
     };
 
-    const canProceed = mission.level && mission.goal && mission.commitment;
+    const canProceed = () => {
+        if (stage === 2) return !!mission.level;
+        if (stage === 3) return !!mission.goal;
+        if (stage === 4) return !!mission.commitment;
+        return true;
+    };
 
     return (
         <View style={styles.root}>
@@ -233,12 +248,12 @@ export default function OnboardingScreen() {
                 {/* Top bar */}
                 <View style={styles.topBar}>
                     <View style={styles.dotsRow}>
-                        {[1, 2, 3].map(n => (
+                        {[1, 2, 3, 4, 5].map(n => (
                             <View key={n} style={[styles.dot, stage === n && styles.dotActive]} />
                         ))}
                     </View>
                     <Pressable onPress={handleSkip} style={styles.skipBtn}>
-                        <Text style={styles.skipText}>Skip → login</Text>
+                        <Text style={styles.skipText}>Skip →</Text>
                     </Pressable>
                 </View>
 
@@ -246,8 +261,10 @@ export default function OnboardingScreen() {
                 <View style={styles.headArea}>
                     <WireframeHead stage={stage} />
                     <View style={styles.scanBadge}>
-                        <Text style={[styles.scanBadgeText, stage >= 3 && { color: CYAN }]}>
-                            {stage === 1 ? 'SCANNING . . .' : stage === 2 ? 'CONFIRM MISSION' : 'UPGRADE COMPLETE'}
+                        <Text style={[styles.scanBadgeText, stage >= 5 && { color: CYAN }]}>
+                            {stage === 1 ? 'SCANNING . . .' : 
+                             stage === 5 ? 'UPGRADE COMPLETE' : 
+                             'CONFIRM MISSION'}
                         </Text>
                     </View>
                 </View>
@@ -279,14 +296,14 @@ export default function OnboardingScreen() {
                         </View>
                     )}
 
-                    {/* ── STAGE 2 ── */}
+                    {/* ── STAGE 2: SOCIAL LEVEL ── */}
                     {stage === 2 && (
                         <ScrollView style={styles.scrollFlex}
                             contentContainerStyle={styles.scrollContent}
                             showsVerticalScrollIndicator={false}
                             keyboardShouldPersistTaps="handled">
                             <Text style={styles.intakeTitle}>BEFORE WE ARM YOU —</Text>
-                            <Text style={styles.intakeSub}>Confirm your mission.</Text>
+                            <Text style={styles.intakeSub}>Select your current social level.</Text>
 
                             <View style={styles.qBlock}>
                                 <Text style={styles.qLabel}>▸ CURRENT SOCIAL LEVEL?</Text>
@@ -301,8 +318,30 @@ export default function OnboardingScreen() {
                                 ))}
                             </View>
 
+                            <Pressable onPress={handleNext}
+                                style={[styles.ctaBtn, !canProceed() && { opacity: 0.38 }]}
+                                disabled={!canProceed()}>
+                                <LinearGradient colors={[Colors.accentPrimary, CYAN]}
+                                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.ctaInner}>
+                                    <Text style={styles.ctaText}>CONFIRM LEVEL</Text>
+                                    <Text style={styles.ctaArrow}>→</Text>
+                                </LinearGradient>
+                            </Pressable>
+                            <View style={{ height: 32 }} />
+                        </ScrollView>
+                    )}
+
+                    {/* ── STAGE 3: PRIMARY MISSION ── */}
+                    {stage === 3 && (
+                        <ScrollView style={styles.scrollFlex}
+                            contentContainerStyle={styles.scrollContent}
+                            showsVerticalScrollIndicator={false}
+                            keyboardShouldPersistTaps="handled">
+                            <Text style={styles.intakeTitle}>PRIMARY MISSION —</Text>
+                            <Text style={styles.intakeSub}>What are you here to fix?</Text>
+
                             <View style={styles.qBlock}>
-                                <Text style={styles.qLabel}>▸ PRIMARY MISSION?</Text>
+                                <Text style={styles.qLabel}>▸ SELECT YOUR OBJECTIVE</Text>
                                 {[
                                     { label: 'Kill social anxiety', icon: '🎯' },
                                     { label: 'Dating / attraction game', icon: '🔥' },
@@ -315,8 +354,30 @@ export default function OnboardingScreen() {
                                 ))}
                             </View>
 
+                            <Pressable onPress={handleNext}
+                                style={[styles.ctaBtn, !canProceed() && { opacity: 0.38 }]}
+                                disabled={!canProceed()}>
+                                <LinearGradient colors={[Colors.accentPrimary, CYAN]}
+                                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.ctaInner}>
+                                    <Text style={styles.ctaText}>LOCK OBJECTIVE</Text>
+                                    <Text style={styles.ctaArrow}>→</Text>
+                                </LinearGradient>
+                            </Pressable>
+                            <View style={{ height: 32 }} />
+                        </ScrollView>
+                    )}
+
+                    {/* ── STAGE 4: COMMITMENT DURATION ── */}
+                    {stage === 4 && (
+                        <ScrollView style={styles.scrollFlex}
+                            contentContainerStyle={styles.scrollContent}
+                            showsVerticalScrollIndicator={false}
+                            keyboardShouldPersistTaps="handled">
+                            <Text style={styles.intakeTitle}>HOW LONG ALL IN? —</Text>
+                            <Text style={styles.intakeSub}>Commit to the grind.</Text>
+
                             <View style={styles.qBlock}>
-                                <Text style={styles.qLabel}>▸ HOW LONG ARE YOU GOING ALL-IN?</Text>
+                                <Text style={styles.qLabel}>▸ SELECT COMMITMENT</Text>
                                 {[
                                     { label: '30 days  —  prove it', icon: '⏱️' },
                                     { label: '90 days  —  I\'m serious', icon: '📅' },
@@ -329,11 +390,11 @@ export default function OnboardingScreen() {
                             </View>
 
                             <Pressable onPress={handleNext}
-                                style={[styles.ctaBtn, !canProceed && { opacity: 0.38 }]}
-                                disabled={!canProceed}>
+                                style={[styles.ctaBtn, !canProceed() && { opacity: 0.38 }]}
+                                disabled={!canProceed()}>
                                 <LinearGradient colors={[Colors.accentPrimary, CYAN]}
                                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.ctaInner}>
-                                    <Text style={styles.ctaText}>LOCK MISSION</Text>
+                                    <Text style={styles.ctaText}>LOCK COMMITMENT</Text>
                                     <Text style={styles.ctaArrow}>→</Text>
                                 </LinearGradient>
                             </Pressable>
@@ -341,19 +402,20 @@ export default function OnboardingScreen() {
                         </ScrollView>
                     )}
 
-                    {/* ── STAGE 3 ── */}
-                    {stage === 3 && (
+                    {/* ── STAGE 5: FRAME ACCEPTED ── */}
+                    {stage === 5 && (
                         <View style={styles.stageBox}>
                             <View style={styles.frameBadge}>
                                 <Text style={styles.frameBadgeText}>FRAME ACCEPTED</Text>
                             </View>
                             <View style={styles.termBlock}>
                                 <TerminalLine text="> Mission locked." delay={100} color={CYAN} />
-                                <TerminalLine text="> Daily reps required." delay={600} />
-                                <TerminalLine text="> Miss a day = streak dies." delay={1100} color="#FF6B6B" />
-                                <TerminalLine text="> No participation trophies." delay={1600} color="#FF6B6B" />
-                                <TerminalLine text="> Welcome to the Engine." delay={2300} color={CYAN} />
-                                <TerminalLine text="> You are no longer allowed to be average." delay={3000} />
+                                <TerminalLine text="> Level: {mission.level?.split(' — ')[0] || 'NPC'}" delay={600} />
+                                <TerminalLine text="> Objective: {mission.goal || 'General'}" delay={1100} />
+                                <TerminalLine text="> Commitment: {mission.commitment?.split(' — ')[0] || '30 days'}" delay={1600} />
+                                <TerminalLine text="> Daily reps required." delay={2300} color="#FF6B6B" />
+                                <TerminalLine text="> Miss a day = streak dies." delay={2800} color="#FF6B6B" />
+                                <TerminalLine text="> Welcome to the Engine." delay={3500} color={CYAN} />
                             </View>
                             <Pressable onPress={handleNext} style={styles.ctaBtn}>
                                 <LinearGradient colors={[CYAN, Colors.accentPrimary]}
