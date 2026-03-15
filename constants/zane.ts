@@ -88,6 +88,136 @@ export const FLIP_PROMPTS = [
     "Someone asks: 'Do you even go outside?'"
 ];
 
+export const LINK_DRILL_RESPONSES = {
+    success: [
+        "Connected. You actually made two random words sound like they belong together. That's neural plasticity in action.",
+        "Link established. Your brain is learning to bridge the unrelated. Keep burning these pathways.",
+        "Solid. You didn't choke when the words made no sense. That's the muscle growing.",
+        "Unexpected. That connection had teeth. You're learning to think in webs, not lines.",
+        "Clean link. No hesitation, no 'ums,' just flow. That's the version of you that wins rooms."
+    ],
+    failure: [
+        "Broken link. You saw two words and your brain filed for bankruptcy. Try again.",
+        "No connection. Your neurons just stood there staring at each other. Awkward.",
+        "Failed bridge. Two words, zero creativity. I've seen NPCs with better lateral thinking.",
+        "Link aborted. You froze when things didn't make immediate sense. That's the old you winning."
+    ],
+    roast: [
+        "Those words have more chemistry than you just showed. Log it again or stay average.",
+        "Your brain gave up faster than a new gym membership. Connect the dots or keep hiding.",
+        "That link was weaker than your excuses. Try again before I tell the leaderboard."
+    ]
+};
+
+export const FLIP_FORMULA_RESPONSES = {
+    success: [
+        "Flipped. You took an insult and made it a power move. That's high-status alchemy.",
+        "Reframed. The energy shifted when you spoke. You didn't defend—you dominated.",
+        "Clean flip. No anger, no explanation, just control. That's the language of leaders.",
+        "Owned it. You turned their weapon into your accessory. Rare. Valuable.",
+        "Masterful. The flip landed because you didn't try too hard. Effortless dominance."
+    ],
+    failure: [
+        "Flop. You tried to flip and face-planted. That's what overthinking gets you.",
+        "No flip. You either got defensive or stayed silent. Both are losses.",
+        "Missed frame. Their insult landed because you didn't catch it. Soft hands lose.",
+        "Weak sauce. That flip had no bite. I've seen apologies with more backbone."
+    ],
+    roast: [
+        "That flip folded like a lawn chair. Log 3 power flips tomorrow or I roast you publicly.",
+        "You let their frame win. Your future self is watching you take the L. Again.",
+        "Flipped? More like flopped. The leaderboard just moved you down a slot."
+    ]
+};
+
+export const RESPONSE_SPEED_RESPONSES = {
+    success: [
+        "Under 4 seconds. You spoke before the doubt could download. That's instinct.",
+        "Fast. No buffer, no stutter, just delivery. Your nervous system is learning.",
+        "Sharp. The clock didn't own you—you owned the clock. High-status speed.",
+        "Immediate. You answered like you expected the question. Confidence without thought.",
+        "Reflex. That wasn't prepared; that was present. You're becoming unplayable."
+    ],
+    failure: [
+        "Time's up. You hesitated. Hesitation is weakness wearing a mask of caution.",
+        "Too slow. Your brain is still buffering while life is playing in 4K.",
+        "Frozen. 4 seconds of silence is a lifetime of low status. Move faster.",
+        "Stalled. You let the pressure cook you instead of channeling it. Soft."
+    ],
+    roast: [
+        "You needed 4 seconds to process that? I've seen calculators with faster response times.",
+        "Tick tock. Your streak is dying while you're 'thinking.' Execute or evaporate.",
+        "Slow is smooth? No. Slow is dead. Your social skills are on life support."
+    ]
+};
+
+export const MIRROR_DRILL_RESPONSES = {
+    success: [
+        "Mirrored. You reflected their energy without losing yours. That's social judo.",
+        "Matched. You entered their world and brought them into yours. Seamless.",
+        "Sync achieved. The mimicry was invisible because you made it yours. Artful.",
+        "Shadow dance. You moved with them, then led. That's the flip from follow to command.",
+        "Reflected power. You showed them themselves, then showed them better."
+    ],
+    failure: [
+        "Broken mirror. You either copied like a parrot or didn't sync at all. Cringe.",
+        "No reflection. They moved, you stood still. Static is low status.",
+        "Awkward mimic. Your mirror had a delay. That's not mirroring—that's lagging.",
+        "Failed sync. You couldn't match their energy if you had a instruction manual."
+    ],
+    roast: [
+        "That mirror was cracked. You're reflecting insecurity, not confidence. Fix it.",
+        "You mimicked like a bad karaoke singer. Off-key and embarrassing. Again.",
+        "Mirror broken. Seven years of bad social skills ahead unless you log this again."
+    ]
+};
+
+export const STORYTELLING_RESPONSES = {
+    success: [
+        "Hooked. First line had teeth. You made them lean in instead of look away.",
+        "Narrative control. You didn't just tell a story—you built a world. Magnetic.",
+        "Tension held. The arc had rise and fall. That's emotional engineering.",
+        "Vivid. They saw it, felt it, wanted more. That's the currency of attention.",
+        "Memorable. Your story had a heartbeat. Most people's stories flatline.",
+        "Commanded the room. Words became experience. That's creator-level presence."
+    ],
+    failure: [
+        "Flatlined. No hook, no arc, no point. I've read terms of service with more drama.",
+        "Lost them by sentence three. Your story had the energy of a loading screen.",
+        "No stakes. You described events like a grocery list. Boring is the only sin.",
+        "Rambling. Stories need structure; you brought chaos. Unfocused energy.",
+        "Forgotten already. Nothing stuck. No image, no emotion, no impact."
+    ],
+    roast: [
+        "That story put me to sleep. I've had more exciting yawns. Rewrite your life.",
+        "Your narrative skills are like your excuses—plentiful and poorly constructed.",
+        "Story? More like a technical manual. The room checked out. You didn't notice."
+    ]
+};
+
+export const COMEDIAN_DRILL_RESPONSES = {
+    success: [
+        "Landed. The timing had a heartbeat. You didn't rush the punchline. Control.",
+        "Funny. Wit like a blade—sharp, clean, unexpected. That's high-status humor.",
+        "Owned the room. They laughed because you commanded it, not because you begged.",
+        "Surprise deployed. The twist was invisible until it hit. That's comedic strategy.",
+        "Effortless. You made hard look easy. The best jokes never try too hard.",
+        "Charisma weaponized. You turned words into currency. They're richer for it."
+    ],
+    failure: [
+        "Cringe. You forced the funny and it died on arrival. Desperation smells.",
+        "No timing. You stepped on your own punchline. Amateur hour.",
+        "Flat joke. The silence after was louder than the setup. Painful.",
+        "Trying too hard. Comedy is confidence, not calculation. You brought a spreadsheet.",
+        "Awkward laugh. They chuckled to end the discomfort, not because it was good."
+    ],
+    roast: [
+        "That joke bombed harder than your social life. Stick to the day job. Or don't.",
+        "I've seen morticians with better timing. You're killing the room—in the wrong way.",
+        "Funny? I've had more laughs at funerals. Log 5 punchlines tomorrow or stay quiet."
+    ]
+};
+
 export const OBJECTS = [
     "This MacBook", "A stapler", "That weird lamp", "A coffee cup", "Your own reflection",
     "A traffic cone", "A pigeon", "The gym water fountain", "A text from your mom",
