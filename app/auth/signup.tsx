@@ -1,6 +1,6 @@
 import {
     View, Text, StyleSheet, TextInput, Pressable, Animated,
-    KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator
+    KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Image
 } from 'react-native';
 import { PanGestureHandler, State, NativeViewGestureHandler } from 'react-native-gesture-handler';
 import { router } from 'expo-router';
@@ -160,7 +160,11 @@ export default function SignupScreen() {
                     <View style={styles.header}>
                         {/* ZCE badge */}
                         <View style={styles.logoBadge}>
-                            <Text style={styles.logoText}>ZCE</Text>
+                            <Image 
+                                source={require('../assets/images/zce-logo.png')}
+                                style={styles.logoImage}
+                                resizeMode="contain"
+                            />
                         </View>
                         <Text style={styles.title}>INITIATE</Text>
                         <Text style={styles.subtitle}>CREATE YOUR IDENTITY</Text>
@@ -326,7 +330,7 @@ const styles = StyleSheet.create({
         alignItems: 'center', justifyContent: 'center',
         marginBottom: 6,
     },
-    logoText: { fontFamily: Fonts.heading, fontSize: 16, color: '#FFFFFF', letterSpacing: 3 },
+    logoImage: { width: 40, height: 40 },
     title: {
         fontFamily: Fonts.heading,
         fontSize: 40,
