@@ -11,11 +11,12 @@ interface GlassCardProps {
     glowColor?: string;
     noPadding?: boolean;
     intensity?: number;
-    danger?: boolean;  // Red glow variant (streaks)
-    accent?: boolean;  // Blue glow variant (CTAs)
-    themed?: boolean;  // True = uses current time-of-day gradient for fill
-    darkGlass?: boolean;  // Darker liquid glass, more morphism (e.g. standing order cards)
+    danger?: boolean;
+    accent?: boolean;
+    themed?: boolean;
+    darkGlass?: boolean;
     onPress?: () => void;
+    categoryColor?: string; // For left accent border inner glow
 }
 
 export default function GlassCard({
@@ -23,12 +24,13 @@ export default function GlassCard({
     style,
     glowColor,
     noPadding,
-    intensity = 70,
+    intensity = 20, // Reduced for subtle glass effect
     danger = false,
     accent = false,
     themed = false,
     darkGlass = false,
     onPress,
+    categoryColor,
 }: GlassCardProps) {
     const timePalette = useTimeColors();
 
@@ -37,10 +39,7 @@ export default function GlassCard({
         ? timePalette.map(c => `${c}26`) // ~15% opacity for colors
         : Colors.gradientCard;
 
-    const blurIntensity = darkGlass ? 90 : intensity;
-    const gradientColors = darkGlass
-        ? (['rgba(0, 0, 0, 0.82)', 'rgba(0, 0, 0, 0.45)'] as const)
-        : (['rgba(0, 0, 0, 0.6)', 'rgba(0, 0, 0, 0.1)'] as const);
+    const blurIntensity = darkGlass ? 20 : intensity;
 
     const resolvedGlow = glowColor
         ? glowColor
@@ -50,90 +49,92 @@ export default function GlassCard({
                 ? Colors.accentPrimary
                 : themed
                     ? '#FFFFFF'
-                    : 'rgba(255, 255, 255, 0.03)';
+                    : 'rgba(255, 255, 255, 0.05)';
 
     const resolvedBorder = danger
         ? Colors.borderDanger
         : accent
             ? Colors.borderAccent
-            : 'rgba(255, 255, 255, 0.12)'; // Faint white
+            : 'rgba(255, 255, 255, 0.1)'; // Thin frosted border
 
     return (
         <Pressable
             disabled={!onPress}
             onPress={onPress}
-            style={[
+            style={({ pressed }) => [
                 styles.outer,
                 {
                     shadowColor: resolvedGlow,
-                    shadowOpacity: danger ? 0.3 : accent ? 0.25 : themed ? 0.2 : 0.05,
-                    shadowRadius: themed ? 15 : 6,
+                    shadowOpacity: danger ? 0.3 : accent ? 0.25 : themed ? 0.2 : 0.08,
+                    shadowRadius: themed ? 15 : 8,
                     borderColor: resolvedBorder,
                 },
+                pressed && styles.pressed,
                 style,
             ]}
         >
             <BlurView intensity={blurIntensity} tint="dark" style={StyleSheet.absoluteFill} />
-            <LinearGradient
-                colors={gradientColors as any}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={[styles.gradient, noPadding && { padding: 0 }]}
-            >
-                {/* 4K Specular Shimmer & Bubble Highlight Layer */}
-                <View style={[styles.shimmerLayer, { borderRadius: (style as any)?.borderRadius || Radius.lg }]}>
-                    {/* General glass shimmer */}
-                    <LinearGradient
-                        colors={['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.02)', 'transparent']}
-                        start={{ x: 0.2, y: 0 }}
-                        end={{ x: 0.8, y: 0.5 }}
-                        style={StyleSheet.absoluteFill}
-                    />
-                    {/* The "Bubble" specular arc highlight at the top */}
-                    <View style={styles.specularArc}>
-                        <LinearGradient
-                            colors={['rgba(255,255,255,0.22)', 'rgba(255,255,255,0.04)', 'transparent']}
-                            start={{ x: 0.5, y: 0 }}
-                            end={{ x: 0.5, y: 1 }}
-                            style={StyleSheet.absoluteFill}
-                        />
-                    </View>
-                </View>
+            <View style={[styles.content, noPadding && { padding: 0 }]}>
+                {/* Shine gradient across top edge */}
+                <LinearGradient
+                    colors={['rgba(255,255,255,0.15)', 'rgba(255,255,255,0.05)', 'transparent']}
+                    start={{ x: 0.5, y: 0 }}
+                    end={{ x: 0.5, y: 1 }}
+                    style={styles.shineGradient}
+                />
+
+                {/* Inner glow on left accent border */}
+                {categoryColor && (
+                    <View style={[styles.leftAccent, { shadowColor: categoryColor }]} />
+                )}
 
                 {children}
-            </LinearGradient>
+            </View>
         </Pressable>
     );
 }
 
 const styles = StyleSheet.create({
     outer: {
-        borderRadius: Radius.lg,
+        borderRadius: 16, // Premium rounded feel
         overflow: 'hidden',
-        backgroundColor: 'rgba(255, 255, 255, 0.01)', // Ultra-transparent base
+        backgroundColor: 'rgba(255, 255, 255, 0.05)', // Very subtle white transparency
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.1)',
-        shadowOffset: { width: 0, height: 12 },
-        shadowRadius: 30,
-        shadowOpacity: 0.1,
+        borderColor: 'rgba(255, 255, 255, 0.1)', // Thin frosted border
+        shadowOffset: { width: 0, height: 8 },
+        shadowRadius: 20,
+        shadowOpacity: 0.12,
         shadowColor: '#000',
-        elevation: 15,
+        elevation: 10,
     },
-    gradient: {
+    pressed: {
+        transform: [{ scale: 0.98 }],
+        opacity: 0.95,
+    },
+    content: {
         padding: 16,
         flex: 1,
+        backgroundColor: 'transparent',
     },
-    shimmerLayer: {
-        ...StyleSheet.absoluteFillObject,
-        opacity: 0.8,
-        overflow: 'hidden',
-    },
-    specularArc: {
+    shineGradient: {
         position: 'absolute',
         top: 0,
         left: 0,
         right: 0,
-        height: '40%',
-        opacity: 0.6,
+        height: '35%',
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
+    },
+    leftAccent: {
+        position: 'absolute',
+        left: 0,
+        top: '15%',
+        bottom: '15%',
+        width: 3,
+        borderRadius: 1.5,
+        backgroundColor: 'transparent',
+        shadowOffset: { width: 0, height: 0 },
+        shadowRadius: 8,
+        shadowOpacity: 0.6,
     },
 });

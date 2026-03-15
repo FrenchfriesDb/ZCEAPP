@@ -11,17 +11,33 @@ interface QuestCardProps {
     xpReward: number;
     completed: boolean;
     onToggle: () => void;
+    category?: string; // For left accent border color
 }
 
-export default function QuestCard({ icon, title, description, xpReward, completed, onToggle }: QuestCardProps) {
+export default function QuestCard({ icon, title, description, xpReward, completed, onToggle, category }: QuestCardProps) {
     const timePalette = useTimeColors();
     const systemColor = timePalette[0];
+
+    // Map category to color
+    const getCategoryColor = (cat?: string) => {
+        switch (cat) {
+            case 'social': return '#00F5FF'; // Cyan
+            case 'confidence': return '#FF2D55'; // Pink/Red
+            case 'humor': return '#FFCC00'; // Yellow
+            case 'leadership': return '#BF5AF2'; // Purple
+            case 'psychology': return '#32D74B'; // Green
+            default: return systemColor;
+        }
+    };
+
+    const categoryColor = getCategoryColor(category);
 
     return (
         <GlassCard
             style={completed ? styles.completedCard : styles.card}
             glowColor={completed ? systemColor + '22' : 'transparent'}
-            intensity={25}
+            intensity={20}
+            categoryColor={categoryColor}
         >
             <View style={styles.row}>
                 <View
