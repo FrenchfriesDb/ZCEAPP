@@ -119,6 +119,9 @@ interface UserContextType {
     hasCompletedOnboarding: boolean;
     setHasCompletedOnboarding: (value: boolean) => void;
     completeOnboarding: () => Promise<void>;
+    /** When set (6 or 7), onboarding should open at this stage when user returns from login/signup */
+    returnToOnboardingStage: number | null;
+    setReturnToOnboardingStage: (stage: number | null) => void;
     resetQuests: (questIds: string[]) => Promise<void>;
     clearChat: () => Promise<void>;
     resetProgress: () => Promise<void>;
@@ -154,6 +157,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
     const [onboardingData, setOnboardingData] = useState({ level: 'NPC', goal: 'General', commitment: '30 days' });
     const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+    const [returnToOnboardingStage, setReturnToOnboardingStage] = useState<number | null>(null);
 
     // KEY FIX: userRef always holds the LATEST user — eliminates stale closures.
     const userRef = useRef<UserData | null>(null);
@@ -797,6 +801,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             changeEmail, changePassword, deleteAccount, changeUsername,
             setOnboardingData, onboardingData,
             hasCompletedOnboarding, setHasCompletedOnboarding, completeOnboarding,
+            returnToOnboardingStage, setReturnToOnboardingStage,
             deploySystemBackup, purchaseSystemBackup,
         }}>
             {children}

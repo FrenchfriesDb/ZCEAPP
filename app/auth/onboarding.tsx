@@ -4,7 +4,7 @@ import {
     Dimensions, ScrollView, SafeAreaView,
 } from 'react-native';
 import { PanGestureHandler, State } from 'react-native-gesture-handler';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import Svg, { Path, G, Circle, Line, Defs, LinearGradient as SvgGrad, Stop } from 'react-native-svg';
 import { Colors, Fonts } from '@/constants/theme';
 import { useUser } from '@/context/UserContext';
@@ -99,13 +99,15 @@ function WireframeHead({ stage }: { stage: number }) {
                     </G>
                 )}
             </Svg>
-            {/* Animated scan line overlay — simple View, no SVG nesting */}
+            {/* Animated scan line overlay — constrained to head bounds */}
             <Animated.View
                 pointerEvents="none"
-                style={[
-                    StyleSheet.absoluteFill,
-                    { justifyContent: 'flex-start', overflow: 'hidden' },
-                ]}
+                style={{
+                    position: 'absolute',
+                    top: 0, left: 0, right: 0, height: 260,
+                    justifyContent: 'flex-start',
+                    overflow: 'hidden',
+                }}
             >
                 <Animated.View style={{
                     position: 'absolute',
@@ -146,20 +148,33 @@ function OptionBtn({ label, icon, selected, onPress }: {
 }) {
     return (
         <Pressable onPress={onPress} style={styles.optPressable}>
-            <View style={[styles.optBtn, selected && styles.optBtnActive]}>
-                <Text style={[styles.optIcon]}>{icon}</Text>
-                <Text style={[styles.optText, selected && styles.optTextActive]} numberOfLines={2}>{label}</Text>
-                {selected && <Text style={styles.optCheck}>◆</Text>}
-            </View>
+            {({ pressed }) => (
+                <View style={[styles.optBtn, selected && styles.optBtnActive, pressed && styles.optBtnPressed]}>
+                    <Text style={[styles.optIcon]}>{icon}</Text>
+                    <Text style={[styles.optText, selected && styles.optTextActive]} numberOfLines={2}>{label}</Text>
+                    {selected && <Text style={styles.optCheck}>◆</Text>}
+                </View>
+            )}
         </Pressable>
     );
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function OnboardingScreen() {
-    const { signUp, signIn, setOnboardingData, onboardingData, completeOnboarding } = useUser();
+    const { signUp, signIn, setOnboardingData, onboardingData, completeOnboarding, returnToOnboardingStage, setReturnToOnboardingStage } = useUser();
     const [stage, setStage] = useState(1);
     const [stageKey, setStageKey] = useState(1);
+
+    // When user swipes back from login/signup, restore the auth stage (6 or 7) instead of showing stage 1
+    useFocusEffect(
+        React.useCallback(() => {
+            if (returnToOnboardingStage === 6 || returnToOnboardingStage === 7) {
+                setStage(returnToOnboardingStage);
+                setStageKey(k => k + 1);
+                setReturnToOnboardingStage(null);
+            }
+        }, [returnToOnboardingStage, setReturnToOnboardingStage])
+    );
     const [mission, setMission] = useState({ level: '', goal: '', commitment: '' });
     const [pageOp] = useState(new Animated.Value(1));
     const [pageTy] = useState(new Animated.Value(0));
@@ -290,7 +305,7 @@ export default function OnboardingScreen() {
                 {/* Top bar */}
                 <View style={styles.topBar}>
                     {stage > 1 && (
-                        <Pressable onPress={handleBack} style={styles.backBtn}>
+                        <Pressable onPress={handleBack} style={({ pressed }) => [styles.backBtn, pressed && styles.backBtnPressed]}>
                             <Text style={styles.backText}>←</Text>
                         </Pressable>
                     )}
@@ -299,8 +314,8 @@ export default function OnboardingScreen() {
                             <View key={n} style={[styles.dot, stage === n && styles.dotActive]} />
                         ))}
                     </View>
-                    <Pressable onPress={handleSkip} style={styles.skipBtn}>
-                        <Text style={styles.skipText}>Skip →</Text>
+                    <Pressable onPress={handleSkip} style={({ pressed }) => [styles.skipBtn, pressed && styles.skipBtnPressed]}>
+                        <Text style={styles.skipText}>SKIP →</Text>
                     </Pressable>
                 </View>
 
@@ -318,12 +333,17 @@ export default function OnboardingScreen() {
                     </View>
                 </View>
 
-                {/* Stage content */}
+                {/* Stage content - scrollable to prevent overlap and overflow */}
                 <Animated.View key={stageKey}
                     style={[styles.content, { opacity: pageOp, transform: [{ translateY: pageTy }] }]}>
 
                     {/* ── STAGE 1 ── */}
                     {stage === 1 && (
+                        <ScrollView
+                            style={styles.scrollFlex}
+                            contentContainerStyle={styles.scrollContentCentered}
+                            showsVerticalScrollIndicator={false}
+                            keyboardShouldPersistTaps="handled">
                         <View style={styles.stageBox}>
                             <View style={styles.termBlock}>
                                 <TerminalLine text="> Scanning environment..." delay={0} color="rgba(255,255,255,0.5)" />
@@ -334,7 +354,7 @@ export default function OnboardingScreen() {
                             </View>
                             <Text style={styles.versionTag}>ZCE — Confidence Engine v1.0  ·  FRAME INJECTION READY</Text>
                             <Animated.View style={{ width: '100%', opacity: btnGlow }}>
-                                <Pressable onPress={handleNext} style={styles.ctaBtn}>
+                                <Pressable onPress={handleNext} style={({ pressed }) => [styles.ctaBtn, pressed && styles.ctaBtnPressed]}>
                                     <View style={styles.ctaInner}>
                                         <Text style={styles.ctaText}>INITIATE UPGRADE</Text>
                                         <Text style={styles.ctaArrow}>→</Text>
@@ -342,6 +362,7 @@ export default function OnboardingScreen() {
                                 </Pressable>
                             </Animated.View>
                         </View>
+                        </ScrollView>
                     )}
 
                     {/* ── STAGE 2: SOCIAL LEVEL ── */}
@@ -367,7 +388,7 @@ export default function OnboardingScreen() {
                             </View>
 
                             <Pressable onPress={handleNext}
-                                style={[styles.ctaBtn, !canProceed() && { opacity: 0.38 }]}
+                                style={({ pressed }) => [styles.ctaBtn, !canProceed() && { opacity: 0.38 }, pressed && canProceed() && styles.ctaBtnPressed]}
                                 disabled={!canProceed()}>
                                 <View style={styles.ctaInner}>
                                     <Text style={styles.ctaText}>CONFIRM LEVEL</Text>
@@ -402,7 +423,7 @@ export default function OnboardingScreen() {
                             </View>
 
                             <Pressable onPress={handleNext}
-                                style={[styles.ctaBtn, !canProceed() && { opacity: 0.38 }]}
+                                style={({ pressed }) => [styles.ctaBtn, !canProceed() && { opacity: 0.38 }, pressed && canProceed() && styles.ctaBtnPressed]}
                                 disabled={!canProceed()}>
                                 <View style={styles.ctaInner}>
                                     <Text style={styles.ctaText}>LOCK OBJECTIVE</Text>
@@ -436,7 +457,7 @@ export default function OnboardingScreen() {
                             </View>
 
                             <Pressable onPress={handleNext}
-                                style={[styles.ctaBtn, !canProceed() && { opacity: 0.38 }]}
+                                style={({ pressed }) => [styles.ctaBtn, !canProceed() && { opacity: 0.38 }, pressed && canProceed() && styles.ctaBtnPressed]}
                                 disabled={!canProceed()}>
                                 <View style={styles.ctaInner}>
                                     <Text style={styles.ctaText}>LOCK COMMITMENT</Text>
@@ -449,6 +470,11 @@ export default function OnboardingScreen() {
 
                     {/* ── STAGE 5: FRAME ACCEPTED ── */}
                     {stage === 5 && (
+                        <ScrollView
+                            style={styles.scrollFlex}
+                            contentContainerStyle={styles.scrollContentCentered}
+                            showsVerticalScrollIndicator={false}
+                            keyboardShouldPersistTaps="handled">
                         <View style={styles.stageBox}>
                             <View style={styles.frameBadge}>
                                 <Text style={styles.frameBadgeText}>FRAME ACCEPTED</Text>
@@ -462,17 +488,23 @@ export default function OnboardingScreen() {
                                 <TerminalLine text="> Miss a day = streak dies." delay={2800} color="rgba(255,255,255,0.6)" />
                                 <TerminalLine text="> Welcome to the Engine." delay={3500} color="#FFFFFF" />
                             </View>
-                            <Pressable onPress={handleNext} style={styles.ctaBtn}>
+                            <Pressable onPress={handleNext} style={({ pressed }) => [styles.ctaBtn, pressed && styles.ctaBtnPressed]}>
                                 <View style={styles.ctaInner}>
                                     <Text style={styles.ctaText}>ENTER THE ENGINE</Text>
                                     <Text style={styles.ctaArrow}>→</Text>
                                 </View>
                             </Pressable>
                         </View>
+                        </ScrollView>
                     )}
 
                     {/* ── STAGE 6: SIGNUP ── */}
                     {stage === 6 && (
+                        <ScrollView
+                            style={styles.scrollFlex}
+                            contentContainerStyle={styles.scrollContentCentered}
+                            showsVerticalScrollIndicator={false}
+                            keyboardShouldPersistTaps="handled">
                         <View style={styles.stageBox}>
                             <View style={styles.termBlock}>
                                 <TerminalLine text="> Creating identity..." delay={0} color="rgba(255,255,255,0.5)" />
@@ -489,19 +521,26 @@ export default function OnboardingScreen() {
                                         commitment: mission.commitment || '30 days',
                                     });
                                     await completeOnboarding();
-                                    router.replace('/auth/signup');
-                                }} style={styles.authBtn}>
+                                    setReturnToOnboardingStage(6);
+                                    router.push('/auth/signup');
+                                }} style={({ pressed }) => [styles.authBtn, pressed && styles.authBtnPressed]}>
                                     <Text style={styles.authBtnText}>CREATE NEW IDENTITY →</Text>
                                 </Pressable>
-                                <Pressable onPress={() => setStage(7)} style={styles.authLink}>
+                                <Pressable onPress={() => setStage(7)} style={({ pressed }) => [styles.authLink, pressed && styles.authLinkPressed]}>
                                     <Text style={styles.authLinkText}>Already have access? Sign In</Text>
                                 </Pressable>
                             </View>
                         </View>
+                        </ScrollView>
                     )}
 
                     {/* ── STAGE 7: LOGIN ── */}
                     {stage === 7 && (
+                        <ScrollView
+                            style={styles.scrollFlex}
+                            contentContainerStyle={styles.scrollContentCentered}
+                            showsVerticalScrollIndicator={false}
+                            keyboardShouldPersistTaps="handled">
                         <View style={styles.stageBox}>
                             <View style={styles.termBlock}>
                                 <TerminalLine text="> Authenticating agent..." delay={0} color="rgba(255,255,255,0.5)" />
@@ -511,22 +550,24 @@ export default function OnboardingScreen() {
                             <View style={styles.authPrompt}>
                                 <Text style={styles.authTitle}>ACCESS RESTRICTED</Text>
                                 <Text style={styles.authSubtitle}>Enter your credentials to proceed</Text>
-                                <Pressable onPress={async () => {
-                                    setOnboardingData({
-                                        level: mission.level || 'NPC',
-                                        goal: mission.goal || 'General',
-                                        commitment: mission.commitment || '30 days',
-                                    });
-                                    await completeOnboarding();
-                                    router.replace('/auth/login');
-                                }} style={styles.authBtn}>
+<Pressable onPress={async () => {
+                                        setOnboardingData({
+                                            level: mission.level || 'NPC',
+                                            goal: mission.goal || 'General',
+                                            commitment: mission.commitment || '30 days',
+                                        });
+                                        await completeOnboarding();
+                                        setReturnToOnboardingStage(7);
+                                        router.push('/auth/login');
+                                    }} style={({ pressed }) => [styles.authBtn, pressed && styles.authBtnPressed]}>
                                     <Text style={styles.authBtnText}>SIGN IN →</Text>
                                 </Pressable>
-                                <Pressable onPress={() => setStage(6)} style={styles.authLink}>
+                                <Pressable onPress={() => setStage(6)} style={({ pressed }) => [styles.authLink, pressed && styles.authLinkPressed]}>
                                     <Text style={styles.authLinkText}>← Back to Create Identity</Text>
                                 </Pressable>
                             </View>
                         </View>
+                        </ScrollView>
                     )}
                 </Animated.View>
             </SafeAreaView>
@@ -551,46 +592,66 @@ const styles = StyleSheet.create({
     dotsRow: { flexDirection: 'row', gap: 10, flex: 1, justifyContent: 'center' },
     dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.15)' },
     dotActive: { width: 22, borderRadius: 3, backgroundColor: '#FFFFFF' },
-    skipBtn: { position: 'absolute', right: 20, paddingVertical: 6, paddingHorizontal: 10 },
-    skipText: { fontFamily: Fonts.mono, color: 'rgba(255,255,255,0.4)', fontSize: 10, textDecorationLine: 'underline', letterSpacing: 1 },
+    skipBtn: {
+        position: 'absolute', right: 20, paddingVertical: 8, paddingHorizontal: 12,
+        borderRadius: 12, borderWidth: 1.5, borderColor: 'rgba(0, 212, 255, 0.4)',
+        backgroundColor: 'rgba(0, 212, 255, 0.08)',
+    },
+    skipBtnPressed: { borderColor: 'rgba(0, 212, 255, 0.9)', transform: [{ scale: 0.97 }] },
+    skipText: { fontFamily: Fonts.monoBold, color: '#FFFFFF', fontSize: 10, letterSpacing: 3, fontWeight: '800' },
 
-    headArea: { alignItems: 'center', paddingVertical: 12 },
+    headArea: { alignItems: 'center', paddingVertical: 12, overflow: 'hidden' },
     scanBadge: {
         marginTop: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
         paddingHorizontal: 16, paddingVertical: 5, borderRadius: 0,
         backgroundColor: 'rgba(255,255,255,0.03)',
+        maxWidth: '90%',
+        alignItems: 'center',
     },
-    scanBadgeText: { fontFamily: Fonts.monoBold, fontSize: 9, color: '#FFFFFF', letterSpacing: 3, fontWeight: '700' },
+    scanBadgeText: { fontFamily: Fonts.monoBold, fontSize: 9, color: '#FFFFFF', letterSpacing: 3, fontWeight: '700', textAlign: 'center' },
 
-    content: { flex: 1, paddingHorizontal: 24, justifyContent: 'center' },
+    content: {
+        flex: 1,
+        minHeight: 0,
+        width: '100%',
+        paddingHorizontal: 24,
+    },
+    scrollContentCentered: {
+        flexGrow: 1,
+        justifyContent: 'center',
+        gap: 24,
+        paddingVertical: 16,
+        paddingBottom: 40,
+    },
 
     stageBox: { gap: 24, paddingBottom: 40 },
 
-    termBlock: { gap: 12, minHeight: 140 },
-    termLine: { fontFamily: Fonts.mono, color: 'rgba(255,255,255,0.7)', fontSize: 13, letterSpacing: 0.5, lineHeight: 22 },
-    versionTag: { fontFamily: Fonts.mono, color: 'rgba(255,255,255,0.35)', fontSize: 8, letterSpacing: 2, opacity: 0.6 },
+    termBlock: { gap: 12, minHeight: 140, width: '100%' },
+    termLine: { fontFamily: Fonts.mono, color: 'rgba(255,255,255,0.7)', fontSize: 13, letterSpacing: 0.5, lineHeight: 22, flexShrink: 1 },
+    versionTag: { fontFamily: Fonts.mono, color: 'rgba(255,255,255,0.35)', fontSize: 8, letterSpacing: 2, opacity: 0.6, flexShrink: 1 },
 
     ctaBtn: {
         width: '100%', borderRadius: 12, overflow: 'hidden',
-        borderWidth: 1.5, borderColor: 'rgba(51, 51, 51, 0.4)',
-        backgroundColor: 'rgba(51, 51, 51, 0.15)',
-        shadowColor: '#333333',
+        borderWidth: 1.5, borderColor: 'rgba(255, 255, 255, 0.4)',
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        shadowColor: 'rgba(255, 255, 255, 0.15)',
         shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.15,
+        shadowOpacity: 1,
         shadowRadius: 20,
         elevation: 8,
     },
+    ctaBtnPressed: { borderColor: 'rgba(255, 255, 255, 0.9)', transform: [{ scale: 0.97 }] },
     ctaInner: {
         paddingVertical: 18, paddingHorizontal: 28,
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12,
         backgroundColor: 'transparent',
     },
     ctaText: { fontFamily: Fonts.heading, color: '#FFFFFF', fontSize: 14, letterSpacing: 3, fontWeight: '800', textTransform: 'uppercase' },
-    ctaArrow: { color: 'rgba(255,255,255,0.8)', fontSize: 18, fontWeight: '800' },
+    ctaArrow: { color: '#FFFFFF', fontSize: 18, fontWeight: '800' },
 
     scrollFlex: { flex: 1 },
     scrollContent: { gap: 24, paddingBottom: 40 },
-    intakeTitle: { fontFamily: Fonts.heading, color: '#FFFFFF', fontSize: 24, letterSpacing: 1, fontWeight: '800' },
+    intakeTitle: { fontFamily: Fonts.heading, color: '#FFFFFF', fontSize: 22, letterSpacing: 1, fontWeight: '800', flexShrink: 1 },
     intakeSub: { fontFamily: Fonts.monoBold, color: 'rgba(255,255,255,0.5)', fontSize: 10, letterSpacing: 3, marginTop: -12, textTransform: 'uppercase' },
 
     qBlock: { gap: 10 },
@@ -598,22 +659,24 @@ const styles = StyleSheet.create({
     optPressable: { width: '100%' },
     optBtn: {
         width: '100%', flexDirection: 'row', alignItems: 'center', gap: 14,
-        padding: 16, borderRadius: 10,
-        borderWidth: 1.5, borderColor: 'rgba(51, 51, 51, 0.3)',
-        backgroundColor: 'rgba(51, 51, 51, 0.1)',
-        shadowColor: '#333333',
+        padding: 16, borderRadius: 12,
+        borderWidth: 1.5, borderColor: 'rgba(255, 255, 255, 0.4)',
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        shadowColor: 'rgba(255, 255, 255, 0.15)',
         shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.1,
-        shadowRadius: 15,
+        shadowOpacity: 1,
+        shadowRadius: 20,
         elevation: 5,
+        flexWrap: 'wrap',
     },
-    optBtnActive: { 
-        borderColor: 'rgba(51, 51, 51, 0.8)', 
-        backgroundColor: 'rgba(51, 51, 51, 0.25)',
-        shadowOpacity: 0.2,
+    optBtnActive: {
+        borderColor: 'rgba(255, 255, 255, 0.9)',
+        backgroundColor: 'rgba(255, 255, 255, 0.15)',
+        shadowOpacity: 1,
     },
+    optBtnPressed: { borderColor: 'rgba(255, 255, 255, 0.9)', transform: [{ scale: 0.97 }] },
     optIcon: { fontSize: 18, opacity: 0.9, color: '#FFFFFF' },
-    optText: { fontFamily: Fonts.body, color: 'rgba(255,255,255,0.6)', fontSize: 14, flex: 1, fontWeight: '500' },
+    optText: { fontFamily: Fonts.body, color: 'rgba(255,255,255,0.6)', fontSize: 14, flex: 1, flexShrink: 1, minWidth: 0, fontWeight: '500' },
     optTextActive: { color: '#FFFFFF', fontWeight: '700' },
     optCheck: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
 
@@ -626,12 +689,16 @@ const styles = StyleSheet.create({
     frameBadgeText: { fontFamily: Fonts.monoBold, color: '#FFFFFF', fontSize: 10, letterSpacing: 4, fontWeight: '800' },
 
     backBtn: {
-        paddingHorizontal: 12, paddingVertical: 8,
+        paddingHorizontal: 14, paddingVertical: 10,
         position: 'absolute', left: 0, top: 0,
+        borderRadius: 12,
+        borderWidth: 1.5, borderColor: 'rgba(255, 255, 255, 0.4)',
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
     },
+    backBtnPressed: { opacity: 0.8, transform: [{ scale: 0.97 }] },
     backText: {
-        fontFamily: Fonts.monoBold, color: 'rgba(255,255,255,0.6)', 
-        fontSize: 16, fontWeight: '800',
+        fontFamily: Fonts.monoBold, color: '#FFFFFF',
+        fontSize: 16, fontWeight: '800', letterSpacing: 2,
     },
 
     // Auth prompt styles for stages 6 & 7
@@ -640,41 +707,51 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
     },
     authTitle: {
-        fontFamily: Fonts.heading, color: '#FFFFFF', fontSize: 24,
+        fontFamily: Fonts.heading, color: '#FFFFFF', fontSize: 20,
         letterSpacing: 4, fontWeight: '800', textAlign: 'center',
+        flexShrink: 1, paddingHorizontal: 8,
     },
     authSubtitle: {
         fontFamily: Fonts.mono, color: 'rgba(255,255,255,0.7)', fontSize: 12,
         textAlign: 'center', paddingHorizontal: 20, lineHeight: 18,
+        flexShrink: 1,
     },
     authBtn: {
-        backgroundColor: 'rgba(51, 51, 51, 0.15)', 
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
         borderWidth: 1.5,
-        borderColor: 'rgba(51, 51, 51, 0.4)',
-        paddingHorizontal: 32, 
+        borderColor: 'rgba(255, 255, 255, 0.4)',
+        paddingHorizontal: 32,
         paddingVertical: 16,
-        borderRadius: 12, 
+        borderRadius: 12,
         marginTop: 8,
-        shadowColor: '#333333',
+        shadowColor: 'rgba(255, 255, 255, 0.15)',
         shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.15,
+        shadowOpacity: 1,
         shadowRadius: 20,
         elevation: 8,
     },
+    authBtnPressed: { borderColor: 'rgba(255, 255, 255, 0.9)', transform: [{ scale: 0.97 }] },
     authBtnText: {
-        fontFamily: Fonts.monoBold, 
-        color: '#FFFFFF', 
+        fontFamily: Fonts.monoBold,
+        color: '#FFFFFF',
         fontSize: 14,
-        letterSpacing: 3, 
+        letterSpacing: 3,
         fontWeight: '800',
         textTransform: 'uppercase',
     },
     authLink: {
         marginTop: 10,
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 12,
+        borderWidth: 1.5,
+        borderColor: 'rgba(255, 255, 255, 0.4)',
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
     },
+    authLinkPressed: { borderColor: 'rgba(255, 255, 255, 0.9)', transform: [{ scale: 0.97 }] },
     authLinkText: {
-        fontFamily: Fonts.mono, color: 'rgba(255,255,255,0.6)', fontSize: 14,
-        letterSpacing: 1,
+        fontFamily: Fonts.monoBold, color: '#FFFFFF', fontSize: 12,
+        letterSpacing: 3, fontWeight: '800',
     },
 
     // Liquid glass input fields
@@ -700,7 +777,7 @@ const styles = StyleSheet.create({
         borderTopColor: 'rgba(51, 51, 51, 0.5)',
         borderLeftColor: 'rgba(51, 51, 51, 0.5)',
         borderRightColor: 'rgba(51, 51, 51, 0.5)',
-        borderBottomColor: 'rgba(51, 51, 51, 0.5)',
+        borderBottomColor: 'rgba(255, 255, 255, 0.5)',
         shadowColor: '#333333',
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.3,

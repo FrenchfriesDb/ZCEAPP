@@ -13,17 +13,18 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/;
 type UsernameStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid';
 
-// Each input field has a little icon + accent color for visual identity
-const FIELDS = [
+const STEP1_FIELDS = [
     { key: 'name', label: 'CODENAME', icon: '◈', placeholder: 'Your name', secure: false, board: 'default' as const },
     { key: 'username', label: 'LEADERBOARD ALIAS', icon: '@', placeholder: 'dark_ceo_zane', secure: false, board: 'default' as const },
+];
+const STEP2_FIELDS = [
     { key: 'email', label: 'AGENT ID (EMAIL)', icon: '◉', placeholder: 'agent@zce.io', secure: false, board: 'email-address' as const },
     { key: 'password', label: 'ACCESS CODE', icon: '◈', placeholder: '••••••••', secure: true, board: 'default' as const },
     { key: 'confirmPassword', label: 'CONFIRM ACCESS CODE', icon: '◈', placeholder: '••••••••', secure: true, board: 'default' as const },
 ];
 
 export default function SignupScreen() {
-    const { signUp, setHasCompletedOnboarding } = useUser();
+    const { signUp, setHasCompletedOnboarding, setReturnToOnboardingStage } = useUser();
     const [name, setName] = useState('');
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
@@ -31,6 +32,7 @@ export default function SignupScreen() {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [signupStep, setSignupStep] = useState<1 | 2>(1);
     const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>('idle');
     const [focusedField, setFocusedField] = useState<string | null>(null);
 
@@ -130,13 +132,10 @@ export default function SignupScreen() {
             onHandlerStateChange={(event) => {
                 if (event.nativeEvent.state === State.END) {
                     const { translationX } = event.nativeEvent;
-                    console.log('[SIGNUP SWIPE] translationX:', translationX);
-                    // Swipe right (positive translationX) to go back to onboarding
+                    // Swipe right: return to onboarding at stage 6 (Create identity), not stage 1
                     if (translationX > 30) {
-                        console.log('[SIGNUP SWIPE] Resetting onboarding and navigating back...');
-                        // Reset onboarding state to prevent navigation conflicts
                         setHasCompletedOnboarding(false);
-                        // Navigate to onboarding
+                        setReturnToOnboardingStage(6);
                         router.replace('/auth/onboarding');
                     }
                 }
@@ -177,7 +176,7 @@ export default function SignupScreen() {
                     {/* ── FORM CARD ── */}
                     <View style={styles.card}>
                         <View style={styles.cardInner}>
-                            {FIELDS.map((field) => {
+                            {(signupStep === 1 ? STEP1_FIELDS : STEP2_FIELDS).map((field) => {
                                 const isFocused = focusedField === field.key;
                                 const isUsername = field.key === 'username';
                                 const showStatus = isUsername && usernameMessage() !== '';
@@ -211,7 +210,7 @@ export default function SignupScreen() {
                                                 value={fieldValue(field.key)}
                                                 onChangeText={v => setFieldValue(field.key, v)}
                                                 placeholder={field.placeholder}
-                                                placeholderTextColor="rgba(255,255,255,0.18)"
+                                                placeholderTextColor="rgba(255, 255, 255, 0.3)"
                                                 secureTextEntry={field.secure}
                                                 autoCapitalize={field.key === 'name' ? 'words' : 'none'}
                                                 autoCorrect={false}
@@ -245,20 +244,55 @@ export default function SignupScreen() {
                                 </View>
                             )}
 
-                            {/* Submit */}
-                            <Pressable
-                                onPress={handleSignup}
-                                disabled={loading}
-                                style={({ pressed }) => [styles.submitBtn, pressed && { opacity: 0.85 }]}
-                            >
-                                <View style={styles.submitInner}>
-                                    {loading ? (
-                                        <ActivityIndicator color="#000" />
-                                    ) : (
-                                        <Text style={styles.submitText}>BEGIN PROTOCOL</Text>
-                                    )}
-                                </View>
-                            </Pressable>
+                            {/* Step 1: Next | Step 2: Submit */}
+                            {signupStep === 1 ? (
+                                <Pressable
+                                    onPress={() => {
+                                        if (!name.trim() || !username.trim()) {
+                                            setError('Codename and Leaderboard Alias required.');
+                                            return;
+                                        }
+                                        if (!USERNAME_REGEX.test(username)) {
+                                            setError('Username: 3–20 characters, letters, numbers, underscores only.');
+                                            return;
+                                        }
+                                        if (usernameStatus === 'taken') {
+                                            setError('Username taken. Choose another.');
+                                            return;
+                                        }
+                                        if (usernameStatus === 'checking') {
+                                            setError('Still verifying username. Wait a moment.');
+                                            return;
+                                        }
+                                        setError('');
+                                        setSignupStep(2);
+                                    }}
+                                    style={({ pressed }) => [styles.submitBtn, pressed && styles.submitBtnPressed]}
+                                >
+                                    <View style={styles.submitInner}>
+                                        <Text style={styles.submitText}>NEXT →</Text>
+                                    </View>
+                                </Pressable>
+                            ) : (
+                                <>
+                                    <Pressable onPress={() => { setError(''); setSignupStep(1); }} style={({ pressed }) => [styles.backStepLink, pressed && { opacity: 0.8 }]}>
+                                        <Text style={styles.backStepText}>← BACK</Text>
+                                    </Pressable>
+                                    <Pressable
+                                        onPress={handleSignup}
+                                        disabled={loading}
+                                        style={({ pressed }) => [styles.submitBtn, pressed && !loading && styles.submitBtnPressed]}
+                                    >
+                                        <View style={styles.submitInner}>
+                                            {loading ? (
+                                                <ActivityIndicator color="#FFFFFF" />
+                                            ) : (
+                                                <Text style={styles.submitText}>BEGIN PROTOCOL</Text>
+                                            )}
+                                        </View>
+                                    </Pressable>
+                                </>
+                            )}
                         </View>
                     </View>
 
@@ -310,10 +344,10 @@ const styles = StyleSheet.create({
     tag: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.25)', letterSpacing: 1.5 },
 
     // ── CARD
-    card: { borderRadius: 0, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' },
-    cardInner: { padding: 24, gap: 18, backgroundColor: 'rgba(255,255,255,0.02)' },
+    card: { borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+    cardInner: { padding: 24, gap: 18, backgroundColor: 'transparent' },
 
-    // ── FIELDS
+    // ── FIELDS (liquid glass)
     fieldGroup: { gap: 7 },
     labelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     labelIcon: { fontFamily: Fonts.mono, fontSize: 12, color: 'rgba(255,255,255,0.4)', width: 14, textAlign: 'center' },
@@ -323,18 +357,31 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         height: 52,
-        backgroundColor: 'transparent',
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.15)',
-        borderRadius: 0,
+        backgroundColor: 'rgba(255, 255, 255, 0.04)',
+        borderTopWidth: 1,
+        borderLeftWidth: 1,
+        borderBottomWidth: 1,
+        borderRightWidth: 1,
+        borderTopColor: 'rgba(255, 255, 255, 0.12)',
+        borderLeftColor: 'rgba(255, 255, 255, 0.12)',
+        borderBottomColor: 'rgba(0, 0, 0, 0.3)',
+        borderRightColor: 'rgba(0, 0, 0, 0.3)',
+        borderRadius: 10,
         paddingHorizontal: 16,
     },
     inputWrapFocused: {
-        borderColor: '#FFFFFF',
-        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderTopColor: 'rgba(255, 255, 255, 0.5)',
+        borderLeftColor: 'rgba(255, 255, 255, 0.5)',
+        borderBottomColor: 'rgba(255, 255, 255, 0.5)',
+        borderRightColor: 'rgba(255, 255, 255, 0.5)',
+        shadowColor: 'rgba(255, 255, 255, 0.4)',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.6,
+        shadowRadius: 12,
+        elevation: 6,
     },
-    inputWrapGreen: { borderColor: 'rgba(255,255,255,0.4)', backgroundColor: 'rgba(255,255,255,0.03)' },
-    inputWrapRed: { borderColor: 'rgba(255,255,255,0.25)', backgroundColor: 'rgba(255,255,255,0.02)' },
+    inputWrapGreen: { borderTopColor: 'rgba(255, 255, 255, 0.5)', borderLeftColor: 'rgba(255, 255, 255, 0.5)', borderBottomColor: 'rgba(255, 255, 255, 0.5)', borderRightColor: 'rgba(255, 255, 255, 0.5)' },
+    inputWrapRed: { borderTopColor: 'rgba(255,100,100,0.5)', borderLeftColor: 'rgba(255,100,100,0.5)', borderBottomColor: 'rgba(255,100,100,0.5)', borderRightColor: 'rgba(255,100,100,0.5)' },
     input: {
         flex: 1,
         color: '#FFFFFF',
@@ -360,16 +407,32 @@ const styles = StyleSheet.create({
     },
     errorText: { fontFamily: Fonts.mono, fontSize: 10, color: 'rgba(255,255,255,0.7)', letterSpacing: 0.3, textAlign: 'center' },
 
-    // ── SUBMIT
-    submitBtn: { borderRadius: 0, overflow: 'hidden', marginTop: 4, borderWidth: 1, borderColor: '#FFFFFF', backgroundColor: '#FFFFFF' },
-    submitInner: { height: 56, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' },
+    // ── SUBMIT (cold cyan liquid glass)
+    submitBtn: {
+        borderRadius: 12,
+        overflow: 'hidden',
+        marginTop: 4,
+        borderWidth: 1.5,
+        borderColor: 'rgba(255, 255, 255, 0.9)',
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        shadowColor: 'rgba(255, 255, 255, 0.15)',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 1,
+        shadowRadius: 20,
+        elevation: 8,
+    },
+    submitBtnPressed: { borderColor: 'rgba(255, 255, 255, 0.9)', transform: [{ scale: 0.97 }] },
+    submitInner: { height: 56, justifyContent: 'center', alignItems: 'center', backgroundColor: 'transparent' },
     submitText: {
         fontFamily: Fonts.heading,
         fontSize: 14,
-        color: '#000000',
+        color: '#FFFFFF',
         letterSpacing: 3,
         fontWeight: '800',
+        textTransform: 'uppercase',
     },
+    backStepLink: { alignSelf: 'center', paddingVertical: 8, marginBottom: 4 },
+    backStepText: { fontFamily: Fonts.monoBold, fontSize: 10, color: 'rgba(255,255,255,0.6)', letterSpacing: 2 },
 
     // ── FOOTER
     loginLink: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },

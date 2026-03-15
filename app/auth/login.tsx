@@ -6,10 +6,11 @@ import { Fonts, Spacing } from '@/constants/theme';
 import { useUser } from '@/context/UserContext';
 
 export default function LoginScreen() {
-    const { signIn, forgotPassword, isLoading } = useUser();
+    const { signIn, forgotPassword, isLoading, setReturnToOnboardingStage } = useUser();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [focusedField, setFocusedField] = useState<string | null>(null);
 
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const gestureX = useRef(new Animated.Value(0)).current;
@@ -37,8 +38,9 @@ export default function LoginScreen() {
             onHandlerStateChange={(event) => {
                 if (event.nativeEvent.state === State.END) {
                     const { translationX } = event.nativeEvent;
-                    // Swipe right (positive translationX) to go back to onboarding
+                    // Swipe right: return to onboarding at stage 7 (Sign in), not stage 1
                     if (translationX > 50) {
+                        setReturnToOnboardingStage(7);
                         router.replace('/auth/onboarding');
                     }
                 }
@@ -61,28 +63,36 @@ export default function LoginScreen() {
                     <View style={styles.form}>
                         <View style={styles.inputGroup}>
                             <Text style={styles.label}>USERNAME OR EMAIL</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="dark_ceo_zane  or  agent@zce.io"
-                                placeholderTextColor="rgba(255,255,255,0.25)"
-                                value={email}
-                                onChangeText={setEmail}
-                                autoCapitalize="none"
-                                autoCorrect={false}
-                                keyboardType="default"
-                            />
+                            <View style={[styles.inputWrap, focusedField === 'email' && styles.inputWrapFocused]}>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="dark_ceo_zane  or  agent@zce.io"
+                                    placeholderTextColor="rgba(255, 255, 255, 0.3)"
+                                    value={email}
+                                    onChangeText={setEmail}
+                                    autoCapitalize="none"
+                                    autoCorrect={false}
+                                    keyboardType="default"
+                                    onFocus={() => setFocusedField('email')}
+                                    onBlur={() => setFocusedField(null)}
+                                />
+                            </View>
                         </View>
 
                         <View style={styles.inputGroup}>
                             <Text style={styles.label}>ACCESS CODE</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="••••••••"
-                                placeholderTextColor="rgba(255,255,255,0.3)"
-                                value={password}
-                                onChangeText={setPassword}
-                                secureTextEntry
-                            />
+                            <View style={[styles.inputWrap, focusedField === 'password' && styles.inputWrapFocused]}>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="••••••••"
+                                    placeholderTextColor="rgba(255, 255, 255, 0.3)"
+                                    value={password}
+                                    onChangeText={setPassword}
+                                    secureTextEntry
+                                    onFocus={() => setFocusedField('password')}
+                                    onBlur={() => setFocusedField(null)}
+                                />
+                            </View>
                         <Pressable
                                 onPress={() => router.push('/auth/forgot-password')}
                                 style={{ alignSelf: 'flex-end', marginTop: 4 }}
@@ -93,7 +103,7 @@ export default function LoginScreen() {
 
                         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-                        <Pressable onPress={handleLogin} style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}>
+                        <Pressable onPress={handleLogin} style={({ pressed }) => [styles.button, pressed && !isLoading && styles.buttonPressed]}>
                             <View style={styles.buttonInner}>
                                 <Text style={styles.buttonText}>{isLoading ? 'AUTHENTICATING...' : 'ENTER THE DOJO'}</Text>
                             </View>
@@ -123,21 +133,56 @@ const styles = StyleSheet.create({
     form: { gap: 24, paddingHorizontal: 16 },
     inputGroup: { gap: 10 },
     label: { fontFamily: Fonts.mono, fontSize: 9, color: 'rgba(255,255,255,0.5)', letterSpacing: 2, fontWeight: '600' },
-    input: {
+    inputWrap: {
         height: 52,
-        backgroundColor: 'transparent',
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.15)',
-        borderRadius: 0,
+        backgroundColor: 'rgba(255, 255, 255, 0.04)',
+        borderTopWidth: 1,
+        borderLeftWidth: 1,
+        borderBottomWidth: 1,
+        borderRightWidth: 1,
+        borderTopColor: 'rgba(255, 255, 255, 0.12)',
+        borderLeftColor: 'rgba(255, 255, 255, 0.12)',
+        borderBottomColor: 'rgba(0, 0, 0, 0.3)',
+        borderRightColor: 'rgba(0, 0, 0, 0.3)',
+        borderRadius: 10,
         paddingHorizontal: 18,
+        justifyContent: 'center',
+    },
+    input: {
+        flex: 1,
         color: '#FFFFFF',
         fontFamily: Fonts.body,
         fontSize: 15,
+        padding: 0,
     },
-    button: { height: 54, borderRadius: 0, overflow: 'hidden', marginTop: 16, borderWidth: 1, borderColor: '#FFFFFF', backgroundColor: '#FFFFFF' },
-    buttonPressed: { opacity: 0.8 },
-    buttonInner: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' },
-    buttonText: { fontFamily: Fonts.heading, fontSize: 14, color: '#000000', letterSpacing: 2.5, fontWeight: '800' },
+    inputWrapFocused: {
+        borderTopColor: 'rgba(255, 255, 255, 0.5)',
+        borderLeftColor: 'rgba(255, 255, 255, 0.5)',
+        borderBottomColor: 'rgba(255, 255, 255, 0.5)',
+        borderRightColor: 'rgba(255, 255, 255, 0.5)',
+        shadowColor: 'rgba(255, 255, 255, 0.4)',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.6,
+        shadowRadius: 12,
+        elevation: 6,
+    },
+    button: {
+        height: 56,
+        borderRadius: 12,
+        overflow: 'hidden',
+        marginTop: 16,
+        borderWidth: 1.5,
+        borderColor: 'rgba(255, 255, 255, 0.9)',
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        shadowColor: 'rgba(255, 255, 255, 0.15)',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 1,
+        shadowRadius: 20,
+        elevation: 8,
+    },
+    buttonPressed: { borderColor: 'rgba(255, 255, 255, 0.9)', transform: [{ scale: 0.97 }] },
+    buttonInner: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'transparent' },
+    buttonText: { fontFamily: Fonts.heading, fontSize: 14, color: '#FFFFFF', letterSpacing: 3, fontWeight: '800', textTransform: 'uppercase' },
     errorText: { color: 'rgba(255,255,255,0.7)', fontFamily: Fonts.mono, fontSize: 10, textAlign: 'center' },
     link: { alignItems: 'center', marginTop: 16 },
     linkText: { fontFamily: Fonts.monoBold, fontSize: 10, color: 'rgba(255,255,255,0.4)', textDecorationLine: 'underline', letterSpacing: 1 },
