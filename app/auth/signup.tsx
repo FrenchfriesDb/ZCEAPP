@@ -158,7 +158,7 @@ export default function SignupScreen() {
 
                     {/* ── HEADER ── */}
                     <View style={styles.header}>
-                        {/* ZCE badge */}
+                        {/* ZCE logo */}
                         <View style={styles.logoBadge}>
                             <Image 
                                 source={require('../../assets/images/ZCELOGO1.png')}
@@ -326,7 +326,6 @@ const styles = StyleSheet.create({
     logoBadge: {
         width: 52, height: 52, borderRadius: 0,
         backgroundColor: 'transparent',
-        borderWidth: 1, borderColor: '#FFFFFF',
         alignItems: 'center', justifyContent: 'center',
         marginBottom: 6,
     },
