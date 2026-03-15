@@ -117,6 +117,7 @@ interface UserContextType {
     setOnboardingData: (data: { level: string, goal: string, commitment: string }) => void;
     onboardingData: { level: string, goal: string, commitment: string };
     hasCompletedOnboarding: boolean;
+    setHasCompletedOnboarding: (value: boolean) => void;
     completeOnboarding: () => Promise<void>;
     resetQuests: (questIds: string[]) => Promise<void>;
     clearChat: () => Promise<void>;
@@ -793,7 +794,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             addJournalEntry, addDrillLog, addChatMessage, clearChat,
             changeEmail, changePassword, deleteAccount, changeUsername,
             setOnboardingData, onboardingData,
-            hasCompletedOnboarding, completeOnboarding,
+            hasCompletedOnboarding, setHasCompletedOnboarding, completeOnboarding,
             deploySystemBackup, purchaseSystemBackup,
         }}>
             {children}

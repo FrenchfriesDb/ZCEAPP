@@ -23,7 +23,7 @@ const FIELDS = [
 ];
 
 export default function SignupScreen() {
-    const { signUp } = useUser();
+    const { signUp, setHasCompletedOnboarding } = useUser();
     const [name, setName] = useState('');
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
@@ -131,10 +131,13 @@ export default function SignupScreen() {
                 if (event.nativeEvent.state === State.END) {
                     const { translationX } = event.nativeEvent;
                     console.log('[SIGNUP SWIPE] translationX:', translationX);
-                    // Swipe right (positive translationX) to go back
+                    // Swipe right (positive translationX) to go back to onboarding
                     if (translationX > 30) {
-                        console.log('[SIGNUP SWIPE] Going back...');
-                        router.back();
+                        console.log('[SIGNUP SWIPE] Resetting onboarding and navigating back...');
+                        // Reset onboarding state to prevent navigation conflicts
+                        setHasCompletedOnboarding(false);
+                        // Navigate to onboarding
+                        router.replace('/auth/onboarding');
                     }
                 }
             }}
