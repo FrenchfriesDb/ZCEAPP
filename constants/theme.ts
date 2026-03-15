@@ -91,7 +91,7 @@ export const TimeColors = {
   // 8 PM — brutalist orange to deep purple
   eveningNavy: ['#EF745C', '#34073D'],
   // 9 PM — Night Dive
-  nightDive: ['#00D4FF', '#28B8D5'],
+  nightDive: ['#020344', '#28B8D5'],
   // 10 PM — Void Spark
   voidSpark: ['#00D4FF', '#00458E'],
   // 11 PM — Midnight Mist
