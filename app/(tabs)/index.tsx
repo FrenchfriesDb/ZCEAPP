@@ -108,6 +108,12 @@ export default function DojoScreen() {
   const currentHour = new Date().getHours();
   const isMoonDustTheme = currentHour >= 21 && currentHour < 22; // 9-10 PM
   const systemColor = isMoonDustTheme ? '#CCB3D1' : timePalette[timePalette.length - 1];
+  
+  // Debug logging
+  console.log('[DEBUG] Current hour:', currentHour);
+  console.log('[DEBUG] isMoonDustTheme:', isMoonDustTheme);
+  console.log('[DEBUG] timePalette:', timePalette);
+  console.log('[DEBUG] systemColor:', systemColor);
   const xpBarColors = useXPBarColors();
   const [roastIndex, setRoastIndex] = useState(() => Math.floor(Math.random() * ROASTS.length));
   const [quoteIndex, setQuoteIndex] = useState(() => Math.floor(Math.random() * ZANE_QUOTES.length));
