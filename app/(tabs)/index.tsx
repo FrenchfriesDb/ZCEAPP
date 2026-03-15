@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
     View, Text, ScrollView, Pressable, Animated, Dimensions,
-    KeyboardAvoidingView, Platform, TextInput, Modal, Alert,
+    KeyboardAvoidingView, Platform, TextInput, Modal, Alert, StyleSheet,
 } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -19,7 +19,7 @@ import {
     query, where, orderBy, limit, onSnapshot,
     getDocs, writeBatch, Timestamp,
 } from 'firebase/firestore';
-import { MissionRow, ProofModal } from '@/components';
+import { ProofModal } from '@/components';
 import { getFirstName, formatDisplayName } from '@/utils/formatters';
 
 const ROASTS = [
