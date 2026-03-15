@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
     View, Text, StyleSheet, Modal, TextInput, Pressable,
-    Animated, Image, Alert, ScrollView, Platform, ActionSheetIOS,
+    Image, Alert, ScrollView, Platform, ActionSheetIOS,
     KeyboardAvoidingView
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
-import { Audio } from 'expo-av';
-import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
+import { Colors, Fonts, Radius } from '@/constants/theme';
 import { useTimeColors } from '@/hooks/useTimeColors';
 import GlassButton from './GlassButton';
 
@@ -20,56 +19,22 @@ interface ProofModalProps {
 
 export default function ProofModal({ visible, onClose, onComplete, questTitle }: ProofModalProps) {
     const [textProof, setTextProof] = useState('');
-    const [photoUri, setPhotoUri] = useState<string | null>(null);
-    const [voiceUri, setVoiceUri] = useState<string | null>(null);
-    const [isRecording, setIsRecording] = useState(false);
-    const pulseAnim = React.useRef(new Animated.Value(1)).current;
-    const recordingRef = React.useRef<any>(null);
+    const [photoUri, setPhotoUri] = useState<string | undefined>(undefined);
     const timePalette = useTimeColors();
     const systemColor = timePalette[timePalette.length - 1];
 
-    useEffect(() => {
-        if (isRecording) {
-            Animated.loop(
-                Animated.sequence([
-                    Animated.timing(pulseAnim, { toValue: 1.15, duration: 600, useNativeDriver: true }),
-                    Animated.timing(pulseAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
-                ])
-            ).start();
-        } else {
-            pulseAnim.stopAnimation();
-            pulseAnim.setValue(1);
+    const handleSubmit = () => {
+        if (!textProof && !photoUri) {
+            Alert.alert('PROOF REQUIRED', 'Submit at least one form of proof: text or photo.');
+            return;
         }
-    }, [isRecording, pulseAnim]);
+        onComplete({ textProof, photoUri });
+        setTextProof('');
+        setPhotoUri(undefined);
+        onClose();
+    };
 
-    // ── IMAGE: show action sheet on iOS (camera / library), just library on Android ──
-    const handlePickImage = async () => {
-        const requestLibrary = async () => {
-            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-            if (status !== 'granted') {
-                Alert.alert('Permission Needed', 'Please enable photo library access in Settings.');
-                return null;
-            }
-            return ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ['images'],
-                allowsEditing: true,
-                quality: 0.8,
-            });
-        };
-
-        const requestCamera = async () => {
-            const { status } = await ImagePicker.requestCameraPermissionsAsync();
-            if (status !== 'granted') {
-                Alert.alert('Permission Needed', 'Please enable camera access in Settings.');
-                return null;
-            }
-            return ImagePicker.launchCameraAsync({
-                mediaTypes: ['images'],
-                allowsEditing: true,
-                quality: 0.8,
-            });
-        };
-
+    const handlePhoto = async () => {
         if (Platform.OS === 'ios') {
             ActionSheetIOS.showActionSheetWithOptions(
                 {
@@ -77,223 +42,235 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                     options: ['Cancel', '📷  Take Photo', '🖼️  Choose from Library'],
                     cancelButtonIndex: 0,
                 },
-                async (index) => {
-                    if (index === 0) return;
-                    const result = await (index === 1 ? requestCamera() : requestLibrary());
-                    if (result && !result.canceled) setPhotoUri(result.assets[0].uri);
+                (buttonIndex) => {
+                    if (buttonIndex === 1) takePhoto();
+                    else if (buttonIndex === 2) pickImage();
                 }
             );
         } else {
-            Alert.alert('PHOTO PROOF', 'How do you want to add a photo?', [
-                { text: 'Take Photo', onPress: async () => { const r = await requestCamera(); if (r && !r.canceled) setPhotoUri(r.assets[0].uri); } },
-                { text: 'Choose from Library', onPress: async () => { const r = await requestLibrary(); if (r && !r.canceled) setPhotoUri(r.assets[0].uri); } },
+            Alert.alert('Photo Proof', 'Choose photo source', [
+                { text: 'Take Photo', onPress: takePhoto },
+                { text: 'Choose from Library', onPress: pickImage },
                 { text: 'Cancel', style: 'cancel' },
             ]);
         }
     };
 
-    // ── MIC: tap to toggle record/stop ──
-    const handleMicToggle = async () => {
-        if (isRecording) {
-            // — STOP —
-            setIsRecording(false);
-            try {
-                if (recordingRef.current) {
-                    await recordingRef.current.stopAndUnloadAsync();
-                    const uri = recordingRef.current.getURI();
-                    setVoiceUri(uri || null);
-                    recordingRef.current = null;
-                }
-            } catch (err: any) {
-                console.error('Recording stop error:', err);
+    const takePhoto = async () => {
+        try {
+            const result = await ImagePicker.launchCameraAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [4, 3],
+                quality: 0.8,
+            });
+            if (!result.canceled && result.assets && result.assets[0]) {
+                setPhotoUri(result.assets[0].uri);
             }
-        } else {
-            // — START — always clean up any stale instance first
-            try {
-                if (recordingRef.current) {
-                    try { await recordingRef.current.stopAndUnloadAsync(); } catch { }
-                    recordingRef.current = null;
-                }
-
-                const { status } = await Audio.requestPermissionsAsync();
-                if (status !== 'granted') {
-                    Alert.alert('Mic Permission Needed', 'Please allow microphone access in Settings.');
-                    return;
-                }
-                await Audio.setAudioModeAsync({
-                    allowsRecordingIOS: true,
-                    playsInSilentModeIOS: true,
-                });
-                const { recording: rec } = await Audio.Recorder.createAsync(
-                    Audio.RecordingOptionsPresets.HIGH_QUALITY
-                );
-                recordingRef.current = rec;
-                setIsRecording(true);
-            } catch (err: any) {
-                console.error('Recording start error:', err);
-                Alert.alert('Recording Failed', err?.message ?? 'Unable to start microphone. Check app permissions.');
-            }
+        } catch (err: any) {
+            Alert.alert('Camera Error', err?.message ?? 'Unable to access camera.');
         }
     };
 
-    const handleSubmit = () => {
-        if (!textProof && !voiceUri && !photoUri) {
-            Alert.alert('PROOF REQUIRED', 'Submit at least one form of proof: text, photo, or voice.');
-            return;
+    const pickImage = async () => {
+        try {
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [4, 3],
+                quality: 0.8,
+            });
+            if (!result.canceled && result.assets && result.assets[0]) {
+                setPhotoUri(result.assets[0].uri);
+            }
+        } catch (err: any) {
+            Alert.alert('Gallery Error', err?.message ?? 'Unable to access photo library.');
         }
-        onComplete({ text: textProof || undefined, voiceUri: voiceUri || undefined, photoUri: photoUri || undefined });
-        setTextProof('');
-        setVoiceUri(null);
-        setPhotoUri(null);
     };
+
+    if (!visible) return null;
 
     return (
-        <Modal visible={visible} transparent animationType="slide">
-            <KeyboardAvoidingView
-                style={styles.overlay}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
-            >
-                <BlurView intensity={60} style={StyleSheet.absoluteFill} tint="dark" />
+        <Modal animationType="fade" transparent visible onRequestClose={onClose}>
+            <View style={styles.modalOverlay}>
+                <BlurView intensity={40} style={StyleSheet.absoluteFill} />
+                <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalContainer}>
+                    <View style={styles.modalCard}>
+                        <Text style={styles.modalTitle}>PROOF OF COMPLETION</Text>
+                        <Text style={styles.modalSub}>{questTitle}</Text>
 
-                <View style={styles.modal}>
-                    <Text style={styles.eyebrow}>VERIFICATION REQUIRED</Text>
-                    <Text style={styles.title} numberOfLines={2}>{questTitle.toUpperCase()}</Text>
+                        <ScrollView style={styles.proofSection} showsVerticalScrollIndicator={false}>
+                            {/* Text Proof */}
+                            <View style={styles.proofBlock}>
+                                <Text style={styles.proofLabel}>TEXT PROOF</Text>
+                                <TextInput
+                                    style={styles.textInput}
+                                    placeholder="Describe what happened..."
+                                    placeholderTextColor={Colors.textTertiary}
+                                    multiline
+                                    value={textProof}
+                                    onChangeText={setTextProof}
+                                    maxLength={500}
+                                />
+                                <Text style={styles.charCount}>{textProof.length}/500</Text>
+                            </View>
 
-                    <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-                        {/* ── Text Proof ── */}
-                        <Text style={styles.sectionLabel}>DESCRIBE THE INTERACTION</Text>
-                        <TextInput
-                            style={styles.textInput}
-                            placeholder="What happened? Who did you talk to? What was the outcome?"
-                            placeholderTextColor="rgba(255,255,255,0.3)"
-                            multiline
-                            value={textProof}
-                            onChangeText={setTextProof}
-                        />
-
-                        {/* ── Media Row ── */}
-                        <View style={styles.mediaRow}>
-                            {/* Photo */}
-                            <Pressable onPress={handlePickImage} style={styles.mediaBtn}>
+                            {/* Photo Proof */}
+                            <View style={styles.proofBlock}>
+                                <Text style={styles.proofLabel}>PHOTO PROOF</Text>
                                 {photoUri ? (
-                                    <Image source={{ uri: photoUri }} style={styles.previewImage} />
-                                ) : (
-                                    <View style={styles.mediaPlaceholder}>
-                                        <Text style={styles.mediaIcon}>📸</Text>
-                                        <Text style={styles.mediaText}>PHOTO</Text>
-                                        <Text style={styles.mediaHint}>Camera or Library</Text>
+                                    <View style={styles.photoPreview}>
+                                        <Image source={{ uri: photoUri }} style={styles.previewImage} />
+                                        <Pressable style={styles.removePhoto} onPress={() => setPhotoUri(null)}>
+                                            <Text style={styles.removePhotoText}>REMOVE</Text>
+                                        </Pressable>
                                     </View>
+                                ) : (
+                                    <Pressable style={styles.photoButton} onPress={handlePhoto}>
+                                        <Text style={styles.photoButtonText}>+ ADD PHOTO</Text>
+                                    </Pressable>
                                 )}
-                            </Pressable>
+                            </View>
+                        </ScrollView>
 
-                            {/* Voice — tap to toggle */}
-                            <Pressable
-                                onPress={handleMicToggle}
-                                style={[styles.mediaBtn, isRecording && styles.mediaBtnActive]}
-                            >
-                                <Animated.View style={{ transform: [{ scale: pulseAnim }], alignItems: 'center' }}>
-                                    <Text style={styles.mediaIcon}>🎙️</Text>
-                                    <Text style={[styles.mediaText, isRecording && { color: Colors.accentCyan }]}>
-                                        {isRecording ? 'TAP TO\nSTOP' : voiceUri ? 'RECORDED ✓' : 'TAP TO\nRECORD'}
-                                    </Text>
-                                </Animated.View>
+                        <View style={styles.footer}>
+                            <Pressable onPress={onClose} style={styles.cancelBtn}>
+                                <Text style={styles.cancelText}>ABANDON</Text>
                             </Pressable>
+                            <GlassButton label="VERIFY & COMPLETE" onPress={handleSubmit} tint={systemColor as any} size="md" glow />
                         </View>
-
-                        {/* Status confirmations */}
-                        {voiceUri && !isRecording && <Text style={styles.statusMsg}>✅ Voice proof ready.</Text>}
-                        {photoUri && <Text style={styles.statusMsg}>✅ Photo proof attached.</Text>}
-                    </ScrollView>
-
-                    <View style={styles.footer}>
-                        <Pressable onPress={onClose} style={styles.cancelBtn}>
-                            <Text style={styles.cancelText}>ABANDON</Text>
-                        </Pressable>
-                        <GlassButton label="VERIFY & COMPLETE" onPress={handleSubmit} tint={systemColor as any} size="md" glow />
                     </View>
-                </View>
-            </KeyboardAvoidingView>
+                </KeyboardAvoidingView>
+            </View>
         </Modal>
     );
 }
 
 const styles = StyleSheet.create({
-    overlay: { flex: 1, justifyContent: 'flex-end', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.82)' },
-    modal: {
-        width: '100%',
-        backgroundColor: '#0A0A0A',
-        borderTopLeftRadius: Radius.xl,
-        borderTopRightRadius: Radius.xl,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
-        padding: Spacing.xl,
-        paddingBottom: 36,
-        maxHeight: '88%',
-    },
-    eyebrow: { fontFamily: Fonts.mono, fontSize: 10, color: Colors.accentCyan, letterSpacing: 3, marginBottom: 6, textAlign: 'center' },
-    title: { fontFamily: Fonts.heading, fontSize: 18, color: '#fff', textAlign: 'center', marginBottom: 20, letterSpacing: 1, lineHeight: 24 },
-
-    content: { marginBottom: 20 },
-    sectionLabel: { fontFamily: Fonts.monoBold, fontSize: 9, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, marginBottom: 10 },
-    textInput: {
-        backgroundColor: 'rgba(255,255,255,0.04)',
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
-        borderRadius: Radius.md,
-        padding: 14,
-        color: '#fff',
-        fontFamily: Fonts.body,
-        fontSize: 14,
-        minHeight: 100,
-        textAlignVertical: 'top',
-        marginBottom: 18,
-    },
-
-    mediaRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
-    mediaBtn: {
+    modalOverlay: {
         flex: 1,
-        aspectRatio: 1,
-        backgroundColor: 'rgba(255,255,255,0.04)',
-        borderRadius: Radius.md,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
         justifyContent: 'center',
         alignItems: 'center',
-        overflow: 'hidden',
+        padding: 20,
     },
-    mediaBtnActive: {
-        borderColor: Colors.accentCyan,
-        backgroundColor: 'rgba(0, 245, 255, 0.08)',
+    modalContainer: {
+        width: '100%',
+        maxWidth: 400,
     },
-    mediaPlaceholder: { alignItems: 'center', gap: 4 },
-    mediaIcon: { fontSize: 26 },
-    mediaText: {
-        fontFamily: Fonts.monoBold,
-        fontSize: 9,
-        color: 'rgba(255,255,255,0.35)',
+    modalCard: {
+        backgroundColor: Colors.bgCard,
+        borderRadius: Radius.xl,
+        borderWidth: 1,
+        borderColor: Colors.borderGlass,
+        padding: 24,
+    },
+    modalTitle: {
+        fontFamily: Fonts.heading,
+        fontSize: 20,
+        color: Colors.textPrimary,
+        textAlign: 'center',
+        fontWeight: '800',
         letterSpacing: 1,
-        textAlign: 'center',
-        marginTop: 2,
+        marginBottom: 4,
     },
-    mediaHint: {
+    modalSub: {
         fontFamily: Fonts.mono,
-        fontSize: 8,
-        color: 'rgba(255,255,255,0.2)',
+        fontSize: 12,
+        color: Colors.textSecondary,
         textAlign: 'center',
-        letterSpacing: 0.3,
+        marginBottom: 20,
+        letterSpacing: 1,
     },
-    previewImage: { width: '100%', height: '100%' },
-    statusMsg: { fontFamily: Fonts.mono, fontSize: 10, color: Colors.accentCyan, marginTop: 4, letterSpacing: 1 },
-
+    proofSection: {
+        maxHeight: 400,
+    },
+    proofBlock: {
+        marginBottom: 20,
+    },
+    proofLabel: {
+        fontFamily: Fonts.monoBold,
+        fontSize: 11,
+        color: Colors.textSecondary,
+        letterSpacing: 1.5,
+        marginBottom: 8,
+        textTransform: 'uppercase',
+    },
+    textInput: {
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderRadius: Radius.md,
+        padding: 16,
+        color: Colors.textPrimary,
+        fontFamily: Fonts.body,
+        fontSize: 15,
+        minHeight: 100,
+        textAlignVertical: 'top',
+        borderWidth: 1,
+        borderColor: Colors.borderGlass,
+        marginBottom: 8,
+    },
+    charCount: {
+        fontFamily: Fonts.mono,
+        fontSize: 10,
+        color: Colors.textTertiary,
+        textAlign: 'right',
+    },
+    photoButton: {
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderRadius: Radius.md,
+        borderWidth: 1,
+        borderColor: Colors.borderGlass,
+        padding: 32,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    photoButtonText: {
+        fontFamily: Fonts.monoBold,
+        fontSize: 12,
+        color: Colors.textSecondary,
+        letterSpacing: 1,
+    },
+    photoPreview: {
+        position: 'relative',
+    },
+    previewImage: {
+        width: '100%',
+        height: 200,
+        borderRadius: Radius.md,
+    },
+    removePhoto: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        backgroundColor: Colors.danger,
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        borderRadius: Radius.pill,
+    },
+    removePhotoText: {
+        fontFamily: Fonts.monoBold,
+        fontSize: 10,
+        color: '#FFFFFF',
+        letterSpacing: 1,
+    },
     footer: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingTop: 18,
-        borderTopWidth: 1,
-        borderTopColor: 'rgba(255,255,255,0.06)',
+        gap: 12,
+        marginTop: 20,
     },
-    cancelBtn: { padding: 12 },
-    cancelText: { fontFamily: Fonts.monoBold, fontSize: 11, color: 'rgba(255,255,255,0.3)', letterSpacing: 2 },
+    cancelBtn: {
+        flex: 1,
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderColor: Colors.borderGlass,
+        padding: 12,
+        borderRadius: Radius.md,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    cancelText: {
+        fontFamily: Fonts.monoBold,
+        fontSize: 14,
+        color: Colors.textSecondary,
+        letterSpacing: 1,
+    },
 });
