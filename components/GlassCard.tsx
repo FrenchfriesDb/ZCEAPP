@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     outer: {
         borderRadius: 16, // Premium rounded feel
         overflow: 'hidden',
-        backgroundColor: 'rgba(255, 255, 255, 0.05)', // Very subtle white transparency
+        backgroundColor: 'rgba(0, 0, 0, 0.3)', // Dark transparency for original look
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.1)', // Thin frosted border
         shadowOffset: { width: 0, height: 8 },
