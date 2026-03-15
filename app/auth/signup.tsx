@@ -148,10 +148,6 @@ export default function SignupScreen() {
             >
             <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
 
-            {/* Ambient glow blobs - white */}
-            <View style={[styles.blob, { top: -80, left: -60, backgroundColor: 'rgba(255,255,255,0.03)' }]} />
-            <View style={[styles.blob, { bottom: 60, right: -80, backgroundColor: 'rgba(255,255,255,0.02)' }]} />
-
             <ScrollView
                 ref={scrollRef}
                 contentContainerStyle={styles.scroll}
