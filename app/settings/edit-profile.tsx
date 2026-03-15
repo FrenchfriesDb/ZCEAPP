@@ -43,6 +43,12 @@ export default function EditProfileScreen() {
     const [usernameModalVisible, setUsernameModalVisible] = useState(false);
     const [emailModalVisible, setEmailModalVisible] = useState(false);
     const [passwordModalVisible, setPasswordModalVisible] = useState(false);
+    const [designationModalVisible, setDesignationModalVisible] = useState(false);
+    const [bioModalVisible, setBioModalVisible] = useState(false);
+    const [codenameModalVisible, setCodenameModalVisible] = useState(false);
+    const [tempTitle, setTempTitle] = useState(title);
+    const [tempBio, setTempBio] = useState(bio);
+    const [tempName, setTempName] = useState(name);
     
     const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/;
 
@@ -309,14 +315,20 @@ export default function EditProfileScreen() {
                         icon={ICONS.designation}
                         label="DESIGNATION"
                         value={title || 'Add designation...'}
-                        onPress={() => {}}
+                        onPress={() => {
+                            setTempTitle(title);
+                            setDesignationModalVisible(true);
+                        }}
                         valueColor={title ? '#fff' : 'rgba(255,255,255,0.3)'}
                     />
                     <SettingRow
                         icon={ICONS.bio}
                         label="MISSION STATEMENT"
                         value={bio || 'Add mission statement...'}
-                        onPress={() => {}}
+                        onPress={() => {
+                            setTempBio(bio);
+                            setBioModalVisible(true);
+                        }}
                         valueColor={bio ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.3)'}
                     />
                     
@@ -325,7 +337,10 @@ export default function EditProfileScreen() {
                         icon={ICONS.codename}
                         label="CODENAME"
                         value={formatDisplayName(user?.name)}
-                        onPress={() => {}}
+                        onPress={() => {
+                            setTempName(name);
+                            setCodenameModalVisible(true);
+                        }}
                     />
                     
                     {/* Row 3: Username */}
@@ -362,23 +377,22 @@ export default function EditProfileScreen() {
                         icon={ICONS.subscription}
                         label="SUBSCRIPTION STATUS"
                         value="FREE TRIAL"
-                        onPress={() => {}}
                         valueColor="#FFD700"
                     />
                     <SettingRow
                         icon={ICONS.restore}
                         label="RESTORE PURCHASES"
-                        onPress={() => {}}
+                        onPress={() => Alert.alert('RESTORE PURCHASES', 'Contact support@zce.io to restore your purchases.')}
                     />
                     <SettingRow
                         icon={ICONS.privacy}
                         label="PRIVACY POLICY"
-                        onPress={() => {}}
+                        onPress={() => Alert.alert('PRIVACY POLICY', 'Your data is secure. We never share your information with third parties. Full privacy policy available at zce.io/privacy')}
                     />
                     <SettingRow
                         icon={ICONS.terms}
                         label="TERMS OF SERVICE"
-                        onPress={() => {}}
+                        onPress={() => Alert.alert('TERMS OF SERVICE', 'By using this app, you agree to our terms. Full terms available at zce.io/terms')}
                         isLast
                     />
                 </SectionCard>
@@ -520,6 +534,112 @@ export default function EditProfileScreen() {
                                 <Text style={styles.modalConfirmText}>
                                     {isUpdatingPassword ? 'ENCRYPTING...' : 'UPDATE'}
                                 </Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Designation Modal */}
+            <Modal visible={designationModalVisible} animationType="slide" transparent onRequestClose={() => setDesignationModalVisible(false)}>
+                <View style={styles.modalBg}>
+                    <View style={styles.modalCard}>
+                        <Text style={styles.modalTitle}>EDIT DESIGNATION</Text>
+                        <Text style={styles.modalSubtitle}>Your professional title or role</Text>
+                        
+                        <TextInput
+                            style={styles.modalInput}
+                            value={tempTitle}
+                            onChangeText={setTempTitle}
+                            placeholder="e.g. Elite Operative"
+                            placeholderTextColor="rgba(255,255,255,0.3)"
+                            autoCapitalize="words"
+                        />
+                        
+                        <View style={styles.modalActions}>
+                            <Pressable onPress={() => setDesignationModalVisible(false)} style={styles.modalCancel}>
+                                <Text style={styles.modalCancelText}>CANCEL</Text>
+                            </Pressable>
+                            <Pressable
+                                style={styles.modalConfirm}
+                                onPress={async () => {
+                                    setTitle(tempTitle);
+                                    await updateProfile({ name, title: tempTitle, bio });
+                                    setDesignationModalVisible(false);
+                                }}
+                            >
+                                <Text style={styles.modalConfirmText}>SAVE</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Bio Modal */}
+            <Modal visible={bioModalVisible} animationType="slide" transparent onRequestClose={() => setBioModalVisible(false)}>
+                <View style={styles.modalBg}>
+                    <View style={styles.modalCard}>
+                        <Text style={styles.modalTitle}>EDIT MISSION STATEMENT</Text>
+                        <Text style={styles.modalSubtitle}>Your personal mission or bio</Text>
+                        
+                        <TextInput
+                            style={[styles.modalInput, { height: 120, textAlignVertical: 'top', paddingTop: 16 }]}
+                            value={tempBio}
+                            onChangeText={setTempBio}
+                            placeholder="Enter your mission statement..."
+                            placeholderTextColor="rgba(255,255,255,0.3)"
+                            multiline
+                            numberOfLines={4}
+                        />
+                        
+                        <View style={styles.modalActions}>
+                            <Pressable onPress={() => setBioModalVisible(false)} style={styles.modalCancel}>
+                                <Text style={styles.modalCancelText}>CANCEL</Text>
+                            </Pressable>
+                            <Pressable
+                                style={styles.modalConfirm}
+                                onPress={async () => {
+                                    setBio(tempBio);
+                                    await updateProfile({ name, title, bio: tempBio });
+                                    setBioModalVisible(false);
+                                }}
+                            >
+                                <Text style={styles.modalConfirmText}>SAVE</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Codename Modal */}
+            <Modal visible={codenameModalVisible} animationType="slide" transparent onRequestClose={() => setCodenameModalVisible(false)}>
+                <View style={styles.modalBg}>
+                    <View style={styles.modalCard}>
+                        <Text style={styles.modalTitle}>EDIT CODENAME</Text>
+                        <Text style={styles.modalSubtitle}>Your display name</Text>
+                        
+                        <TextInput
+                            style={styles.modalInput}
+                            value={tempName}
+                            onChangeText={setTempName}
+                            placeholder="Enter your codename"
+                            placeholderTextColor="rgba(255,255,255,0.3)"
+                            autoCapitalize="words"
+                        />
+                        
+                        <View style={styles.modalActions}>
+                            <Pressable onPress={() => setCodenameModalVisible(false)} style={styles.modalCancel}>
+                                <Text style={styles.modalCancelText}>CANCEL</Text>
+                            </Pressable>
+                            <Pressable
+                                style={styles.modalConfirm}
+                                onPress={async () => {
+                                    setName(tempName);
+                                    await updateProfile({ name: tempName, title, bio });
+                                    setCodenameModalVisible(false);
+                                }}
+                            >
+                                <Text style={styles.modalConfirmText}>SAVE</Text>
                             </Pressable>
                         </View>
                     </View>
