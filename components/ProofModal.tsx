@@ -8,6 +8,7 @@ import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
 import { Audio } from 'expo-av';
 import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
+import { useTimeColors } from '@/hooks/useTimeColors';
 import GlassButton from './GlassButton';
 
 interface ProofModalProps {
@@ -24,6 +25,8 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
     const [isRecording, setIsRecording] = useState(false);
     const pulseAnim = React.useRef(new Animated.Value(1)).current;
     const recordingRef = React.useRef<any>(null);
+    const timePalette = useTimeColors();
+    const systemColor = timePalette[timePalette.length - 1];
 
     useEffect(() => {
         if (isRecording) {
@@ -207,7 +210,7 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                         <Pressable onPress={onClose} style={styles.cancelBtn}>
                             <Text style={styles.cancelText}>ABANDON</Text>
                         </Pressable>
-                        <GlassButton label="VERIFY & COMPLETE" onPress={handleSubmit} tint="blue" size="md" glow />
+                        <GlassButton label="VERIFY & COMPLETE" onPress={handleSubmit} tint={systemColor as any} size="md" glow />
                     </View>
                 </View>
             </KeyboardAvoidingView>

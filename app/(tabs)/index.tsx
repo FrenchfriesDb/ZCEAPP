@@ -646,13 +646,13 @@ const styles = StyleSheet.create({
     fontSize: 180,
     fontWeight: '900',
     color: '#E8E8E8',
-    lineHeight: 220, // Further increased to prevent cutoff
-    paddingTop: 10,  // Added padding to ensure top isn't sliced
+    lineHeight: 220, 
+    paddingTop: 15, 
     letterSpacing: -8,
     textAlignVertical: 'center',
     textAlign: 'center',
     marginBottom: 40,
-    marginTop: -10,
+    marginTop: -5, 
     // Removed hardcoded textShadow to use dynamic theme glow
   },
   heroUnit: {
