@@ -213,6 +213,7 @@ export default function DojoScreen() {
     return (
       <GlassCard
         darkGlass
+        glowColor="#00D4FF"
         onPress={() => handlePress(item)}
         style={[
           styles.missionCard,
