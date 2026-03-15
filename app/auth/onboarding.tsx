@@ -178,7 +178,6 @@ export default function OnboardingScreen() {
 
     const btnGlow = useRef(new Animated.Value(0.7)).current;
     const glowOp = useRef(new Animated.Value(0.4)).current;
-    const gestureX = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
         Animated.loop(Animated.sequence([
@@ -556,17 +555,22 @@ const styles = StyleSheet.create({
     versionTag: { fontFamily: Fonts.mono, color: 'rgba(255,255,255,0.35)', fontSize: 8, letterSpacing: 2, opacity: 0.6 },
 
     ctaBtn: {
-        width: '100%', borderRadius: 0, overflow: 'hidden',
-        borderWidth: 1, borderColor: '#FFFFFF',
-        backgroundColor: '#FFFFFF',
+        width: '100%', borderRadius: 12, overflow: 'hidden',
+        borderWidth: 1.5, borderColor: 'rgba(0, 212, 255, 0.4)',
+        backgroundColor: 'rgba(0, 212, 255, 0.08)',
+        shadowColor: '#00D4FF',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.15,
+        shadowRadius: 20,
+        elevation: 8,
     },
     ctaInner: {
         paddingVertical: 18, paddingHorizontal: 28,
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: 'transparent',
     },
-    ctaText: { fontFamily: Fonts.heading, color: '#000000', fontSize: 14, letterSpacing: 2.5, fontWeight: '800' },
-    ctaArrow: { color: 'rgba(0,0,0,0.6)', fontSize: 18, fontWeight: '800' },
+    ctaText: { fontFamily: Fonts.heading, color: '#FFFFFF', fontSize: 14, letterSpacing: 3, fontWeight: '800', textTransform: 'uppercase' },
+    ctaArrow: { color: 'rgba(255,255,255,0.8)', fontSize: 18, fontWeight: '800' },
 
     scrollFlex: { flex: 1 },
     scrollContent: { gap: 24, paddingBottom: 40 },
@@ -578,11 +582,20 @@ const styles = StyleSheet.create({
     optPressable: { width: '100%' },
     optBtn: {
         width: '100%', flexDirection: 'row', alignItems: 'center', gap: 14,
-        padding: 16, borderRadius: 0,
-        borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
-        backgroundColor: 'transparent',
+        padding: 16, borderRadius: 10,
+        borderWidth: 1.5, borderColor: 'rgba(0, 212, 255, 0.3)',
+        backgroundColor: 'rgba(0, 212, 255, 0.05)',
+        shadowColor: '#00D4FF',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.1,
+        shadowRadius: 15,
+        elevation: 5,
     },
-    optBtnActive: { borderColor: '#FFFFFF', backgroundColor: 'rgba(255,255,255,0.08)' },
+    optBtnActive: { 
+        borderColor: 'rgba(0, 212, 255, 0.8)', 
+        backgroundColor: 'rgba(0, 212, 255, 0.12)',
+        shadowOpacity: 0.2,
+    },
     optIcon: { fontSize: 18, opacity: 0.9, color: '#FFFFFF' },
     optText: { fontFamily: Fonts.body, color: 'rgba(255,255,255,0.6)', fontSize: 14, flex: 1, fontWeight: '500' },
     optTextActive: { color: '#FFFFFF', fontWeight: '700' },
@@ -619,13 +632,26 @@ const styles = StyleSheet.create({
         textAlign: 'center', paddingHorizontal: 20, lineHeight: 18,
     },
     authBtn: {
-        backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
-        borderColor: '#FFFFFF', paddingHorizontal: 24, paddingVertical: 12,
-        borderRadius: 0, marginTop: 8,
+        backgroundColor: 'rgba(0, 212, 255, 0.08)', 
+        borderWidth: 1.5,
+        borderColor: 'rgba(0, 212, 255, 0.4)',
+        paddingHorizontal: 32, 
+        paddingVertical: 16,
+        borderRadius: 12, 
+        marginTop: 8,
+        shadowColor: '#00D4FF',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.15,
+        shadowRadius: 20,
+        elevation: 8,
     },
     authBtnText: {
-        fontFamily: Fonts.monoBold, color: '#FFFFFF', fontSize: 14,
-        letterSpacing: 1, fontWeight: '800',
+        fontFamily: Fonts.monoBold, 
+        color: '#FFFFFF', 
+        fontSize: 14,
+        letterSpacing: 3, 
+        fontWeight: '800',
+        textTransform: 'uppercase',
     },
     authLink: {
         marginTop: 10,
@@ -633,5 +659,39 @@ const styles = StyleSheet.create({
     authLinkText: {
         fontFamily: Fonts.mono, color: 'rgba(255,255,255,0.6)', fontSize: 14,
         letterSpacing: 1,
+    },
+
+    // Liquid glass input fields
+    inputField: {
+        backgroundColor: 'rgba(255, 255, 255, 0.04)',
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(255, 255, 255, 0.12)',
+        borderLeftWidth: 1,
+        borderLeftColor: 'rgba(255, 255, 255, 0.12)',
+        borderRightWidth: 1,
+        borderRightColor: 'rgba(0, 0, 0, 0.3)',
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0, 0, 0, 0.3)',
+        borderRadius: 10,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        fontSize: 16,
+        color: '#FFFFFF',
+        fontFamily: Fonts.body,
+        marginBottom: 16,
+    },
+    inputFieldFocused: {
+        borderTopColor: 'rgba(0, 212, 255, 0.5)',
+        borderLeftColor: 'rgba(0, 212, 255, 0.5)',
+        borderRightColor: 'rgba(0, 212, 255, 0.5)',
+        borderBottomColor: 'rgba(0, 212, 255, 0.5)',
+        shadowColor: '#00D4FF',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
+        elevation: 5,
+    },
+    inputPlaceholder: {
+        color: 'rgba(255, 255, 255, 0.3)',
     },
 });
