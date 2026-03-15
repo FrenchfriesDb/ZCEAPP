@@ -26,11 +26,10 @@ export default function XPBar({ xp }: Props) {
     const xpInLevel = XPConfig.getXpInCurrentLevel(xp);
     const progress = XPConfig.getProgress(xp); // 0–1
     const palette = useXPBarColors();
-    const themeColor = palette[0];
+    const themeColor = palette[palette.length - 1]; // Use the lightest color for text
     
-    // Fix unreadable text during 9 PM Night Dive theme
-    const isNightDive = themeColor === '#020344';
-    const textColor = isNightDive ? '#00D4FF' : themeColor;
+    // Fix unreadable text during dark themes by using the lighter color
+    const textColor = themeColor;
 
     const [barWidth, setBarWidth] = useState(0);
     const animatedProgress = useRef(new Animated.Value(0)).current;
