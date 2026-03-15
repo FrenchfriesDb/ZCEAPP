@@ -457,6 +457,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             setUser(initialData);
             userRef.current = initialData;
             await Storage.setItem('zce_user', JSON.stringify(initialData));
+            // Complete onboarding after successful signup
+            await completeOnboarding();
             router.replace('/(tabs)');
         } catch (e: any) {
             let msg = getFriendlyAuthError(e.code || '');

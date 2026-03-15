@@ -141,8 +141,9 @@ function RootLayoutNav() {
       }
     }
     else {
-      // We have a user. If they are in the auth flow, send to tabs.
+      // We have a user - always go to tabs regardless of where they are
       if (inAuthGroup) {
+        console.log('[NAV] Authenticated user in auth flow, redirecting to tabs...');
         router.replace('/(tabs)');
       }
     }

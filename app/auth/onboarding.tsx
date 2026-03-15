@@ -595,24 +595,25 @@ const styles = StyleSheet.create({
 
     // Auth prompt styles for stages 6 & 7
     authPrompt: {
-        alignItems: 'center', gap: 20, marginTop: 20,
+        alignItems: 'center', gap: 16, marginTop: 10,
+        paddingHorizontal: 20,
     },
     authTitle: {
-        fontFamily: Fonts.heading, color: '#FFFFFF', fontSize: 28,
-        letterSpacing: 6, fontWeight: '800', textAlign: 'center',
+        fontFamily: Fonts.heading, color: '#FFFFFF', fontSize: 24,
+        letterSpacing: 4, fontWeight: '800', textAlign: 'center',
     },
     authSubtitle: {
-        fontFamily: Fonts.mono, color: 'rgba(255,255,255,0.7)', fontSize: 14,
-        textAlign: 'center', paddingHorizontal: 40,
+        fontFamily: Fonts.mono, color: 'rgba(255,255,255,0.7)', fontSize: 12,
+        textAlign: 'center', paddingHorizontal: 20, lineHeight: 18,
     },
     authBtn: {
         backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
-        borderColor: '#FFFFFF', paddingHorizontal: 32, paddingVertical: 16,
-        borderRadius: 0, marginTop: 10,
+        borderColor: '#FFFFFF', paddingHorizontal: 24, paddingVertical: 12,
+        borderRadius: 0, marginTop: 8,
     },
     authBtnText: {
-        fontFamily: Fonts.monoBold, color: '#FFFFFF', fontSize: 16,
-        letterSpacing: 2, fontWeight: '800',
+        fontFamily: Fonts.monoBold, color: '#FFFFFF', fontSize: 14,
+        letterSpacing: 1, fontWeight: '800',
     },
     authLink: {
         marginTop: 10,
