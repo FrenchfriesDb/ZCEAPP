@@ -1,14 +1,34 @@
-import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, Platform, Alert } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, Platform, Alert, Modal } from 'react-native';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
+import { Fonts, Radius } from '@/constants/theme';
 import { useUser } from '@/context/UserContext';
-import GlassCard from '@/components/GlassCard';
+import { useTimeColors } from '@/hooks/useTimeColors';
+import { formatDisplayName } from '@/utils/formatters';
+
+// Icons as emojis for now - can be replaced with icon library
+const ICONS = {
+    designation: '🎯',
+    bio: '📝',
+    codename: '🆔',
+    username: '@',
+    email: '✉️',
+    password: '🔒',
+    subscription: '👑',
+    restore: '🔄',
+    privacy: '🛡️',
+    terms: '📋',
+    signout: '🚪',
+    reset: '⚠️',
+    delete: '☠️',
+};
 
 export default function EditProfileScreen() {
     const { user, updateProfile, signOut, changeEmail, changePassword, deleteAccount, resetProgress, changeUsername } = useUser();
+    const timePalette = useTimeColors();
+    const systemColor = timePalette[0];
 
+    // Form state
     const [name, setName] = useState(user?.name || '');
     const [title, setTitle] = useState(user?.title || '');
     const [bio, setBio] = useState(user?.bio || '');
@@ -20,6 +40,10 @@ export default function EditProfileScreen() {
     const [newUsername, setNewUsername] = useState('');
     const [isChangingUsername, setIsChangingUsername] = useState(false);
     const [usernameError, setUsernameError] = useState('');
+    const [usernameModalVisible, setUsernameModalVisible] = useState(false);
+    const [emailModalVisible, setEmailModalVisible] = useState(false);
+    const [passwordModalVisible, setPasswordModalVisible] = useState(false);
+    
     const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/;
 
     const handleSave = async () => {
@@ -27,7 +51,6 @@ export default function EditProfileScreen() {
         await updateProfile({ name, title, bio });
         setTimeout(() => {
             setIsSaving(false);
-            router.back();
         }, 800);
     };
 
@@ -36,72 +59,72 @@ export default function EditProfileScreen() {
     };
 
     const handleUpdateEmail = async () => {
-        if (!newEmail || newEmail === user?.email) return;
-
-        const confirmChange = () => {
-            if (Platform.OS === 'web') {
-                if (confirm(`SYNC NEW IDENTITY?\n\nChanging your agent ID to ${newEmail} will update your primary access credentials.`)) {
-                    execute();
-                }
-            } else {
-                Alert.alert(
-                    'SYNC NEW IDENTITY?',
-                    `Update primary credentials to: ${newEmail}?`,
-                    [
-                        { text: 'ABORT', style: 'cancel' },
-                        { text: 'CONFIRM UPDATE', onPress: execute }
-                    ]
-                );
-            }
-        };
+        if (!newEmail || newEmail === user?.email) {
+            setEmailModalVisible(false);
+            return;
+        }
 
         const execute = async () => {
             setIsUpdatingEmail(true);
             try {
                 await changeEmail(newEmail);
-            } catch (e) {
+                setEmailModalVisible(false);
+            } catch (_e) {
                 // Error handled in UserContext
             } finally {
                 setIsUpdatingEmail(false);
             }
         };
 
-        confirmChange();
+        if (Platform.OS === 'web') {
+            if (confirm(`SYNC NEW IDENTITY?\n\nChanging your agent ID to ${newEmail} will update your primary access credentials.`)) {
+                execute();
+            }
+        } else {
+            Alert.alert(
+                'SYNC NEW IDENTITY?',
+                `Update primary credentials to: ${newEmail}?`,
+                [
+                    { text: 'ABORT', style: 'cancel' },
+                    { text: 'CONFIRM UPDATE', onPress: execute }
+                ]
+            );
+        }
     };
 
     const handleUpdatePassword = async () => {
-        if (!newPassword) return;
-
-        const confirmChange = () => {
-            if (Platform.OS === 'web') {
-                if (confirm('ENCRYPT NEW ACCESS CODE?\n\nAre you sure you want to change your security access code?')) {
-                    execute();
-                }
-            } else {
-                Alert.alert(
-                    'ENCRYPT ACCESS CODE?',
-                    'Are you sure you want to rotate your security access credentials?',
-                    [
-                        { text: 'ABORT', style: 'cancel' },
-                        { text: 'CONFIRM ROTATION', onPress: execute }
-                    ]
-                );
-            }
-        };
+        if (!newPassword) {
+            setPasswordModalVisible(false);
+            return;
+        }
 
         const execute = async () => {
             setIsUpdatingPassword(true);
             try {
                 await changePassword(newPassword);
                 setNewPassword('');
-            } catch (e) {
+                setPasswordModalVisible(false);
+            } catch (_e) {
                 // Error handled in UserContext
             } finally {
                 setIsUpdatingPassword(false);
             }
         };
 
-        confirmChange();
+        if (Platform.OS === 'web') {
+            if (confirm('ENCRYPT NEW ACCESS CODE?\n\nAre you sure you want to change your security access code?')) {
+                execute();
+            }
+        } else {
+            Alert.alert(
+                'ENCRYPT ACCESS CODE?',
+                'Are you sure you want to rotate your security access credentials?',
+                [
+                    { text: 'ABORT', style: 'cancel' },
+                    { text: 'CONFIRM ROTATION', onPress: execute }
+                ]
+            );
+        }
     };
 
     const handleDeleteAccount = () => {
@@ -125,7 +148,7 @@ export default function EditProfileScreen() {
         const secondConfirm = () => {
             if (Platform.OS === 'web') {
                 if (confirm('FINAL WARNING: ARE YOU ABSOLUTELY SURE?\n\nAll your charisma progress will be lost forever.')) {
-                    deleteAccount();
+                    thirdConfirm();
                 }
             } else {
                 Alert.alert(
@@ -133,7 +156,62 @@ export default function EditProfileScreen() {
                     'ARE YOU ABSOLUTELY SURE?\n\nAll your charisma progress will be lost forever.',
                     [
                         { text: 'ABORT', style: 'cancel' },
-                        { text: 'CONFIRM DELETE', style: 'destructive', onPress: deleteAccount }
+                        { text: 'CONFIRM DELETE', style: 'destructive', onPress: thirdConfirm }
+                    ]
+                );
+            }
+        };
+
+        const thirdConfirm = () => {
+            if (Platform.OS === 'web') {
+                if (confirm('TYPE "DELETE" TO CONFIRM\n\nThis is your last chance to abort.')) {
+                    deleteAccount();
+                }
+            } else {
+                Alert.alert(
+                    'TYPE "DELETE" TO CONFIRM',
+                    'This is your last chance to abort.',
+                    [
+                        { text: 'ABORT', style: 'cancel' },
+                        { text: 'DELETE FOREVER', style: 'destructive', onPress: deleteAccount }
+                    ]
+                );
+            }
+        };
+
+        firstConfirm();
+    };
+
+    const handleResetProgress = () => {
+        const firstConfirm = () => {
+            if (Platform.OS === 'web') {
+                if (confirm('⚠️ WIPE ALL PROGRESS?\n\nThis resets your XP, streak, and completed missions to zero — but keeps your account. Cannot be undone.')) {
+                    secondConfirm();
+                }
+            } else {
+                Alert.alert(
+                    '⚠️ WIPE ALL PROGRESS?',
+                    'This resets your XP, streak, and completed missions to zero — but keeps your account. Cannot be undone.',
+                    [
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'PROCEED', onPress: secondConfirm }
+                    ]
+                );
+            }
+        };
+
+        const secondConfirm = () => {
+            if (Platform.OS === 'web') {
+                if (confirm('FINAL CONFIRMATION\n\nYour progress will be gone forever.')) {
+                    resetProgress();
+                }
+            } else {
+                Alert.alert(
+                    'FINAL CONFIRMATION',
+                    'Your progress will be gone forever.',
+                    [
+                        { text: 'ABORT', style: 'cancel' },
+                        { text: 'WIPE PROGRESS', style: 'destructive', onPress: resetProgress }
                     ]
                 );
             }
@@ -153,6 +231,7 @@ export default function EditProfileScreen() {
         try {
             await changeUsername(newUsername.toLowerCase());
             setNewUsername('');
+            setUsernameModalVisible(false);
         } catch (e: any) {
             setUsernameError(e?.message || 'Failed to update username.');
         } finally {
@@ -160,220 +239,502 @@ export default function EditProfileScreen() {
         }
     };
 
+    // Row component for consistent styling
+    const SettingRow = ({ 
+        icon, 
+        label, 
+        value, 
+        onPress, 
+        isLast = false,
+        valueColor = 'rgba(255,255,255,0.6)',
+        danger = false
+    }: { 
+        icon: string; 
+        label: string; 
+        value?: string; 
+        onPress?: () => void;
+        isLast?: boolean;
+        valueColor?: string;
+        danger?: boolean;
+    }) => (
+        <Pressable 
+            onPress={onPress}
+            style={[styles.row, !isLast && styles.rowWithDivider]}
+        >
+            <Text style={styles.rowIcon}>{icon}</Text>
+            <Text style={[styles.rowLabel, danger && styles.dangerText]}>{label}</Text>
+            <View style={styles.rowRight}>
+                {value && (
+                    <Text 
+                        style={[styles.rowValue, { color: valueColor }, danger && styles.dangerText]} 
+                        numberOfLines={1}
+                    >
+                        {value}
+                    </Text>
+                )}
+                {onPress && <Text style={styles.rowArrow}>›</Text>}
+            </View>
+        </Pressable>
+    );
+
+    // Section card component
+    const SectionCard = ({ children, title }: { children: React.ReactNode; title: string }) => (
+        <View style={styles.sectionCard}>
+            <Text style={[styles.sectionTitle, { color: systemColor }]}>{title}</Text>
+            <View style={styles.cardContent}>
+                {children}
+            </View>
+        </View>
+    );
+
     return (
         <View style={styles.container}>
-            <LinearGradient colors={['#050508', '#080816', '#000000']} style={StyleSheet.absoluteFill} />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
 
+            {/* Header */}
             <View style={styles.header}>
                 <Pressable onPress={() => router.back()} style={styles.backBtn}>
                     <Text style={styles.backText}>← BACK</Text>
                 </Pressable>
-                <Text style={styles.headerTitle}>IDENTITY PROTOCOL</Text>
-                <View style={{ width: 40 }} />
+                <Text style={styles.headerTitle}>AGENT PROTOCOLS</Text>
+                <View style={{ width: 60 }} />
             </View>
 
-            <ScrollView contentContainerStyle={styles.content}>
-                <GlassCard style={styles.formCard}>
-                    <Text style={styles.sectionTitle}>PUBLIC DOSSIER</Text>
+            <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+                
+                {/* SECTION 1 — AGENT PROFILE */}
+                <SectionCard title="AGENT PROFILE">
+                    {/* Row 1: Designation and Bio */}
+                    <SettingRow
+                        icon={ICONS.designation}
+                        label="DESIGNATION"
+                        value={title || 'Add designation...'}
+                        onPress={() => {}}
+                        valueColor={title ? '#fff' : 'rgba(255,255,255,0.3)'}
+                    />
+                    <SettingRow
+                        icon={ICONS.bio}
+                        label="MISSION STATEMENT"
+                        value={bio || 'Add mission statement...'}
+                        onPress={() => {}}
+                        valueColor={bio ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.3)'}
+                    />
+                    
+                    {/* Row 2: Codename */}
+                    <SettingRow
+                        icon={ICONS.codename}
+                        label="CODENAME"
+                        value={formatDisplayName(user?.name)}
+                        onPress={() => {}}
+                    />
+                    
+                    {/* Row 3: Username */}
+                    <SettingRow
+                        icon={ICONS.username}
+                        label="USERNAME"
+                        value={user?.username ? `@${user.username}` : 'Set username...'}
+                        onPress={() => setUsernameModalVisible(true)}
+                        valueColor={user?.username ? systemColor : 'rgba(255,255,255,0.3)'}
+                    />
+                    
+                    {/* Row 4: Email */}
+                    <SettingRow
+                        icon={ICONS.email}
+                        label="EMAIL"
+                        value={user?.email}
+                        onPress={() => setEmailModalVisible(true)}
+                        valueColor="rgba(255,255,255,0.4)"
+                    />
+                    
+                    {/* Password - separate row */}
+                    <SettingRow
+                        icon={ICONS.password}
+                        label="ACCESS CODE"
+                        value="••••••••"
+                        onPress={() => setPasswordModalVisible(true)}
+                        isLast
+                    />
+                </SectionCard>
 
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>CODENAME</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={name}
-                            onChangeText={setName}
-                            placeholderTextColor={Colors.textTertiary}
-                        />
-                    </View>
+                {/* SECTION 2 — SECURITY PROTOCOLS */}
+                <SectionCard title="SECURITY PROTOCOLS">
+                    <SettingRow
+                        icon={ICONS.subscription}
+                        label="SUBSCRIPTION STATUS"
+                        value="FREE TRIAL"
+                        onPress={() => {}}
+                        valueColor="#FFD700"
+                    />
+                    <SettingRow
+                        icon={ICONS.restore}
+                        label="RESTORE PURCHASES"
+                        onPress={() => {}}
+                    />
+                    <SettingRow
+                        icon={ICONS.privacy}
+                        label="PRIVACY POLICY"
+                        onPress={() => {}}
+                    />
+                    <SettingRow
+                        icon={ICONS.terms}
+                        label="TERMS OF SERVICE"
+                        onPress={() => {}}
+                        isLast
+                    />
+                </SectionCard>
 
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>DESIGNATION</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={title}
-                            onChangeText={setTitle}
-                            placeholderTextColor={Colors.textTertiary}
-                        />
-                    </View>
+                {/* SECTION 3 — DANGER ZONE */}
+                <SectionCard title="DANGER ZONE">
+                    <SettingRow
+                        icon={ICONS.signout}
+                        label="SIGN OUT"
+                        value="BURN IDENTITY"
+                        onPress={handleSignOut}
+                        danger
+                    />
+                    <SettingRow
+                        icon={ICONS.reset}
+                        label="RESET ALL PROGRESS"
+                        value="WIPE DATA"
+                        onPress={handleResetProgress}
+                        danger
+                    />
+                    <SettingRow
+                        icon={ICONS.delete}
+                        label="DELETE ACCOUNT"
+                        value="TERMINATE AGENT"
+                        onPress={handleDeleteAccount}
+                        danger
+                        isLast
+                    />
+                </SectionCard>
 
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>MISSION STATEMENT (BIO)</Text>
-                        <TextInput
-                            style={[styles.input, styles.textArea]}
-                            value={bio}
-                            onChangeText={setBio}
-                            multiline
-                            numberOfLines={4}
-                            placeholderTextColor={Colors.textTertiary}
-                        />
-                    </View>
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>USERNAME · LEADERBOARD IDENTITY</Text>
-                        <View style={styles.usernameCurrentRow}>
-                            <Text style={styles.usernameAt}>@</Text>
-                            <Text style={styles.usernameCurrent}>{user?.username || '—not set—'}</Text>
+                <View style={{ height: 40 }} />
+            </ScrollView>
+
+            {/* Username Modal */}
+            <Modal visible={usernameModalVisible} animationType="slide" transparent onRequestClose={() => setUsernameModalVisible(false)}>
+                <View style={styles.modalBg}>
+                    <View style={styles.modalCard}>
+                        <Text style={styles.modalTitle}>CHANGE USERNAME</Text>
+                        <Text style={styles.modalSubtitle}>30-day cooldown after changing. Choose wisely.</Text>
+                        
+                        <View style={styles.currentValueRow}>
+                            <Text style={styles.currentValueLabel}>CURRENT:</Text>
+                            <Text style={styles.currentValue}>@{user?.username || 'not set'}</Text>
                         </View>
+                        
                         <TextInput
-                            style={styles.input}
+                            style={styles.modalInput}
                             value={newUsername}
                             onChangeText={v => { setNewUsername(v.replace(/\s/g, '').slice(0, 20)); setUsernameError(''); }}
                             placeholder="new_username"
-                            placeholderTextColor={Colors.textTertiary}
+                            placeholderTextColor="rgba(255,255,255,0.3)"
                             autoCapitalize="none"
                             autoCorrect={false}
                         />
-                        {!!usernameError && <Text style={styles.fieldError}>{usernameError}</Text>}
-                        <Text style={styles.fieldHint}>30-day cooldown after changing. Choose wisely.</Text>
-                        <Pressable
-                            onPress={handleUsernameUpdate}
-                            style={({ pressed }) => [styles.smallBtn, pressed && styles.pressed, !newUsername && { opacity: 0.4 }]}
-                            disabled={!newUsername || isChangingUsername}
-                        >
-                            <Text style={styles.smallBtnText}>
-                                {isChangingUsername ? 'UPDATING...' : 'UPDATE USERNAME'}
-                            </Text>
-                        </Pressable>
+                        {!!usernameError && <Text style={styles.modalError}>{usernameError}</Text>}
+                        
+                        <View style={styles.modalActions}>
+                            <Pressable onPress={() => setUsernameModalVisible(false)} style={styles.modalCancel}>
+                                <Text style={styles.modalCancelText}>CANCEL</Text>
+                            </Pressable>
+                            <Pressable
+                                style={[styles.modalConfirm, { opacity: (!newUsername || isChangingUsername) ? 0.6 : 1 }]}
+                                onPress={handleUsernameUpdate}
+                                disabled={!newUsername || isChangingUsername}
+                            >
+                                <Text style={styles.modalConfirmText}>
+                                    {isChangingUsername ? 'UPDATING...' : 'CONFIRM'}
+                                </Text>
+                            </Pressable>
+                        </View>
                     </View>
+                </View>
+            </Modal>
 
-                    <Pressable onPress={handleSave} style={({ pressed }) => [styles.saveBtn, pressed && styles.pressed]}>
-                        <LinearGradient
-                            colors={['#4A9EFF', '#7B61FF']}
-                            style={styles.gradientBtn}
-                        >
-                            <Text style={styles.saveText}>{isSaving ? 'UPDATING...' : 'SAVE PUBLIC PROFILE'}</Text>
-                        </LinearGradient>
-                    </Pressable>
-                </GlassCard>
-
-                <GlassCard style={styles.formCard}>
-                    <Text style={styles.sectionTitle}>SECURITY PROTOCOLS</Text>
-
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>CURRENT IDENTITY</Text>
-                        <Text style={{ color: '#fff', fontFamily: Fonts.mono, fontSize: 12, marginBottom: 4 }}>{user?.email}</Text>
-                        <View style={styles.divider} />
-                    </View>
-
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>NEW AGENT ID (EMAIL)</Text>
+            {/* Email Modal */}
+            <Modal visible={emailModalVisible} animationType="slide" transparent onRequestClose={() => setEmailModalVisible(false)}>
+                <View style={styles.modalBg}>
+                    <View style={styles.modalCard}>
+                        <Text style={styles.modalTitle}>UPDATE EMAIL</Text>
+                        
+                        <View style={styles.currentValueRow}>
+                            <Text style={styles.currentValueLabel}>CURRENT:</Text>
+                            <Text style={styles.currentValue}>{user?.email}</Text>
+                        </View>
+                        
                         <TextInput
-                            style={styles.input}
+                            style={styles.modalInput}
                             value={newEmail}
                             onChangeText={setNewEmail}
-                            placeholder="agent@zce.io"
-                            placeholderTextColor={Colors.textTertiary}
+                            placeholder="new@email.com"
+                            placeholderTextColor="rgba(255,255,255,0.3)"
                             autoCapitalize="none"
                             keyboardType="email-address"
                         />
-                        <Pressable
-                            onPress={handleUpdateEmail}
-                            style={({ pressed }) => [styles.smallBtn, pressed && styles.pressed]}
-                            disabled={newEmail === user?.email}
-                        >
-                            <Text style={[styles.smallBtnText, newEmail === user?.email && { opacity: 0.5 }]}>
-                                {isUpdatingEmail ? 'SYNCING...' : 'UPDATE EMAIL'}
-                            </Text>
-                        </Pressable>
+                        
+                        <View style={styles.modalActions}>
+                            <Pressable onPress={() => setEmailModalVisible(false)} style={styles.modalCancel}>
+                                <Text style={styles.modalCancelText}>CANCEL</Text>
+                            </Pressable>
+                            <Pressable
+                                style={[styles.modalConfirm, { opacity: (newEmail === user?.email || isUpdatingEmail) ? 0.6 : 1 }]}
+                                onPress={handleUpdateEmail}
+                                disabled={newEmail === user?.email || isUpdatingEmail}
+                            >
+                                <Text style={styles.modalConfirmText}>
+                                    {isUpdatingEmail ? 'SYNCING...' : 'UPDATE'}
+                                </Text>
+                            </Pressable>
+                        </View>
                     </View>
+                </View>
+            </Modal>
 
-                    <View style={styles.divider} />
-
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>ACCESS CODE (PROTECTED)</Text>
+            {/* Password Modal */}
+            <Modal visible={passwordModalVisible} animationType="slide" transparent onRequestClose={() => setPasswordModalVisible(false)}>
+                <View style={styles.modalBg}>
+                    <View style={styles.modalCard}>
+                        <Text style={styles.modalTitle}>UPDATE ACCESS CODE</Text>
+                        <Text style={styles.modalSubtitle}>Protected by access code verification</Text>
+                        
                         <TextInput
-                            style={styles.input}
+                            style={styles.modalInput}
                             value={newPassword}
                             onChangeText={setNewPassword}
                             placeholder="••••••••"
-                            placeholderTextColor={Colors.textTertiary}
+                            placeholderTextColor="rgba(255,255,255,0.3)"
                             secureTextEntry
                         />
-                        <Pressable
-                            onPress={handleUpdatePassword}
-                            style={({ pressed }) => [styles.smallBtn, pressed && styles.pressed]}
-                            disabled={!newPassword}
-                        >
-                            <Text style={[styles.smallBtnText, !newPassword && { opacity: 0.5 }]}>
-                                {isUpdatingPassword ? 'ENCRYPTING...' : 'UPDATE PASSWORD'}
-                            </Text>
-                        </Pressable>
+                        
+                        <View style={styles.modalActions}>
+                            <Pressable onPress={() => setPasswordModalVisible(false)} style={styles.modalCancel}>
+                                <Text style={styles.modalCancelText}>CANCEL</Text>
+                            </Pressable>
+                            <Pressable
+                                style={[styles.modalConfirm, { opacity: (!newPassword || isUpdatingPassword) ? 0.6 : 1 }]}
+                                onPress={handleUpdatePassword}
+                                disabled={!newPassword || isUpdatingPassword}
+                            >
+                                <Text style={styles.modalConfirmText}>
+                                    {isUpdatingPassword ? 'ENCRYPTING...' : 'UPDATE'}
+                                </Text>
+                            </Pressable>
+                        </View>
                     </View>
-                </GlassCard>
-
-                <Pressable onPress={handleSignOut} style={styles.signOutBtn}>
-                    <Text style={styles.signOutText}>BURN IDENTITY (SIGN OUT)</Text>
-                </Pressable>
-
-                {/* Reset Progress — wipes XP/streak but keeps account */}
-                <Pressable
-                    style={[styles.signOutBtn, { borderColor: 'rgba(255, 160, 50, 0.4)', backgroundColor: 'rgba(255, 140, 0, 0.05)', marginTop: 12 }]}
-                    onPress={() => Alert.alert(
-                        '⚠️ WIPE ALL PROGRESS?',
-                        'This resets your XP, streak, and completed missions to zero — but keeps your account. Cannot be undone.',
-                        [
-                            { text: 'Cancel', style: 'cancel' },
-                            { text: 'RESET', style: 'destructive', onPress: () => resetProgress() },
-                        ]
-                    )}
-                >
-                    <Text style={[styles.signOutText, { color: '#FFA040' }]}>WIPE PROGRESS (KEEP ACCOUNT)</Text>
-                </Pressable>
-
-                <Pressable onPress={handleDeleteAccount} style={[styles.signOutBtn, styles.deleteBtn]}>
-                    <Text style={styles.deleteText}>TERMINATE AGENT (DELETE ACCOUNT)</Text>
-                </Pressable>
-            </ScrollView>
-        </View >
+                </View>
+            </Modal>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1 },
-    header: {
-        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-        paddingTop: 60, paddingHorizontal: 20, paddingBottom: 20,
+    container: {
+        flex: 1,
+        backgroundColor: '#000000',
     },
-    backBtn: { padding: 10 },
-    backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12 },
-    headerTitle: { color: '#fff', fontFamily: Fonts.heading, fontSize: 16, letterSpacing: 2 },
-
-    content: { padding: 20, gap: 24 },
-    formCard: { padding: 24, gap: 20 },
-    sectionTitle: { color: Colors.accentPrimary, fontFamily: Fonts.mono, fontSize: 10, letterSpacing: 2, marginBottom: 8 },
-
-    inputGroup: { gap: 8 },
-    label: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 10, letterSpacing: 1 },
-    input: {
-        backgroundColor: 'rgba(0,0,0,0.3)',
-        borderRadius: Radius.sm,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingTop: 60,
+        paddingHorizontal: 20,
+        paddingBottom: 20,
+    },
+    backBtn: {
+        padding: 10,
+    },
+    backText: {
+        color: 'rgba(255,255,255,0.5)',
+        fontFamily: Fonts.mono,
+        fontSize: 12,
+        letterSpacing: 1,
+    },
+    headerTitle: {
         color: '#fff',
-        padding: 12,
+        fontFamily: Fonts.heading,
+        fontSize: 14,
+        letterSpacing: 3,
+        fontWeight: '800',
+    },
+    content: {
+        padding: 16,
+        paddingBottom: 100,
+        gap: 16,
+    },
+    sectionCard: {
+        marginBottom: 0,
+    },
+    sectionTitle: {
+        fontFamily: Fonts.monoBold,
+        fontSize: 10,
+        letterSpacing: 3,
+        marginBottom: 8,
+        textTransform: 'uppercase',
+    },
+    cardContent: {
+        backgroundColor: 'rgba(255,255,255,0.03)',
+        borderRadius: Radius.lg,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.08)',
+        overflow: 'hidden',
+    },
+    row: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        minHeight: 52,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+    },
+    rowWithDivider: {
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(255,255,255,0.05)',
+    },
+    rowIcon: {
+        fontSize: 16,
+        width: 28,
+        textAlign: 'center',
+        marginRight: 12,
+    },
+    rowLabel: {
+        flex: 1,
         fontFamily: Fonts.body,
         fontSize: 14,
+        color: '#fff',
+        letterSpacing: 0.3,
     },
-    textArea: { height: 100, textAlignVertical: 'top' },
-
-    saveBtn: { borderRadius: Radius.md, overflow: 'hidden', marginTop: 8 },
-    gradientBtn: { padding: 16, alignItems: 'center' },
-    saveText: { color: '#fff', fontFamily: Fonts.heading, fontSize: 14, letterSpacing: 2 },
-    pressed: { opacity: 0.8 },
-
-    divider: { height: 1, backgroundColor: 'rgba(255,255,255,0.05)', marginVertical: 8 },
-    smallBtn: { paddingVertical: 10, alignItems: 'flex-end' },
-    smallBtnText: { color: Colors.accentPrimary, fontFamily: Fonts.mono, fontSize: 10, letterSpacing: 1, textDecorationLine: 'underline' },
-
-    signOutBtn: { padding: 16, alignItems: 'center', marginTop: 20, borderWidth: 1, borderColor: 'rgba(255, 59, 48, 0.3)', borderRadius: Radius.md },
-    signOutText: { color: '#FF3B30', fontFamily: Fonts.mono, fontSize: 12, letterSpacing: 1 },
-
-    deleteBtn: { marginTop: 12, borderColor: 'rgba(255, 0, 0, 0.5)', backgroundColor: 'rgba(255, 0, 0, 0.05)' },
-    deleteText: { color: '#FF4444', fontFamily: Fonts.monoBold, fontSize: 12, letterSpacing: 1 },
-
-    // Username section
-    usernameCurrentRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 6 },
-    usernameAt: { fontFamily: Fonts.monoBold, fontSize: 13, color: Colors.accentPrimary },
-    usernameCurrent: { fontFamily: Fonts.mono, fontSize: 13, color: '#fff', letterSpacing: 0.5 },
-    fieldError: { color: '#FF3B30', fontFamily: Fonts.mono, fontSize: 9, letterSpacing: 0.3 },
-    fieldHint: { color: 'rgba(255,255,255,0.25)', fontFamily: Fonts.mono, fontSize: 9, letterSpacing: 0.3 },
+    rowRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    rowValue: {
+        fontFamily: Fonts.mono,
+        fontSize: 12,
+        letterSpacing: 0.5,
+        maxWidth: 140,
+    },
+    rowArrow: {
+        fontSize: 18,
+        color: 'rgba(255,255,255,0.3)',
+        marginLeft: 4,
+    },
+    rowInput: {
+        flex: 1,
+        fontFamily: Fonts.body,
+        fontSize: 14,
+        color: '#fff',
+        textAlign: 'right',
+        paddingVertical: 4,
+        minWidth: 100,
+    },
+    dangerText: {
+        color: '#FF3B30',
+    },
+    
+    // Modal styles
+    modalBg: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.9)',
+        justifyContent: 'center',
+        padding: 20,
+    },
+    modalCard: {
+        backgroundColor: '#111',
+        borderRadius: 24,
+        padding: 28,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+    },
+    modalTitle: {
+        fontFamily: Fonts.heading,
+        fontSize: 18,
+        color: '#fff',
+        letterSpacing: 2,
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    modalSubtitle: {
+        fontFamily: Fonts.mono,
+        fontSize: 10,
+        color: 'rgba(255,255,255,0.4)',
+        letterSpacing: 0.5,
+        marginBottom: 20,
+        textAlign: 'center',
+    },
+    currentValueRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        marginBottom: 16,
+    },
+    currentValueLabel: {
+        fontFamily: Fonts.monoBold,
+        fontSize: 10,
+        color: 'rgba(255,255,255,0.4)',
+        letterSpacing: 1,
+    },
+    currentValue: {
+        fontFamily: Fonts.mono,
+        fontSize: 12,
+        color: '#fff',
+        letterSpacing: 0.5,
+    },
+    modalInput: {
+        height: 56,
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderRadius: 16,
+        paddingHorizontal: 20,
+        color: '#fff',
+        fontFamily: Fonts.body,
+        fontSize: 16,
+        marginBottom: 12,
+        textAlign: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+    },
+    modalError: {
+        color: '#FF3B30',
+        fontFamily: Fonts.mono,
+        fontSize: 10,
+        textAlign: 'center',
+        marginBottom: 12,
+    },
+    modalActions: {
+        flexDirection: 'row',
+        gap: 12,
+        marginTop: 8,
+    },
+    modalCancel: {
+        flex: 1,
+        height: 52,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+    },
+    modalCancelText: {
+        fontFamily: Fonts.mono,
+        color: 'rgba(255,255,255,0.5)',
+        fontSize: 12,
+        letterSpacing: 1,
+    },
+    modalConfirm: {
+        flex: 1,
+        height: 52,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+    },
+    modalConfirmText: {
+        fontFamily: Fonts.heading,
+        color: '#000',
+        fontSize: 13,
+        fontWeight: '800',
+        letterSpacing: 1,
+    },
 });
