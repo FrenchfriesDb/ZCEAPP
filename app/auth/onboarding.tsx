@@ -10,8 +10,8 @@ import { Colors, Fonts } from '@/constants/theme';
 import { useUser } from '@/context/UserContext';
 
 const { width: W, height: H } = Dimensions.get('window');
-const CYAN = '#FFFFFF';
-const ACCENT = '#FFFFFF';
+const CYAN = '#333333';
+const ACCENT = '#333333';
 
 // ─── Wireframe Head ───────────────────────────────────────────────────────────
 function WireframeHead({ stage }: { stage: number }) {
@@ -111,7 +111,7 @@ function WireframeHead({ stage }: { stage: number }) {
                     position: 'absolute',
                     left: 15, right: 15,
                     height: 1,
-                    backgroundColor: '#FFFFFF',
+                    backgroundColor: '#333333',
                     opacity: scanOp,
                     transform: [{ translateY: scanLineY }],
                 }} />
@@ -556,9 +556,9 @@ const styles = StyleSheet.create({
 
     ctaBtn: {
         width: '100%', borderRadius: 12, overflow: 'hidden',
-        borderWidth: 1.5, borderColor: 'rgba(255, 255, 255, 0.2)',
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        shadowColor: '#FFFFFF',
+        borderWidth: 1.5, borderColor: 'rgba(51, 51, 51, 0.4)',
+        backgroundColor: 'rgba(51, 51, 51, 0.15)',
+        shadowColor: '#333333',
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.15,
         shadowRadius: 20,
@@ -583,9 +583,9 @@ const styles = StyleSheet.create({
     optBtn: {
         width: '100%', flexDirection: 'row', alignItems: 'center', gap: 14,
         padding: 16, borderRadius: 10,
-        borderWidth: 1.5, borderColor: 'rgba(255, 255, 255, 0.15)',
-        backgroundColor: 'rgba(255, 255, 255, 0.03)',
-        shadowColor: '#FFFFFF',
+        borderWidth: 1.5, borderColor: 'rgba(51, 51, 51, 0.3)',
+        backgroundColor: 'rgba(51, 51, 51, 0.1)',
+        shadowColor: '#333333',
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.1,
         shadowRadius: 15,
@@ -682,10 +682,10 @@ const styles = StyleSheet.create({
     },
     inputFieldFocused: {
         borderTopColor: 'rgba(0, 212, 255, 0.5)',
-        borderLeftColor: 'rgba(255, 255, 255, 0.3)',
-        borderRightColor: 'rgba(255, 255, 255, 0.3)',
-        borderBottomColor: 'rgba(255, 255, 255, 0.3)',
-        shadowColor: '#FFFFFF',
+        borderLeftColor: 'rgba(51, 51, 51, 0.5)',
+        borderRightColor: 'rgba(51, 51, 51, 0.5)',
+        borderBottomColor: 'rgba(51, 51, 51, 0.5)',
+        shadowColor: '#333333',
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.3,
         shadowRadius: 10,
