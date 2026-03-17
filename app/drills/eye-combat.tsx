@@ -44,19 +44,21 @@ setTimeRemaining(20);
 
   const handleEyeBreak = () => {
     const newBreaks = breaks + 1;
-    setBreaks(newBreaks);
+setBreaks(newBreaks);
     Alert.alert('EYE BREAK DETECTED', `You've broken eye contact ${newBreaks} times. Reset timer and lock in.`, [
-onPress: () => setTimeRemaining(20) },
+      { text: 'RESET', onPress: () => setTimeRemaining(20) },
+    ]);
     ]);
   };
 
   const handleComplete = async () => {
     try {
       const xp = Math.max(12, 20 - breaks * 2);
-      await completeDrill(xp);
-      Alert.alert('STARE DOMINANCE', `You held for 60 seconds. ${breaks} breaks detected. +${xp} XP awarded.`, [
+await completeDrill(xp);
+      Alert.alert('STARE DOMINANCE', `You held for 20 seconds. ${breaks} breaks detected. +${xp} XP awarded.`, [
         { text: 'FINISH SESSION', onPress: () => router.replace('/') },
-onPress: () => { setStage('ready'); setTimeRemaining(20); setBreaks(0); } },
+        { text: 'ANOTHER ROUND', onPress: () => { setStage('ready'); setTimeRemaining(20); setBreaks(0); } },
+      ]);
       ]);
     } catch (err) {
       console.error('Drill completion error:', err);
