@@ -286,13 +286,13 @@ export default function MirrorDrill() {
 
                     <View style={styles.divider} />
 
-                    <Text style={styles.label}>THE VIBE:</Text>
-                    <Animated.View style={{ opacity: fadeAnim, alignItems: 'center' }}>
-                        <Text style={[styles.flavorTitle, { color: systemColor }]}>
-                            <Text style={styles.emojiText}>{FLAVORS[flavorIdx].label.split(' ')[0]}</Text> {FLAVORS[flavorIdx].label.split(' ')[1]}
-                        </Text>
-                        <Text style={styles.flavorDesc}>{FLAVORS[flavorIdx].desc}</Text>
-                    </Animated.View>
+	                    <Text style={styles.label}>THE VIBE:</Text>
+	                    <Animated.View style={{ opacity: fadeAnim, alignItems: 'center' }}>
+	                        <Text style={styles.flavorTitle}>
+	                            <Text style={styles.emojiText}>{FLAVORS[flavorIdx].label.split(' ')[0]}</Text> {FLAVORS[flavorIdx].label.split(' ')[1]}
+	                        </Text>
+	                        <Text style={styles.flavorDesc}>{FLAVORS[flavorIdx].desc}</Text>
+	                    </Animated.View>
                 </GlassCard>
 
                 {/* Proof Section */}
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
     },
     backBtn: { padding: 8, minWidth: 60 },
     backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12, letterSpacing: 1 },
-    title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: Colors.textPrimary, letterSpacing: 3, textAlign: 'center' },
+	    title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: '#FFFFFF', letterSpacing: 3, textAlign: 'center' },
 
     scrollContent: { padding: Spacing.md, alignItems: 'center', gap: 6, paddingBottom: 10 },
 
@@ -404,28 +404,28 @@ const styles = StyleSheet.create({
 
     promptCard: { width: '100%', padding: 10, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)' },
     label: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, marginBottom: 6 },
-    lineText: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.textPrimary, textAlign: 'center', lineHeight: 24 },
+	    lineText: { fontFamily: Fonts.heading, fontSize: 18, color: '#FFFFFF', textAlign: 'center', lineHeight: 24 },
     divider: { width: 40, height: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginVertical: 10 },
-    flavorTitle: { fontFamily: Fonts.heading, fontSize: 18, marginBottom: 0 },
+	    flavorTitle: { fontFamily: Fonts.heading, fontSize: 18, marginBottom: 0, color: '#FFFFFF' },
     emojiText: {
         fontFamily: Platform.OS === 'ios' ? 'System' : undefined,
         fontWeight: 'normal',
         letterSpacing: 0,
     },
-    flavorDesc: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, textAlign: 'center' },
+	    flavorDesc: { fontFamily: Fonts.body, fontSize: 13, color: '#FFFFFF', textAlign: 'center' },
 
     proofSection: { width: '100%', gap: 6, marginTop: 2 },
     proofLabel: { fontFamily: Fonts.monoBold, fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 4 },
-    textInput: {
+	    textInput: {
         width: '100%',
         backgroundColor: 'rgba(255,255,255,0.05)',
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.1)',
         borderRadius: Radius.md,
         padding: 10,
-        color: Colors.textPrimary,
-        fontFamily: Fonts.body,
-        fontSize: 13,
+	        color: '#FFFFFF',
+	        fontFamily: Fonts.body,
+	        fontSize: 13,
         minHeight: 50,
         textAlignVertical: 'top',
     },
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
         borderColor: Colors.accentCyan + '55',
         backgroundColor: 'rgba(0, 245, 255, 0.05)',
     },
-    voiceBtnText: { fontFamily: Fonts.monoBold, fontSize: 11, color: Colors.textPrimary, letterSpacing: 1 },
+	    voiceBtnText: { fontFamily: Fonts.monoBold, fontSize: 11, color: '#FFFFFF', letterSpacing: 1 },
 
     btn: { backgroundColor: '#fff', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 8, marginTop: 20 },
     btnText: { color: Colors.bgPrimary, fontWeight: 'bold', fontFamily: Fonts.heading },

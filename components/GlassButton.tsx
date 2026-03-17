@@ -13,7 +13,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Colors, Fonts, FontSizes, Radius } from '@/constants/theme';
 import { useTimeColors } from '@/hooks/useTimeColors';
-import { useTextColors } from '@/context/TextColorsContext';
 
 /**
  * Ultra-realistic "water-glass" button.
@@ -64,14 +63,14 @@ const TINT = {
     },
     blue: {
         rimColors: [
-            'rgba(255,255,255,0.15)',
-            'rgba(255,255,255,0.08)',
-            'rgba(0,0,0,0.70)',
+            'rgba(255,255,255,0.35)',
+            'rgba(255,255,255,0.10)',
+            'rgba(0,0,0,0.78)',
         ] as const,
         bodyColors: [
-            'rgba(0,0,0,0.03)',
-            'rgba(0,0,0,0.01)',
-            'rgba(0,0,0,0.08)',
+            'rgba(255,255,255,0.10)',
+            'rgba(255,255,255,0.04)',
+            'rgba(0,0,0,0.24)',
         ] as const,
         specularColors: [
             'rgba(255,255,255,0.25)',
@@ -162,8 +161,8 @@ export default function GlassButton({
 }: GlassButtonProps) {
     const scaleAnim = useRef(new Animated.Value(1)).current;
     const glowAnim = useRef(new Animated.Value(0.4)).current;
-    const timePalette = useTimeColors();
-    const systemColor = timePalette[0];
+    const { palette: timePalette } = useTimeColors();
+    const themeSecondary = timePalette[1] ?? timePalette[timePalette.length - 1] ?? Colors.accentCyan;
 
     // glow halo pulse
     useEffect(() => {
@@ -188,14 +187,12 @@ export default function GlassButton({
     const isCircle = variant === 'circle';
     const br = variant === 'pill' ? Radius.pill : Radius.lg;
     
-    // Use theme color for blue tint
-    const { textPrimary } = useTextColors();
-    const useThemeColor = tint === 'blue';
-    const finalTint = useThemeColor ? { ...t, label: textPrimary, glowColor: textPrimary } : t;
-
-    // Special font color for sunset theme (6-7 PM)
-    const isSunsetTheme = timePalette[0] === '#FF0F7B' && timePalette[1] === '#F89B29';
-    const labelColor = '#FFFFFF'; // Always white for better visibility
+    const accentColor =
+        tint === 'blue' ? themeSecondary : tint === 'red' ? Colors.accentDanger : tint === 'monochrome' ? '#FFFFFF' : null;
+    const labelColor = '#FFFFFF';
+    const rimColors = accentColor
+        ? ([`${accentColor}66`, 'rgba(255,255,255,0.10)', 'rgba(0,0,0,0.78)'] as const)
+        : t.rimColors;
 
     return (
         <Animated.View style={[{ transform: [{ scale: scaleAnim }] }, style]}>
@@ -212,9 +209,9 @@ export default function GlassButton({
                         styles.glowHalo,
                         {
                             borderRadius: br + 6,
-                            shadowColor: useThemeColor ? textPrimary : finalTint.glowColor,
+                            shadowColor: accentColor ?? t.glowColor,
                             shadowOpacity: glowAnim,
-                            backgroundColor: useThemeColor ? textPrimary : finalTint.glowColor,
+                            backgroundColor: accentColor ?? t.glowColor,
                             ...(isCircle ? { width: circle + 12, height: circle + 12, left: -6, top: -6 } : {}),
                         },
                     ]} />
@@ -225,7 +222,7 @@ export default function GlassButton({
 
                 {/* 3 ── METALLIC SPECULAR RIM (1.2px) */}
                 <LinearGradient
-                    colors={useThemeColor ? [textPrimary + '60', textPrimary + '20', 'rgba(0,0,0,0.55)'] : finalTint.rimColors}
+                    colors={rimColors}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 0, y: 1 }}
                     style={[styles.rim, { borderRadius: br }, isCircle && { width: circle, height: circle }]}
@@ -243,13 +240,26 @@ export default function GlassButton({
                     >
                         {/* Glass body gradient — slight top shimmer, dark bottom */}
                         <LinearGradient
-                            colors={useThemeColor ? [textPrimary + '12', textPrimary + '03', 'rgba(0,0,0,0.22)'] : finalTint.bodyColors}
+                            colors={t.bodyColors}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 0, y: 1 }}
-                            style={styles.glassBody}
+                            style={[
+                                styles.glassBody,
+                                isCircle ? { width: circle - 2.4, height: circle - 2.4 } : { paddingHorizontal: ph, paddingVertical: pv },
+                            ]}
                         >
+                            {/* Right-edge accent glow (matches the theme's secondary color for drills) */}
+                            {accentColor ? (
+                                <LinearGradient
+                                    colors={['rgba(0,0,0,0)', `${accentColor}22`]}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 0 }}
+                                    style={StyleSheet.absoluteFill}
+                                />
+                            ) : null}
+
                             <LinearGradient
-                                colors={finalTint.specularColors}
+                                colors={t.specularColors}
                                 start={{ x: 0.5, y: 0 }}
                                 end={{ x: 0.5, y: 1 }}
                                 style={StyleSheet.absoluteFill}
@@ -271,15 +281,17 @@ export default function GlassButton({
                                         textShadowColor: 'rgba(0,0,0,0.5)',
                                         textShadowRadius: 2,
                                         textShadowOffset: { width: 0, height: 1 },
-                                        fontFamily: Platform.OS === 'ios' ? 'System' : undefined,
-                                        fontWeight: '600',
+                                        fontFamily: Fonts.headingSemi,
                                         letterSpacing: 0.5,
                                     }}>
                                         {icon}
                                     </Text>
                                 ) : null}
-                                <Text style={[styles.label, { fontSize: fs, color: labelColor }, labelStyle]}>
-                                    {label}
+                                <Text
+                                    style={[styles.label, { fontSize: fs, color: labelColor }, labelStyle]}
+                                    numberOfLines={1}
+                                >
+                                    {label.toUpperCase()}
                                 </Text>
                         </LinearGradient>
                     </BlurView>
@@ -290,6 +302,15 @@ export default function GlassButton({
 }
 
 const styles = StyleSheet.create({
+    rim: {
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.10)',
+        padding: 1.2,
+    },
+    glassBody: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     glowHalo: {
         ...StyleSheet.absoluteFillObject,
         shadowOffset: { width: 0, height: 0 },
@@ -312,9 +333,8 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
     label: {
-        fontFamily: Fonts.headingSemi,
-        fontWeight: '700',
-        letterSpacing: 0.6,
+        fontFamily: Fonts.heading,
+        letterSpacing: 2.2,
         textAlign: 'center',
         color: '#FFFFFF',
         textShadowColor: 'rgba(0,0,0,0.8)',

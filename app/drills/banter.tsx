@@ -170,7 +170,7 @@ The Brutal Truth: Next round, don't think. Respond. Your first instinct is usual
         <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/')} style={styles.backBtn}>
           <Text style={styles.backText}>← EXIT</Text>
         </Pressable>
-        <Text style={[styles.title, { color: themeColor }]}>BANTER BUILDER</Text>
+        <Text style={styles.title}>BANTER BUILDER</Text>
         <View style={{ width: 60 }} />
       </View>
 
@@ -178,7 +178,7 @@ The Brutal Truth: Next round, don't think. Respond. Your first instinct is usual
         <View style={{ paddingHorizontal: Spacing.md, paddingTop: 6 }}>
           <GlassCard style={[styles.statementCard, { borderColor: themeColor + '44' }]}>
             <Text style={styles.statementLabel}>STATEMENT:</Text>
-            <Text style={[styles.statementText, { color: themeColor }]}>
+            <Text style={styles.statementText}>
               "{STATEMENTS[statementIdx]}"
             </Text>
           </GlassCard>
@@ -205,7 +205,7 @@ The Brutal Truth: Next round, don't think. Respond. Your first instinct is usual
             {!isTimerActive && (
               <GlassCard style={[styles.statementCard, { borderColor: themeColor + '44' }]}>
                 <Text style={styles.statementLabel}>STATEMENT:</Text>
-                <Text style={[styles.statementText, { color: themeColor }]}>
+                <Text style={styles.statementText}>
                   "{STATEMENTS[statementIdx]}"
                 </Text>
               </GlassCard>
@@ -213,7 +213,7 @@ The Brutal Truth: Next round, don't think. Respond. Your first instinct is usual
 
             {/* Timer */}
             <View style={styles.timerContainer}>
-              <Text style={[styles.timerText, { color: timeLeft <= 2 ? '#FF4444' : themeColor }]}>
+              <Text style={[styles.timerText, { color: timeLeft <= 2 ? '#FF4444' : '#FFFFFF' }]}>
                 {isTimerActive ? timeLeft : '5'}
               </Text>
               <Text style={styles.timerLabel}>{isTimerActive ? 'SECONDS LEFT' : 'TAP TO START'}</Text>
@@ -320,20 +320,20 @@ const styles = StyleSheet.create({
   },
   backBtn: { padding: 8, minWidth: 60 },
   backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12, letterSpacing: 1 },
-  title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: Colors.textPrimary, letterSpacing: 3, textAlign: 'center' },
+  title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: '#FFFFFF', letterSpacing: 3, textAlign: 'center' },
 
   scrollContent: { padding: Spacing.md, alignItems: 'center', gap: 12, paddingBottom: 10 },
 
   infoCard: { width: '100%', padding: 12, backgroundColor: 'rgba(255,255,255,0.03)' },
   infoLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, marginBottom: 6 },
-  infoText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 20 },
+  infoText: { fontFamily: Fonts.body, fontSize: 13, color: '#FFFFFF', lineHeight: 20 },
 
   statementCard: { width: '100%', padding: 16, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.02)', borderWidth: 1 },
   statementLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 10 },
-  statementText: { fontFamily: Fonts.heading, fontSize: 16, textAlign: 'center', lineHeight: 24 },
+  statementText: { fontFamily: Fonts.heading, fontSize: 16, textAlign: 'center', lineHeight: 24, color: '#FFFFFF' },
 
   timerContainer: { alignItems: 'center', marginVertical: 20, gap: 4 },
-  timerText: { fontFamily: Fonts.heading, fontSize: 64, fontWeight: '900', lineHeight: 64 },
+  timerText: { fontFamily: Fonts.heading, fontSize: 64, fontWeight: '900', lineHeight: 64, color: '#FFFFFF' },
   timerLabel: { fontFamily: Fonts.mono, fontSize: 10, color: 'rgba(255,255,255,0.3)', letterSpacing: 2 },
 
   responseInput: {
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0, 245, 255, 0.3)',
     borderRadius: Radius.md,
     padding: 14,
-    color: Colors.textPrimary,
+    color: '#FFFFFF',
     fontFamily: Fonts.body,
     fontSize: 14,
     minHeight: 60,
@@ -352,10 +352,10 @@ const styles = StyleSheet.create({
 
   responseCard: { width: '100%', padding: 14, backgroundColor: 'rgba(0, 245, 255, 0.05)', borderColor: 'rgba(0, 245, 255, 0.2)', borderWidth: 1 },
   responseLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(0, 245, 255, 0.5)', letterSpacing: 1, marginBottom: 8 },
-  responseText: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textPrimary, lineHeight: 20 },
+  responseText: { fontFamily: Fonts.body, fontSize: 14, color: '#FFFFFF', lineHeight: 20 },
 
   analysisCard: { width: '100%', padding: 16, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: Radius.lg },
-  analysisText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, lineHeight: 20 },
+  analysisText: { fontFamily: Fonts.body, fontSize: 12, color: '#FFFFFF', lineHeight: 20 },
 
   buttonGroup: { width: '100%', gap: 10, marginTop: 16 },
 });

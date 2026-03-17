@@ -90,7 +90,7 @@ export default function EyeCombatDrill() {
         <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/')} style={styles.backBtn}>
           <Text style={styles.backText}>← EXIT</Text>
         </Pressable>
-        <Text style={[styles.title, { color: systemColor }]}>EYE COMBAT</Text>
+        <Text style={styles.title}>EYE COMBAT</Text>
         <View style={{ width: 60 }} />
       </View>
 
@@ -140,7 +140,7 @@ export default function EyeCombatDrill() {
             </View>
 
             <GlassCard style={[styles.timerCard, { borderColor: systemColor + '66' }]}>
-              <Text style={[styles.timerText, { color: systemColor }]}>
+              <Text style={styles.timerText}>
                 {timeRemaining}s
               </Text>
             </GlassCard>
@@ -211,17 +211,17 @@ const styles = StyleSheet.create({
   },
   backBtn: { padding: 8, minWidth: 60 },
   backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12, letterSpacing: 1 },
-  title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, letterSpacing: 3, textAlign: 'center' },
+  title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, letterSpacing: 3, textAlign: 'center', color: '#FFFFFF' },
 
   scrollContent: { padding: Spacing.md, alignItems: 'center', gap: 12, paddingBottom: 10 },
 
   infoCard: { width: '100%', padding: 12, backgroundColor: 'rgba(255,255,255,0.03)' },
   infoLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, marginBottom: 6 },
-  infoText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 20 },
+  infoText: { fontFamily: Fonts.body, fontSize: 13, color: '#FFFFFF', lineHeight: 20 },
 
   rulesCard: { width: '100%', padding: 12, backgroundColor: 'rgba(255,255,255,0.02)' },
   rulesLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 8 },
-  rulesText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, lineHeight: 18 },
+  rulesText: { fontFamily: Fonts.body, fontSize: 12, color: '#FFFFFF', lineHeight: 18 },
 
   cameraSection: { width: '100%', alignItems: 'center' },
   cameraContainer: {
@@ -253,17 +253,17 @@ const styles = StyleSheet.create({
   },
 
   timerCard: { width: '100%', paddingVertical: 24, alignItems: 'center', backgroundColor: 'rgba(113, 195, 247, 0.05)', borderWidth: 1 },
-  timerText: { fontFamily: Fonts.heading, fontSize: 56, fontWeight: '700' },
+  timerText: { fontFamily: Fonts.heading, fontSize: 56, fontWeight: '700', color: '#FFFFFF' },
 
   instructionCard: { width: '100%', padding: 14, backgroundColor: 'rgba(255,255,255,0.02)' },
-  instructionText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, textAlign: 'center' },
+  instructionText: { fontFamily: Fonts.body, fontSize: 12, color: '#FFFFFF', textAlign: 'center' },
 
   breakCard: { width: '100%', paddingVertical: 16, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.01)' },
   breakLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 8 },
   breakCount: { fontFamily: Fonts.heading, fontSize: 28 },
 
   completeCard: { width: '100%', padding: 20, backgroundColor: 'rgba(0, 245, 255, 0.05)', borderColor: 'rgba(0, 245, 255, 0.2)', borderWidth: 1 },
-  completeTitle: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.accentCyan, marginBottom: 12 },
-  completeText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 20, marginBottom: 12 },
+  completeTitle: { fontFamily: Fonts.heading, fontSize: 18, color: '#FFFFFF', marginBottom: 12 },
+  completeText: { fontFamily: Fonts.body, fontSize: 13, color: '#FFFFFF', lineHeight: 20, marginBottom: 12 },
   breaksSummary: { fontFamily: Fonts.body, fontSize: 11, color: 'rgba(255,255,255,0.4)', fontStyle: 'italic', marginTop: 8 },
 });

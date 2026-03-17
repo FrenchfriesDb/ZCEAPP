@@ -244,10 +244,11 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                             label="VERIFY & COMPLETE" 
                             onPress={handleSubmit} 
                             tint="blue"
-                            size="md" 
+                            size="lg" 
                             glow
                             style={{ 
                                 shadowColor: firstColor,
+                                minWidth: 240,
                             }}
                         />
                     </View>

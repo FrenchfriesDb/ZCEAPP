@@ -4,6 +4,7 @@ import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import GlassCard from '@/components/GlassCard';
+import GlassButton from '@/components/GlassButton';
 import { OBJECTS } from '@/constants/zane';
 import { AIService } from '@/services/ai';
 import { useUser } from '@/context/UserContext';
@@ -98,28 +99,39 @@ export default function ComedianDrill() {
                 {!feedback ? (
                     <View style={styles.inputSection}>
                         <Text style={styles.inputLabel}>YOUR PERFORMANCE:</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Type your roast or compliment..."
-                            placeholderTextColor="rgba(255,255,255,0.3)"
-                            value={response}
-                            onChangeText={setResponse}
-                            multiline
-                        />
-                        <Pressable onPress={handleAnalyze} style={styles.analyzeBtn} disabled={isLoading || !response}>
-                            {isLoading ? <ActivityIndicator color={Colors.bgPrimary} /> : <Text style={styles.analyzeBtnText}>GET FEEDBACK</Text>}
-                        </Pressable>
-                    </View>
-                ) : (
-                    <View style={styles.feedbackSection}>
-                        <ScrollView style={styles.feedbackScroll} contentContainerStyle={styles.feedbackScrollContent}>
-                            <Text style={styles.feedbackText}>{feedback}</Text>
-                        </ScrollView>
-                        <Pressable onPress={generate} style={styles.btn}>
-                            <Text style={styles.btnText}>NEXT OBJECT</Text>
-                        </Pressable>
-                    </View>
-                )}
+	                        <TextInput
+	                            style={styles.input}
+	                            placeholder="Type your roast or compliment..."
+	                            placeholderTextColor="rgba(255,255,255,0.3)"
+	                            value={response}
+	                            onChangeText={setResponse}
+	                            multiline
+	                        />
+	                        <GlassButton
+	                            label={isLoading ? 'Analyzing...' : 'Get Feedback'}
+	                            onPress={handleAnalyze}
+	                            tint="blue"
+	                            size="lg"
+	                            glow
+	                            disabled={isLoading || !response}
+	                            style={{ width: '100%', marginTop: 6 }}
+	                        />
+	                    </View>
+	                ) : (
+	                    <View style={styles.feedbackSection}>
+	                        <ScrollView style={styles.feedbackScroll} contentContainerStyle={styles.feedbackScrollContent}>
+	                            <Text style={styles.feedbackText}>{feedback}</Text>
+	                        </ScrollView>
+	                        <GlassButton
+	                            label="Next Object"
+	                            onPress={generate}
+	                            tint="blue"
+	                            size="lg"
+	                            glow
+	                            style={{ width: '100%' }}
+	                        />
+	                    </View>
+	                )}
 
                 <View style={{ height: 40 }} />
             </ScrollView>
@@ -135,14 +147,14 @@ const styles = StyleSheet.create({
     backBtn: { width: 60 },
     headerSpacer: { width: 60 },
     backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12 },
-    title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: Colors.textPrimary, letterSpacing: 3, textAlign: 'center' },
+    title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: '#FFFFFF', letterSpacing: 3, textAlign: 'center' },
 
     scrollContent: { paddingHorizontal: Spacing.lg, gap: 16, paddingBottom: 40 },
-    instruction: { fontFamily: Fonts.body, fontSize: 16, color: Colors.textSecondary, textAlign: 'center' },
+    instruction: { fontFamily: Fonts.body, fontSize: 16, color: '#FFFFFF', textAlign: 'center' },
 
     card: { padding: 24, alignItems: 'center', width: '100%' },
     label: { fontFamily: Fonts.mono, fontSize: 12, color: Colors.accentPrimary, marginBottom: 10 },
-    object: { fontFamily: Fonts.heading, fontSize: 28, color: Colors.textPrimary, textAlign: 'center' },
+    object: { fontFamily: Fonts.heading, fontSize: 28, color: '#FFFFFF', textAlign: 'center' },
     nextSubject: { marginTop: 12, padding: 8, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 20 },
     nextSubjectText: { fontFamily: Fonts.mono, fontSize: 10, color: 'rgba(255,255,255,0.4)', letterSpacing: 1 },
 
@@ -150,7 +162,7 @@ const styles = StyleSheet.create({
     inputLabel: { fontFamily: Fonts.mono, fontSize: 10, color: Colors.accentPrimary, letterSpacing: 2 },
     input: {
         backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: 14,
-        color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 16, minHeight: 80, textAlignVertical: 'top',
+        color: '#FFFFFF', fontFamily: Fonts.body, fontSize: 16, minHeight: 80, textAlignVertical: 'top',
         borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
     },
     analyzeBtn: { backgroundColor: '#fff', paddingVertical: 14, borderRadius: 30, alignItems: 'center' },
@@ -165,7 +177,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(255,255,255,0.08)',
     },
     feedbackScrollContent: { padding: 18 },
-    feedbackText: { color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 14, lineHeight: 22 },
+    feedbackText: { color: '#FFFFFF', fontFamily: Fonts.body, fontSize: 14, lineHeight: 22 },
 
     btn: { backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 40, paddingVertical: 14, borderRadius: 30, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
     btnText: { fontFamily: Fonts.heading, fontSize: 14, color: '#fff', letterSpacing: 2 },

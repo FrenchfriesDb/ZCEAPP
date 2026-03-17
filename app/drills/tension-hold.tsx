@@ -83,7 +83,7 @@ export default function TensionHoldDrill() {
         <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/')} style={styles.backBtn}>
           <Text style={styles.backText}>← EXIT</Text>
         </Pressable>
-        <Text style={[styles.title, { color: systemColor }]}>TENSION HOLD</Text>
+        <Text style={styles.title}>TENSION HOLD</Text>
         <View style={{ width: 60 }} />
       </View>
 
@@ -91,7 +91,7 @@ export default function TensionHoldDrill() {
         <View style={{ paddingHorizontal: Spacing.md, paddingTop: 6 }}>
           <GlassCard style={[styles.promptCard, { borderColor: systemColor + '44' }]}>
             <Text style={styles.promptLabel}>THE PROMPT:</Text>
-            <Text style={[styles.promptText, { color: systemColor }]}>
+            <Text style={styles.promptText}>
               "{TENSION_PROMPTS[promptIdx]}"
             </Text>
           </GlassCard>
@@ -186,16 +186,16 @@ const styles = StyleSheet.create({
   },
   backBtn: { padding: 8, minWidth: 60 },
   backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12, letterSpacing: 1 },
-  title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, letterSpacing: 3, textAlign: 'center' },
+  title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, letterSpacing: 3, textAlign: 'center', color: '#FFFFFF' },
 
   scrollContent: { padding: Spacing.md, alignItems: 'center', gap: 12, paddingBottom: 10 },
 
   infoCard: { width: '100%', padding: 14, backgroundColor: 'rgba(255,255,255,0.03)' },
-  infoText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 20 },
+  infoText: { fontFamily: Fonts.body, fontSize: 13, color: '#FFFFFF', lineHeight: 20 },
 
   promptCard: { width: '100%', padding: 14, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.02)', borderWidth: 1 },
   promptLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 10 },
-  promptText: { fontFamily: Fonts.heading, fontSize: 15, textAlign: 'center', lineHeight: 22 },
+  promptText: { fontFamily: Fonts.heading, fontSize: 15, textAlign: 'center', lineHeight: 22, color: '#FFFFFF' },
 
   inputLabel: { fontFamily: Fonts.mono, fontSize: 9, color: 'rgba(255,255,255,0.4)', letterSpacing: 1, marginTop: 10, alignSelf: 'flex-start' },
   inputWrapper: { width: '100%' },
@@ -206,20 +206,20 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.1)',
     borderRadius: Radius.md,
     padding: 12,
-    color: Colors.textPrimary,
+    color: '#FFFFFF',
     fontFamily: Fonts.body,
     fontSize: 14,
     minHeight: 50,
   },
 
   stareLabel: { fontFamily: Fonts.mono, fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginVertical: 20 },
-  timerText: { fontFamily: Fonts.heading, fontSize: 72, fontWeight: '900', lineHeight: 80 },
+  timerText: { fontFamily: Fonts.heading, fontSize: 72, fontWeight: '900', lineHeight: 80, color: '#FFFFFF' },
   timerLabel: { fontFamily: Fonts.mono, fontSize: 10, color: 'rgba(255,255,255,0.25)', letterSpacing: 2 },
 
   stareCard: { width: '100%', padding: 14, backgroundColor: 'rgba(255,255,255,0.02)', marginTop: 20 },
-  stareDesc: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 20 },
+  stareDesc: { fontFamily: Fonts.body, fontSize: 13, color: '#FFFFFF', lineHeight: 20 },
 
   completeCard: { width: '100%', padding: 20, backgroundColor: 'rgba(0, 245, 255, 0.05)', borderColor: 'rgba(0, 245, 255, 0.2)', borderWidth: 1 },
-  completeTitle: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.accentCyan, marginBottom: 12 },
-  completeText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 20 },
+  completeTitle: { fontFamily: Fonts.heading, fontSize: 18, color: '#FFFFFF', marginBottom: 12 },
+  completeText: { fontFamily: Fonts.body, fontSize: 13, color: '#FFFFFF', lineHeight: 20 },
 });

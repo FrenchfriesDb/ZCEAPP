@@ -4,6 +4,7 @@ import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import GlassCard from '@/components/GlassCard';
+import GlassButton from '@/components/GlassButton';
 import { AIService } from '@/services/ai';
 import { useUser } from '@/context/UserContext';
 
@@ -92,20 +93,31 @@ export default function WitDrill() {
                     <TextInput style={styles.input} placeholder="..." placeholderTextColor="#999" value={rewrite2} onChangeText={setRewrite2} />
                 </GlassCard>
 
-                {!submitted ? (
-                    <Pressable onPress={handleAnalyze} style={styles.btn} disabled={isLoading || !rewrite1 || !rewrite2}>
-                        {isLoading ? <ActivityIndicator color={Colors.bgPrimary} /> : <Text style={styles.btnText}>COMPLETE MINING</Text>}
-                    </Pressable>
-                ) : (
-                    <View style={styles.resultContainer}>
-                        <ScrollView style={styles.feedbackScroll} contentContainerStyle={styles.feedbackScrollContent}>
-                            <Text style={styles.feedbackText}>{feedback}</Text>
-                        </ScrollView>
-                        <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')} style={styles.btn}>
-                            <Text style={styles.btnText}>ACKNOWLEDGED</Text>
-                        </Pressable>
-                    </View>
-                )}
+	                {!submitted ? (
+	                    <GlassButton
+	                        label={isLoading ? 'Analyzing...' : 'Complete Mining'}
+	                        onPress={handleAnalyze}
+	                        tint="blue"
+	                        size="lg"
+	                        glow
+	                        disabled={isLoading || !rewrite1 || !rewrite2}
+	                        style={{ width: '100%', marginTop: 6 }}
+	                    />
+	                ) : (
+	                    <View style={styles.resultContainer}>
+	                        <ScrollView style={styles.feedbackScroll} contentContainerStyle={styles.feedbackScrollContent}>
+	                            <Text style={styles.feedbackText}>{feedback}</Text>
+	                        </ScrollView>
+	                        <GlassButton
+	                            label="Acknowledged"
+	                            onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}
+	                            tint="blue"
+	                            size="lg"
+	                            glow
+	                            style={{ width: '100%' }}
+	                        />
+	                    </View>
+	                )}
 
                 <View style={{ height: 40 }} />
             </ScrollView>
@@ -121,17 +133,17 @@ const styles = StyleSheet.create({
     backBtn: { width: 60 },
     headerSpacer: { width: 60 },
     backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12 },
-    title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: Colors.textPrimary, letterSpacing: 3, textAlign: 'center' },
+	    title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: '#FFFFFF', letterSpacing: 3, textAlign: 'center' },
 
     content: { paddingBottom: 40, gap: 14 },
-    instruction: { color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 14, textAlign: 'center', marginBottom: 6 },
+	    instruction: { color: '#FFFFFF', fontFamily: Fonts.body, fontSize: 14, textAlign: 'center', marginBottom: 6 },
 
     card: { padding: 16 },
     label: { color: Colors.accentPrimary, fontFamily: Fonts.mono, fontSize: 10, letterSpacing: 1, marginBottom: 6 },
-    input: {
-        backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 8, padding: 12,
-        color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
-    },
+	    input: {
+	        backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 8, padding: 12,
+	        color: '#FFFFFF', fontFamily: Fonts.body, fontSize: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
+	    },
 
     btn: { backgroundColor: '#fff', paddingVertical: 14, borderRadius: 30, alignItems: 'center', marginTop: 6 },
     btnText: { fontFamily: Fonts.heading, fontSize: 14, letterSpacing: 2, color: Colors.bgPrimary },
@@ -145,5 +157,5 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(255,255,255,0.08)',
     },
     feedbackScrollContent: { padding: 18 },
-    feedbackText: { color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 14, lineHeight: 22 },
+	    feedbackText: { color: '#FFFFFF', fontFamily: Fonts.body, fontSize: 14, lineHeight: 22 },
 });
