@@ -86,6 +86,18 @@ export default function QuestsScreen() {
     const isMoonDustTheme = currentHour >= 21 && currentHour < 22; // 9-10 PM
     const systemColor = isMoonDustTheme ? '#CCB3D1' : timePalette[timePalette.length - 1];
     const questPrimary = timePalette[0] ?? themeTextPrimary ?? '#FF0F7B';
+    // Some themes (e.g. Moon Dust) start with a very dark first stop; keep key header text readable.
+    const isDarkHex = (hex: string) => {
+        const h = hex.replace('#', '');
+        if (h.length !== 6) return false;
+        const r = parseInt(h.slice(0, 2), 16) / 255;
+        const g = parseInt(h.slice(2, 4), 16) / 255;
+        const b = parseInt(h.slice(4, 6), 16) / 255;
+        const toLin = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+        const L = 0.2126 * toLin(r) + 0.7152 * toLin(g) + 0.0722 * toLin(b);
+        return L < 0.22;
+    };
+    const questPrimaryText = isDarkHex(questPrimary) ? '#FFFFFF' : questPrimary;
     // Convert hex to rgba for textShadowColor
     const hexToRgba = (hex: string, alpha: number) => {
         const r = parseInt(hex.slice(1, 3), 16);
@@ -176,15 +188,15 @@ export default function QuestsScreen() {
                                 color: '#FFFFFF' // White number
                             }
                         ]}>{completedCount}</Text>
-                        <Text style={[styles.heroUnit, { color: questPrimary }]}>OF {visibleQuests.length} QUESTS</Text>
+                        <Text style={[styles.heroUnit, { color: questPrimaryText }]}>OF {visibleQuests.length} QUESTS</Text>
                     </View>
-                    <Text style={[styles.welcomeText, { color: questPrimary }]}>
+                    <Text style={[styles.welcomeText, { color: questPrimaryText }]}>
                         Harvesting status. Stay in frame.
                     </Text>
 
                     <View style={styles.heroXPContainer}>
                         <View style={[styles.xpEarned, { borderColor: questPrimary + '33' }]}>
-                            <Text style={[styles.xpEarnedText, { color: questPrimary }]}>+{totalXP} XP EXTRACTED TODAY</Text>
+                            <Text style={[styles.xpEarnedText, { color: questPrimaryText }]}>+{totalXP} XP EXTRACTED TODAY</Text>
                         </View>
                     </View>
                 </View>
