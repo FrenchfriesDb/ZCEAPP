@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { TimeColors } from '@/constants/theme';
+import { TimeColors, getDynamicColors } from '@/constants/theme';
 
 /**
  * Returns a time-of-day gradient palette (string[]) that cycles through
@@ -22,6 +22,11 @@ import { TimeColors } from '@/constants/theme';
  */
 export const useTimeColors = () => {
     const [palette, setPalette] = useState<string[]>(TimeColors.day);
+    const [textColors, setTextColors] = useState({
+        primary: '#E8E8E8',
+        secondary: 'rgba(255, 255, 255, 0.45)',
+        tertiary: 'rgba(255, 255, 255, 0.22)',
+    });
 
     useEffect(() => {
         const updateColors = () => {
@@ -42,13 +47,22 @@ export const useTimeColors = () => {
             else if (time < 18) next = TimeColors.dusk;
             else if (time < 19) next = TimeColors.sunset;        // 6–7 PM
             else if (time < 19.5) next = TimeColors.twilight;      // 7–7:30 PM
-            else if (time < 20) next = TimeColors.battleGlory;     // 7:30-8 PM
+            else if (time < 20) {
+                next = TimeColors.battleGlory;     // 7:30-8 PM
+                textPrimaryColor = '#FF6B35'; // Orange-red for battle glory theme
+            }
             else if (time < 20.5) next = TimeColors.eveningNavy;     // 8-8:30 PM
             else if (time < 22) next = TimeColors.nightDive;        // 9-10 PM Moon Dust  
             else if (time < 23) next = TimeColors.voidSpark;       // 10-11 PM VOID SPARK
             else next = TimeColors.midnightMist;                     // 11 PM-12 AM
 
+            const dyn = getDynamicColors(h, m);
             setPalette(next);
+            setTextColors({
+                primary: dyn.textPrimary,
+                secondary: dyn.textSecondary,
+                tertiary: dyn.textTertiary,
+            });
         };
 
         updateColors();
@@ -56,5 +70,5 @@ export const useTimeColors = () => {
         return () => clearInterval(interval);
     }, []);
 
-    return palette;
+    return { palette, textColors };
 };

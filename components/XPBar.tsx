@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Fonts, Radius, XPConfig } from '@/constants/theme';
 import { useXPBarColors } from '@/hooks/useXPBarColors';
+import { useTextColors } from '@/context/TextColorsContext';
 
 interface Props {
     xp: number;
@@ -26,12 +27,9 @@ export default function XPBar({ xp }: Props) {
     const xpInLevel = XPConfig.getXpInCurrentLevel(xp);
     const progress = XPConfig.getProgress(xp); // 0–1
     const palette = useXPBarColors();
-    const themeColor = palette[palette.length - 1]; // Use the lightest color for text
+    const { textPrimary } = useTextColors();
     
-    // Special handling for 9 PM Moon Dust theme - force lavender color
-    const currentHour = new Date().getHours();
-    const isMoonDustTheme = currentHour >= 21 && currentHour < 22; // 9-10 PM
-    const textColor = isMoonDustTheme ? '#CCB3D1' : themeColor;
+    const textColor = textPrimary;
 
     const [barWidth, setBarWidth] = useState(0);
     const animatedProgress = useRef(new Animated.Value(0)).current;
@@ -109,13 +107,11 @@ const styles = StyleSheet.create({
     levelText: {
         fontFamily: Fonts.monoBold,
         fontSize: 10,
-        color: '#FFFFFF',
         letterSpacing: 0.5,
     },
     rankTitle: {
         fontFamily: Fonts.heading,
         fontSize: 15,
-        color: '#FFFFFF',
         fontWeight: '800',
         letterSpacing: 1.5,
         flex: 1,
@@ -124,11 +120,10 @@ const styles = StyleSheet.create({
     xpCounts: {
         fontFamily: Fonts.mono,
         fontSize: 11,
-        color: 'rgba(255, 255, 255, 0.5)',
         flexShrink: 0,
     },
     xpDivider: {
-        color: 'rgba(255, 255, 255, 0.2)',
+        // Will be set inline
     },
     barTrack: {
         height: 6,

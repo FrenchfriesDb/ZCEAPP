@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
-    View, Text, ScrollView, Pressable, Animated, Dimensions,
-    KeyboardAvoidingView, Platform, TextInput, Modal, Alert, StyleSheet, FlatList,
+  View, Text, ScrollView, Pressable, Animated, Dimensions,
+  KeyboardAvoidingView, Platform, TextInput, Modal, Alert, StyleSheet, FlatList, Image,
 } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
-import { Audio } from 'expo-av';
+// Don't import expo-av at module load time — require it at runtime where available.
 import * as Haptics from 'expo-haptics';
 import { useUser } from '@/context/UserContext';
+import { useTextColors } from '@/context/TextColorsContext';
 import { Colors, Fonts, FontSizes, Spacing, Radius, XPConfig } from '@/constants/theme';
 import { useTimeColors } from '@/hooks/useTimeColors';
 import { useXPBarColors } from '@/hooks/useXPBarColors';
@@ -103,11 +104,21 @@ const pick8 = (pool: any[]) => [...pool].sort(() => 0.5 - Math.random()).slice(0
 
 export default function DojoScreen() {
   const { user, completeQuest, resetQuests, recoverStreak, deploySystemBackup } = useUser();
-  const timePalette = useTimeColors();
+  const { palette: timePalette } = useTimeColors();
+  const { textPrimary, textSecondary, textTertiary } = useTextColors();
+  
+  // Debug: Log current theme
+  console.log('Current theme at', new Date().toLocaleTimeString(), ':', {
+    timePalette,
+    textPrimary,
+    textSecondary,
+    textTertiary
+  });
   // Special handling for 9 PM Moon Dust theme - force lavender color
   const currentHour = new Date().getHours();
   const isMoonDustTheme = currentHour >= 21 && currentHour < 22; // 9-10 PM
   const systemColor = isMoonDustTheme ? '#CCB3D1' : timePalette[timePalette.length - 1];
+  const middleColor = timePalette[Math.floor(timePalette.length / 2)];
   // Convert hex to rgba for textShadowColor
   const hexToRgba = (hex: string, alpha: number) => {
     const r = parseInt(hex.slice(1, 3), 16);
@@ -115,7 +126,7 @@ export default function DojoScreen() {
     const b = parseInt(hex.slice(5, 7), 16);
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   };
-  const glowColor = hexToRgba(systemColor, 1.0);
+  const glowColor = hexToRgba(textPrimary, 1.0);
   const xpBarColors = useXPBarColors();
   const [roastIndex, setRoastIndex] = useState(() => Math.floor(Math.random() * ROASTS.length));
   const [quoteIndex, setQuoteIndex] = useState(() => Math.floor(Math.random() * ZANE_QUOTES.length));
@@ -123,6 +134,63 @@ export default function DojoScreen() {
   // ... rest of the component state ...
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
+  // Audio playback for archived recordings
+  const playbackRef = useRef<any>(null);
+  const [playingUri, setPlayingUri] = useState<string | null>(null);
+
+  const getAudio = () => {
+    if (Platform.OS === 'web') return null;
+    try {
+      // require at runtime to avoid native module load errors in environments without expo-av
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      return require('expo-av').Audio;
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const togglePlay = async (uri?: string) => {
+    if (!uri) return;
+    try {
+      if (playingUri === uri) {
+        if (playbackRef.current) {
+          await playbackRef.current.stopAsync();
+          await playbackRef.current.unloadAsync();
+          playbackRef.current = null;
+        }
+        setPlayingUri(null);
+        return;
+      }
+
+      // stop any existing playback
+      if (playbackRef.current) {
+        try { await playbackRef.current.stopAsync(); await playbackRef.current.unloadAsync(); } catch (_) {}
+        playbackRef.current = null;
+      }
+
+      const Audio = getAudio();
+      if (!Audio) {
+        Alert.alert('Playback Not Available', 'Audio playback is not available on this platform.');
+        return;
+      }
+
+      setPlayingUri(uri);
+      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true, staysActiveInBackground: false });
+      const { sound } = await Audio.Sound.createAsync({ uri }, { shouldPlay: true });
+      playbackRef.current = sound;
+      sound.setOnPlaybackStatusUpdate((status: any) => {
+        if (status?.didJustFinish) {
+          try { sound.unloadAsync(); } catch (_) {}
+          playbackRef.current = null;
+          setPlayingUri(null);
+        }
+      });
+    } catch (err) {
+      console.error('Playback error', err);
+      Alert.alert('Playback Error', 'Unable to play recording.');
+      setPlayingUri(null);
+    }
+  };
 
   const [dailyMissions, setDailyMissions] = useState<any[]>(() => pick8(DAILY_MISSION_POOL));
   const [fieldQuests, setFieldQuests] = useState<any[]>(() => pick8(QUEST_POOL));
@@ -285,8 +353,8 @@ export default function DojoScreen() {
     return (
       <View style={styles.sectionHeader}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.sectionTitle}>{title}</Text>
-          <Text style={styles.sectionSub}>{count}/{total} COMPLETED</Text>
+          <Text style={[styles.sectionTitle, { color: title === 'STANDING ORDERS' ? systemColor : textPrimary }]}>{title}</Text>
+          <Text style={[styles.sectionSub, { color: textTertiary }]}>{count}/{total} COMPLETED</Text>
         </View>
         {done ? (
           <GlassButton
@@ -320,6 +388,7 @@ export default function DojoScreen() {
             <Text style={[
               styles.heroNumber,
               { 
+                color: '#FFFFFF', // White number
                 textShadowColor: glowColor,
                 textShadowOffset: { width: 0, height: 0 },
                 textShadowRadius: 40
@@ -330,21 +399,21 @@ export default function DojoScreen() {
             </Text>
             <Text style={[
               styles.heroUnit,
-              { color: systemColor },
+              { color: textPrimary },
               (user?.streakAtRisk && streakCount > 0) && { color: Colors.accentDanger, opacity: 1 }
             ]}>
               {(user?.streakAtRisk && streakCount > 0) ? 'REPAIR REQUIRED' : 'DAY STREAK'}
             </Text>
           </View>
 
-          <Text style={styles.welcomeText}>
+          <Text style={[styles.welcomeText, { color: textPrimary }]}>
             Welcome back, {getFirstName(user?.name)}.
           </Text>
 
           {/* XP Progression — Directly below streak as requested */}
           <View style={styles.heroXPContainer}>
             <XPBar xp={user?.xp || 0} />
-            <Text style={styles.xpSubLabel} numberOfLines={1} adjustsFontSizeToFit>
+            <Text style={[styles.xpSubLabel, { color: textPrimary }]} numberOfLines={1} adjustsFontSizeToFit>
               CHARISMA ENGINE // PROGRESSION {user?.xp || 0} XP TOTAL
             </Text>
           </View>
@@ -384,7 +453,7 @@ export default function DojoScreen() {
             label="Talk to Zane"
             onPress={() => router.push('/chat')}
             size="lg"
-            tint="monochrome"
+            tint="blue"
             variant="pill"
             glow
             style={{ width: '100%' }}
@@ -481,8 +550,9 @@ export default function DojoScreen() {
           let log = `Verified: ${selectedItem.title}.`;
           if (proofData.text) log += ` Description: ${proofData.text}`;
           if (proofData.photoUri) log += ` [Photo Proof Attached]`;
+          if (proofData.voiceUri) log += ` [Voice Proof Attached]`;
 
-          await completeQuest(selectedItem.id, selectedItem.xp, log);
+          await completeQuest(selectedItem.id, selectedItem.xp, log, { photoUri: proofData.photoUri, voiceUri: proofData.voiceUri });
           setModalVisible(false);
           setSelectedItem(null);
         }}
@@ -494,15 +564,15 @@ export default function DojoScreen() {
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
           <View style={styles.modalContentWrapper}>
             <View style={[styles.modalCard, { borderColor: 'rgba(255,68,68,0.2)' }]}>
-              <Text style={[styles.modalTitle, { color: Colors.accentDanger }]}>STREAK BROKEN</Text>
+              <Text style={[styles.modalTitle, { color: textPrimary }]}>STREAK BROKEN</Text>
               <Text style={styles.modalSub}>RECOVERY PROTOCOL REQUIRED</Text>
-              <Text style={[styles.modalLabel, { color: Colors.textPrimary, fontSize: 13, marginBottom: 16 }]}>
+              <Text style={[styles.modalLabel, { color: textPrimary, fontSize: 13, marginBottom: 16 }]}>
                 {recoveryQuestion}
               </Text>
               <TextInput
-                style={styles.modalInput}
+                style={[styles.modalInput, { color: textPrimary }]}
                 placeholder="Argue your charisma recovery..."
-                placeholderTextColor={Colors.textTertiary}
+                placeholderTextColor={textTertiary}
                 value={recoveryAnswer}
                 onChangeText={setRecoveryAnswer}
                 multiline
@@ -551,7 +621,7 @@ export default function DojoScreen() {
               </Pressable>
             ))}
           </View>
-          <FlatList
+                <FlatList
             data={(() => {
               if (historyTab === 'drills') {
                 return (user?.drillLogs || []).filter((l: any) => l.type !== 'Mission');
@@ -565,25 +635,47 @@ export default function DojoScreen() {
             })()}
             keyExtractor={item => item.id}
             contentContainerStyle={styles.historyList}
-            renderItem={({ item }) => (
-              <GlassCard style={styles.logCard}>
-                <View style={styles.logTop}>
-                  <Text style={styles.logType}>
-                    {historyTab === 'drills' ? item.type?.toUpperCase() : (item._source === 'mission' ? 'MISSION LOG' : 'JOURNAL ENTRY')}
-                  </Text>
-                  <Text style={styles.logDate}>{new Date(item.date).toLocaleDateString()}</Text>
-                </View>
-                <Text style={styles.logBody}>
-                  {historyTab === 'drills' ? item.feedback : item.entry}
-                </Text>
-                {historyTab === 'journal' && item.analysis && (
-                  <View style={styles.analysisBox}>
-                    <Text style={styles.analysisLabel}>ZANE ANALYSIS:</Text>
-                    <Text style={styles.analysisContent}>{item.analysis}</Text>
-                  </View>
+                renderItem={({ item }) => (
+                  <GlassCard style={styles.logCard}>
+                    <View style={styles.logTop}>
+                      <Text style={styles.logType}>
+                        {historyTab === 'drills' ? item.type?.toUpperCase() : (item._source === 'mission' ? 'MISSION LOG' : 'JOURNAL ENTRY')}
+                      </Text>
+                      <Text style={styles.logDate}>{new Date(item.date).toLocaleDateString()}</Text>
+                    </View>
+                    {(() => {
+                      const content = (historyTab === 'drills' ? item.feedback : item.entry) || '';
+                      let cleaned = content.replace(/\[ID:[^\]]+\]/g, '').trim();
+                      // Replace any id-like tokens (qs_, dm_, q_, id_) anywhere in the text
+                      cleaned = cleaned.replace(/\b(?:qs_|dm_|q_|id_)[A-Za-z0-9_-]+\b/gi, (match) => {
+                        const pretty = match.replace(/^(?:qs_|dm_|q_|id_)/i, '').replace(/[_-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                        return pretty;
+                      });
+                      const img = item.photoUri || item.imageUrl || item.image || item.photo || (item.media && item.media[0]);
+                      const audio = item.recording || item.recordingUri || item.voiceUri || item.audio;
+
+                      if (img) {
+                        return <Image source={{ uri: img }} style={{ width: '100%', height: 160, borderRadius: 12, marginTop: 8 }} resizeMode="cover" />;
+                      }
+
+                      if (audio) {
+                        return (
+                          <Pressable onPress={() => togglePlay(audio)} style={{ marginTop: 8, padding: 12, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.03)' }}>
+                            <Text style={{ color: textPrimary }}>{playingUri === audio ? 'Playing...' : 'Play recording'}</Text>
+                          </Pressable>
+                        );
+                      }
+
+                      return <Text style={styles.logBody}>{cleaned || '(no description provided)'}</Text>;
+                    })()}
+                    {historyTab === 'journal' && item.analysis && (
+                      <View style={styles.analysisBox}>
+                        <Text style={styles.analysisLabel}>ZANE ANALYSIS:</Text>
+                        <Text style={styles.analysisContent}>{item.analysis}</Text>
+                      </View>
+                    )}
+                  </GlassCard>
                 )}
-              </GlassCard>
-            )}
             ListEmptyComponent={<Text style={styles.emptyText}>No data in neural buffers.</Text>}
           />
         </View>
@@ -645,14 +737,13 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.heading,
     fontSize: 180,
     fontWeight: '900',
-    color: '#E8E8E8',
-    lineHeight: 220, 
-    paddingTop: 15, 
+    lineHeight: 220,
+    paddingTop: 15,
     letterSpacing: -8,
     textAlignVertical: 'center',
     textAlign: 'center',
     marginBottom: 40,
-    marginTop: -5, 
+    marginTop: -5,
     // Removed hardcoded textShadow to use dynamic theme glow
   },
   heroUnit: {
@@ -889,13 +980,13 @@ const styles = StyleSheet.create({
   missionIcon: {
     fontSize: 16,
     color: '#FFFFFF',
-    fontFamily: Platform.OS === 'ios' ? 'System' : undefined,
+    fontFamily: Platform.select({ ios: 'Apple Color Emoji', default: undefined }),
     fontWeight: 'normal',
     letterSpacing: 0,
   },
   emojiIcon: {
     fontSize: 14,
-    fontFamily: Platform.OS === 'ios' ? 'System' : undefined,
+    fontFamily: Platform.select({ ios: 'Apple Color Emoji', default: undefined }),
     fontWeight: 'normal',
     letterSpacing: 0,
   },
@@ -1012,7 +1103,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   historyTabBtn: {
-    flex: 1, height: 46, borderRadius: Radius.pill,
     backgroundColor: 'rgba(255,255,255,0.04)',
     justifyContent: 'center', alignItems: 'center',
     borderWidth: 1, borderColor: Colors.borderGlass,

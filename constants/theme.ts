@@ -79,7 +79,7 @@ export const TimeColors = {
   // 8:30 AM – 4 PM — Cloud Drift (Vibrant Sky)
   day: ['#2C6CBC', '#71C3F7', '#F6F6F6'],
   // 5 PM — warm golden hour
-  goldenHour: ['#FFA585', '#FFEDA0'],
+  goldenHour: ['#FFEDA0', '#FFA585'],
   // 5:30 PM — rose mauve dusk
   dusk: ['#DD83AD', '#C3E1FC'],
   // 6–7 PM — fiery sunset
@@ -88,8 +88,8 @@ export const TimeColors = {
   twilight: ['#FF1B6B', '#45CAFF'],
   // 7:30–8 PM — Battle glory (gold → red → deep blue)
   battleGlory: ['#FC9F32', '#AE1B1E', '#1A2766'],
-  // 8 PM — brutalist orange to deep purple
-  eveningNavy: ['#EF745C', '#34073D'],
+  // 8 PM — Mars Echo
+  marsEcho: ['#EF745C', '#34073D'],
   // 8:30 PM — Plum Glow
   plumGlow: ['#3E196E', '#D46C76', '#FFC07C'],
   // 9 PM — Moon Dust
@@ -109,12 +109,46 @@ export const TimeColors = {
 // Helper: derive the dominant accent color (first stop) for any single-color usage
 export const getTimeAccent = (palette: string[]) => palette[0];
 
+// Dynamic text colors that match each theme's gradient colors
+// PATTERN: Use the LAST gradient color for each theme as the primary text color
+export const getDynamicColors = (hour: number, minute: number) => {
+  const time = hour + minute / 60;
+  let textPrimaryColor = '#E8E8E8'; // default
+  
+  if (time < 5) textPrimaryColor = '#294861'; // Deep Abyss - last color (dark steel blue)
+  else if (time < 6) textPrimaryColor = '#4B749F'; // Earlier Dawn - last color (light blue)  
+  else if (time >= 7.166 && time <= 7.5) textPrimaryColor = '#D3321D'; // Citrus Sunrise - last color (red-orange)
+  else if (time < 8.5) textPrimaryColor = '#71C3F7'; // Morning - last color (sky blue)
+  else if (time < 16) textPrimaryColor = '#F6F6F6'; // Cloud Drift - last color (white)
+  else if (time < 17) textPrimaryColor = '#71C3F7'; // Cloud Drift - last color (sky blue)
+  else if (time < 17.5) textPrimaryColor = '#FFA585'; // Golden Hour - last color (orange)
+  else if (time < 18) textPrimaryColor = '#C3E1FC'; // Dusk - last color (light blue)
+  else if (time < 19) textPrimaryColor = '#F89B29'; // Sunset - last color (orange)
+  else if (time < 19.5) textPrimaryColor = '#45CAFF'; // Twilight - last color (cyan)
+  else if (time < 20) textPrimaryColor = '#1A2766'; // Battle Glory - last color (deep blue)
+  else if (time < 20.5) textPrimaryColor = '#34073D'; // Mars Echo - last color (deep purple)
+  else if (time < 21) textPrimaryColor = '#FFC07C'; // Plum Glow - last color (peach)
+  else if (time < 22) textPrimaryColor = '#CCB3D1'; // Moon Dust/Night Dive - last color (lavender)  
+  else if (time < 23) textPrimaryColor = '#00458E'; // Void Spark - last color (deep blue)
+  else textPrimaryColor = '#918CA9'; // Midnight Mist - last color (lavender gray)
+  
+  return {
+    textPrimary: textPrimaryColor,
+    textSecondary: `${textPrimaryColor}88`, // 50% opacity
+    textTertiary: `${textPrimaryColor}44`, // 25% opacity
+  };
+};
+
 export const Colors = {
   ...rawPalette,
   ...gradients,
   ...glows,
   light: rawPalette, // Only strings for themed components
   dark: rawPalette,
+  // Default colors - will be overridden by getDynamicColors
+  textPrimary: '#E8E8E8',
+  textSecondary: 'rgba(255, 255, 255, 0.45)',
+  textTertiary: 'rgba(255, 255, 255, 0.22)',
 };
 
 

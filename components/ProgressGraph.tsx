@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, useWindowDimensions, Pressable } from 'react-native';
 import Svg, { Polyline, Circle, Defs, LinearGradient, Stop, G, Line } from 'react-native-svg';
 import { Colors, Fonts, Radius, Spacing } from '@/constants/theme';
+import { useTextColors } from '@/context/TextColorsContext';
 
 type TimeRange = '1W' | '1M' | 'ALL';
 
@@ -23,8 +24,10 @@ function getDaysForRange(range: TimeRange, dailyXp: { [date: string]: number }):
     return Math.min(Math.max(diffDays + 1, 30), 365);
 }
 
-export default function ProgressGraph({ dailyXp, color = Colors.accentPrimary }: ProgressGraphProps) {
+export default function ProgressGraph({ dailyXp, color }: ProgressGraphProps) {
     const [range, setRange] = useState<TimeRange>('1M');
+    const { textPrimary, textSecondary, textTertiary } = useTextColors();
+    const graphColor = color || textPrimary;
     const days = getDaysForRange(range, dailyXp);
     const { width: screenWidth } = useWindowDimensions();
     const CHART_WIDTH = Math.max(200, screenWidth - (Spacing.lg * 2) - 64);
@@ -58,10 +61,10 @@ export default function ProgressGraph({ dailyXp, color = Colors.accentPrimary }:
         <View style={styles.container}>
             <View style={styles.header}>
                 <View>
-                    <Text style={styles.title}>VELOCITY MONITOR</Text>
-                    <Text style={styles.subtitle}>{days} DAY PERFORMANCE</Text>
+                    <Text style={[styles.title, { color: textPrimary }]}>VELOCITY MONITOR</Text>
+                    <Text style={[styles.subtitle, { color: textSecondary }]}>{days} DAY PERFORMANCE</Text>
                 </View>
-                <Text style={styles.peakText}>PEAK: {Math.max(...data.map(d => d.xp), 0)} XP</Text>
+                <Text style={[styles.peakText, { color: textTertiary }]}>PEAK: {Math.max(...data.map(d => d.xp), 0)} XP</Text>
             </View>
 
             <View style={styles.toggleRow}>
@@ -69,9 +72,9 @@ export default function ProgressGraph({ dailyXp, color = Colors.accentPrimary }:
                     <Pressable
                         key={r}
                         onPress={() => setRange(r)}
-                        style={[styles.toggleBtn, range === r && [styles.toggleBtnActive, { borderColor: color + '66', backgroundColor: color + '22' }]]}
+                        style={[styles.toggleBtn, range === r && [styles.toggleBtnActive, { borderColor: graphColor + '66', backgroundColor: graphColor + '22' }]]}
                     >
-                        <Text style={[styles.toggleText, range === r && [styles.toggleTextActive, { color }]]}>{r}</Text>
+                        <Text style={[styles.toggleText, { color: textSecondary }, range === r && [styles.toggleTextActive, { color: textPrimary }]]}>{r}</Text>
                     </Pressable>
                 ))}
             </View>
@@ -80,8 +83,8 @@ export default function ProgressGraph({ dailyXp, color = Colors.accentPrimary }:
                 <Svg width={CHART_WIDTH} height={CHART_HEIGHT + 30}>
                     <Defs>
                         <LinearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-                            <Stop offset="0" stopColor={color} stopOpacity="0.3" />
-                            <Stop offset="1" stopColor={color} stopOpacity="0" />
+                            <Stop offset="0" stopColor={graphColor} stopOpacity="0.3" />
+                            <Stop offset="1" stopColor={graphColor} stopOpacity="0" />
                         </LinearGradient>
                     </Defs>
 
@@ -92,8 +95,9 @@ export default function ProgressGraph({ dailyXp, color = Colors.accentPrimary }:
                     <Polyline
                         points={points}
                         fill="none"
-                        stroke={color}
-                        strokeWidth="2.5"
+                        stroke={graphColor}
+                        strokeWidth="2"
+                        strokeLinecap="round"
                         strokeLinejoin="round"
                     />
 
@@ -111,7 +115,7 @@ export default function ProgressGraph({ dailyXp, color = Colors.accentPrimary }:
                                         cx={x}
                                         cy={y}
                                         r={item.isCurrent ? 4 : 3}
-                                        fill={item.isCurrent ? color : (item.xp > 0 ? color : 'rgba(255,255,255,0.1)')}
+                                        fill={item.isCurrent ? graphColor : (item.xp > 0 ? graphColor : 'rgba(255,255,255,0.1)')}
                                         stroke={Colors.bgPrimary}
                                         strokeWidth={1}
                                     />
@@ -133,11 +137,11 @@ export default function ProgressGraph({ dailyXp, color = Colors.accentPrimary }:
             <View style={styles.footer}>
                 <View style={styles.legendItem}>
                     <View style={[styles.dot, { backgroundColor: '#34C759' }]} />
-                    <Text style={styles.legendText}>CHAINED</Text>
+                    <Text style={[styles.legendText, { color: textSecondary }]}>CHAINED</Text>
                 </View>
                 <View style={styles.legendItem}>
                     <View style={[styles.dot, { backgroundColor: '#FF3B30' }]} />
-                    <Text style={styles.legendText}>MISSED</Text>
+                    <Text style={[styles.legendText, { color: textSecondary }]}>MISSED</Text>
                 </View>
             </View>
         </View>
@@ -176,28 +180,24 @@ const styles = StyleSheet.create({
     toggleText: {
         fontFamily: Fonts.monoBold,
         fontSize: 11,
-        color: 'rgba(255,255,255,0.5)',
         letterSpacing: 1,
     },
     toggleTextActive: {
-        color: '#FFFFFF',
+        // Will be set inline
     },
     title: {
         fontFamily: Fonts.monoBold,
         fontSize: 10,
-        color: 'rgba(255,255,255,0.6)',
         letterSpacing: 2,
     },
     subtitle: {
         fontFamily: Fonts.mono,
         fontSize: 8,
-        color: 'rgba(255,255,255,0.3)',
         marginTop: 2,
     },
     peakText: {
         fontFamily: Fonts.monoBold,
         fontSize: 9,
-        color: 'rgba(255,255,255,0.4)',
     },
     chartWrapper: {
         alignItems: 'center',

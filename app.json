@@ -46,12 +46,12 @@
       ],
       "expo-font",
       "expo-secure-store",
-      "expo-build-properties",
       "expo-web-browser",
-      "expo-audio"
+      "expo-audio",
+      "expo-av"
     ],
     "experiments": {
-      "typedRoutes": true,
+      "typedRoutes": false,
       "reactCompiler": true
     },
     "extra": {

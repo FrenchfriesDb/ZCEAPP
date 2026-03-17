@@ -105,7 +105,7 @@ interface UserContextType {
     forgotPassword: (email: string) => Promise<void>;
     updateProfile: (updates: Partial<UserData>) => Promise<void>;
     completeDrill: (xpGain: number) => Promise<void>;
-    completeQuest: (questId: string, xpGain: number, log?: string) => Promise<void>;
+    completeQuest: (questId: string, xpGain: number, log?: string, attachments?: { photoUri?: string, voiceUri?: string }) => Promise<void>;
     recoverStreak: () => Promise<void>;
     addJournalEntry: (entry: string, analysis?: string) => Promise<void>;
     addDrillLog: (type: string, score?: number, feedback?: string) => Promise<void>;
@@ -561,7 +561,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
      * Called when an agent completes a quest or daily mission.
      * Marks questId in completedQuests, increments streak if it's a new day.
      */
-    const completeQuest = async (questId: string, xpGain: number = 20, log?: string) => {
+    const completeQuest = async (questId: string, xpGain: number = 20, log?: string, attachments?: { photoUri?: string, voiceUri?: string }) => {
         const current = userRef.current;
         if (!current) { console.warn('[completeQuest] No user'); return; }
 
@@ -608,12 +608,17 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
         console.log(`[Quest Engine] XP Updated | Key: ${freshToday} | NewDailyTotal: ${dailyXp[freshToday]}`);
 
-        const historyLog = {
+        const historyLog: any = {
             id: Date.now().toString(),
             date: new Date().toISOString(),
             type: 'Mission',
             feedback: log ? `${log} [ID:${questId}]` : `Completed Mission: ${questId}`
         };
+
+        if (attachments) {
+            if (attachments.photoUri) historyLog.photoUri = attachments.photoUri;
+            if (attachments.voiceUri) historyLog.voiceUri = attachments.voiceUri;
+        }
 
         await _syncUpdate({
             xp: newXp,

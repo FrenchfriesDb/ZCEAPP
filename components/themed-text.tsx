@@ -21,7 +21,7 @@ export function ThemedText({
   const children = rest.children;
   const containsEmoji = (s: string) => /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u.test(s);
   const emojiStyle = typeof children === 'string' && containsEmoji(children)
-    ? {}
+    ? Platform.select({ ios: { fontFamily: 'Apple Color Emoji' }, default: undefined })
     : undefined;
 
   return (

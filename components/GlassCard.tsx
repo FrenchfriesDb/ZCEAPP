@@ -32,7 +32,7 @@ export default function GlassCard({
     onPress,
     categoryColor,
 }: GlassCardProps) {
-    const timePalette = useTimeColors();
+    const { palette: timePalette } = useTimeColors();
 
     // Create highly translucent version of time palette for "Liquid Glass"
     const themedColors = themed

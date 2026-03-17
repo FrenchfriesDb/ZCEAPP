@@ -1,7 +1,18 @@
 import { View, Text, StyleSheet, Pressable, Animated, ScrollView, TextInput, Alert, Platform, KeyboardAvoidingView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { Audio } from 'expo-av';
+// Web platform check
+const isWeb = Platform.OS === 'web';
+
+// Helper function to get Audio only when needed
+const getAudio = () => {
+    if (isWeb) return null;
+    try {
+        return require('expo-av').Audio;
+    } catch {
+        return null;
+    }
+};
 import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
 import { router } from 'expo-router';
 import { useState, useRef, useEffect } from 'react';
@@ -113,18 +124,27 @@ export default function MirrorDrill() {
                     try { await recordingRef.current.stopAndUnloadAsync(); } catch { }
                     recordingRef.current = null;
                 }
-                const { status } = await Audio.requestPermissionsAsync();
-                if (status !== 'granted') {
-                    Alert.alert('Mic Permission Needed', 'Allow microphone access in Settings.');
-                    return;
-                }
-                await Audio.setAudioModeAsync({
-                    allowsRecordingIOS: true,
-                    playsInSilentModeIOS: true,
-                });
-                const { recording: rec } = await Audio.Recording.createAsync(
-                    Audio.RecordingOptionsPresets.HIGH_QUALITY
-                );
+                    const Audio = getAudio();
+                    if (!Audio) {
+                        Alert.alert('Not Available', 'Voice recording is not available on this platform.');
+                        return;
+                    }
+                    // request permissions if available
+                    if (typeof Audio.requestPermissionsAsync === 'function') {
+                        const { status } = await Audio.requestPermissionsAsync();
+                        if (status !== 'granted') {
+                            Alert.alert('Mic Permission Needed', 'Allow microphone access in Settings.');
+                            return;
+                        }
+                    }
+
+                    await Audio.setAudioModeAsync({
+                        allowsRecordingIOS: true,
+                        playsInSilentModeIOS: true,
+                    });
+                    const { recording: rec } = await Audio.createAsync(
+                        Audio.RecordingOptionsPresets.HIGH_QUALITY
+                    );
                 recordingRef.current = rec;
                 setIsRecording(true);
             } catch (err: any) {
@@ -146,21 +166,20 @@ export default function MirrorDrill() {
 
         try {
             if (sound) {
-                await sound.replayAsync();
-                setIsPlaying(true);
-            } else {
-                const { sound: newSound } = await Audio.Sound.createAsync(
-                    { uri: voiceUri },
-                    { shouldPlay: true }
-                );
-                setSound(newSound);
-                setIsPlaying(true);
-                newSound.setOnPlaybackStatusUpdate((status) => {
-                    if (status.isLoaded && status.didJustFinish) {
-                        setIsPlaying(false);
-                    }
-                });
+                await sound.unloadAsync();
+                setSound(null);
             }
+            const { sound: newSound } = await Audio.Sound.createAsync(
+                { uri: voiceUri },
+                { shouldPlay: true }
+            );
+            setSound(newSound);
+            setIsPlaying(true);
+            newSound.setOnPlaybackStatusUpdate((status) => {
+                if (status.isLoaded && status.didJustFinish) {
+                    setIsPlaying(false);
+                }
+            });
         } catch (err) {
             console.error('[Mirror] Playback error:', err);
             Alert.alert('Playback Error', 'Could not play recording.');
@@ -175,7 +194,7 @@ export default function MirrorDrill() {
         if (sound) await sound.unloadAsync();
         await completeDrill(20);
         Alert.alert('REP VERIFIED', 'Operation logged. +20 XP awarded.', [
-            { text: 'FINISH SESSION', onPress: () => router.replace('/(tabs)') },
+            { text: 'FINISH SESSION', onPress: () => router.replace('/') },
             { text: 'NEXT REP', onPress: nextDrill },
         ]);
     };
@@ -221,7 +240,7 @@ export default function MirrorDrill() {
             <LinearGradient colors={Colors.gradientDark} style={StyleSheet.absoluteFill} />
 
             <View style={styles.header}>
-                <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')} style={styles.backBtn}>
+                <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/')} style={styles.backBtn}>
                     <Text style={styles.backText}>← EXIT</Text>
                 </Pressable>
                 <Text style={styles.title}>MIRROR DRILL</Text>

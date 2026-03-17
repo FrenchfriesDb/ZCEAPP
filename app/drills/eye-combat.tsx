@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, Pressable, Alert, ScrollView, KeyboardAvoidingV
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useState, useEffect } from 'react';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useUser } from '@/context/UserContext';
 import { useTimeColors } from '@/hooks/useTimeColors';
 import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
@@ -9,14 +10,16 @@ import GlassCard from '@/components/GlassCard';
 import GlassButton from '@/components/GlassButton';
 
 export default function EyeCombatDrill() {
+  const CHALLENGE_SECONDS = 20;
   const { completeDrill } = useUser();
   const { palette: timePalette } = useTimeColors();
   const systemColor = timePalette[timePalette.length - 1];
 
   const [stage, setStage] = useState<'ready' | 'challenge' | 'complete'>('ready');
-  const [timeRemaining, setTimeRemaining] = useState(60);
+  const [timeRemaining, setTimeRemaining] = useState(CHALLENGE_SECONDS);
   const [isActive, setIsActive] = useState(false);
   const [breaks, setBreaks] = useState(0);
+  const [permission, requestPermission] = useCameraPermissions();
 
   useEffect(() => {
     if (!isActive || timeRemaining <= 0) return;
@@ -35,30 +38,41 @@ export default function EyeCombatDrill() {
     return () => clearInterval(timer);
   }, [isActive, timeRemaining]);
 
-  const handleStartChallenge = () => {
+  const ensureCameraPermission = async () => {
+    // Expo Camera permissions vary per platform; gate on native where it matters.
+    if (Platform.OS === 'web') return true;
+    if (permission?.granted) return true;
+    const res = await requestPermission();
+    return !!res?.granted;
+  };
+
+  const handleStartChallenge = async () => {
+    const ok = await ensureCameraPermission();
+    if (!ok) {
+      Alert.alert('Camera Permission Needed', 'Enable camera access to run Eye Combat.');
+      return;
+    }
     setStage('challenge');
     setIsActive(true);
-setTimeRemaining(20);
+    setTimeRemaining(CHALLENGE_SECONDS);
     setBreaks(0);
   };
 
   const handleEyeBreak = () => {
     const newBreaks = breaks + 1;
-setBreaks(newBreaks);
+    setBreaks(newBreaks);
     Alert.alert('EYE BREAK DETECTED', `You've broken eye contact ${newBreaks} times. Reset timer and lock in.`, [
-      { text: 'RESET', onPress: () => setTimeRemaining(20) },
-    ]);
+      { text: 'RESET', onPress: () => setTimeRemaining(CHALLENGE_SECONDS) },
     ]);
   };
 
   const handleComplete = async () => {
     try {
       const xp = Math.max(12, 20 - breaks * 2);
-await completeDrill(xp);
-      Alert.alert('STARE DOMINANCE', `You held for 20 seconds. ${breaks} breaks detected. +${xp} XP awarded.`, [
+      await completeDrill(xp);
+      Alert.alert('STARE DOMINANCE', `You held for ${CHALLENGE_SECONDS} seconds. ${breaks} breaks detected. +${xp} XP awarded.`, [
         { text: 'FINISH SESSION', onPress: () => router.replace('/') },
-        { text: 'ANOTHER ROUND', onPress: () => { setStage('ready'); setTimeRemaining(20); setBreaks(0); } },
-      ]);
+        { text: 'ANOTHER ROUND', onPress: () => { setStage('ready'); setTimeRemaining(CHALLENGE_SECONDS); setBreaks(0); } },
       ]);
     } catch (err) {
       console.error('Drill completion error:', err);
@@ -94,10 +108,10 @@ await completeDrill(xp);
               <Text style={styles.rulesLabel}>RULES:</Text>
               <Text style={styles.rulesText}>
                 • Stare directly at the screen (front camera).{'\n'}
-                • Hold eye contact for 60 seconds.{'\n'}
+                • Hold eye contact for 20 seconds.{'\n'}
                 • Don't blink excessively.{'\n'}
                 • Each eye break resets your timer.{'\n'}
-                • Goal: 60 seconds with zero breaks.
+                • Goal: 20 seconds with zero breaks.
               </Text>
             </GlassCard>
 
@@ -114,6 +128,17 @@ await completeDrill(xp);
 
         {stage === 'challenge' && (
           <>
+            <View style={styles.cameraSection}>
+              <View style={[styles.cameraContainer, { borderColor: systemColor + '66', shadowColor: systemColor }]}>
+                <CameraView style={styles.camera} facing="front" zoom={0} />
+                <View pointerEvents="none" style={styles.targetOverlay}>
+                  <View style={[styles.targetRing, { borderColor: 'rgba(255,255,255,0.65)' }]} />
+                  <View style={[styles.targetDot, { backgroundColor: systemColor }]} />
+                  <Text style={styles.targetText}>LOCK IN</Text>
+                </View>
+              </View>
+            </View>
+
             <GlassCard style={[styles.timerCard, { borderColor: systemColor + '66' }]}>
               <Text style={[styles.timerText, { color: systemColor }]}>
                 {timeRemaining}s
@@ -148,7 +173,7 @@ await completeDrill(xp);
             <GlassCard style={styles.completeCard}>
               <Text style={styles.completeTitle}>STARE MASTERED ✓</Text>
               <Text style={styles.completeText}>
-                60 seconds of unbroken eye contact. You just proved you have the presence to dominate any room. Your stare alone commands respect.
+                20 seconds of unbroken eye contact. You just proved you have the presence to dominate any room. Your stare alone commands respect.
               </Text>
               {breaks > 0 && (
                 <Text style={styles.breaksSummary}>
@@ -197,6 +222,35 @@ const styles = StyleSheet.create({
   rulesCard: { width: '100%', padding: 12, backgroundColor: 'rgba(255,255,255,0.02)' },
   rulesLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 8 },
   rulesText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, lineHeight: 18 },
+
+  cameraSection: { width: '100%', alignItems: 'center' },
+  cameraContainer: {
+    width: '100%',
+    aspectRatio: 1,
+    borderRadius: Radius.xl,
+    overflow: 'hidden',
+    borderWidth: 2,
+    backgroundColor: 'rgba(255,255,255,0.02)',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 18,
+    elevation: 10,
+  },
+  camera: { flex: 1 },
+  targetOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  targetRing: { width: 96, height: 96, borderRadius: 48, borderWidth: 1 },
+  targetDot: { width: 10, height: 10, borderRadius: 5, marginTop: -53 },
+  targetText: {
+    marginTop: 18,
+    fontFamily: Fonts.monoBold,
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.8)',
+    letterSpacing: 3,
+  },
 
   timerCard: { width: '100%', paddingVertical: 24, alignItems: 'center', backgroundColor: 'rgba(113, 195, 247, 0.05)', borderWidth: 1 },
   timerText: { fontFamily: Fonts.heading, fontSize: 56, fontWeight: '700' },

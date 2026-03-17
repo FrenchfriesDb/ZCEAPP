@@ -5,77 +5,75 @@ import { Colors, Fonts, FontSizes, Spacing, Radius } from '@/constants/theme';
 import GlassButton from '@/components/GlassButton';
 import { router } from 'expo-router';
 import { useTimeColors } from '@/hooks/useTimeColors';
+import { useState } from 'react';
 
-const DRILL_MODULES = [
+const DRILL_CATEGORIES = [
     {
-        id: 'mirror',
-        label: 'MR',
-        title: 'Mirror Drill',
-        desc: 'Master face control & tone.',
-        route: '/drills/mirror',
-        accent: '#96BAFF', // Cyan-Blue
+        category: 'MIRROR PROTOCOL',
+        desc: 'Face control & presence mastery',
+        drills: [
+            { id: 'mirror', label: 'MR', title: 'Mirror Drill', desc: 'Master face control & tone.', route: '/drills/mirror', accent: '#96BAFF' },
+            { id: 'eye-combat', label: 'EC', title: 'Eye Combat', desc: '60s unbroken stare.', route: '/drills/eye-combat', accent: '#FF007A' },
+            { id: 'tension-hold', label: 'TH', title: 'Tension Hold', desc: '15s stare challenge.', route: '/drills/tension-hold', accent: '#FF6B6B' },
+        ],
     },
     {
-        id: 'speed',
-        label: 'RS',
-        title: 'Response Speed',
-        desc: 'React in under 5 seconds.',
-        route: '/drills/speed',
-        accent: '#FFD700', // Gold
+        category: 'VERBAL ARSENAL',
+        desc: 'Wit, comedyflow, & clever comebacks',
+        drills: [
+            { id: 'speed', label: 'RS', title: 'Response Speed', desc: 'React in under 5 seconds.', route: '/drills/speed', accent: '#FFD700' },
+            { id: 'link', label: 'LG', title: 'The Link Game', desc: 'Find clever connections.', route: '/drills/link', accent: '#7E30E1' },
+            { id: 'flip', label: 'FF', title: 'Flip Formula', desc: 'Turn any line into gold.', route: '/drills/flip', accent: '#00F5FF' },
+            { id: 'wit', label: 'WM', title: 'Wit Mining', desc: 'Analyze & rewrite comedy.', route: '/drills/wit', accent: '#A0A0A0' },
+            { id: 'comedian', label: 'TC', title: 'Talk Like a Comedian', desc: 'Roast random objects.', route: '/drills/comedian', accent: '#FF4E50' },
+            { id: 'story', label: 'ST', title: 'Storytelling', desc: '30s improv challenge.', route: '/drills/story', accent: '#F9D423' },
+            { id: 'banter', label: 'BB', title: 'Banter Builder', desc: 'Build on statements in 5s.', route: '/drills/banter', accent: '#71C3F7' },
+            { id: 'vibe-pivot', label: 'VP', title: 'Vibe Pivot', desc: 'Convert complaints to flexes.', route: '/drills/vibe-pivot', accent: '#FFB84D' },
+            { id: 'absurdity-escalator', label: 'AE', title: 'Absurdity Escalator', desc: '5 volleys of escalation.', route: '/drills/absurdity-escalator', accent: '#7E30E1' },
+            { id: 'weapon-picker', label: 'WP', title: 'Weapon Picker', desc: 'Master 8 attack strategies.', route: '/drills/weapon-picker', accent: '#A0A0A0' },
+            { id: 'yes-and', label: 'YA', title: 'Yes And Simulator', desc: 'Master improv fundamentals.', route: '/drills/yes-and', accent: '#F9D423' },
+        ],
     },
     {
-        id: 'link',
-        label: 'LG',
-        title: 'The Link Game',
-        desc: 'Find clever connections.',
-        route: '/drills/link',
-        accent: '#7E30E1', // Purple
+        category: 'POWER SYSTEMS',
+        desc: 'Voice projection & cognitive strength',
+        drills: [
+            { id: 'decibel-breaker', label: 'DB', title: 'Decibel Breaker', desc: 'Project from diaphragm.', route: '/drills/decibel-breaker', accent: '#FFD700' },
+            { id: 'cognitive-load', label: 'CL', title: 'Cognitive Load', desc: 'Trivia while maintaining posture.', route: '/drills/cognitive-load', accent: '#00F5FF' },
+        ],
     },
     {
-        id: 'flip',
-        label: 'FF',
-        title: 'Flip Formula',
-        desc: 'Turn any line into gold.',
-        route: '/drills/flip',
-        accent: '#00F5FF', // Cyan
-    },
-    {
-        id: 'journal',
-        label: 'ZJ',
-        title: 'Zane Journal',
-        desc: 'Log your daily operations.',
-        route: '/drills/journal',
-        accent: '#FF007A', // Pink
-    },
-    {
-        id: 'wit',
-        label: 'WM',
-        title: 'Wit Mining',
-        desc: 'Analyze & rewrite comedy.',
-        route: '/drills/wit',
-        accent: '#A0A0A0', // Silver stays
-    },
-    {
-        id: 'comedian',
-        label: 'TC',
-        title: 'Talk Like a Comedian',
-        desc: 'Roast random objects.',
-        route: '/drills/comedian',
-        accent: '#FF4E50', // Red-Orange
-    },
-    {
-        id: 'story',
-        label: 'ST',
-        title: 'Storytelling',
-        desc: '30s improv challenge.',
-        route: '/drills/story',
-        accent: '#F9D423', // Yellow
+        category: 'OPERATIONS',
+        desc: 'Track your daily dominance',
+        drills: [
+            { id: 'journal', label: 'ZJ', title: 'Zane Journal', desc: 'Log your daily operations.', route: '/drills/journal', accent: '#FF007A' },
+        ],
     },
 ];
 
 export default function DrillsScreen() {
     const timePalette = useTimeColors();
     const systemColor = timePalette[0];
+    const [selectedFilter, setSelectedFilter] = useState<string>('all');
+
+    const FILTER_TABS = [
+        { id: 'all', label: 'All' },
+        { id: 'mirror', label: 'Mirror' },
+        { id: 'verbal', label: 'Verbal' },
+        { id: 'power', label: 'Power' },
+        { id: 'operations', label: 'Ops' },
+    ];
+
+    const filteredCategories = selectedFilter === 'all' 
+        ? DRILL_CATEGORIES 
+        : DRILL_CATEGORIES.filter(cat => {
+            if (selectedFilter === 'mirror') return cat.category === 'MIRROR PROTOCOL';
+            if (selectedFilter === 'verbal') return cat.category === 'VERBAL ARSENAL';
+            if (selectedFilter === 'power') return cat.category === 'POWER SYSTEMS';
+            if (selectedFilter === 'operations') return cat.category === 'OPERATIONS';
+            return true;
+        });
+
     return (
         <View style={styles.container}>
             <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
@@ -93,46 +91,79 @@ export default function DrillsScreen() {
                     <Text style={styles.headerSub}>Select a protocol to begin your session.</Text>
                 </View>
 
-                {/* Drill Cards */}
-                <View style={styles.grid}>
-                    {DRILL_MODULES.map((drill, i) => (
+                {/* Filter Tabs */}
+                <ScrollView 
+                    horizontal 
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.filterTabs}
+                >
+                    {FILTER_TABS.map(tab => (
                         <Pressable
-                            key={drill.id}
-                            onPress={() => router.push(drill.route as any)}
-                            style={({ pressed }) => [styles.cardWrapper, pressed && { opacity: 0.85 }]}
+                            key={tab.id}
+                            onPress={() => setSelectedFilter(tab.id)}
+                            style={[
+                                styles.filterTab,
+                                selectedFilter === tab.id && [styles.filterTabActive, { borderColor: systemColor, backgroundColor: `${systemColor}15` }]
+                            ]}
                         >
-                            <View style={[styles.card, { shadowColor: drill.accent }]}>
-                                <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-                                {/* Left accent bar */}
-                                <View style={[styles.accentBar, { backgroundColor: drill.accent }]} />
-
-                                {/* Monogram badge */}
-                                <View style={[styles.monogram, {
-                                    backgroundColor: `${drill.accent}18`,
-                                    borderColor: `${drill.accent}35`,
-                                }]}>
-                                    <Text style={[styles.monogramText, { color: drill.accent }]}>
-                                        {drill.label}
-                                    </Text>
-                                </View>
-
-                                {/* Info */}
-                                <View style={styles.cardInfo}>
-                                    <Text style={styles.cardTitle}>{drill.title}</Text>
-                                    <Text style={styles.cardDesc}>{drill.desc}</Text>
-                                </View>
-
-                                {/* Arrow */}
-                                <GlassButton
-                                    label="START"
-                                    onPress={() => router.push(drill.route as any)}
-                                    tint="dark"
-                                    size="sm"
-                                />
-                            </View>
+                            <Text style={[
+                                styles.filterTabText,
+                                selectedFilter === tab.id && { color: systemColor, fontWeight: '700' }
+                            ]}>
+                                {tab.label}
+                            </Text>
                         </Pressable>
                     ))}
-                </View>
+                </ScrollView>
+
+                {/* Drill Cards Grouped by Category */}
+                {filteredCategories.map((category, catIdx) => (
+                    <View key={catIdx} style={styles.categorySection}>
+                        <View style={styles.categoryHeader}>
+                            <Text style={[styles.categoryTitle, { color: systemColor }]}>{category.category}</Text>
+                            <Text style={styles.categoryDesc}>{category.desc}</Text>
+                        </View>
+                        <View style={styles.grid}>
+                            {category.drills.map((drill, i) => (
+                                <Pressable
+                                    key={drill.id}
+                                    onPress={() => router.push(drill.route as any)}
+                                    style={({ pressed }) => [styles.cardWrapper, pressed && { opacity: 0.85 }]}
+                                >
+                                    <View style={[styles.card, { shadowColor: drill.accent }]}>
+                                        <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+                                        {/* Left accent bar */}
+                                        <View style={[styles.accentBar, { backgroundColor: drill.accent }]} />
+
+                                        {/* Monogram badge */}
+                                        <View style={[styles.monogram, {
+                                            backgroundColor: `${drill.accent}18`,
+                                            borderColor: `${drill.accent}35`,
+                                        }]}>
+                                            <Text style={[styles.monogramText, { color: drill.accent }]}>
+                                                {drill.label}
+                                            </Text>
+                                        </View>
+
+                                        {/* Info */}
+                                        <View style={styles.cardInfo}>
+                                            <Text style={styles.cardTitle}>{drill.title}</Text>
+                                            <Text style={styles.cardDesc}>{drill.desc}</Text>
+                                        </View>
+
+                                        {/* Arrow */}
+                                        <GlassButton
+                                            label="START"
+                                            onPress={() => router.push(drill.route as any)}
+                                            tint="dark"
+                                            size="sm"
+                                        />
+                                    </View>
+                                </Pressable>
+                            ))}
+                        </View>
+                    </View>
+                ))}
 
                 <View style={{ height: 120 }} />
             </ScrollView>
@@ -225,6 +256,47 @@ const styles = StyleSheet.create({
         fontSize: FontSizes.lg,
         color: Colors.textTertiary,
         fontFamily: Fonts.heading,
+    },
+    categorySection: {
+        marginBottom: 32,
+    },
+    categoryHeader: {
+        marginBottom: 14,
+        paddingHorizontal: Spacing.sm,
+    },
+    filterTabs: {
+        paddingHorizontal: Spacing.md,
+        gap: 8,
+        marginBottom: 16,
+    },
+    filterTab: {
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: Radius.md,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+        backgroundColor: 'transparent',
+    },
+    filterTabActive: {
+        borderWidth: 1,
+    },
+    filterTabText: {
+        fontFamily: Fonts.monoBold,
+        fontSize: 11,
+        color: Colors.textSecondary,
+        letterSpacing: 1,
+    },
+    categoryTitle: {
+        fontFamily: Fonts.monoBold,
+        fontSize: 11,
+        letterSpacing: 2,
+        marginBottom: 4,
+    },
+    categoryDesc: {
+        fontFamily: Fonts.body,
+        fontSize: 12,
+        color: Colors.textSecondary,
+        lineHeight: 16,
     },
     ambientGlow: {
         position: 'absolute',

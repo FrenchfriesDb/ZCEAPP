@@ -7,6 +7,7 @@ import GlassCard from '@/components/GlassCard';
 import GlassButton from '@/components/GlassButton';
 import ProofModal from '@/components/ProofModal';
 import { useUser } from '@/context/UserContext';
+import { useTextColors } from '@/context/TextColorsContext';
 import { useTimeColors } from '@/hooks/useTimeColors';
 
 const CATEGORIES = [
@@ -34,7 +35,7 @@ const shuffleArray = <T,>(array: T[]): T[] => {
 const QUESTS = [
     // === ORIGINAL QUESTS ===
     { id: 'qs_stranger', icon: '🗣️', title: 'Talk to a Stranger', description: "Initiate a conversation with someone you don't know. Any topic — weather, a compliment, or just \"hey.\"", xpReward: 10, category: 'social' },
-    { id: 'qs_eyelock', icon: '👁️', title: 'Eye-Lock Challenge', description: 'Hold eye contact for 3 seconds with 5 different people today. No looking away first.', xpReward: 10, category: 'confidence' },
+{ id: 'qs_eyelock', icon: '👁️', title: 'Eye-Lock Challenge', description: 'Use camera, hold eye contact with person for 20 seconds (natural view). No looking away first.', xpReward: 10, category: 'confidence' },
     { id: 'qs_compliment', icon: '💎', title: 'Bold Compliment', description: "Give a genuine, unexpected compliment. Make it specific — not \"nice shirt\" but \"that color really works on you.\"", xpReward: 10, category: 'social' },
     { id: 'qs_laugh', icon: '😂', title: 'Make Someone Laugh', description: 'Tell a joke, say something witty, or make an observation that gets a genuine laugh.', xpReward: 10, category: 'humor' },
     { id: 'qs_voice', icon: '🎙️', title: 'Voice Power', description: 'Record yourself speaking for 60 seconds. Replay it. Notice your tone, pace, and energy. Speak like a CEO.', xpReward: 10, category: 'confidence' },
@@ -70,6 +71,8 @@ const QUESTS = [
 
 export default function QuestsScreen() {
     const { user, completeQuest, resetQuests } = useUser();
+    const { palette: timePalette } = useTimeColors();
+    const { textPrimary: themeTextPrimary } = useTextColors();
     const completedIds = user?.completedQuests || [];
 
     const [selectedQuest, setSelectedQuest] = useState<typeof QUESTS[0] | null>(null);
@@ -78,11 +81,11 @@ export default function QuestsScreen() {
     const [questBatch, setQuestBatch] = useState(0);
     const [shuffledQuests, setShuffledQuests] = useState(() => shuffleArray(QUESTS));
 
-    const timePalette = useTimeColors();
     // Special handling for 9 PM Moon Dust theme - force lavender color
     const currentHour = new Date().getHours();
     const isMoonDustTheme = currentHour >= 21 && currentHour < 22; // 9-10 PM
     const systemColor = isMoonDustTheme ? '#CCB3D1' : timePalette[timePalette.length - 1];
+    const questPrimary = timePalette[0] ?? themeTextPrimary ?? '#FF0F7B';
     // Convert hex to rgba for textShadowColor
     const hexToRgba = (hex: string, alpha: number) => {
         const r = parseInt(hex.slice(1, 3), 16);
@@ -90,7 +93,7 @@ export default function QuestsScreen() {
         const b = parseInt(hex.slice(5, 7), 16);
         return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     };
-    const glowColor = hexToRgba(systemColor, 1.0);
+    const glowColor = hexToRgba(questPrimary, 1.0);
 
     // Reshuffle when batch changes
     useMemo(() => {
@@ -147,7 +150,7 @@ export default function QuestsScreen() {
         if (proofData.photoUri) log += ` [Photo Proof Attached]`;
         if (proofData.voiceUri) log += ` [Voice Proof Attached]`;
 
-        await completeQuest(selectedQuest.id, selectedQuest.xpReward, log);
+        await completeQuest(selectedQuest.id, selectedQuest.xpReward, log, { photoUri: proofData.photoUri, voiceUri: proofData.voiceUri });
         setIsProofVisible(false);
         setSelectedQuest(null);
     };
@@ -164,20 +167,24 @@ export default function QuestsScreen() {
             <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 <View style={styles.heroSection}>
                     <View style={styles.heroProgressWrapper}>
-                        <Text style={[styles.heroNumber, { 
-                            textShadowColor: glowColor,
-                            textShadowOffset: { width: 0, height: 0 },
-                            textShadowRadius: 40
-                        }]}>{completedCount}</Text>
-                        <Text style={[styles.heroUnit, { color: systemColor }]}>OF {visibleQuests.length} QUESTS</Text>
+                        <Text style={[
+                            styles.heroNumber,
+                            { 
+                                textShadowColor: glowColor,
+                                textShadowOffset: { width: 0, height: 0 },
+                                textShadowRadius: 40,
+                                color: '#FFFFFF' // White number
+                            }
+                        ]}>{completedCount}</Text>
+                        <Text style={[styles.heroUnit, { color: questPrimary }]}>OF {visibleQuests.length} QUESTS</Text>
                     </View>
-                    <Text style={styles.welcomeText}>
+                    <Text style={[styles.welcomeText, { color: questPrimary }]}>
                         Harvesting status. Stay in frame.
                     </Text>
 
                     <View style={styles.heroXPContainer}>
-                        <View style={[styles.xpEarned, { borderColor: systemColor + '33' }]}>
-                            <Text style={[styles.xpEarnedText, { color: systemColor }]}>+{totalXP} XP EXTRACTED TODAY</Text>
+                        <View style={[styles.xpEarned, { borderColor: questPrimary + '33' }]}>
+                            <Text style={[styles.xpEarnedText, { color: questPrimary }]}>+{totalXP} XP EXTRACTED TODAY</Text>
                         </View>
                     </View>
                 </View>
@@ -291,16 +298,13 @@ const styles = StyleSheet.create({
     heroUnit: {
         fontFamily: Fonts.monoBold,
         fontSize: 11,
-        color: Colors.accentCyan,
         letterSpacing: 4,
         marginTop: -10,
         fontWeight: '800',
-        opacity: 0.8,
     },
     welcomeText: {
         fontFamily: Fonts.body,
         fontSize: 16,
-        color: 'rgba(255,255,255,0.4)',
         textAlign: 'center',
         marginBottom: 20,
         marginTop: 10,

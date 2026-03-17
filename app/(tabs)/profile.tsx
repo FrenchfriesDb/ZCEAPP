@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Modal, FlatList, Platform, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Modal, FlatList, Platform, TextInput, ActivityIndicator, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Fonts, Spacing, Radius, XPConfig } from '@/constants/theme';
 import GlassCard from '@/components/GlassCard';
 import { useUser } from '@/context/UserContext';
+import { useTextColors } from '@/context/TextColorsContext';
 import { router } from 'expo-router';
 import { useTimeColors } from '@/hooks/useTimeColors';
 import { formatDisplayName } from '@/utils/formatters';
@@ -12,6 +13,8 @@ import ProgressGraph from '@/components/ProgressGraph';
 
 export default function ProfileScreen() {
     const { user, signOut, changeUsername, purchaseSystemBackup } = useUser();
+    const { palette: timePalette, textColors } = useTimeColors();
+    const { textPrimary, textSecondary, textTertiary } = useTextColors();
 
     // UI State
     const [archivesVisible, setArchivesVisible] = useState(false);
@@ -22,7 +25,6 @@ export default function ProfileScreen() {
 
     // Derived Constants
     const levelInfo = XPConfig.getLevel(user?.xp || 0);
-    const timePalette = useTimeColors();
     // Special handling for 9 PM Moon Dust theme - force lavender color
     const currentHour = new Date().getHours();
     const isMoonDustTheme = currentHour >= 21 && currentHour < 22; // 9-10 PM
@@ -36,7 +38,7 @@ export default function ProfileScreen() {
                 onPress={() => signOut()}
                 style={{ backgroundColor: 'rgba(255, 255, 255, 0.08)', paddingVertical: 14, paddingHorizontal: 32, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.2)' }}
             >
-                <Text style={{ color: Colors.textPrimary, fontFamily: Fonts.mono, fontSize: 12, letterSpacing: 2 }}>FORCE LOGOUT</Text>
+                <Text style={{ color: textPrimary, fontFamily: Fonts.mono, fontSize: 12, letterSpacing: 2 }}>FORCE LOGOUT</Text>
             </Pressable>
         </View>
     );
@@ -61,12 +63,12 @@ export default function ProfileScreen() {
                             <View style={styles.nameRow}>
                                 <View style={styles.avatarContainer}>
                                     <View style={styles.avatar}>
-                                        <Text style={styles.avatarText}>{formatDisplayName(user.name).charAt(0)}</Text>
+                                        <Text style={[styles.avatarText, { color: textPrimary }]}>{formatDisplayName(user.name).charAt(0)}</Text>
                                     </View>
                                     <View style={[styles.onlineBadge, { backgroundColor: systemColor, shadowColor: systemColor }]} />
                                 </View>
                                 <Text
-                                    style={styles.name}
+                                    style={[styles.name, { color: textPrimary }]}
                                     numberOfLines={1}
                                     adjustsFontSizeToFit
                                     minimumFontScale={0.8}
@@ -117,7 +119,7 @@ export default function ProfileScreen() {
                 <View style={styles.statsGrid}>
                     <GlassCard themed style={styles.statCard} intensity={12}>
                         <Text style={styles.statLabel}>AGENT STREAK</Text>
-                        <Text style={[styles.statValue, { color: systemColor, textShadowColor: systemColor + '40' }]}>{user.streak}</Text>
+                        <Text style={[styles.statValue, { color: textPrimary, textShadowColor: textPrimary + '40' }]}>{user.streak}</Text>
                         <Text style={[styles.statSub, { color: '#FFFFFF' }]}>DAYS ACTIVE</Text>
                     </GlassCard>
                 </View>
@@ -125,12 +127,12 @@ export default function ProfileScreen() {
                 <View style={styles.statsGrid}>
                     <GlassCard themed style={styles.statCard} intensity={15}>
                         <Text style={styles.statLabel}>NEURAL LEVEL</Text>
-                        <Text style={[styles.statValue, { color: systemColor, textShadowColor: systemColor + '40' }]}>{levelInfo.level}</Text>
+                        <Text style={[styles.statValue, { color: textPrimary, textShadowColor: textPrimary + '40' }]}>{levelInfo.level}</Text>
                         <Text style={[styles.statSub, { color: '#FFFFFF' }]}>{levelInfo.title.toUpperCase()}</Text>
                     </GlassCard>
                     <GlassCard themed style={styles.statCard} intensity={15}>
                         <Text style={styles.statLabel}>SYSTEM BACKUPS</Text>
-                        <Text style={[styles.statValue, { color: systemColor, textShadowColor: systemColor + '40' }]}>{user.systemBackups || 0}</Text>
+                        <Text style={[styles.statValue, { color: textPrimary, textShadowColor: textPrimary + '40' }]}>{user.systemBackups || 0}</Text>
                         <Pressable onPress={purchaseSystemBackup}>
                             <Text style={[styles.statSub, { color: user.xp >= 500 ? '#FFFFFF' : 'rgba(255,255,255,0.4)' }]}>
                                 {user.xp >= 500 ? '+ BUY (500XP)' : 'XP LOW'}
@@ -142,12 +144,12 @@ export default function ProfileScreen() {
                 <View style={styles.statsGrid}>
                     <GlassCard themed style={styles.statCard} intensity={15}>
                         <Text style={styles.statLabel}>DRILLS</Text>
-                        <Text style={[styles.statValue, { color: systemColor, textShadowColor: systemColor + '40' }]}>{totalDrills}</Text>
+                        <Text style={[styles.statValue, { color: textPrimary, textShadowColor: textPrimary + '40' }]}>{totalDrills}</Text>
                         <Text style={[styles.statSub, { color: '#FFFFFF' }]}>REPS LOGGED</Text>
                     </GlassCard>
                     <GlassCard themed style={styles.statCard} intensity={15}>
                         <Text style={styles.statLabel}>MISSIONS</Text>
-                        <Text style={[styles.statValue, { color: systemColor, textShadowColor: systemColor + '40' }]}>{totalMissions}</Text>
+                        <Text style={[styles.statValue, { color: textPrimary, textShadowColor: textPrimary + '40' }]}>{totalMissions}</Text>
                         <Text style={[styles.statSub, { color: '#FFFFFF' }]}>FIELD OPS</Text>
                     </GlassCard>
                 </View>
@@ -222,7 +224,15 @@ export default function ProfileScreen() {
                                     </Text>
                                     <Text style={styles.archiveItemDate}>{new Date(item.date).toLocaleDateString()}</Text>
                                 </View>
-                                <Text style={styles.archiveItemText}>{archiveTab === 'drills' ? item.feedback : item.entry}</Text>
+                                {(() => {
+                                    const content = archiveTab === 'drills' ? (item.feedback || '') : (item.entry || '');
+                                    let cleaned = content.replace(/\[ID:[^\]]+\]/g, '').trim();
+                                    cleaned = cleaned.replace(/\b(?:qs_|dm_|q_|id_)[A-Za-z0-9_-]+\b/gi, (match) => {
+                                        const pretty = match.replace(/^(?:qs_|dm_|q_|id_)/i, '').replace(/[_-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                                        return pretty;
+                                    });
+                                    return <Text style={styles.archiveItemText}>{cleaned || '(no description provided)'}</Text>;
+                                })()}
                                 {archiveTab === 'journal' && item.analysis && (
                                     <View style={styles.analysisContainer}>
                                         <Text style={styles.analysisLabel}>ZANE ANALYSIS:</Text>
@@ -303,7 +313,7 @@ const styles = StyleSheet.create({
         borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)',
         justifyContent: 'center', alignItems: 'center',
     },
-    avatarText: { fontFamily: Fonts.heading, fontSize: 24, color: '#fff', fontWeight: '800' },
+    avatarText: { fontFamily: Fonts.heading, fontSize: 24, fontWeight: '800' },
     onlineBadge: {
         position: 'absolute', bottom: -2, right: -2,
         width: 14, height: 14, borderRadius: 7,
@@ -322,7 +332,6 @@ const styles = StyleSheet.create({
         flex: 1,
         fontFamily: Fonts.heading,
         fontSize: 24,
-        color: Colors.textPrimary,
         fontWeight: '900',
         letterSpacing: -1,
         lineHeight: 28,
@@ -355,7 +364,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center', alignItems: 'center',
         borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
     },
-    emojiFix: { fontFamily: Platform.OS === 'ios' ? 'System' : undefined, fontSize: 18 },
+    emojiFix: { fontFamily: Platform.select({ ios: 'Apple Color Emoji', default: undefined }), fontSize: 18 },
     graphCard: {
         padding: 4,
         marginBottom: 20,
@@ -376,7 +385,7 @@ const styles = StyleSheet.create({
     },
     statLabel: { fontFamily: Fonts.mono, fontSize: 9, color: 'rgba(255,255,255,0.8)', marginBottom: 8, letterSpacing: 2, fontWeight: '800' },
     statValue: {
-        fontFamily: Fonts.heading, fontSize: 52, color: '#B3E0FF', fontWeight: '900',
+        fontFamily: Fonts.heading, fontSize: 52, fontWeight: '900',
         textShadowRadius: 8, textShadowOffset: { width: 0, height: 0 }
     },
     statSub: { fontFamily: Fonts.monoBold, fontSize: 9, letterSpacing: 1, marginTop: 4 },

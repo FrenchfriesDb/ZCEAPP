@@ -13,6 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Colors, Fonts, FontSizes, Radius } from '@/constants/theme';
 import { useTimeColors } from '@/hooks/useTimeColors';
+import { useTextColors } from '@/context/TextColorsContext';
 
 /**
  * Ultra-realistic "water-glass" button.
@@ -44,25 +45,6 @@ interface GlassButtonProps {
 const TINT = {
     dark: {
         rimColors: [
-            'rgba(255,255,255,0.40)',  // top specular rim
-            'rgba(255,255,255,0.05)',
-            'rgba(0,0,0,0.80)',        // bottom shadow
-        ] as const,
-        bodyColors: [
-            '#1a1a1a',                 // Top dark gray
-            '#0c0c0c',                 // mid
-            '#000000',                 // bottom pure black
-        ] as const,
-        specularColors: [
-            'rgba(255,255,255,0.15)',  // bubble highlight
-            'rgba(255,255,255,0.03)',
-            'rgba(255,255,255,0.00)',
-        ] as const,
-        label: '#E8E8E8',
-        glowColor: 'rgba(255,255,255,0.10)',
-    },
-    blue: {
-        rimColors: [
             'rgba(255,255,255,0.60)',
             'rgba(255,255,255,0.14)',
             'rgba(0,0,0,0.55)',
@@ -77,8 +59,27 @@ const TINT = {
             'rgba(255,255,255,0.08)',
             'rgba(255,255,255,0.00)',
         ] as const,
+        label: '#E8E8E8',
+        glowColor: 'rgba(255,255,255,0.10)',
+    },
+    blue: {
+        rimColors: [
+            'rgba(255,255,255,0.15)',
+            'rgba(255,255,255,0.08)',
+            'rgba(0,0,0,0.70)',
+        ] as const,
+        bodyColors: [
+            'rgba(0,0,0,0.03)',
+            'rgba(0,0,0,0.01)',
+            'rgba(0,0,0,0.08)',
+        ] as const,
+        specularColors: [
+            'rgba(255,255,255,0.25)',
+            'rgba(255,255,255,0.12)',
+            'rgba(255,255,255,0.03)',
+        ] as const,
         label: '#FFFFFF',
-        glowColor: 'rgba(255,255,255,0.20)',
+        glowColor: 'rgba(255,255,255,0.08)',
     },
     red: {
         rimColors: [
@@ -98,6 +99,25 @@ const TINT = {
         ] as const,
         label: Colors.accentDanger,
         glowColor: 'rgba(255,68,68,0.16)',
+    },
+    dynamic: {
+        rimColors: [
+            'rgba(255,255,255,0.60)',
+            'rgba(255,255,255,0.14)',
+            'rgba(0,0,0,0.55)',
+        ] as const,
+        bodyColors: [
+            'rgba(255,255,255,0.12)',
+            'rgba(255,255,255,0.03)',
+            'rgba(0,0,0,0.22)',
+        ] as const,
+        specularColors: [
+            'rgba(255,255,255,0.28)',
+            'rgba(255,255,255,0.08)',
+            'rgba(255,255,255,0.00)',
+        ] as const,
+        label: '#FFFFFF',
+        glowColor: 'rgba(255,255,255,0.20)',
     },
     monochrome: {
         rimColors: [
@@ -121,10 +141,12 @@ const TINT = {
 };
 
 const SIZE = {
-    sm: { ph: 14, pv: 9, fs: FontSizes.sm, circle: 42 },
-    md: { ph: 22, pv: 13, fs: FontSizes.md, circle: 54 },
-    lg: { ph: 30, pv: 17, fs: FontSizes.lg, circle: 66 },
-};
+    xs: { ph: 24, pv: 20, fs: FontSizes.xs, circle: 48 },
+    sm: { ph: 28, pv: 24, fs: FontSizes.sm, circle: 56 },
+    md: { ph: 48, pv: 40, fs: FontSizes.md, circle: 72 },
+    lg: { ph: 56, pv: 48, fs: FontSizes.lg, circle: 88 },
+    xl: { ph: 64, pv: 56, fs: FontSizes.xl, circle: 104 },
+} as const;
 
 export default function GlassButton({
     label,
@@ -165,6 +187,15 @@ export default function GlassButton({
     const t = TINT[tint as keyof typeof TINT] || TINT.dark;
     const isCircle = variant === 'circle';
     const br = variant === 'pill' ? Radius.pill : Radius.lg;
+    
+    // Use theme color for blue tint
+    const { textPrimary } = useTextColors();
+    const useThemeColor = tint === 'blue';
+    const finalTint = useThemeColor ? { ...t, label: textPrimary, glowColor: textPrimary } : t;
+
+    // Special font color for sunset theme (6-7 PM)
+    const isSunsetTheme = timePalette[0] === '#FF0F7B' && timePalette[1] === '#F89B29';
+    const labelColor = '#FFFFFF'; // Always white for better visibility
 
     return (
         <Animated.View style={[{ transform: [{ scale: scaleAnim }] }, style]}>
@@ -181,9 +212,9 @@ export default function GlassButton({
                         styles.glowHalo,
                         {
                             borderRadius: br + 6,
-                            shadowColor: tint === 'blue' ? systemColor : t.glowColor,
+                            shadowColor: useThemeColor ? textPrimary : finalTint.glowColor,
                             shadowOpacity: glowAnim,
-                            backgroundColor: tint === 'blue' ? systemColor : t.glowColor,
+                            backgroundColor: useThemeColor ? textPrimary : finalTint.glowColor,
                             ...(isCircle ? { width: circle + 12, height: circle + 12, left: -6, top: -6 } : {}),
                         },
                     ]} />
@@ -194,14 +225,14 @@ export default function GlassButton({
 
                 {/* 3 ── METALLIC SPECULAR RIM (1.2px) */}
                 <LinearGradient
-                    colors={[...t.rimColors]}
-                    start={{ x: 0.3, y: 0 }}
-                    end={{ x: 0.7, y: 1 }}
-                    style={[{ padding: 0.8 }, isCircle ? { width: circle, height: circle, borderRadius: br } : { borderRadius: br }]}
+                    colors={useThemeColor ? [textPrimary + '60', textPrimary + '20', 'rgba(0,0,0,0.55)'] : finalTint.rimColors}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={[styles.rim, { borderRadius: br }, isCircle && { width: circle, height: circle }]}
                 >
                     {/* 4 ── FROSTED GLASS BODY (high blur) */}
                     <BlurView
-                        intensity={60}
+                        intensity={100}
                         tint="dark"
                         style={[
                             { overflow: 'hidden' },
@@ -212,45 +243,44 @@ export default function GlassButton({
                     >
                         {/* Glass body gradient — slight top shimmer, dark bottom */}
                         <LinearGradient
-                            colors={[...t.bodyColors]}
-                            start={{ x: 0.5, y: 0 }}
-                            end={{ x: 0.5, y: 1 }}
-                            style={[
-                                isCircle
-                                    ? { width: circle - 2.4, height: circle - 2.4, borderRadius: br - 1.2, justifyContent: 'center' as const, alignItems: 'center' as const }
-                                    : { paddingHorizontal: ph, paddingVertical: pv, flexDirection: 'row' as const, gap: 8, alignItems: 'center' as const, justifyContent: 'center' as const },
-                            ]}
+                            colors={useThemeColor ? [textPrimary + '12', textPrimary + '03', 'rgba(0,0,0,0.22)'] : finalTint.bodyColors}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 0, y: 1 }}
+                            style={styles.glassBody}
                         >
-                            {/* 5 ── INNER SPECULAR HIGHLIGHT — top 35% white arc */}
-                            <View style={[
-                                styles.specularOverlay,
-                                isCircle
-                                    ? { width: circle - 4, height: (circle - 4) * 0.45, borderRadius: br }
-                                    : { height: '45%', borderRadius: br },
-                            ]}>
-                                <LinearGradient
-                                    colors={[...t.specularColors]}
-                                    start={{ x: 0.5, y: 0 }}
-                                    end={{ x: 0.5, y: 1 }}
-                                    style={StyleSheet.absoluteFill}
-                                />
-                            </View>
+                            <LinearGradient
+                                colors={finalTint.specularColors}
+                                start={{ x: 0.5, y: 0 }}
+                                end={{ x: 0.5, y: 1 }}
+                                style={StyleSheet.absoluteFill}
+                            />        
+                            <View
+                                style={[
+                                    styles.specularOverlay,
+                                    isCircle
+                                        ? { width: circle - 2.4, height: (circle - 2.4) * 0.45, borderRadius: br - 1.2, justifyContent: 'center' as const, alignItems: 'center' as const }
+                                        : { height: '45%', borderRadius: br },
+                                ]}
+                            />
 
-                            {/* 6 ── LABEL */}
-                            {icon ? (
-                                <Text style={{
-                                    fontSize: fs,
-                                    color: t.label,
-                                    fontFamily: Platform.OS === 'ios' ? 'System' : undefined,
-                                    fontWeight: 'normal',
-                                    letterSpacing: 0
-                                }}>
-                                    {icon}
+                                {/* 6 ── LABEL */}
+                                {icon ? (
+                                    <Text style={{
+                                        fontSize: fs,
+                                        color: '#FFFFFF',
+                                        textShadowColor: 'rgba(0,0,0,0.5)',
+                                        textShadowRadius: 2,
+                                        textShadowOffset: { width: 0, height: 1 },
+                                        fontFamily: Platform.OS === 'ios' ? 'System' : undefined,
+                                        fontWeight: '600',
+                                        letterSpacing: 0.5,
+                                    }}>
+                                        {icon}
+                                    </Text>
+                                ) : null}
+                                <Text style={[styles.label, { fontSize: fs, color: labelColor }, labelStyle]}>
+                                    {label}
                                 </Text>
-                            ) : null}
-                            <Text style={[styles.label, { fontSize: fs, color: t.label }, labelStyle]}>
-                                {label}
-                            </Text>
                         </LinearGradient>
                     </BlurView>
                 </LinearGradient>
@@ -286,5 +316,9 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         letterSpacing: 0.6,
         textAlign: 'center',
+        color: '#FFFFFF',
+        textShadowColor: 'rgba(0,0,0,0.8)',
+        textShadowRadius: 3,
+        textShadowOffset: { width: 0, height: 2 },
     },
 });

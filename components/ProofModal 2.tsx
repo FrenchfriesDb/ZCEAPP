@@ -6,28 +6,15 @@ import {
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
+import { Audio } from 'expo-av';
 import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
 import { useTimeColors } from '@/hooks/useTimeColors';
-import { useTextColors } from '@/context/TextColorsContext';
 import GlassButton from './GlassButton';
-
-// Web platform check
-const isWeb = Platform.OS === 'web';
-
-// Helper function to get Audio only when needed
-const getAudio = () => {
-    if (Platform.OS === 'web') return null;
-    try {
-        return require('expo-av').Audio;
-    } catch (e) {
-        return null;
-    }
-};
 
 interface ProofModalProps {
     visible: boolean;
     onClose: () => void;
-    onComplete: (proofData: { text?: string, photoUri?: string, voiceUri?: string }) => void;
+    onComplete: (proofData: { text?: string, photoUri?: string }) => void;
     questTitle: string;
 }
 
@@ -38,11 +25,8 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
     const [isRecording, setIsRecording] = useState(false);
     const pulseAnim = React.useRef(new Animated.Value(1)).current;
     const recordingRef = React.useRef<any>(null);
-    const { textPrimary } = useTextColors();
-    const { palette: timePalette } = useTimeColors();
+    const timePalette = useTimeColors();
     const systemColor = timePalette[timePalette.length - 1];
-    const middleColor = timePalette[Math.floor(timePalette.length / 2)];
-    const firstColor = timePalette[0];
 
     useEffect(() => {
         if (isRecording) {
@@ -58,15 +42,8 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
         }
     }, [isRecording, pulseAnim]);
 
-    // ── IMAGE: show action sheet on iOS (camera / library), just library on Android/web ──
+    // ── IMAGE: show action sheet on iOS (camera / library), just library on Android ──
     const handlePickImage = async () => {
-        if (isWeb) {
-            Alert.alert('Photo Proof', 'Camera is not available on web. Please choose from library.', [
-                { text: 'Choose from Library', onPress: async () => { const r = await requestLibrary(); if (r && !r.canceled) setPhotoUri(r.assets[0].uri); } },
-                { text: 'Cancel', style: 'cancel' },
-            ]);
-            return;
-        }
         const requestLibrary = async () => {
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (status !== 'granted') {
@@ -117,17 +94,6 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
 
     // ── MIC: tap to toggle record/stop ──
     const handleMicToggle = async () => {
-        if (isWeb) {
-            Alert.alert('Not Available', 'Voice recording is not available on web.');
-            return;
-        }
-
-        const Audio = getAudio();
-        if (!Audio) {
-            Alert.alert('Not Available', 'Audio recording is not available on this device.');
-            return;
-        }
-
         if (isRecording) {
             // — STOP —
             setIsRecording(false);
@@ -149,11 +115,16 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                     recordingRef.current = null;
                 }
 
+                const { status } = await Audio.requestPermissionsAsync();
+                if (status !== 'granted') {
+                    Alert.alert('Mic Permission Needed', 'Please allow microphone access in Settings.');
+                    return;
+                }
                 await Audio.setAudioModeAsync({
                     allowsRecordingIOS: true,
                     playsInSilentModeIOS: true,
                 });
-                const { recording: rec } = await Audio.createAsync(
+                const { recording: rec } = await Audio.Recorder.createAsync(
                     Audio.RecordingOptionsPresets.HIGH_QUALITY
                 );
                 recordingRef.current = rec;
@@ -219,13 +190,12 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                             {/* Voice — tap to toggle */}
                             <Pressable
                                 onPress={handleMicToggle}
-                                style={[styles.mediaBtn, isRecording && styles.mediaBtnActive, isWeb && styles.mediaBtnDisabled]}
-                                disabled={isWeb}
+                                style={[styles.mediaBtn, isRecording && styles.mediaBtnActive]}
                             >
                                 <Animated.View style={{ transform: [{ scale: pulseAnim }], alignItems: 'center' }}>
                                     <Text style={styles.mediaIcon}>🎙️</Text>
-                                    <Text style={[styles.mediaText, isRecording && { color: Colors.accentCyan }, isWeb && { color: Colors.textTertiary }]}>
-                                        {isWeb ? 'WEB\nDISABLED' : isRecording ? 'TAP TO\nSTOP' : voiceUri ? 'RECORDED ✓' : 'TAP TO\nRECORD'}
+                                    <Text style={[styles.mediaText, isRecording && { color: Colors.accentCyan }]}>
+                                        {isRecording ? 'TAP TO\nSTOP' : voiceUri ? 'RECORDED ✓' : 'TAP TO\nRECORD'}
                                     </Text>
                                 </Animated.View>
                             </Pressable>
@@ -240,16 +210,7 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                         <Pressable onPress={onClose} style={styles.cancelBtn}>
                             <Text style={styles.cancelText}>ABANDON</Text>
                         </Pressable>
-                        <GlassButton 
-                            label="VERIFY & COMPLETE" 
-                            onPress={handleSubmit} 
-                            tint="blue"
-                            size="md" 
-                            glow
-                            style={{ 
-                                shadowColor: firstColor,
-                            }}
-                        />
+                        <GlassButton label="VERIFY & COMPLETE" onPress={handleSubmit} tint={systemColor as any} size="md" glow />
                     </View>
                 </View>
             </KeyboardAvoidingView>
@@ -321,9 +282,6 @@ const styles = StyleSheet.create({
         color: 'rgba(255,255,255,0.2)',
         textAlign: 'center',
         letterSpacing: 0.3,
-    },
-    mediaBtnDisabled: {
-        opacity: 0.4,
     },
     previewImage: { width: '100%', height: '100%' },
     statusMsg: { fontFamily: Fonts.mono, fontSize: 10, color: Colors.accentCyan, marginTop: 4, letterSpacing: 1 },

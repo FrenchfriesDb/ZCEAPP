@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import { Colors, Fonts, FontSizes, Spacing, Radius } from '@/constants/theme';
 import GlassCard from './GlassCard';
 import { useTimeColors } from '@/hooks/useTimeColors';
+import { useTextColors } from '@/context/TextColorsContext';
 
 interface QuestCardProps {
     icon: string;
@@ -15,7 +16,8 @@ interface QuestCardProps {
 }
 
 export default function QuestCard({ icon, title, description, xpReward, completed, onToggle, category }: QuestCardProps) {
-    const timePalette = useTimeColors();
+    const { palette: timePalette } = useTimeColors();
+    const { textPrimary } = useTextColors();
     const systemColor = timePalette[0];
 
     // Map category to color
@@ -49,13 +51,13 @@ export default function QuestCard({ icon, title, description, xpReward, complete
                 </View>
 
                 <View style={styles.content}>
-                    <Text style={[styles.title, completed && styles.completedText]}>{title}</Text>
+                    <Text style={[styles.title, completed && styles.completedText, { color: textPrimary }]}>{title}</Text>
                     <Text style={styles.description}>{description}</Text>
                 </View>
 
                 <View style={styles.right}>
                     <View style={[styles.xpBadge, { borderColor: systemColor + '44' }, completed && { opacity: 0.5 }]}>
-                        <Text style={[styles.xpText, { color: systemColor }]}>+{xpReward} XP</Text>
+                        <Text style={[styles.xpText, { color: textPrimary }]}>+{xpReward} XP</Text>
                     </View>
 
                     <Pressable onPress={onToggle} style={({ pressed }) => [
@@ -98,7 +100,7 @@ const styles = StyleSheet.create({
         fontSize: 24,
     },
     emojiFix: {
-        fontFamily: Platform.OS === 'ios' ? 'System' : undefined,
+        fontFamily: Platform.select({ ios: 'Apple Color Emoji', default: undefined }),
         fontWeight: 'normal',
         letterSpacing: 0,
     },
@@ -109,7 +111,6 @@ const styles = StyleSheet.create({
     title: {
         fontFamily: Fonts.heading,
         fontSize: 16,
-        color: Colors.textPrimary,
         letterSpacing: 0.5,
     },
     completedText: {
@@ -136,7 +137,6 @@ const styles = StyleSheet.create({
     xpText: {
         fontFamily: Fonts.monoBold,
         fontSize: 10,
-        color: Colors.accentCyan,
         letterSpacing: 1,
     },
     checkbox: {

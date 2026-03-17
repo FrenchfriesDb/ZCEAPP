@@ -3,6 +3,7 @@ import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { Tabs } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { Colors, Fonts, Radius } from '@/constants/theme';
+import { TextColorsProvider } from '@/context/TextColorsContext';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 
 const TAB_CONFIG = [
@@ -49,10 +50,11 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 
 export default function TabLayout() {
   return (
-    <Tabs
-      tabBar={(props) => <FloatingTabBar {...props} />}
-      screenOptions={{ headerShown: false }}
-    >
+    <TextColorsProvider>
+      <Tabs
+        tabBar={(props) => <FloatingTabBar {...props} />}
+        screenOptions={{ headerShown: false }}
+      >
       {TAB_CONFIG.map(tab => (
         <Tabs.Screen
           key={tab.name}
@@ -62,7 +64,8 @@ export default function TabLayout() {
       ))}
       <Tabs.Screen name="chat" options={{ tabBarStyle: { display: 'none' } }} />
       <Tabs.Screen name="research" options={{ tabBarStyle: { display: 'none' } }} />
-    </Tabs>
+      </Tabs>
+    </TextColorsProvider>
   );
 }
 
