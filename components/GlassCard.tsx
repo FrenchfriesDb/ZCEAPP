@@ -73,10 +73,11 @@ export default function GlassCard({
                 style,
             ]}
         >
-            <BlurView intensity={blurIntensity} tint="dark" style={[StyleSheet.absoluteFill, { borderRadius: 16 }]} />
+            <BlurView pointerEvents="none" intensity={blurIntensity} tint="dark" style={[StyleSheet.absoluteFill, { borderRadius: 16 }]} />
             <View style={[styles.content, noPadding && { padding: 0 }]}>
                 {/* Shine gradient across top edge */}
                 <LinearGradient
+                    pointerEvents="none"
                     colors={['rgba(255,255,255,0.15)', 'rgba(255,255,255,0.05)', 'transparent']}
                     start={{ x: 0.5, y: 0 }}
                     end={{ x: 0.5, y: 1 }}
@@ -85,7 +86,7 @@ export default function GlassCard({
 
                 {/* Inner glow on left accent border */}
                 {categoryColor && (
-                    <View style={[styles.leftAccent, { shadowColor: categoryColor }]} />
+                    <View pointerEvents="none" style={[styles.leftAccent, { shadowColor: categoryColor }]} />
                 )}
 
                 {children}

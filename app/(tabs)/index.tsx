@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 // Don't import expo-av at module load time — load it at runtime where available.
 import * as Haptics from 'expo-haptics';
+import { requireOptionalNativeModule } from 'expo-modules-core';
 import { useUser } from '@/context/UserContext';
 import { useTextColors } from '@/context/TextColorsContext';
 import { Colors, Fonts, FontSizes, Spacing, Radius, XPConfig } from '@/constants/theme';
@@ -102,6 +103,31 @@ const RECOVERY_QUESTIONS = [
 
 const pick8 = (pool: any[]) => [...pool].sort(() => 0.5 - Math.random()).slice(0, 8);
 
+// Lazy-load expo-av at runtime. Some builds (custom dev clients) may not include it.
+let _cachedAudio: any | null | undefined;
+const loadAudio = async () => {
+  if (Platform.OS === 'web') return null;
+  if (_cachedAudio !== undefined) return _cachedAudio;
+  try {
+    const maybe = requireOptionalNativeModule('ExponentAV');
+    if (!maybe) {
+      _cachedAudio = null;
+      return null;
+    }
+  } catch {
+    _cachedAudio = null;
+    return null;
+  }
+  try {
+    const mod = await import('expo-av');
+    _cachedAudio = mod.Audio;
+    return _cachedAudio;
+  } catch {
+    _cachedAudio = null;
+    return null;
+  }
+};
+
 export default function DojoScreen() {
   const { user, completeQuest, resetQuests, recoverStreak, deploySystemBackup } = useUser();
   const { palette: timePalette } = useTimeColors();
@@ -135,20 +161,6 @@ export default function DojoScreen() {
   const playbackRef = useRef<any>(null);
   const [playingUri, setPlayingUri] = useState<string | null>(null);
 
-  let _cachedAudio: any | null | undefined;
-  const loadAudio = async () => {
-    if (Platform.OS === 'web') return null;
-    if (_cachedAudio !== undefined) return _cachedAudio;
-    try {
-      const mod = await import('expo-av');
-      _cachedAudio = mod.Audio;
-      return _cachedAudio;
-    } catch (_e) {
-      _cachedAudio = null;
-      return null;
-    }
-  };
-
   const togglePlay = async (uri?: string) => {
     if (!uri) return;
     try {
@@ -170,7 +182,7 @@ export default function DojoScreen() {
 
       const Audio = await loadAudio();
       if (!Audio) {
-        Alert.alert('Playback Not Available', 'Audio playback is not available on this platform.');
+        Alert.alert('Playback Not Available', 'Audio playback is not available in this build.');
         return;
       }
 

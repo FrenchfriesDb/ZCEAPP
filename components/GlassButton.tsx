@@ -266,6 +266,7 @@ export default function GlassButton({
                 >
                     {/* 4 ── FROSTED GLASS BODY (high blur) */}
                     <BlurView
+                        pointerEvents="none"
                         intensity={blurIntensity}
                         tint="dark"
                         style={[
@@ -277,6 +278,7 @@ export default function GlassButton({
                     >
                         {/* Glass body gradient — slight top shimmer, dark bottom */}
                         <LinearGradient
+                            pointerEvents="none"
                             colors={bodyColors}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 0, y: 1 }}
@@ -287,6 +289,7 @@ export default function GlassButton({
                         >
                             {(isVerify || isGlass) && accentColor ? (
                                 <LinearGradient
+                                    pointerEvents="none"
                                     colors={['rgba(0,0,0,0)', `${accentColor}14`]}
                                     start={{ x: 0, y: 0 }}
                                     end={{ x: 1, y: 0 }}
@@ -295,12 +298,14 @@ export default function GlassButton({
                             ) : null}
 
                             <LinearGradient
+                                pointerEvents="none"
                                 colors={specularColors}
                                 start={{ x: 0.5, y: 0 }}
                                 end={{ x: 0.5, y: 1 }}
                                 style={StyleSheet.absoluteFill}
                             />        
                             <View
+                                pointerEvents="none"
                                 style={[
                                     styles.specularOverlay,
                                     isCircle

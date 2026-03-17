@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, Pressable, Animated, ScrollView, TextInput, Alert, Platform, KeyboardAvoidingView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { requireOptionalNativeModule } from 'expo-modules-core';
 // Web platform check
 const isWeb = Platform.OS === 'web';
 
@@ -9,6 +10,17 @@ let _cachedAudio: any | null | undefined;
 const loadAudio = async () => {
     if (isWeb) return null;
     if (_cachedAudio !== undefined) return _cachedAudio;
+    // If the native module doesn't exist, importing expo-av will throw and may trigger a redbox.
+    try {
+        const maybe = requireOptionalNativeModule('ExponentAV');
+        if (!maybe) {
+            _cachedAudio = null;
+            return null;
+        }
+    } catch {
+        _cachedAudio = null;
+        return null;
+    }
     try {
         const mod = await import('expo-av');
         _cachedAudio = mod.Audio;

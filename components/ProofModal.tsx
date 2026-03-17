@@ -10,6 +10,7 @@ import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
 import { useTimeColors } from '@/hooks/useTimeColors';
 import { useTextColors } from '@/context/TextColorsContext';
 import GlassButton from './GlassButton';
+import { requireOptionalNativeModule } from 'expo-modules-core';
 
 // Web platform check
 const isWeb = Platform.OS === 'web';
@@ -19,6 +20,17 @@ let _cachedAudio: any | null | undefined;
 const loadAudio = async () => {
     if (Platform.OS === 'web') return null;
     if (_cachedAudio !== undefined) return _cachedAudio;
+    // If the native module doesn't exist, importing expo-av will throw and may trigger a redbox.
+    try {
+        const maybe = requireOptionalNativeModule('ExponentAV');
+        if (!maybe) {
+            _cachedAudio = null;
+            return null;
+        }
+    } catch {
+        _cachedAudio = null;
+        return null;
+    }
     try {
         const mod = await import('expo-av');
         _cachedAudio = mod.Audio;
