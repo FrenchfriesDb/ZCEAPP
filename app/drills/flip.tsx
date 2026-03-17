@@ -4,6 +4,7 @@ import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import GlassCard from '@/components/GlassCard';
+import GlassButton from '@/components/GlassButton';
 import { AIService } from '@/services/ai';
 import { useUser } from '@/context/UserContext';
 import { FLIP_PROMPTS } from '@/constants/zane';
@@ -14,6 +15,7 @@ export default function FlipDrill() {
     const [response, setResponse] = useState('');
     const [analysis, setAnalysis] = useState('');
     const [loading, setLoading] = useState(false);
+    const [isResponseFocused, setIsResponseFocused] = useState(false);
 
     const generateSituation = () => {
         const random = FLIP_PROMPTS[Math.floor(Math.random() * FLIP_PROMPTS.length)];
@@ -72,6 +74,18 @@ export default function FlipDrill() {
                 <View style={styles.headerSpacer} />
             </View>
 
+            {/* Keep the prompt visible while typing your flip (ScrollView can jump to focused input). */}
+            {(isResponseFocused || !!response) && (
+                <View style={{ paddingHorizontal: Spacing.lg, paddingTop: 6 }}>
+                    <GlassCard style={styles.pinnedPromptCard}>
+                        <Text style={styles.pinnedPromptLabel}>SITUATION:</Text>
+                        <Text style={styles.pinnedPromptText} numberOfLines={3}>
+                            {situation || 'Tap 🎲 to generate a situation, or type your own.'}
+                        </Text>
+                    </GlassCard>
+                </View>
+            )}
+
             <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
 
                 <Text style={styles.instruction}>
@@ -104,12 +118,20 @@ export default function FlipDrill() {
                         value={response}
                         onChangeText={setResponse}
                         multiline
+                        onFocus={() => setIsResponseFocused(true)}
+                        onBlur={() => setIsResponseFocused(false)}
                     />
                 </View>
 
-                <Pressable onPress={handleAnalyze} style={({ pressed }) => [styles.btn, pressed && styles.btnPressed]}>
-                    {loading ? <ActivityIndicator color={Colors.bgPrimary} /> : <Text style={styles.btnText}>ANALYZE WITH AI</Text>}
-                </Pressable>
+                <GlassButton
+                    label={loading ? 'ANALYZING...' : 'ANALYZE WITH AI'}
+                    onPress={handleAnalyze}
+                    size="md"
+                    tint="dark"
+                    glow={!loading && !!situation && !!response}
+                    disabled={loading || !situation || !response}
+                    style={{ width: '100%', marginTop: 10 }}
+                />
 
                 {analysis ? (
                     <GlassCard style={styles.resultCard} glowColor={Colors.accentPrimary}>
@@ -135,6 +157,9 @@ const styles = StyleSheet.create({
 
     scrollContent: { padding: Spacing.lg, paddingBottom: 60, gap: 20 },
     instruction: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, textAlign: 'center', marginBottom: 10 },
+    pinnedPromptCard: { paddingVertical: 10, paddingHorizontal: 12 },
+    pinnedPromptLabel: { fontFamily: Fonts.mono, fontSize: 9, color: 'rgba(255,255,255,0.35)', letterSpacing: 1.5, marginBottom: 6 },
+    pinnedPromptText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textPrimary, lineHeight: 18 },
 
     inputGroup: { gap: 10 },
     label: { fontFamily: Fonts.mono, fontSize: 10, color: Colors.accentPrimary, letterSpacing: 1 },
@@ -151,12 +176,7 @@ const styles = StyleSheet.create({
         fontWeight: 'normal',
         letterSpacing: 0,
     },
-    btn: {
-        height: 56, borderRadius: 28, backgroundColor: Colors.accentPrimary,
-        justifyContent: 'center', alignItems: 'center', marginTop: 10
-    },
-    btnPressed: { opacity: 0.9 },
-    btnText: { fontFamily: Fonts.heading, fontSize: 14, color: Colors.bgPrimary, letterSpacing: 2 },
+    // Buttons use <GlassButton/> now (global liquid glass look)
 
     resultCard: { padding: 20, marginTop: 10 },
     resultTitle: { fontFamily: Fonts.heading, fontSize: 16, color: Colors.accentPrimary, marginBottom: 12 },

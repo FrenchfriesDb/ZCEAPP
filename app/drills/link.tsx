@@ -103,6 +103,19 @@ export default function LinkDrill() {
                 <View style={styles.headerSpacer} />
             </View>
 
+            {/* Keep the words visible while typing the rep (ScrollView will auto-jump to the TextInput). */}
+            {!active && (isFinished || !!feedback) && (
+                <View style={{ paddingHorizontal: Spacing.lg, paddingTop: 6 }}>
+                    <GlassCard style={styles.pinnedWordsCard}>
+                        <View style={styles.wordsHeader}>
+                            <Text style={styles.wordSmall}>{word1}</Text>
+                            <Text style={styles.plusSmall}>+</Text>
+                            <Text style={styles.wordSmall}>{word2}</Text>
+                        </View>
+                    </GlassCard>
+                </View>
+            )}
+
             <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                 <View style={styles.content}>
                     {!active && !isFinished && !feedback ? (
@@ -147,12 +160,6 @@ export default function LinkDrill() {
                         </>
                     ) : (
                         <View style={styles.feedbackSection}>
-                            <View style={styles.wordsHeader}>
-                                <Text style={styles.wordSmall}>{word1}</Text>
-                                <Text style={styles.plusSmall}>+</Text>
-                                <Text style={styles.wordSmall}>{word2}</Text>
-                            </View>
-
                             {!feedback ? (
                                 <View style={styles.logSection}>
                                     <Text style={styles.label}>WHAT'S THE LINK?</Text>
@@ -224,6 +231,7 @@ const styles = StyleSheet.create({
 
     // Buttons use <GlassButton/> now (global liquid glass look)
 
+    pinnedWordsCard: { paddingVertical: 10, paddingHorizontal: 12, width: '100%' },
     feedbackSection: { width: '100%', gap: 16, flex: 1 },
     wordsHeader: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 10 },
     wordSmall: { fontFamily: Fonts.heading, fontSize: 16, color: Colors.textSecondary },
