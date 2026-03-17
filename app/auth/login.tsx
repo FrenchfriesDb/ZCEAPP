@@ -14,6 +14,7 @@ export default function LoginScreen() {
 
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const gestureX = useRef(new Animated.Value(0)).current;
+    const isWeb = Platform.OS === 'web';
 
     useEffect(() => {
         Animated.timing(fadeAnim, { toValue: 1, duration: 1000, useNativeDriver: true }).start();
@@ -32,24 +33,11 @@ export default function LoginScreen() {
         }
     };
 
-    return (
-        <PanGestureHandler
-            onGestureEvent={Animated.event([{ nativeEvent: { translationX: gestureX } }], { useNativeDriver: false })}
-            onHandlerStateChange={(event) => {
-                if (event.nativeEvent.state === State.END) {
-                    const { translationX } = event.nativeEvent;
-                    // Swipe right: return to onboarding at stage 7 (Sign in), not stage 1
-                    if (translationX > 50) {
-                        setReturnToOnboardingStage(7);
-                        router.replace('/auth/onboarding');
-                    }
-                }
-            }}
+    const content = (
+        <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={{ flex: 1, backgroundColor: '#000000' }}
         >
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                style={{ flex: 1, backgroundColor: '#000000' }}
-            >
             <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
 
             <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
@@ -120,6 +108,30 @@ export default function LoginScreen() {
                 </Animated.View>
             </ScrollView>
         </KeyboardAvoidingView>
+    );
+
+    if (isWeb) {
+        // RNGH web requires a real DOM element child; avoid crashing by disabling the swipe gesture on web.
+        return <View style={{ flex: 1 }}>{content}</View>;
+    }
+
+    return (
+        <PanGestureHandler
+            onGestureEvent={Animated.event([{ nativeEvent: { translationX: gestureX } }], { useNativeDriver: false })}
+            onHandlerStateChange={(event) => {
+                if (event.nativeEvent.state === State.END) {
+                    const { translationX } = event.nativeEvent;
+                    // Swipe right: return to onboarding at stage 7 (Sign in), not stage 1
+                    if (translationX > 50) {
+                        setReturnToOnboardingStage(7);
+                        router.replace('/auth/onboarding');
+                    }
+                }
+            }}
+        >
+            <Animated.View style={{ flex: 1 }}>
+                {content}
+            </Animated.View>
         </PanGestureHandler>
     );
 }
