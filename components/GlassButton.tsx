@@ -155,7 +155,7 @@ export default function GlassButton({
     variant = 'pill',
     size = 'md',
     icon,
-    look = 'plain',
+    look = 'glass',
     tint = 'dark',
     glow = false,
     style,

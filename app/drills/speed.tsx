@@ -4,6 +4,7 @@ import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
 import { router } from 'expo-router';
 import { useState, useEffect, useRef } from 'react';
 import GlassCard from '@/components/GlassCard';
+import GlassButton from '@/components/GlassButton';
 import { SPEED_PROMPTS } from '@/constants/zane';
 import { useUser } from '@/context/UserContext';
 import { AIService } from '@/services/ai';
@@ -123,9 +124,14 @@ export default function SpeedDrill() {
                             <Text style={styles.intro}>
                                 React in 11 seconds. Don't think. Flow.
                             </Text>
-                            <Pressable onPress={generatePrompt} style={styles.startBtn}>
-                                <Text style={styles.btnText}>GENERATE PROMPT</Text>
-                            </Pressable>
+                            <GlassButton
+                                label="GENERATE PROMPT"
+                                onPress={generatePrompt}
+                                size="md"
+                                tint="dark"
+                                glow
+                                style={{ width: '100%' }}
+                            />
                         </View>
                     )}
 
@@ -154,13 +160,15 @@ export default function SpeedDrill() {
                                 autoFocus
                             />
 
-                            <Pressable
+                            <GlassButton
+                                label={isLoading ? 'ANALYZING...' : 'SUBMIT RESPONSE'}
                                 onPress={() => finishDrill(true)}
-                                style={[styles.submitBtn, isLoading && { opacity: 0.7 }]}
+                                size="md"
+                                tint="blue"
+                                glow={!isLoading}
                                 disabled={isLoading}
-                            >
-                                <Text style={styles.btnText}>{isLoading ? 'ANALYZING...' : 'SUBMIT RESPONSE'}</Text>
-                            </Pressable>
+                                style={{ width: '100%' }}
+                            />
                         </View>
                     )}
 
@@ -169,13 +177,15 @@ export default function SpeedDrill() {
                             <ScrollView style={styles.feedbackScroll} contentContainerStyle={styles.feedbackScrollContent}>
                                 <Text style={styles.feedbackText}>{feedback}</Text>
                             </ScrollView>
-                            <Pressable
+                            <GlassButton
+                                label={isLoading ? 'ANALYZING...' : 'NEXT ROUND'}
                                 onPress={generatePrompt}
-                                style={[styles.startBtn, isLoading && { opacity: 0.5 }]}
+                                size="md"
+                                tint="dark"
+                                glow={!isLoading}
                                 disabled={isLoading}
-                            >
-                                <Text style={styles.btnText}>{isLoading ? 'ANALYZING...' : 'NEXT ROUND'}</Text>
-                            </Pressable>
+                                style={{ width: '100%' }}
+                            />
                         </View>
                     ) : null}
                 </View>
@@ -197,8 +207,7 @@ const styles = StyleSheet.create({
     centerBox: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 20 },
     intro: { color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 16, marginBottom: 20, textAlign: 'center' },
 
-    startBtn: { backgroundColor: '#fff', paddingHorizontal: 30, paddingVertical: 15, borderRadius: 30 },
-    btnText: { fontFamily: Fonts.heading, fontSize: 14, letterSpacing: 2, color: Colors.bgPrimary },
+    // Buttons use <GlassButton/> now (global liquid glass look)
 
     activeContainer: { gap: 12, width: '100%' },
     timerBarBg: { height: 4, backgroundColor: 'rgba(255,255,255,0.1)', width: '100%' },
@@ -212,7 +221,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: 14,
         color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
     },
-    submitBtn: { backgroundColor: Colors.accentPrimary, paddingVertical: 14, borderRadius: 30, alignItems: 'center' },
+    // Buttons use <GlassButton/> now (global liquid glass look)
 
     feedbackContainer: { flex: 1, gap: 16 },
     feedbackScroll: {

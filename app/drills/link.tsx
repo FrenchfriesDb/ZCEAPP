@@ -4,6 +4,7 @@ import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
 import { router } from 'expo-router';
 import { useState, useRef, useEffect } from 'react';
 import GlassCard from '@/components/GlassCard';
+import GlassButton from '@/components/GlassButton';
 import { LINK_WORDS } from '@/constants/zane';
 import { useUser } from '@/context/UserContext';
 import { AIService } from '@/services/ai';
@@ -107,9 +108,14 @@ export default function LinkDrill() {
                     {!active && !isFinished && !feedback ? (
                         <View style={styles.centerBox}>
                             <Text style={styles.intro}>Find the connection in 10s. Don't let the frame slip.</Text>
-                            <Pressable onPress={shuffle} style={styles.btn}>
-                                <Text style={styles.btnText}>START ROUND</Text>
-                            </Pressable>
+                            <GlassButton
+                                label="START ROUND"
+                                onPress={shuffle}
+                                size="md"
+                                tint="dark"
+                                glow
+                                style={{ width: '100%' }}
+                            />
                         </View>
                     ) : active ? (
                         <>
@@ -130,9 +136,14 @@ export default function LinkDrill() {
                                     <Text style={styles.word}>{word2}</Text>
                                 </GlassCard>
                             </View>
-                            <Pressable onPress={finish} style={[styles.btn, { marginTop: 20, backgroundColor: Colors.accentPrimary }]}>
-                                <Text style={styles.btnText}>DONE</Text>
-                            </Pressable>
+                            <GlassButton
+                                label="DONE"
+                                onPress={finish}
+                                size="md"
+                                tint="blue"
+                                glow
+                                style={{ width: '100%', marginTop: 20 }}
+                            />
                         </>
                     ) : (
                         <View style={styles.feedbackSection}>
@@ -153,22 +164,30 @@ export default function LinkDrill() {
                                         onChangeText={setResponse}
                                         multiline
                                     />
-                                    <Pressable onPress={handleAnalyze} style={styles.submitBtn} disabled={isLoading || !response}>
-                                        {isLoading ? <ActivityIndicator color={Colors.bgPrimary} /> : <Text style={styles.btnTextDark}>ANALYZE LINK</Text>}
-                                    </Pressable>
+                                    <GlassButton
+                                        label={isLoading ? 'ANALYZING...' : 'ANALYZE LINK'}
+                                        onPress={handleAnalyze}
+                                        size="md"
+                                        tint="dark"
+                                        glow={!isLoading && !!response}
+                                        disabled={isLoading || !response}
+                                        style={{ width: '100%' }}
+                                    />
                                 </View>
                             ) : (
                                 <View style={styles.resultContainer}>
                                     <ScrollView style={styles.feedbackScroll} contentContainerStyle={styles.feedbackScrollContent}>
                                         <Text style={styles.feedbackText}>{feedback}</Text>
                                     </ScrollView>
-                                    <Pressable
+                                    <GlassButton
+                                        label={isLoading ? 'ANALYZING...' : 'NEXT ROUND'}
                                         onPress={shuffle}
-                                        style={[styles.btn, isLoading && { opacity: 0.5 }]}
+                                        size="md"
+                                        tint="dark"
+                                        glow={!isLoading}
                                         disabled={isLoading}
-                                    >
-                                        <Text style={styles.btnText}>{isLoading ? 'ANALYZING...' : 'NEXT ROUND'}</Text>
-                                    </Pressable>
+                                        style={{ width: '100%' }}
+                                    />
                                 </View>
                             )}
                         </View>
@@ -203,8 +222,7 @@ const styles = StyleSheet.create({
     word: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.textPrimary, textAlign: 'center' },
     plus: { fontFamily: Fonts.heading, fontSize: 24, color: Colors.accentPrimary },
 
-    btn: { backgroundColor: '#fff', paddingHorizontal: 30, paddingVertical: 14, borderRadius: 30, width: '100%', alignItems: 'center' },
-    btnText: { fontFamily: Fonts.heading, fontSize: 14, color: Colors.bgPrimary, letterSpacing: 2 },
+    // Buttons use <GlassButton/> now (global liquid glass look)
 
     feedbackSection: { width: '100%', gap: 16, flex: 1 },
     wordsHeader: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 10 },
@@ -218,8 +236,7 @@ const styles = StyleSheet.create({
         color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 16, minHeight: 80, textAlignVertical: 'top',
         borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
     },
-    submitBtn: { backgroundColor: '#fff', paddingVertical: 14, borderRadius: 30, alignItems: 'center' },
-    btnTextDark: { fontFamily: Fonts.heading, fontSize: 14, color: Colors.bgPrimary, letterSpacing: 2 },
+    // Buttons use <GlassButton/> now (global liquid glass look)
 
     resultContainer: { gap: 16, flex: 1 },
     feedbackScroll: {

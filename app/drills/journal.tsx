@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { useUser } from '@/context/UserContext';
 import GlassCard from '@/components/GlassCard';
+import GlassButton from '@/components/GlassButton';
 import { AIService } from '@/services/ai';
 
 export default function JournalDrill() {
@@ -68,15 +69,26 @@ export default function JournalDrill() {
                 />
 
                 {!saved ? (
-                    <Pressable onPress={handleSave} style={[styles.btn, isLoading && { opacity: 0.7 }]} disabled={isLoading}>
-                        <Text style={styles.btnText}>{isLoading ? 'ANALYZING...' : 'SAVE LOG'}</Text>
-                    </Pressable>
+                    <GlassButton
+                        label={isLoading ? 'ANALYZING...' : 'SAVE LOG'}
+                        onPress={handleSave}
+                        size="md"
+                        tint="dark"
+                        glow={!isLoading && !!entry}
+                        disabled={isLoading || !entry}
+                        style={{ width: '100%', marginTop: 20 }}
+                    />
                 ) : (
                     <GlassCard style={styles.analysisCard} glowColor={Colors.accentPrimary}>
                         <Text style={styles.analysisText}>{analysis}</Text>
-                        <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')} style={styles.doneBtn}>
-                            <Text style={styles.doneBtnText}>ACKNOWLEDGED</Text>
-                        </Pressable>
+                        <GlassButton
+                            label="ACKNOWLEDGED"
+                            onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}
+                            size="md"
+                            tint="dark"
+                            glow
+                            style={{ width: '100%' }}
+                        />
                     </GlassCard>
                 )}
 
@@ -106,14 +118,9 @@ const styles = StyleSheet.create({
         borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
     },
 
-    btn: {
-        marginTop: 20, height: 56, borderRadius: 28,
-        backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center'
-    },
-    btnText: { fontFamily: Fonts.heading, fontSize: 14, color: Colors.bgPrimary, letterSpacing: 2 },
+    // Buttons use <GlassButton/> now (global liquid glass look)
 
     analysisCard: { padding: 24, marginTop: 20 },
     analysisText: { color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 16, lineHeight: 24, marginBottom: 20 },
-    doneBtn: { backgroundColor: Colors.accentPrimary, paddingVertical: 14, borderRadius: 28, alignItems: 'center' },
-    doneBtnText: { color: Colors.bgPrimary, fontFamily: Fonts.heading, fontSize: 13, letterSpacing: 2 },
+    // Buttons use <GlassButton/> now (global liquid glass look)
 });

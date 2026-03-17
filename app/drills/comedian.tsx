@@ -4,6 +4,7 @@ import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import GlassCard from '@/components/GlassCard';
+import GlassButton from '@/components/GlassButton';
 import { OBJECTS } from '@/constants/zane';
 import { AIService } from '@/services/ai';
 import { useUser } from '@/context/UserContext';
@@ -73,9 +74,15 @@ export default function ComedianDrill() {
                     <GlassCard style={styles.card}>
                         <Text style={styles.label}>THE SUBJECT:</Text>
                         <Text style={styles.object}>{object}</Text>
-                        <Pressable onPress={generate} style={styles.nextSubject}>
-                            <Text style={styles.nextSubjectText}><Text style={{}}>🎲</Text> RANDOMIZE</Text>
-                        </Pressable>
+                        <View style={{ width: '100%', marginTop: 12 }}>
+                            <GlassButton
+                                label="🎲 RANDOMIZE"
+                                onPress={generate}
+                                size="sm"
+                                tint="dark"
+                                style={{ width: '100%' }}
+                            />
+                        </View>
                     </GlassCard>
                 </View>
             )}
@@ -89,9 +96,15 @@ export default function ComedianDrill() {
                     <GlassCard style={styles.card}>
                         <Text style={styles.label}>THE SUBJECT:</Text>
                         <Text style={styles.object}>{object}</Text>
-                        <Pressable onPress={generate} style={styles.nextSubject}>
-                            <Text style={styles.nextSubjectText}><Text style={{}}>🎲</Text> RANDOMIZE</Text>
-                        </Pressable>
+                        <View style={{ width: '100%', marginTop: 12 }}>
+                            <GlassButton
+                                label="🎲 RANDOMIZE"
+                                onPress={generate}
+                                size="sm"
+                                tint="dark"
+                                style={{ width: '100%' }}
+                            />
+                        </View>
                     </GlassCard>
                 ) : null}
 
@@ -106,18 +119,29 @@ export default function ComedianDrill() {
                             onChangeText={setResponse}
                             multiline
                         />
-                        <Pressable onPress={handleAnalyze} style={styles.analyzeBtn} disabled={isLoading || !response}>
-                            {isLoading ? <ActivityIndicator color={Colors.bgPrimary} /> : <Text style={styles.analyzeBtnText}>GET FEEDBACK</Text>}
-                        </Pressable>
+                        <GlassButton
+                            label={isLoading ? 'ANALYZING...' : 'GET FEEDBACK'}
+                            onPress={handleAnalyze}
+                            size="md"
+                            tint="dark"
+                            glow={!isLoading && !!response}
+                            disabled={isLoading || !response}
+                            style={{ width: '100%' }}
+                        />
                     </View>
                 ) : (
                     <View style={styles.feedbackSection}>
                         <ScrollView style={styles.feedbackScroll} contentContainerStyle={styles.feedbackScrollContent}>
                             <Text style={styles.feedbackText}>{feedback}</Text>
                         </ScrollView>
-                        <Pressable onPress={generate} style={styles.btn}>
-                            <Text style={styles.btnText}>NEXT OBJECT</Text>
-                        </Pressable>
+                        <GlassButton
+                            label="NEXT OBJECT"
+                            onPress={generate}
+                            size="md"
+                            tint="dark"
+                            glow
+                            style={{ width: '100%' }}
+                        />
                     </View>
                 )}
 
@@ -143,8 +167,7 @@ const styles = StyleSheet.create({
     card: { padding: 24, alignItems: 'center', width: '100%' },
     label: { fontFamily: Fonts.mono, fontSize: 12, color: Colors.accentPrimary, marginBottom: 10 },
     object: { fontFamily: Fonts.heading, fontSize: 28, color: Colors.textPrimary, textAlign: 'center' },
-    nextSubject: { marginTop: 12, padding: 8, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 20 },
-    nextSubjectText: { fontFamily: Fonts.mono, fontSize: 10, color: 'rgba(255,255,255,0.4)', letterSpacing: 1 },
+    // Buttons use <GlassButton/> now (global liquid glass look)
 
     inputSection: { gap: 10 },
     inputLabel: { fontFamily: Fonts.mono, fontSize: 10, color: Colors.accentPrimary, letterSpacing: 2 },
@@ -153,8 +176,7 @@ const styles = StyleSheet.create({
         color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 16, minHeight: 80, textAlignVertical: 'top',
         borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
     },
-    analyzeBtn: { backgroundColor: '#fff', paddingVertical: 14, borderRadius: 30, alignItems: 'center' },
-    analyzeBtnText: { fontFamily: Fonts.heading, fontSize: 14, color: Colors.bgPrimary, letterSpacing: 2 },
+    // Buttons use <GlassButton/> now (global liquid glass look)
 
     feedbackSection: { gap: 16 },
     feedbackScroll: {
@@ -167,6 +189,5 @@ const styles = StyleSheet.create({
     feedbackScrollContent: { padding: 18 },
     feedbackText: { color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 14, lineHeight: 22 },
 
-    btn: { backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 40, paddingVertical: 14, borderRadius: 30, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
-    btnText: { fontFamily: Fonts.heading, fontSize: 14, color: '#fff', letterSpacing: 2 },
+    // Buttons use <GlassButton/> now (global liquid glass look)
 });

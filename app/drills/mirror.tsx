@@ -217,7 +217,14 @@ export default function MirrorDrill() {
         return (
             <View style={styles.container}>
                 <Text style={styles.cameraText}>We need your permission to show the camera feed</Text>
-                <Pressable onPress={requestPermission} style={styles.btn}><Text style={styles.btnText}>Grant Permission</Text></Pressable>
+                <GlassButton
+                    label="Grant Permission"
+                    onPress={requestPermission}
+                    size="md"
+                    tint="dark"
+                    glow
+                    style={{ width: '100%', marginTop: 14, alignSelf: 'center' }}
+                />
             </View>
         );
     }
@@ -450,6 +457,6 @@ const styles = StyleSheet.create({
     voiceBtnText: { fontFamily: Fonts.monoBold, fontSize: 11, color: Colors.textPrimary, letterSpacing: 1 },
 
     btn: { backgroundColor: '#fff', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 8, marginTop: 20 },
-    btnText: { color: Colors.bgPrimary, fontWeight: 'bold', fontFamily: Fonts.heading },
+    // Buttons use <GlassButton/> now (global liquid glass look)
     cameraText: { color: '#fff', textAlign: 'center', padding: 40 },
 });

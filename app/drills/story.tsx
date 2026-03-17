@@ -4,6 +4,7 @@ import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
 import { router } from 'expo-router';
 import { useState, useEffect, useRef } from 'react';
 import GlassCard from '@/components/GlassCard';
+import GlassButton from '@/components/GlassButton';
 import { AIService } from '@/services/ai';
 import { useUser } from '@/context/UserContext';
 
@@ -119,9 +120,14 @@ export default function StoryDrill() {
                 {!active && !isFinished && !feedback ? (
                     <View style={styles.centerBox}>
                         <Text style={styles.intro}>35 seconds to weave a web. Go.</Text>
-                        <Pressable onPress={start} style={styles.btn}>
-                            <Text style={styles.btnText}>START IMPROV</Text>
-                        </Pressable>
+                        <GlassButton
+                            label="START IMPROV"
+                            onPress={start}
+                            size="md"
+                            tint="dark"
+                            glow
+                            style={{ width: '100%' }}
+                        />
                     </View>
                 ) : active ? (
                     <View style={styles.activeContainer}>
@@ -130,9 +136,14 @@ export default function StoryDrill() {
                         <View style={styles.barBg}>
                             <Animated.View style={[styles.barFill, { width: timerAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }]} />
                         </View>
-                        <Pressable onPress={finish} style={[styles.btn, { marginTop: 40, backgroundColor: Colors.accentPrimary }]}>
-                            <Text style={[styles.btnText, { color: '#000' }]}>DONE</Text>
-                        </Pressable>
+                        <GlassButton
+                            label="DONE"
+                            onPress={finish}
+                            size="md"
+                            tint="blue"
+                            glow
+                            style={{ width: '100%', marginTop: 24 }}
+                        />
                     </View>
                 ) : (
                     <View style={styles.feedbackSection}>
@@ -153,18 +164,29 @@ export default function StoryDrill() {
                                     onChangeText={setResponse}
                                     multiline
                                 />
-                                <Pressable onPress={handleAnalyze} style={styles.submitBtn} disabled={isLoading || !response}>
-                                    {isLoading ? <ActivityIndicator color={Colors.bgPrimary} /> : <Text style={styles.btnTextSmall}>ANALYZE STORY</Text>}
-                                </Pressable>
+                                <GlassButton
+                                    label={isLoading ? 'ANALYZING...' : 'ANALYZE STORY'}
+                                    onPress={handleAnalyze}
+                                    size="md"
+                                    tint="dark"
+                                    glow={!isLoading && !!response}
+                                    disabled={isLoading || !response}
+                                    style={{ width: '100%' }}
+                                />
                             </View>
                         ) : (
                             <View style={styles.resultContainer}>
                                 <ScrollView style={styles.feedbackScroll} contentContainerStyle={styles.feedbackScrollContent}>
                                     <Text style={styles.feedbackText}>{feedback}</Text>
                                 </ScrollView>
-                                <Pressable onPress={start} style={styles.btn}>
-                                    <Text style={styles.btnText}>NEXT REP</Text>
-                                </Pressable>
+                                <GlassButton
+                                    label="NEXT REP"
+                                    onPress={start}
+                                    size="md"
+                                    tint="dark"
+                                    glow
+                                    style={{ width: '100%' }}
+                                />
                             </View>
                         )}
                     </View>
@@ -188,8 +210,7 @@ const styles = StyleSheet.create({
     centerBox: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
     intro: { color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 16, marginBottom: 16, textAlign: 'center' },
 
-    btn: { backgroundColor: '#fff', paddingHorizontal: 36, paddingVertical: 16, borderRadius: 30 },
-    btnText: { fontFamily: Fonts.heading, fontSize: 14, color: Colors.bgPrimary, letterSpacing: 2 },
+    // Buttons use <GlassButton/> now (global liquid glass look)
 
     activeContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14, width: '100%' },
     timer: { fontFamily: Fonts.heading, fontSize: 48, color: Colors.textPrimary },
@@ -208,8 +229,7 @@ const styles = StyleSheet.create({
         color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 16, minHeight: 80, textAlignVertical: 'top',
         borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
     },
-    submitBtn: { backgroundColor: '#fff', paddingVertical: 14, borderRadius: 30, alignItems: 'center' },
-    btnTextSmall: { fontFamily: Fonts.heading, fontSize: 13, color: Colors.bgPrimary, letterSpacing: 2 },
+    // Buttons use <GlassButton/> now (global liquid glass look)
 
     resultContainer: { gap: 16 },
     feedbackScroll: {

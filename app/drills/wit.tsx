@@ -4,6 +4,7 @@ import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import GlassCard from '@/components/GlassCard';
+import GlassButton from '@/components/GlassButton';
 import { AIService } from '@/services/ai';
 import { useUser } from '@/context/UserContext';
 
@@ -93,17 +94,28 @@ export default function WitDrill() {
                 </GlassCard>
 
                 {!submitted ? (
-                    <Pressable onPress={handleAnalyze} style={styles.btn} disabled={isLoading || !rewrite1 || !rewrite2}>
-                        {isLoading ? <ActivityIndicator color={Colors.bgPrimary} /> : <Text style={styles.btnText}>COMPLETE MINING</Text>}
-                    </Pressable>
+                    <GlassButton
+                        label={isLoading ? 'ANALYZING...' : 'COMPLETE MINING'}
+                        onPress={handleAnalyze}
+                        size="md"
+                        tint="dark"
+                        glow={!isLoading && !!rewrite1 && !!rewrite2}
+                        disabled={isLoading || !rewrite1 || !rewrite2}
+                        style={{ width: '100%', marginTop: 6 }}
+                    />
                 ) : (
                     <View style={styles.resultContainer}>
                         <ScrollView style={styles.feedbackScroll} contentContainerStyle={styles.feedbackScrollContent}>
                             <Text style={styles.feedbackText}>{feedback}</Text>
                         </ScrollView>
-                        <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')} style={styles.btn}>
-                            <Text style={styles.btnText}>ACKNOWLEDGED</Text>
-                        </Pressable>
+                        <GlassButton
+                            label="ACKNOWLEDGED"
+                            onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}
+                            size="md"
+                            tint="dark"
+                            glow
+                            style={{ width: '100%' }}
+                        />
                     </View>
                 )}
 
@@ -133,8 +145,7 @@ const styles = StyleSheet.create({
         color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
     },
 
-    btn: { backgroundColor: '#fff', paddingVertical: 14, borderRadius: 30, alignItems: 'center', marginTop: 6 },
-    btnText: { fontFamily: Fonts.heading, fontSize: 14, letterSpacing: 2, color: Colors.bgPrimary },
+    // Buttons use <GlassButton/> now (global liquid glass look)
 
     resultContainer: { gap: 16 },
     feedbackScroll: {
