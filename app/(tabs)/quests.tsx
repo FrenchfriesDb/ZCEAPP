@@ -81,10 +81,7 @@ export default function QuestsScreen() {
     const [questBatch, setQuestBatch] = useState(0);
     const [shuffledQuests, setShuffledQuests] = useState(() => shuffleArray(QUESTS));
 
-    // Special handling for 9 PM Moon Dust theme - force lavender color
-    const currentHour = new Date().getHours();
-    const isMoonDustTheme = currentHour >= 21 && currentHour < 22; // 9-10 PM
-    const systemColor = isMoonDustTheme ? '#CCB3D1' : timePalette[timePalette.length - 1];
+    const systemColor = timePalette[timePalette.length - 1];
     const questPrimary = timePalette[0] ?? themeTextPrimary ?? '#FF0F7B';
     // Some themes (e.g. Moon Dust) start with a very dark first stop; keep key header text readable.
     const isDarkHex = (hex: string) => {
@@ -343,7 +340,11 @@ const styles = StyleSheet.create({
         fontSize: 24,
     },
     emojiFix: {
-        fontFamily: Platform.OS === 'ios' ? 'Apple Color Emoji' : undefined,
+        fontFamily: Platform.select({
+            ios: 'Apple Color Emoji',
+            web: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji',
+            default: undefined,
+        }),
         fontWeight: 'normal',
         letterSpacing: 0,
     },

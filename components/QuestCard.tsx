@@ -100,7 +100,11 @@ const styles = StyleSheet.create({
         fontSize: 24,
     },
     emojiFix: {
-        fontFamily: Platform.select({ ios: 'Apple Color Emoji', default: undefined }),
+        fontFamily: Platform.select({
+            ios: 'Apple Color Emoji',
+            web: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji',
+            default: undefined,
+        }),
         fontWeight: 'normal',
         letterSpacing: 0,
     },

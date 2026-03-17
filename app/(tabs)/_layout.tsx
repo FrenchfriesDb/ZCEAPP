@@ -116,7 +116,11 @@ const styles = StyleSheet.create({
     opacity: 0.35,
   },
   emoji: {
-    fontFamily: Platform.OS === 'ios' ? 'System' : undefined,
+    fontFamily: Platform.select({
+      ios: 'Apple Color Emoji',
+      web: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji',
+      default: undefined,
+    }),
     fontWeight: 'normal',
     letterSpacing: 0,
   },

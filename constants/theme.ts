@@ -101,7 +101,8 @@ export const TimeColors = {
   // 12 AM – 4 AM — Deep Abyss
   deepAbyss: ['#0E1C26', '#2A454B', '#294861'],
   // 7:10 AM – 7:30 AM — Citrus Sunrise
-  sunriseCitrus: ['#FFCF67', '#D3321D'],
+  // Sunset Flame (warm cream → hot pink)
+  sunriseCitrus: ['#F5E6AD', '#F13C77'],
   // Cloud Drift Alias for clarity
   cloudDrift: ['#2C6CBC', '#71C3F7', '#F6F6F6'],
 };
@@ -117,7 +118,7 @@ export const getDynamicColors = (hour: number, minute: number) => {
   
   if (time < 5) textPrimaryColor = '#294861'; // Deep Abyss - last color (dark steel blue)
   else if (time < 6) textPrimaryColor = '#4B749F'; // Earlier Dawn - last color (light blue)  
-  else if (time >= 7.166 && time <= 7.5) textPrimaryColor = '#D3321D'; // Citrus Sunrise - last color (red-orange)
+  else if (time >= 7.166 && time <= 7.5) textPrimaryColor = '#F13C77'; // Sunset Flame - last color (hot pink)
   else if (time < 8.5) textPrimaryColor = '#71C3F7'; // Morning - last color (sky blue)
   else if (time < 16) textPrimaryColor = '#F6F6F6'; // Cloud Drift - last color (white)
   else if (time < 17) textPrimaryColor = '#71C3F7'; // Cloud Drift - last color (sky blue)
@@ -128,7 +129,7 @@ export const getDynamicColors = (hour: number, minute: number) => {
   else if (time < 20) textPrimaryColor = '#1A2766'; // Battle Glory - last color (deep blue)
   else if (time < 20.5) textPrimaryColor = '#34073D'; // Mars Echo - last color (deep purple)
   else if (time < 21) textPrimaryColor = '#FFC07C'; // Plum Glow - last color (peach)
-  else if (time < 22) textPrimaryColor = '#CCB3D1'; // Moon Dust/Night Dive - last color (lavender)  
+  else if (time < 22) textPrimaryColor = '#FFFFFF'; // Moon Dust/Night Dive - force white for contrast
   else if (time < 23) textPrimaryColor = '#00458E'; // Void Spark - last color (deep blue)
   else textPrimaryColor = '#918CA9'; // Midnight Mist - last color (lavender gray)
   

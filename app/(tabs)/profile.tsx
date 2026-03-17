@@ -25,10 +25,7 @@ export default function ProfileScreen() {
 
     // Derived Constants
     const levelInfo = XPConfig.getLevel(user?.xp || 0);
-    // Special handling for 9 PM Moon Dust theme - force lavender color
-    const currentHour = new Date().getHours();
-    const isMoonDustTheme = currentHour >= 21 && currentHour < 22; // 9-10 PM
-    const systemColor = isMoonDustTheme ? '#CCB3D1' : timePalette[timePalette.length - 1];
+    const systemColor = timePalette[timePalette.length - 1];
 
     if (!user) return (
         <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', gap: 24, padding: 32 }]}>
@@ -364,7 +361,14 @@ const styles = StyleSheet.create({
         justifyContent: 'center', alignItems: 'center',
         borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
     },
-    emojiFix: { fontFamily: Platform.select({ ios: 'Apple Color Emoji', default: undefined }), fontSize: 18 },
+    emojiFix: {
+        fontFamily: Platform.select({
+            ios: 'Apple Color Emoji',
+            web: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji',
+            default: undefined,
+        }),
+        fontSize: 18,
+    },
     graphCard: {
         padding: 4,
         marginBottom: 20,

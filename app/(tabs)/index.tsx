@@ -7,7 +7,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
-// Don't import expo-av at module load time — require it at runtime where available.
+// Don't import expo-av at module load time — load it at runtime where available.
 import * as Haptics from 'expo-haptics';
 import { useUser } from '@/context/UserContext';
 import { useTextColors } from '@/context/TextColorsContext';
@@ -114,10 +114,7 @@ export default function DojoScreen() {
     textSecondary,
     textTertiary
   });
-  // Special handling for 9 PM Moon Dust theme - force lavender color
-  const currentHour = new Date().getHours();
-  const isMoonDustTheme = currentHour >= 21 && currentHour < 22; // 9-10 PM
-  const systemColor = isMoonDustTheme ? '#CCB3D1' : timePalette[timePalette.length - 1];
+  const systemColor = timePalette[timePalette.length - 1];
   const middleColor = timePalette[Math.floor(timePalette.length / 2)];
   // Convert hex to rgba for textShadowColor
   const hexToRgba = (hex: string, alpha: number) => {
@@ -138,13 +135,16 @@ export default function DojoScreen() {
   const playbackRef = useRef<any>(null);
   const [playingUri, setPlayingUri] = useState<string | null>(null);
 
-  const getAudio = () => {
+  let _cachedAudio: any | null | undefined;
+  const loadAudio = async () => {
     if (Platform.OS === 'web') return null;
+    if (_cachedAudio !== undefined) return _cachedAudio;
     try {
-      // require at runtime to avoid native module load errors in environments without expo-av
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      return require('expo-av').Audio;
-    } catch (e) {
+      const mod = await import('expo-av');
+      _cachedAudio = mod.Audio;
+      return _cachedAudio;
+    } catch (_e) {
+      _cachedAudio = null;
       return null;
     }
   };
@@ -168,7 +168,7 @@ export default function DojoScreen() {
         playbackRef.current = null;
       }
 
-      const Audio = getAudio();
+      const Audio = await loadAudio();
       if (!Audio) {
         Alert.alert('Playback Not Available', 'Audio playback is not available on this platform.');
         return;
@@ -908,7 +908,11 @@ const styles = StyleSheet.create({
   },
   archivesBtnIcon: {
     fontSize: 24,
-    fontFamily: Platform.OS === 'ios' ? 'Apple Color Emoji' : undefined,
+    fontFamily: Platform.select({
+      ios: 'Apple Color Emoji',
+      web: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji',
+      default: undefined,
+    }),
     fontWeight: 'normal',
     letterSpacing: 0,
   },
@@ -983,13 +987,21 @@ const styles = StyleSheet.create({
   missionIcon: {
     fontSize: 16,
     color: '#FFFFFF',
-    fontFamily: Platform.select({ ios: 'Apple Color Emoji', default: undefined }),
+    fontFamily: Platform.select({
+      ios: 'Apple Color Emoji',
+      web: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji',
+      default: undefined,
+    }),
     fontWeight: 'normal',
     letterSpacing: 0,
   },
   emojiIcon: {
     fontSize: 14,
-    fontFamily: Platform.select({ ios: 'Apple Color Emoji', default: undefined }),
+    fontFamily: Platform.select({
+      ios: 'Apple Color Emoji',
+      web: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji',
+      default: undefined,
+    }),
     fontWeight: 'normal',
     letterSpacing: 0,
   },
