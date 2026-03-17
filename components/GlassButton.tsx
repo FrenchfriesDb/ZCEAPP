@@ -222,8 +222,9 @@ export default function GlassButton({
 
     // Keep the ProofModal verify button punchy, but not huge.
     // "compact" is for list/CTA contexts where height feels too tall.
-    const pvScale = isVerify ? 0.58 : compact ? 0.78 : 1;
-    const phScale = isVerify ? 0.58 : compact ? 0.92 : 1;
+    // Verify button defines the "target" height for compact CTAs across the app.
+    const pvScale = isVerify ? 0.58 : compact ? 0.58 : 1;
+    const phScale = isVerify ? 0.58 : compact ? 0.82 : 1;
     const phEff = Math.max(14, Math.round(ph * phScale));
     const pvEff = Math.max(10, Math.round(pv * pvScale));
 

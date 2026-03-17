@@ -452,13 +452,14 @@ export default function DojoScreen() {
           <GlassButton
             label="Talk to Zane"
             onPress={() => router.push('/chat')}
-            size="lg"
+            size="sm"
             look="glass"
             tint="blue"
             variant="pill"
             glow
             compact
             style={{ width: '100%' }}
+            labelStyle={{ fontSize: 14 }}
           />
         </View>
 
