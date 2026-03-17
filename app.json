@@ -15,7 +15,9 @@
       "bundleIdentifier": "com.usahealthlife.zce",
       "buildNumber": "6",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSMicrophoneUsageDescription": "ZCE needs microphone access to record voice reps and proof.",
+        "NSCameraUsageDescription": "ZCE needs camera access for drill camera modes and photo proof."
       }
     },
     "android": {
