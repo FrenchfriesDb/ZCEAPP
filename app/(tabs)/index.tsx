@@ -108,13 +108,10 @@ let _cachedAudio: any | null | undefined;
 const loadAudio = async () => {
   if (Platform.OS === 'web') return null;
   if (_cachedAudio !== undefined) return _cachedAudio;
-  try {
-    const maybe = requireOptionalNativeModule('ExponentAV');
-    if (!maybe) {
-      _cachedAudio = null;
-      return null;
-    }
-  } catch {
+  // Some custom dev clients expose an empty stub object for ExponentAV. Importing `expo-av`
+  // in that case still throws `Cannot find native module 'ExponentAV'` (and can redbox).
+  const exponentAV = requireOptionalNativeModule<any>('ExponentAV');
+  if (!exponentAV || typeof exponentAV.setAudioMode !== 'function') {
     _cachedAudio = null;
     return null;
   }

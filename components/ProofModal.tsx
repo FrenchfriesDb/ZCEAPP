@@ -20,14 +20,10 @@ let _cachedAudio: any | null | undefined;
 const loadAudio = async () => {
     if (Platform.OS === 'web') return null;
     if (_cachedAudio !== undefined) return _cachedAudio;
-    // If the native module doesn't exist, importing expo-av will throw and may trigger a redbox.
-    try {
-        const maybe = requireOptionalNativeModule('ExponentAV');
-        if (!maybe) {
-            _cachedAudio = null;
-            return null;
-        }
-    } catch {
+    // Some custom dev clients expose an empty stub object for ExponentAV. Importing `expo-av`
+    // in that case still throws `Cannot find native module 'ExponentAV'` (and can redbox).
+    const exponentAV = requireOptionalNativeModule<any>('ExponentAV');
+    if (!exponentAV || typeof exponentAV.setAudioMode !== 'function') {
         _cachedAudio = null;
         return null;
     }
@@ -77,13 +73,6 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
 
     // ── IMAGE: show action sheet on iOS (camera / library), just library on Android/web ──
     const handlePickImage = async () => {
-        if (isWeb) {
-            Alert.alert('Photo Proof', 'Camera is not available on web. Please choose from library.', [
-                { text: 'Choose from Library', onPress: async () => { const r = await requestLibrary(); if (r && !r.canceled) setPhotoUri(r.assets[0].uri); } },
-                { text: 'Cancel', style: 'cancel' },
-            ]);
-            return;
-        }
         const requestLibrary = async () => {
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (status !== 'granted') {
@@ -96,6 +85,14 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                 quality: 0.8,
             });
         };
+
+        if (isWeb) {
+            Alert.alert('Photo Proof', 'Camera is not available on web. Please choose from library.', [
+                { text: 'Choose from Library', onPress: async () => { const r = await requestLibrary(); if (r && !r.canceled) setPhotoUri(r.assets[0].uri); } },
+                { text: 'Cancel', style: 'cancel' },
+            ]);
+            return;
+        }
 
         const requestCamera = async () => {
             const { status } = await ImagePicker.requestCameraPermissionsAsync();
