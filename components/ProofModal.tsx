@@ -14,12 +14,17 @@ import GlassButton from './GlassButton';
 // Web platform check
 const isWeb = Platform.OS === 'web';
 
-// Helper function to get Audio only when needed
-const getAudio = () => {
+// Lazy-load expo-av at runtime. Some builds (custom dev clients) may not include it.
+let _cachedAudio: any | null | undefined;
+const loadAudio = async () => {
     if (Platform.OS === 'web') return null;
+    if (_cachedAudio !== undefined) return _cachedAudio;
     try {
-        return require('expo-av').Audio;
+        const mod = await import('expo-av');
+        _cachedAudio = mod.Audio;
+        return _cachedAudio;
     } catch (e) {
+        _cachedAudio = null;
         return null;
     }
 };
@@ -122,9 +127,12 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
             return;
         }
 
-        const Audio = getAudio();
+        const Audio = await loadAudio();
         if (!Audio) {
-            Alert.alert('Not Available', 'Audio recording is not available on this device.');
+            Alert.alert(
+                'Audio Not Available',
+                'This build does not include the audio module. If you are using a custom dev client, rebuild it with expo-av enabled.'
+            );
             return;
         }
 

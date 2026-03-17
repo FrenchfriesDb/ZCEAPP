@@ -4,12 +4,17 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 // Web platform check
 const isWeb = Platform.OS === 'web';
 
-// Helper function to get Audio only when needed
-const getAudio = () => {
+// Lazy-load expo-av at runtime. Some builds (custom dev clients) may not include it.
+let _cachedAudio: any | null | undefined;
+const loadAudio = async () => {
     if (isWeb) return null;
+    if (_cachedAudio !== undefined) return _cachedAudio;
     try {
-        return require('expo-av').Audio;
-    } catch {
+        const mod = await import('expo-av');
+        _cachedAudio = mod.Audio;
+        return _cachedAudio;
+    } catch (e) {
+        _cachedAudio = null;
         return null;
     }
 };
@@ -52,10 +57,10 @@ export default function MirrorDrill() {
     // Recording state
     const [isRecording, setIsRecording] = useState(false);
     const [voiceUri, setVoiceUri] = useState<string | null>(null);
-    const recordingRef = useRef<Audio.Recording | null>(null);
+    const recordingRef = useRef<any>(null);
 
     // Playback state
-    const [sound, setSound] = useState<Audio.Sound | null>(null);
+    const [sound, setSound] = useState<any>(null);
     const [isPlaying, setIsPlaying] = useState(false);
 
     // Text proof
@@ -93,6 +98,15 @@ export default function MirrorDrill() {
 
     // ── TAP TO TOGGLE RECORD / STOP ──
     const handleRecordToggle = async () => {
+        const Audio = await loadAudio();
+        if (!Audio) {
+            Alert.alert(
+                'Audio Not Available',
+                'This build does not include the audio module. If you are using a custom dev client, rebuild it with expo-av enabled.'
+            );
+            return;
+        }
+
         if (isRecording) {
             // STOP recording
             setIsRecording(false);
@@ -124,27 +138,23 @@ export default function MirrorDrill() {
                     try { await recordingRef.current.stopAndUnloadAsync(); } catch { }
                     recordingRef.current = null;
                 }
-                    const Audio = getAudio();
-                    if (!Audio) {
-                        Alert.alert('Not Available', 'Voice recording is not available on this platform.');
+
+                // request permissions if available
+                if (typeof Audio.requestPermissionsAsync === 'function') {
+                    const { status } = await Audio.requestPermissionsAsync();
+                    if (status !== 'granted') {
+                        Alert.alert('Mic Permission Needed', 'Allow microphone access in Settings.');
                         return;
                     }
-                    // request permissions if available
-                    if (typeof Audio.requestPermissionsAsync === 'function') {
-                        const { status } = await Audio.requestPermissionsAsync();
-                        if (status !== 'granted') {
-                            Alert.alert('Mic Permission Needed', 'Allow microphone access in Settings.');
-                            return;
-                        }
-                    }
+                }
 
-                    await Audio.setAudioModeAsync({
-                        allowsRecordingIOS: true,
-                        playsInSilentModeIOS: true,
-                    });
-                    const { recording: rec } = await Audio.createAsync(
-                        Audio.RecordingOptionsPresets.HIGH_QUALITY
-                    );
+                await Audio.setAudioModeAsync({
+                    allowsRecordingIOS: true,
+                    playsInSilentModeIOS: true,
+                });
+                const { recording: rec } = await Audio.createAsync(
+                    Audio.RecordingOptionsPresets.HIGH_QUALITY
+                );
                 recordingRef.current = rec;
                 setIsRecording(true);
             } catch (err: any) {
@@ -157,6 +167,12 @@ export default function MirrorDrill() {
     // ── PLAY BACK the recording ──
     const handlePlayback = async () => {
         if (!voiceUri) return;
+
+        const Audio = await loadAudio();
+        if (!Audio) {
+            Alert.alert('Audio Not Available', 'Playback is not available in this build.');
+            return;
+        }
 
         if (isPlaying && sound) {
             await sound.pauseAsync();
