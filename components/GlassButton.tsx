@@ -46,22 +46,22 @@ interface GlassButtonProps {
 const TINT = {
     dark: {
         rimColors: [
-            'rgba(255,255,255,0.35)',
-            'rgba(255,255,255,0.10)',
-            'rgba(0,0,0,0.82)',
+            'rgba(255,255,255,0.22)',
+            'rgba(255,255,255,0.06)',
+            'rgba(0,0,0,0.90)',
         ] as const,
         bodyColors: [
-            'rgba(255,255,255,0.08)',
-            'rgba(255,255,255,0.03)',
-            'rgba(0,0,0,0.30)',
+            'rgba(255,255,255,0.04)',
+            'rgba(255,255,255,0.015)',
+            'rgba(0,0,0,0.42)',
         ] as const,
         specularColors: [
-            'rgba(255,255,255,0.28)',
-            'rgba(255,255,255,0.08)',
+            'rgba(255,255,255,0.18)',
+            'rgba(255,255,255,0.05)',
             'rgba(255,255,255,0.00)',
         ] as const,
         label: '#E8E8E8',
-        glowColor: 'rgba(255,255,255,0.10)',
+        glowColor: 'rgba(255,255,255,0.06)',
     },
     blue: {
         rimColors: [
@@ -165,7 +165,7 @@ export default function GlassButton({
     const scaleAnim = useRef(new Animated.Value(1)).current;
     const glowAnim = useRef(new Animated.Value(0.4)).current;
     const { palette: timePalette } = useTimeColors();
-    const themeSecondary = timePalette[1] ?? timePalette[timePalette.length - 1] ?? Colors.accentCyan;
+    const themeAccent = timePalette[0] ?? Colors.accentCyan;
 
     // glow halo pulse
     useEffect(() => {
@@ -192,7 +192,7 @@ export default function GlassButton({
 
     const isVerify = look === 'verify';
     const accentColor = isVerify
-        ? (tint === 'blue' ? themeSecondary : tint === 'red' ? Colors.accentDanger : tint === 'monochrome' ? '#FFFFFF' : null)
+        ? (tint === 'red' ? Colors.accentDanger : tint === 'monochrome' ? '#FFFFFF' : themeAccent)
         : null;
 
     const rimColors = isVerify && accentColor
