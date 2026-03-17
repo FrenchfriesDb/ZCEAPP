@@ -245,7 +245,7 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                             onPress={handleSubmit} 
                             look="verify"
                             tint="blue"
-                            size="md" 
+                            size="sm" 
                             glow
                             style={{ 
                                 shadowColor: firstColor,

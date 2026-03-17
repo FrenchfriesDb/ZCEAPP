@@ -196,9 +196,31 @@ export default function GlassButton({
         : null;
 
     const rimColors = isVerify && accentColor
-        ? ([`${accentColor}66`, 'rgba(255,255,255,0.10)', 'rgba(0,0,0,0.78)'] as const)
+        ? ([`${accentColor}44`, 'rgba(255,255,255,0.08)', 'rgba(0,0,0,0.86)'] as const)
         : t.rimColors;
     const labelColor = '#FFFFFF';
+    const blurIntensity = isVerify ? 70 : 100;
+    const bodyColors = (isVerify && accentColor)
+        ? ([
+            'rgba(255,255,255,0.03)',
+            'rgba(0,0,0,0.16)',
+            'rgba(0,0,0,0.42)',
+        ] as const)
+        : t.bodyColors;
+    const specularColors = isVerify
+        ? ([
+            'rgba(255,255,255,0.14)',
+            'rgba(255,255,255,0.06)',
+            'rgba(255,255,255,0.00)',
+        ] as const)
+        : t.specularColors;
+
+    // Keep the ProofModal verify button punchy, but not huge.
+    const padScale = isVerify ? 0.58 : 1;
+    const phEff = Math.max(14, Math.round(ph * padScale));
+    const pvEff = Math.max(10, Math.round(pv * padScale));
+
+    const haloColor = accentColor ? `${accentColor}24` : (tint === 'red' ? Colors.accentDanger : t.glowColor);
 
     return (
         <Animated.View style={[{ transform: [{ scale: scaleAnim }] }, style]}>
@@ -215,9 +237,10 @@ export default function GlassButton({
                         styles.glowHalo,
                         {
                             borderRadius: br + 6,
-                            shadowColor: accentColor ?? (tint === 'red' ? Colors.accentDanger : t.glowColor),
+                            shadowColor: haloColor,
                             shadowOpacity: glowAnim,
-                            backgroundColor: accentColor ?? (tint === 'red' ? Colors.accentDanger : t.glowColor),
+                            backgroundColor: haloColor,
+                            shadowRadius: isVerify ? 18 : 30,
                             ...(isCircle ? { width: circle + 12, height: circle + 12, left: -6, top: -6 } : {}),
                         },
                     ]} />
@@ -235,7 +258,7 @@ export default function GlassButton({
                 >
                     {/* 4 ── FROSTED GLASS BODY (high blur) */}
                     <BlurView
-                        intensity={100}
+                        intensity={blurIntensity}
                         tint="dark"
                         style={[
                             { overflow: 'hidden' },
@@ -246,17 +269,17 @@ export default function GlassButton({
                     >
                         {/* Glass body gradient — slight top shimmer, dark bottom */}
                         <LinearGradient
-                            colors={t.bodyColors}
+                            colors={bodyColors}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 0, y: 1 }}
                             style={[
                                 styles.glassBody,
-                                isCircle ? { width: circle - 2.4, height: circle - 2.4 } : { paddingHorizontal: ph, paddingVertical: pv },
+                                isCircle ? { width: circle - 2.4, height: circle - 2.4 } : { paddingHorizontal: phEff, paddingVertical: pvEff },
                             ]}
                         >
                             {isVerify && accentColor ? (
                                 <LinearGradient
-                                    colors={['rgba(0,0,0,0)', `${accentColor}22`]}
+                                    colors={['rgba(0,0,0,0)', `${accentColor}14`]}
                                     start={{ x: 0, y: 0 }}
                                     end={{ x: 1, y: 0 }}
                                     style={StyleSheet.absoluteFill}
@@ -264,7 +287,7 @@ export default function GlassButton({
                             ) : null}
 
                             <LinearGradient
-                                colors={t.specularColors}
+                                colors={specularColors}
                                 start={{ x: 0.5, y: 0 }}
                                 end={{ x: 0.5, y: 1 }}
                                 style={StyleSheet.absoluteFill}
