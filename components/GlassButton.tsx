@@ -33,7 +33,7 @@ interface GlassButtonProps {
     size?: 'sm' | 'md' | 'lg';
     icon?: string;
     /** Default is neutral black/grey. Use 'verify' only for the ProofModal verify button. */
-    look?: 'plain' | 'verify';
+    look?: 'plain' | 'glass' | 'verify';
     /** 'dark' blends w/ bg (default), 'blue'/'red'/'monochrome' for accents */
     tint?: 'dark' | 'blue' | 'red' | 'monochrome';
     /** Add an animated glow halo around the button */
@@ -190,24 +190,26 @@ export default function GlassButton({
     const isCircle = variant === 'circle';
     const br = variant === 'pill' ? Radius.pill : Radius.lg;
 
+    const isGlass = look === 'glass';
     const isVerify = look === 'verify';
-    const accentColor = isVerify
+    const wantsAccent = isVerify || (isGlass && tint !== 'dark');
+    const accentColor = wantsAccent
         ? (tint === 'red' ? Colors.accentDanger : tint === 'monochrome' ? '#FFFFFF' : themeAccent)
         : null;
 
-    const rimColors = isVerify && accentColor
+    const rimColors = (isVerify || isGlass) && accentColor
         ? ([`${accentColor}44`, 'rgba(255,255,255,0.08)', 'rgba(0,0,0,0.86)'] as const)
         : t.rimColors;
     const labelColor = '#FFFFFF';
-    const blurIntensity = isVerify ? 70 : 100;
-    const bodyColors = (isVerify && accentColor)
+    const blurIntensity = (isVerify || isGlass) ? 70 : 100;
+    const bodyColors = (isVerify || isGlass)
         ? ([
             'rgba(255,255,255,0.03)',
             'rgba(0,0,0,0.16)',
             'rgba(0,0,0,0.42)',
         ] as const)
         : t.bodyColors;
-    const specularColors = isVerify
+    const specularColors = (isVerify || isGlass)
         ? ([
             'rgba(255,255,255,0.14)',
             'rgba(255,255,255,0.06)',
@@ -277,7 +279,7 @@ export default function GlassButton({
                                 isCircle ? { width: circle - 2.4, height: circle - 2.4 } : { paddingHorizontal: phEff, paddingVertical: pvEff },
                             ]}
                         >
-                            {isVerify && accentColor ? (
+                            {(isVerify || isGlass) && accentColor ? (
                                 <LinearGradient
                                     colors={['rgba(0,0,0,0)', `${accentColor}14`]}
                                     start={{ x: 0, y: 0 }}

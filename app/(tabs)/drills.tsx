@@ -155,6 +155,7 @@ export default function DrillsScreen() {
                                         <GlassButton
                                             label="START"
                                             onPress={() => router.push(drill.route as any)}
+                                            look="glass"
                                             tint="dark"
                                             size="sm"
                                         />

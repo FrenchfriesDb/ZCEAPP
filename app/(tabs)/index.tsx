@@ -453,6 +453,7 @@ export default function DojoScreen() {
             label="Talk to Zane"
             onPress={() => router.push('/chat')}
             size="lg"
+            look="glass"
             tint="blue"
             variant="pill"
             glow

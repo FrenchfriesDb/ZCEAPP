@@ -16,6 +16,7 @@ export default function SpeedDrill() {
     const [response, setResponse] = useState("");
     const [feedback, setFeedback] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const TOTAL_SECONDS = 11.0;
 
     const timerAnim = useRef(new Animated.Value(1)).current;
 
@@ -47,7 +48,7 @@ export default function SpeedDrill() {
         setPrompt(random);
         setResponse("");
         setFeedback("");
-        setTimeLeft(11.0);
+        setTimeLeft(TOTAL_SECONDS);
         setActive(true);
         timerAnim.setValue(1);
     };
@@ -133,7 +134,12 @@ export default function SpeedDrill() {
                             <View style={styles.timerBarBg}>
                                 <Animated.View style={[styles.timerBarFill, {
                                     width: timerAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
-                                    backgroundColor: timeLeft < 2 ? Colors.accentPrimary : Colors.accentSecondary
+                                    backgroundColor:
+                                        (timeLeft / TOTAL_SECONDS) > 0.66
+                                            ? '#00FF64'
+                                            : (timeLeft / TOTAL_SECONDS) > 0.33
+                                                ? '#F89B29'
+                                                : '#FF3B30'
                                 }]} />
                             </View>
                             <Text style={styles.timerText}>{timeLeft.toFixed(1)}s</Text>
