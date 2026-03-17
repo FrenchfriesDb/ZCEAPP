@@ -34,21 +34,46 @@ const log = (msg) => process.stdout.write(`${msg}\n`);
 let changed = false;
 
 // ---- expo-image duplicate Swift files ----
+// expo-image sometimes ships duplicate Swift sources at ios/<File>.swift as well as ios/**/<File>.swift,
+// which breaks Xcode with "Filename used twice". We always remove the root-level duplicate and keep
+// the nested version (Utils/Loaders/Coders/etc).
 const expoImageRoot = p('node_modules', 'expo-image', 'ios');
-const expoImageUtils = p('node_modules', 'expo-image', 'ios', 'Utils');
-const expoImageDuplicates = ['Blurhash.swift', 'ImageUtils.swift', 'Thumbhash.swift'];
-
-if (fs.existsSync(expoImageRoot) && fs.existsSync(expoImageUtils)) {
-  for (const filename of expoImageDuplicates) {
-    const keep = path.join(expoImageUtils, filename);
-    const dup = path.join(expoImageRoot, filename);
-    // Only remove the duplicate if a Utils version exists.
-    if (fs.existsSync(keep) && fs.existsSync(dup)) {
-      const removed = rmIfExists(dup);
-      if (removed) {
-        changed = true;
-        log(`[patch-node-modules-ios] Removed duplicate expo-image source: ${path.relative(root, dup)}`);
+if (fs.existsSync(expoImageRoot)) {
+  const walk = (dir, out = []) => {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const e of entries) {
+      const abs = path.join(dir, e.name);
+      if (e.isDirectory()) {
+        // Skip tests; they are excluded by the podspec anyway.
+        if (e.name === 'Tests') continue;
+        walk(abs, out);
+      } else {
+        out.push(abs);
       }
+    }
+    return out;
+  };
+
+  const allFiles = walk(expoImageRoot);
+  const swiftFiles = allFiles.filter((f) => f.endsWith('.swift'));
+
+  const byBase = new Map();
+  for (const abs of swiftFiles) {
+    const base = path.basename(abs);
+    const arr = byBase.get(base) ?? [];
+    arr.push(abs);
+    byBase.set(base, arr);
+  }
+
+  for (const [base, paths] of byBase.entries()) {
+    if (paths.length < 2) continue;
+    const rootCandidate = path.join(expoImageRoot, base);
+    if (!paths.includes(rootCandidate)) continue;
+    // Keep any nested copy, remove the root-level one.
+    const removed = rmIfExists(rootCandidate);
+    if (removed) {
+      changed = true;
+      log(`[patch-node-modules-ios] Removed duplicate expo-image source: ${path.relative(root, rootCandidate)}`);
     }
   }
 }
@@ -63,4 +88,3 @@ if (rmIfExists(expoRouterTestsDir)) {
 if (!changed) {
   log('[patch-node-modules-ios] No changes needed.');
 }
-
