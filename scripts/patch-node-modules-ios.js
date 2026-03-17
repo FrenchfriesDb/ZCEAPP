@@ -33,6 +33,19 @@ const log = (msg) => process.stdout.write(`${msg}\n`);
 
 let changed = false;
 
+const replaceInFile = (absPath, replacer) => {
+  try {
+    if (!fs.existsSync(absPath)) return false;
+    const before = fs.readFileSync(absPath, 'utf8');
+    const after = replacer(before);
+    if (after !== before) {
+      fs.writeFileSync(absPath, after, 'utf8');
+      return true;
+    }
+  } catch (_) {}
+  return false;
+};
+
 // ---- expo-image duplicate Swift files ----
 // expo-image sometimes ships duplicate Swift sources at ios/<File>.swift as well as ios/**/<File>.swift,
 // which breaks Xcode with "Filename used twice". We always remove the root-level duplicate and keep
@@ -83,6 +96,22 @@ const expoRouterTestsDir = p('node_modules', 'expo-router', 'ios', 'Tests');
 if (rmIfExists(expoRouterTestsDir)) {
   changed = true;
   log(`[patch-node-modules-ios] Removed expo-router iOS Tests: ${path.relative(root, expoRouterTestsDir)}`);
+}
+
+// ---- expo-av header compatibility ----
+// expo-av still imports the legacy ObjC header name `EXEventEmitter.h`, but ExpoModulesCore exports
+// the modern `EventEmitter.h` header in SDK 55+.
+const expoAvHeader = p('node_modules', 'expo-av', 'ios', 'EXAV', 'EXAV.h');
+if (
+  replaceInFile(expoAvHeader, (s) =>
+    s.replace(
+      /#import\s+<ExpoModulesCore\/EXEventEmitter\.h>/g,
+      '#import <ExpoModulesCore/EventEmitter.h>'
+    )
+  )
+) {
+  changed = true;
+  log(`[patch-node-modules-ios] Patched expo-av import in: ${path.relative(root, expoAvHeader)}`);
 }
 
 if (!changed) {
