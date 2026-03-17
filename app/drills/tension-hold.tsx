@@ -87,23 +87,28 @@ export default function TensionHoldDrill() {
         <View style={{ width: 60 }} />
       </View>
 
+      {stage === 'prompt' && (
+        <View style={{ paddingHorizontal: Spacing.md, paddingTop: 6 }}>
+          <GlassCard style={[styles.promptCard, { borderColor: systemColor + '44' }]}>
+            <Text style={styles.promptLabel}>THE PROMPT:</Text>
+            <Text style={[styles.promptText, { color: systemColor }]}>
+              "{TENSION_PROMPTS[promptIdx]}"
+            </Text>
+          </GlassCard>
+        </View>
+      )}
+
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
       >
         {stage === 'prompt' && (
           <>
             <GlassCard style={styles.infoCard}>
               <Text style={styles.infoText}>
                 They just said something weird. You need a Zane-style comeback. One sentence. Deliver it with your full chest.
-              </Text>
-            </GlassCard>
-
-            <GlassCard style={[styles.promptCard, { borderColor: systemColor + '44' }]}>
-              <Text style={styles.promptLabel}>THE PROMPT:</Text>
-              <Text style={[styles.promptText, { color: systemColor }]}>
-                "{TENSION_PROMPTS[promptIdx]}"
               </Text>
             </GlassCard>
 

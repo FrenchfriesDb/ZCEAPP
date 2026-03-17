@@ -93,6 +93,17 @@ export default function CognitiveLoadDrill() {
         <View style={{ width: 60 }} />
       </View>
 
+      {stage === 'challenge' && (
+        <View style={{ paddingHorizontal: Spacing.md, paddingTop: 6 }}>
+          <GlassCard style={[styles.questionCard, { borderColor: systemColor + '44' }]}>
+            <Text style={styles.questionLabel}>QUESTION:</Text>
+            <Text style={[styles.questionText, { color: systemColor }]}>
+              {TRIVIA_QUESTIONS[questionIdx].q}
+            </Text>
+          </GlassCard>
+        </View>
+      )}
+
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {stage === 'ready' && (
           <>
@@ -141,13 +152,6 @@ export default function CognitiveLoadDrill() {
 
         {stage === 'challenge' && (
           <>
-            <GlassCard style={[styles.questionCard, { borderColor: systemColor + '44' }]}>
-              <Text style={styles.questionLabel}>QUESTION:</Text>
-              <Text style={[styles.questionText, { color: systemColor }]}>
-                {TRIVIA_QUESTIONS[questionIdx].q}
-              </Text>
-            </GlassCard>
-
             <TextInput
               style={styles.input}
               placeholder="Your answer..."

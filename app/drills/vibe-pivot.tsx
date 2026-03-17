@@ -92,6 +92,17 @@ export default function VibePivotDrill() {
         <View style={{ width: 60 }} />
       </View>
 
+      {!showGrade && (
+        <View style={{ paddingHorizontal: Spacing.md, paddingTop: 6 }}>
+          <GlassCard style={[styles.complaintCard, { borderColor: systemColor + '44' }]}>
+            <Text style={styles.complaintLabel}>THE COMPLAINT:</Text>
+            <Text style={[styles.complaintText, { color: systemColor }]}>
+              "{COMPLAINTS[complaintIdx]}"
+            </Text>
+          </GlassCard>
+        </View>
+      )}
+
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -103,13 +114,6 @@ export default function VibePivotDrill() {
               <Text style={styles.infoLabel}>HOW IT WORKS:</Text>
               <Text style={styles.infoText}>
                 Someone drops a boring complaint. You have 8 seconds to pivot it into a deadpan flex or absurd conspiracy. Move the topic from "reality" to "entertainment."
-              </Text>
-            </GlassCard>
-
-            <GlassCard style={[styles.complaintCard, { borderColor: systemColor + '44' }]}>
-              <Text style={styles.complaintLabel}>THE COMPLAINT:</Text>
-              <Text style={[styles.complaintText, { color: systemColor }]}>
-                "{COMPLAINTS[complaintIdx]}"
               </Text>
             </GlassCard>
 

@@ -113,7 +113,23 @@ export default function AbsurdityEscalatorDrill() {
         <View style={{ width: 60 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      {stage === 'volley' && voltCount < 5 && (
+        <View style={{ paddingHorizontal: Spacing.md, paddingTop: 6 }}>
+          <GlassCard style={[styles.promptCard, { borderColor: systemColor + '44' }]}>
+            <Text style={styles.promptLabel}>VOLLEY {voltCount + 1}/5:</Text>
+            <Text style={[styles.promptText, { color: systemColor }]}>
+              {voltCount === 0 ? `"${initialPrompt}"` : aiResponse || 'Waiting for your absurdity...'}
+            </Text>
+          </GlassCard>
+        </View>
+      )}
+
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+      >
         {stage === 'ready' && (
           <>
             <GlassCard style={styles.infoCard}>
@@ -171,13 +187,6 @@ export default function AbsurdityEscalatorDrill() {
 
             {voltCount < 5 && (
               <>
-                <GlassCard style={[styles.promptCard, { borderColor: systemColor + '44' }]}>
-                  <Text style={styles.promptLabel}>VOLLEY {voltCount + 1}/5:</Text>
-                  <Text style={[styles.promptText, { color: systemColor }]}>
-                    {voltCount === 0 ? `"${initialPrompt}"` : aiResponse || 'Waiting for your absurdity...'}
-                  </Text>
-                </GlassCard>
-
                 <TextInput
                   style={styles.input}
                   placeholder="Escalate the absurdity..."

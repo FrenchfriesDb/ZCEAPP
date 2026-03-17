@@ -107,6 +107,14 @@ export default function SpeedDrill() {
                 <View style={styles.headerSpacer} />
             </View>
 
+            {active && (
+                <View style={{ paddingHorizontal: Spacing.lg, paddingTop: 6 }}>
+                    <GlassCard style={styles.promptCard}>
+                        <Text style={styles.promptText}>{prompt}</Text>
+                    </GlassCard>
+                </View>
+            )}
+
             <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                 <View style={styles.content}>
                     {!active && !feedback && (
@@ -129,10 +137,6 @@ export default function SpeedDrill() {
                                 }]} />
                             </View>
                             <Text style={styles.timerText}>{timeLeft.toFixed(1)}s</Text>
-
-                            <GlassCard style={styles.promptCard}>
-                                <Text style={styles.promptText}>{prompt}</Text>
-                            </GlassCard>
 
                             <TextInput
                                 style={styles.input}

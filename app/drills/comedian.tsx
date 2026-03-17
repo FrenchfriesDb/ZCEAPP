@@ -68,18 +68,32 @@ export default function ComedianDrill() {
                 <View style={styles.headerSpacer} />
             </View>
 
+            {!feedback && (
+                <View style={{ paddingTop: 6 }}>
+                    <GlassCard style={styles.card}>
+                        <Text style={styles.label}>THE SUBJECT:</Text>
+                        <Text style={styles.object}>{object}</Text>
+                        <Pressable onPress={generate} style={styles.nextSubject}>
+                            <Text style={styles.nextSubjectText}><Text style={{}}>🎲</Text> RANDOMIZE</Text>
+                        </Pressable>
+                    </GlassCard>
+                </View>
+            )}
+
             <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                 <Text style={styles.instruction}>
                     Roast or compliment this subject like a pro.
                 </Text>
 
-                <GlassCard style={styles.card}>
-                    <Text style={styles.label}>THE SUBJECT:</Text>
-                    <Text style={styles.object}>{object}</Text>
-                    <Pressable onPress={generate} style={styles.nextSubject}>
-                        <Text style={styles.nextSubjectText}><Text style={{}}>🎲</Text> RANDOMIZE</Text>
-                    </Pressable>
-                </GlassCard>
+                {feedback ? (
+                    <GlassCard style={styles.card}>
+                        <Text style={styles.label}>THE SUBJECT:</Text>
+                        <Text style={styles.object}>{object}</Text>
+                        <Pressable onPress={generate} style={styles.nextSubject}>
+                            <Text style={styles.nextSubjectText}><Text style={{}}>🎲</Text> RANDOMIZE</Text>
+                        </Pressable>
+                    </GlassCard>
+                ) : null}
 
                 {!feedback ? (
                     <View style={styles.inputSection}>

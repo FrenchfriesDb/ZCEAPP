@@ -105,11 +105,12 @@ export default function WeaponPickerDrill() {
     if (newRounds >= 3) {
       setStage('complete');
     } else {
-      setRandomWeapon(null);
+      const weapon = WEAPONS[Math.floor(Math.random() * WEAPONS.length)];
+      setRandomWeapon(weapon);
       setUserResponse('');
       setWeaponScore(0);
       setCurrentPrompt(PROMPTS[Math.floor(Math.random() * PROMPTS.length)]);
-      setStage('prompt');
+      setStage('weapon');
     }
   };
 
@@ -141,7 +142,23 @@ export default function WeaponPickerDrill() {
         <View style={{ width: 60 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      {stage === 'response' && randomWeapon && (
+        <View style={{ paddingHorizontal: Spacing.md, paddingTop: 6 }}>
+          <GlassCard style={[styles.instructionCard, { borderColor: systemColor + '44', borderWidth: 1 }]}>
+            <Text style={styles.instructionLabel}>SCENARIO (WEAPON: {randomWeapon.name}):</Text>
+            <Text style={styles.instructionText}>
+              "{currentPrompt}"
+            </Text>
+          </GlassCard>
+        </View>
+      )}
+
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+      >
         {stage === 'ready' && (
           <>
             <GlassCard style={styles.infoCard}>
@@ -205,13 +222,6 @@ export default function WeaponPickerDrill() {
 
         {stage === 'response' && randomWeapon && (
           <>
-            <GlassCard style={styles.instructionCard}>
-              <Text style={styles.instructionLabel}>RESPOND USING {randomWeapon.name}:</Text>
-              <Text style={styles.instructionText}>
-                "{currentPrompt}"
-              </Text>
-            </GlassCard>
-
             <TextInput
               style={styles.input}
               placeholder="Your response..."

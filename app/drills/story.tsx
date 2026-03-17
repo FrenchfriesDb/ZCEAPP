@@ -107,6 +107,14 @@ export default function StoryDrill() {
                 <View style={styles.headerSpacer} />
             </View>
 
+            {!active && isFinished && !feedback && (
+                <View style={{ paddingHorizontal: Spacing.lg, paddingTop: 6 }}>
+                    <GlassCard style={styles.promptCardSmall}>
+                        <Text style={styles.promptSmall}>PROMPT: {prompt}</Text>
+                    </GlassCard>
+                </View>
+            )}
+
             <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                 {!active && !isFinished && !feedback ? (
                     <View style={styles.centerBox}>
@@ -128,9 +136,11 @@ export default function StoryDrill() {
                     </View>
                 ) : (
                     <View style={styles.feedbackSection}>
-                        <GlassCard style={styles.promptCardSmall}>
-                            <Text style={styles.promptSmall}>PROMPT: {prompt}</Text>
-                        </GlassCard>
+                        {!(isFinished && !feedback) && (
+                            <GlassCard style={styles.promptCardSmall}>
+                                <Text style={styles.promptSmall}>PROMPT: {prompt}</Text>
+                            </GlassCard>
+                        )}
 
                         {!feedback ? (
                             <View style={styles.logSection}>

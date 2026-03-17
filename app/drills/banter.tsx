@@ -174,10 +174,22 @@ The Brutal Truth: Next round, don't think. Respond. Your first instinct is usual
         <View style={{ width: 60 }} />
       </View>
 
+      {!showAnalysis && isTimerActive && (
+        <View style={{ paddingHorizontal: Spacing.md, paddingTop: 6 }}>
+          <GlassCard style={[styles.statementCard, { borderColor: themeColor + '44' }]}>
+            <Text style={styles.statementLabel}>STATEMENT:</Text>
+            <Text style={[styles.statementText, { color: themeColor }]}>
+              "{STATEMENTS[statementIdx]}"
+            </Text>
+          </GlassCard>
+        </View>
+      )}
+
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
       >
         {!showAnalysis ? (
           <>
@@ -189,13 +201,15 @@ The Brutal Truth: Next round, don't think. Respond. Your first instinct is usual
               </Text>
             </GlassCard>
 
-            {/* Statement Display */}
-            <GlassCard style={[styles.statementCard, { borderColor: themeColor + '44' }]}>
-              <Text style={styles.statementLabel}>STATEMENT:</Text>
-              <Text style={[styles.statementText, { color: themeColor }]}>
-                "{STATEMENTS[statementIdx]}"
-              </Text>
-            </GlassCard>
+            {/* Statement Display (pinned during typing) */}
+            {!isTimerActive && (
+              <GlassCard style={[styles.statementCard, { borderColor: themeColor + '44' }]}>
+                <Text style={styles.statementLabel}>STATEMENT:</Text>
+                <Text style={[styles.statementText, { color: themeColor }]}>
+                  "{STATEMENTS[statementIdx]}"
+                </Text>
+              </GlassCard>
+            )}
 
             {/* Timer */}
             <View style={styles.timerContainer}>
