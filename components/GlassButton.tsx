@@ -38,6 +38,8 @@ interface GlassButtonProps {
     tint?: 'dark' | 'blue' | 'red' | 'monochrome';
     /** Add an animated glow halo around the button */
     glow?: boolean;
+    /** Reduce vertical padding (useful for tight rows like the Drills list + primary CTA). */
+    compact?: boolean;
     style?: ViewStyle;
     labelStyle?: TextStyle;
     disabled?: boolean;
@@ -158,6 +160,7 @@ export default function GlassButton({
     look = 'glass',
     tint = 'dark',
     glow = false,
+    compact = false,
     style,
     labelStyle,
     disabled = false,
@@ -218,9 +221,11 @@ export default function GlassButton({
         : t.specularColors;
 
     // Keep the ProofModal verify button punchy, but not huge.
-    const padScale = isVerify ? 0.58 : 1;
-    const phEff = Math.max(14, Math.round(ph * padScale));
-    const pvEff = Math.max(10, Math.round(pv * padScale));
+    // "compact" is for list/CTA contexts where height feels too tall.
+    const pvScale = isVerify ? 0.58 : compact ? 0.78 : 1;
+    const phScale = isVerify ? 0.58 : compact ? 0.92 : 1;
+    const phEff = Math.max(14, Math.round(ph * phScale));
+    const pvEff = Math.max(10, Math.round(pv * pvScale));
 
     const haloColor = accentColor ? `${accentColor}24` : (tint === 'red' ? Colors.accentDanger : t.glowColor);
 

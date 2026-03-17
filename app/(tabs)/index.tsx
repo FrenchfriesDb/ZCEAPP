@@ -457,6 +457,7 @@ export default function DojoScreen() {
             tint="blue"
             variant="pill"
             glow
+            compact
             style={{ width: '100%' }}
           />
         </View>

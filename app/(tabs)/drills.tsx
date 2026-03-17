@@ -158,6 +158,7 @@ export default function DrillsScreen() {
                                             look="glass"
                                             tint="dark"
                                             size="sm"
+                                            compact
                                         />
                                     </View>
                                 </Pressable>
