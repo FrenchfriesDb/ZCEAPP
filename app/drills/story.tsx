@@ -4,7 +4,6 @@ import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
 import { router } from 'expo-router';
 import { useState, useEffect, useRef } from 'react';
 import GlassCard from '@/components/GlassCard';
-import GlassButton from '@/components/GlassButton';
 import { AIService } from '@/services/ai';
 import { useUser } from '@/context/UserContext';
 
@@ -116,35 +115,24 @@ export default function StoryDrill() {
                 </View>
             )}
 
-	            <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-	                {!active && !isFinished && !feedback ? (
-	                    <View style={styles.centerBox}>
-	                        <Text style={styles.intro}>35 seconds to weave a web. Go.</Text>
-	                        <GlassButton
-	                            label="Start Improv"
-	                            onPress={start}
-	                            tint="blue"
-	                            size="lg"
-	                            glow
-	                            style={{ width: '100%' }}
-	                        />
-	                    </View>
-	                ) : active ? (
+            <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+                {!active && !isFinished && !feedback ? (
+                    <View style={styles.centerBox}>
+                        <Text style={styles.intro}>35 seconds to weave a web. Go.</Text>
+                        <Pressable onPress={start} style={styles.btn}>
+                            <Text style={styles.btnText}>START IMPROV</Text>
+                        </Pressable>
+                    </View>
+                ) : active ? (
                     <View style={styles.activeContainer}>
                         <Text style={styles.timer}>{timeLeft}s</Text>
                         <Text style={styles.prompt}>{prompt}</Text>
                         <View style={styles.barBg}>
                             <Animated.View style={[styles.barFill, { width: timerAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }]} />
                         </View>
-	                        <View style={{ width: '100%', marginTop: 18 }}>
-	                            <GlassButton
-	                                label="Done"
-	                                onPress={finish}
-	                                tint="dark"
-	                                size="lg"
-	                                style={{ width: '100%' }}
-	                            />
-	                        </View>
+                        <Pressable onPress={finish} style={[styles.btn, { marginTop: 40, backgroundColor: Colors.accentPrimary }]}>
+                            <Text style={[styles.btnText, { color: '#000' }]}>DONE</Text>
+                        </Pressable>
                     </View>
                 ) : (
                     <View style={styles.feedbackSection}>
@@ -155,44 +143,33 @@ export default function StoryDrill() {
                         )}
 
                         {!feedback ? (
-	                            <View style={styles.logSection}>
-	                                <Text style={styles.label}>WHAT DID YOU DESCRIBE?</Text>
-	                                <TextInput
-	                                    style={styles.input}
-	                                    placeholder="Summarize your story..."
-	                                    placeholderTextColor="rgba(255,255,255,0.3)"
-	                                    value={response}
-	                                    onChangeText={setResponse}
-	                                    multiline
-	                                />
-	                                <GlassButton
-	                                    label={isLoading ? 'Analyzing...' : 'Analyze Story'}
-	                                    onPress={handleAnalyze}
-	                                    tint="blue"
-	                                    size="lg"
-	                                    glow
-	                                    disabled={isLoading || !response}
-	                                    style={{ width: '100%', marginTop: 12 }}
-	                                />
-	                            </View>
-	                        ) : (
-	                            <View style={styles.resultContainer}>
+                            <View style={styles.logSection}>
+                                <Text style={styles.label}>WHAT DID YOU DESCRIBE?</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Summarize your story..."
+                                    placeholderTextColor="rgba(255,255,255,0.3)"
+                                    value={response}
+                                    onChangeText={setResponse}
+                                    multiline
+                                />
+                                <Pressable onPress={handleAnalyze} style={styles.submitBtn} disabled={isLoading || !response}>
+                                    {isLoading ? <ActivityIndicator color={Colors.bgPrimary} /> : <Text style={styles.btnTextSmall}>ANALYZE STORY</Text>}
+                                </Pressable>
+                            </View>
+                        ) : (
+                            <View style={styles.resultContainer}>
                                 <ScrollView style={styles.feedbackScroll} contentContainerStyle={styles.feedbackScrollContent}>
                                     <Text style={styles.feedbackText}>{feedback}</Text>
                                 </ScrollView>
-	                                <GlassButton
-	                                    label="Next Rep"
-	                                    onPress={start}
-	                                    tint="blue"
-	                                    size="lg"
-	                                    glow
-	                                    style={{ width: '100%', marginTop: 12 }}
-	                                />
-	                            </View>
-	                        )}
-	                    </View>
-	                )}
-	            </ScrollView>
+                                <Pressable onPress={start} style={styles.btn}>
+                                    <Text style={styles.btnText}>NEXT REP</Text>
+                                </Pressable>
+                            </View>
+                        )}
+                    </View>
+                )}
+            </ScrollView>
         </KeyboardAvoidingView>
     );
 }
@@ -205,11 +182,11 @@ const styles = StyleSheet.create({
     backBtn: { width: 60 },
     headerSpacer: { width: 60 },
     backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12 },
-	    title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: '#FFFFFF', letterSpacing: 3, textAlign: 'center' },
+    title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: Colors.textPrimary, letterSpacing: 3, textAlign: 'center' },
 
     scrollContent: { flexGrow: 1, padding: Spacing.lg, paddingBottom: 40 },
     centerBox: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
-	    intro: { color: '#FFFFFF', fontFamily: Fonts.body, fontSize: 16, marginBottom: 16, textAlign: 'center' },
+    intro: { color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 16, marginBottom: 16, textAlign: 'center' },
 
     btn: { backgroundColor: '#fff', paddingHorizontal: 36, paddingVertical: 16, borderRadius: 30 },
     btnText: { fontFamily: Fonts.heading, fontSize: 14, color: Colors.bgPrimary, letterSpacing: 2 },
@@ -222,7 +199,7 @@ const styles = StyleSheet.create({
 
     feedbackSection: { flex: 1, gap: 14 },
     promptCardSmall: { padding: 12 },
-	    promptSmall: { color: '#FFFFFF', fontFamily: Fonts.body, fontSize: 14, fontStyle: 'italic' },
+    promptSmall: { color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 14, fontStyle: 'italic' },
 
     logSection: { gap: 10 },
     label: { fontFamily: Fonts.mono, fontSize: 10, color: Colors.accentPrimary, letterSpacing: 2 },

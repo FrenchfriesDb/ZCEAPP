@@ -243,12 +243,12 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                         <GlassButton 
                             label="VERIFY & COMPLETE" 
                             onPress={handleSubmit} 
+                            look="verify"
                             tint="blue"
-                            size="lg" 
+                            size="md" 
                             glow
                             style={{ 
                                 shadowColor: firstColor,
-                                minWidth: 240,
                             }}
                         />
                     </View>

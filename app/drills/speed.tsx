@@ -4,7 +4,6 @@ import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
 import { router } from 'expo-router';
 import { useState, useEffect, useRef } from 'react';
 import GlassCard from '@/components/GlassCard';
-import GlassButton from '@/components/GlassButton';
 import { SPEED_PROMPTS } from '@/constants/zane';
 import { useUser } from '@/context/UserContext';
 import { AIService } from '@/services/ai';
@@ -123,15 +122,9 @@ export default function SpeedDrill() {
                             <Text style={styles.intro}>
                                 React in 11 seconds. Don't think. Flow.
                             </Text>
-                            <GlassButton
-                                label="Generate Prompt"
-                                onPress={generatePrompt}
-                                tint="blue"
-                                size="lg"
-                                glow
-                                disabled={isLoading}
-                                style={{ width: '100%' }}
-                            />
+                            <Pressable onPress={generatePrompt} style={styles.startBtn}>
+                                <Text style={styles.btnText}>GENERATE PROMPT</Text>
+                            </Pressable>
                         </View>
                     )}
 
@@ -155,15 +148,13 @@ export default function SpeedDrill() {
                                 autoFocus
                             />
 
-                            <GlassButton
-                                label={isLoading ? 'Analyzing...' : 'Submit Response'}
+                            <Pressable
                                 onPress={() => finishDrill(true)}
-                                tint="blue"
-                                size="lg"
-                                glow
+                                style={[styles.submitBtn, isLoading && { opacity: 0.7 }]}
                                 disabled={isLoading}
-                                style={{ width: '100%' }}
-                            />
+                            >
+                                <Text style={styles.btnText}>{isLoading ? 'ANALYZING...' : 'SUBMIT RESPONSE'}</Text>
+                            </Pressable>
                         </View>
                     )}
 
@@ -172,15 +163,13 @@ export default function SpeedDrill() {
                             <ScrollView style={styles.feedbackScroll} contentContainerStyle={styles.feedbackScrollContent}>
                                 <Text style={styles.feedbackText}>{feedback}</Text>
                             </ScrollView>
-                            <GlassButton
-                                label={isLoading ? 'Analyzing...' : 'Next Round'}
+                            <Pressable
                                 onPress={generatePrompt}
-                                tint="blue"
-                                size="lg"
-                                glow
+                                style={[styles.startBtn, isLoading && { opacity: 0.5 }]}
                                 disabled={isLoading}
-                                style={{ width: '100%' }}
-                            />
+                            >
+                                <Text style={styles.btnText}>{isLoading ? 'ANALYZING...' : 'NEXT ROUND'}</Text>
+                            </Pressable>
                         </View>
                     ) : null}
                 </View>
@@ -192,15 +181,15 @@ export default function SpeedDrill() {
 const styles = StyleSheet.create({
     container: { flex: 1 },
     header: { flexDirection: 'row', alignItems: 'center', paddingTop: 56, paddingBottom: 16, paddingHorizontal: 20 },
-	    backBtn: { width: 60 },
-	    headerSpacer: { width: 60 },
-	    backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12 },
-	    title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: '#FFFFFF', letterSpacing: 3, textAlign: 'center' },
+    backBtn: { width: 60 },
+    headerSpacer: { width: 60 },
+    backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12 },
+    title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: Colors.textPrimary, letterSpacing: 3, textAlign: 'center' },
 
     scrollContent: { flexGrow: 1 },
     content: { flex: 1, padding: Spacing.lg, paddingTop: 12 },
     centerBox: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 20 },
-	    intro: { color: '#FFFFFF', fontFamily: Fonts.body, fontSize: 16, marginBottom: 20, textAlign: 'center' },
+    intro: { color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 16, marginBottom: 20, textAlign: 'center' },
 
     startBtn: { backgroundColor: '#fff', paddingHorizontal: 30, paddingVertical: 15, borderRadius: 30 },
     btnText: { fontFamily: Fonts.heading, fontSize: 14, letterSpacing: 2, color: Colors.bgPrimary },
@@ -208,16 +197,16 @@ const styles = StyleSheet.create({
     activeContainer: { gap: 12, width: '100%' },
     timerBarBg: { height: 4, backgroundColor: 'rgba(255,255,255,0.1)', width: '100%' },
     timerBarFill: { height: '100%' },
-	    timerText: { color: '#FFFFFF', fontFamily: Fonts.heading, fontSize: 24, textAlign: 'center' },
+    timerText: { color: Colors.textPrimary, fontFamily: Fonts.heading, fontSize: 24, textAlign: 'center' },
 
     promptCard: { padding: 14, alignItems: 'center' },
-	    promptText: { color: '#FFFFFF', fontFamily: Fonts.heading, fontSize: 16, textAlign: 'center', lineHeight: 24 },
+    promptText: { color: Colors.textPrimary, fontFamily: Fonts.heading, fontSize: 16, textAlign: 'center', lineHeight: 24 },
 
-	    input: {
-	        backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: 14,
-	        color: '#FFFFFF', fontFamily: Fonts.body, fontSize: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
-	    },
-	    submitBtn: { backgroundColor: Colors.accentPrimary, paddingVertical: 14, borderRadius: 30, alignItems: 'center' },
+    input: {
+        backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: 14,
+        color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
+    },
+    submitBtn: { backgroundColor: Colors.accentPrimary, paddingVertical: 14, borderRadius: 30, alignItems: 'center' },
 
     feedbackContainer: { flex: 1, gap: 16 },
     feedbackScroll: {
@@ -229,5 +218,5 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(255,255,255,0.08)',
     },
     feedbackScrollContent: { padding: 18 },
-	    feedbackText: { color: '#FFFFFF', fontFamily: Fonts.body, fontSize: 14, lineHeight: 22 },
+    feedbackText: { color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 14, lineHeight: 22 },
 });

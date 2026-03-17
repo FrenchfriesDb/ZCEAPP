@@ -32,6 +32,8 @@ interface GlassButtonProps {
     variant?: 'pill' | 'circle';
     size?: 'sm' | 'md' | 'lg';
     icon?: string;
+    /** Default is neutral black/grey. Use 'verify' only for the ProofModal verify button. */
+    look?: 'plain' | 'verify';
     /** 'dark' blends w/ bg (default), 'blue'/'red'/'monochrome' for accents */
     tint?: 'dark' | 'blue' | 'red' | 'monochrome';
     /** Add an animated glow halo around the button */
@@ -44,14 +46,14 @@ interface GlassButtonProps {
 const TINT = {
     dark: {
         rimColors: [
-            'rgba(255,255,255,0.60)',
-            'rgba(255,255,255,0.14)',
-            'rgba(0,0,0,0.55)',
+            'rgba(255,255,255,0.35)',
+            'rgba(255,255,255,0.10)',
+            'rgba(0,0,0,0.82)',
         ] as const,
         bodyColors: [
-            'rgba(255,255,255,0.12)',
+            'rgba(255,255,255,0.08)',
             'rgba(255,255,255,0.03)',
-            'rgba(0,0,0,0.22)',
+            'rgba(0,0,0,0.30)',
         ] as const,
         specularColors: [
             'rgba(255,255,255,0.28)',
@@ -63,14 +65,14 @@ const TINT = {
     },
     blue: {
         rimColors: [
-            'rgba(255,255,255,0.35)',
-            'rgba(255,255,255,0.10)',
-            'rgba(0,0,0,0.78)',
+            'rgba(255,255,255,0.15)',
+            'rgba(255,255,255,0.08)',
+            'rgba(0,0,0,0.70)',
         ] as const,
         bodyColors: [
-            'rgba(255,255,255,0.10)',
-            'rgba(255,255,255,0.04)',
-            'rgba(0,0,0,0.24)',
+            'rgba(0,0,0,0.03)',
+            'rgba(0,0,0,0.01)',
+            'rgba(0,0,0,0.08)',
         ] as const,
         specularColors: [
             'rgba(255,255,255,0.25)',
@@ -153,6 +155,7 @@ export default function GlassButton({
     variant = 'pill',
     size = 'md',
     icon,
+    look = 'plain',
     tint = 'dark',
     glow = false,
     style,
@@ -183,16 +186,19 @@ export default function GlassButton({
         Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, speed: 30, bounciness: 5 }).start();
 
     const { ph, pv, fs, circle } = SIZE[size];
-    const t = TINT[tint as keyof typeof TINT] || TINT.dark;
+    const t = look === 'plain' ? TINT.dark : (TINT[tint as keyof typeof TINT] || TINT.dark);
     const isCircle = variant === 'circle';
     const br = variant === 'pill' ? Radius.pill : Radius.lg;
-    
-    const accentColor =
-        tint === 'blue' ? themeSecondary : tint === 'red' ? Colors.accentDanger : tint === 'monochrome' ? '#FFFFFF' : null;
-    const labelColor = '#FFFFFF';
-    const rimColors = accentColor
+
+    const isVerify = look === 'verify';
+    const accentColor = isVerify
+        ? (tint === 'blue' ? themeSecondary : tint === 'red' ? Colors.accentDanger : tint === 'monochrome' ? '#FFFFFF' : null)
+        : null;
+
+    const rimColors = isVerify && accentColor
         ? ([`${accentColor}66`, 'rgba(255,255,255,0.10)', 'rgba(0,0,0,0.78)'] as const)
         : t.rimColors;
+    const labelColor = '#FFFFFF';
 
     return (
         <Animated.View style={[{ transform: [{ scale: scaleAnim }] }, style]}>
@@ -209,9 +215,9 @@ export default function GlassButton({
                         styles.glowHalo,
                         {
                             borderRadius: br + 6,
-                            shadowColor: accentColor ?? t.glowColor,
+                            shadowColor: accentColor ?? (tint === 'red' ? Colors.accentDanger : t.glowColor),
                             shadowOpacity: glowAnim,
-                            backgroundColor: accentColor ?? t.glowColor,
+                            backgroundColor: accentColor ?? (tint === 'red' ? Colors.accentDanger : t.glowColor),
                             ...(isCircle ? { width: circle + 12, height: circle + 12, left: -6, top: -6 } : {}),
                         },
                     ]} />
@@ -248,8 +254,7 @@ export default function GlassButton({
                                 isCircle ? { width: circle - 2.4, height: circle - 2.4 } : { paddingHorizontal: ph, paddingVertical: pv },
                             ]}
                         >
-                            {/* Right-edge accent glow (matches the theme's secondary color for drills) */}
-                            {accentColor ? (
+                            {isVerify && accentColor ? (
                                 <LinearGradient
                                     colors={['rgba(0,0,0,0)', `${accentColor}22`]}
                                     start={{ x: 0, y: 0 }}
@@ -288,10 +293,14 @@ export default function GlassButton({
                                     </Text>
                                 ) : null}
                                 <Text
-                                    style={[styles.label, { fontSize: fs, color: labelColor }, labelStyle]}
+                                    style={[
+                                        styles.label,
+                                        { fontSize: fs, color: labelColor, letterSpacing: isVerify ? 2.2 : 1.2 },
+                                        labelStyle,
+                                    ]}
                                     numberOfLines={1}
                                 >
-                                    {label.toUpperCase()}
+                                    {isVerify ? label.toUpperCase() : label}
                                 </Text>
                         </LinearGradient>
                     </BlurView>
@@ -333,8 +342,7 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
     label: {
-        fontFamily: Fonts.heading,
-        letterSpacing: 2.2,
+        fontFamily: Fonts.headingSemi,
         textAlign: 'center',
         color: '#FFFFFF',
         textShadowColor: 'rgba(0,0,0,0.8)',

@@ -111,7 +111,7 @@ export default function YesAndSimulatorDrill() {
         <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/')} style={styles.backBtn}>
           <Text style={styles.backText}>← EXIT</Text>
         </Pressable>
-        <Text style={styles.title}>YES AND</Text>
+        <Text style={[styles.title, { color: systemColor }]}>YES AND</Text>
         <View style={{ width: 60 }} />
       </View>
 
@@ -151,7 +151,7 @@ export default function YesAndSimulatorDrill() {
           <>
             <GlassCard style={[styles.promptCard, { borderColor: systemColor + '44' }]}>
               <Text style={styles.promptLabel}>THE PREMISE:</Text>
-              <Text style={styles.promptText}>
+              <Text style={[styles.promptText, { color: systemColor }]}>
                 "{PROMPTS[promptIdx]}"
               </Text>
             </GlassCard>
@@ -234,32 +234,32 @@ const styles = StyleSheet.create({
   },
   backBtn: { padding: 8, minWidth: 60 },
   backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12, letterSpacing: 1 },
-  title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, letterSpacing: 3, textAlign: 'center', color: '#FFFFFF' },
+  title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, letterSpacing: 3, textAlign: 'center' },
 
   scrollContent: { padding: Spacing.md, alignItems: 'center', gap: 12, paddingBottom: 10 },
 
   infoCard: { width: '100%', padding: 12, backgroundColor: 'rgba(255,255,255,0.03)' },
   infoLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, marginBottom: 6 },
-  infoText: { fontFamily: Fonts.body, fontSize: 13, color: '#FFFFFF', lineHeight: 20 },
+  infoText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 20 },
 
   rulesCard: { width: '100%', padding: 12, backgroundColor: 'rgba(255,255,255,0.02)' },
   rulesLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 8 },
-  rulesText: { fontFamily: Fonts.body, fontSize: 12, color: '#FFFFFF', lineHeight: 18 },
+  rulesText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, lineHeight: 18 },
 
   promptCard: { width: '100%', padding: 14, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.02)', borderWidth: 1 },
   promptLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 10 },
-  promptText: { fontFamily: Fonts.body, fontSize: 14, textAlign: 'center', lineHeight: 22, color: '#FFFFFF' },
+  promptText: { fontFamily: Fonts.body, fontSize: 14, textAlign: 'center', lineHeight: 22 },
 
   instructionCard: { width: '100%', padding: 12, backgroundColor: 'rgba(255,255,255,0.02)' },
-  instructionText: { fontFamily: Fonts.body, fontSize: 12, color: '#FFFFFF', textAlign: 'center' },
+  instructionText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, textAlign: 'center' },
 
   recordCard: { width: '100%', padding: 20, alignItems: 'center', backgroundColor: 'rgba(255, 68, 68, 0.05)', borderColor: 'rgba(255, 68, 68, 0.2)', borderWidth: 1 },
   recordIndicator: { fontFamily: Fonts.heading, fontSize: 20, marginBottom: 8 },
-  recordTime: { fontFamily: Fonts.heading, fontSize: 32, color: '#FFFFFF', marginBottom: 8 },
-  recordDesc: { fontFamily: Fonts.body, fontSize: 12, color: '#FFFFFF' },
+  recordTime: { fontFamily: Fonts.heading, fontSize: 32, color: Colors.textPrimary, marginBottom: 8 },
+  recordDesc: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary },
 
   analyzeCard: { width: '100%', padding: 16, backgroundColor: 'rgba(255,255,255,0.02)', borderWidth: 1 },
   analyzeScore: { fontFamily: Fonts.heading, fontSize: 18, marginBottom: 10 },
-  analyzeText: { fontFamily: Fonts.body, fontSize: 12, color: '#FFFFFF', lineHeight: 18, marginBottom: 10 },
+  analyzeText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, lineHeight: 18, marginBottom: 10 },
   analyzeMetric: { fontFamily: Fonts.mono, fontSize: 10, color: 'rgba(255,255,255,0.4)', letterSpacing: 1 },
 });

@@ -88,7 +88,7 @@ export default function VibePivotDrill() {
         <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/')} style={styles.backBtn}>
           <Text style={styles.backText}>← EXIT</Text>
         </Pressable>
-        <Text style={styles.title}>VIBE PIVOT</Text>
+        <Text style={[styles.title, { color: systemColor }]}>VIBE PIVOT</Text>
         <View style={{ width: 60 }} />
       </View>
 
@@ -96,7 +96,7 @@ export default function VibePivotDrill() {
         <View style={{ paddingHorizontal: Spacing.md, paddingTop: 6 }}>
           <GlassCard style={[styles.complaintCard, { borderColor: systemColor + '44' }]}>
             <Text style={styles.complaintLabel}>THE COMPLAINT:</Text>
-            <Text style={styles.complaintText}>
+            <Text style={[styles.complaintText, { color: systemColor }]}>
               "{COMPLAINTS[complaintIdx]}"
             </Text>
           </GlassCard>
@@ -177,17 +177,17 @@ const styles = StyleSheet.create({
   },
   backBtn: { padding: 8, minWidth: 60 },
   backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12, letterSpacing: 1 },
-  title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, letterSpacing: 3, textAlign: 'center', color: '#FFFFFF' },
+  title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, letterSpacing: 3, textAlign: 'center' },
 
   scrollContent: { padding: Spacing.md, alignItems: 'center', gap: 12, paddingBottom: 10 },
 
   infoCard: { width: '100%', padding: 12, backgroundColor: 'rgba(255,255,255,0.03)' },
   infoLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, marginBottom: 6 },
-  infoText: { fontFamily: Fonts.body, fontSize: 13, color: '#FFFFFF', lineHeight: 20 },
+  infoText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 20 },
 
   complaintCard: { width: '100%', padding: 14, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.02)', borderWidth: 1 },
   complaintLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 10 },
-  complaintText: { fontFamily: Fonts.heading, fontSize: 15, textAlign: 'center', lineHeight: 22, color: '#FFFFFF' },
+  complaintText: { fontFamily: Fonts.heading, fontSize: 15, textAlign: 'center', lineHeight: 22 },
 
   inputLabel: { fontFamily: Fonts.mono, fontSize: 9, color: 'rgba(255,255,255,0.4)', letterSpacing: 1, alignSelf: 'flex-start', marginTop: 10 },
   responseInput: {
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.1)',
     borderRadius: Radius.md,
     padding: 12,
-    color: '#FFFFFF',
+    color: Colors.textPrimary,
     fontFamily: Fonts.body,
     fontSize: 14,
     minHeight: 60,
@@ -209,5 +209,5 @@ const styles = StyleSheet.create({
   responseText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textPrimary },
 
   gradeCard: { width: '100%', padding: 14, backgroundColor: 'rgba(255,255,255,0.03)' },
-  gradeText: { fontFamily: Fonts.body, fontSize: 12, color: '#FFFFFF', lineHeight: 20 },
+  gradeText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, lineHeight: 20 },
 });

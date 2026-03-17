@@ -4,7 +4,6 @@ import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
 import { router } from 'expo-router';
 import { useState, useRef, useEffect } from 'react';
 import GlassCard from '@/components/GlassCard';
-import GlassButton from '@/components/GlassButton';
 import { LINK_WORDS } from '@/constants/zane';
 import { useUser } from '@/context/UserContext';
 import { AIService } from '@/services/ai';
@@ -105,19 +104,14 @@ export default function LinkDrill() {
 
             <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                 <View style={styles.content}>
-	                    {!active && !isFinished && !feedback ? (
-	                        <View style={styles.centerBox}>
-	                            <Text style={styles.intro}>Find the connection in 10s. Don't let the frame slip.</Text>
-	                            <GlassButton
-	                                label="Start Round"
-	                                onPress={shuffle}
-	                                tint="blue"
-	                                size="lg"
-	                                glow
-	                                style={{ width: '100%' }}
-	                            />
-	                        </View>
-	                    ) : active ? (
+                    {!active && !isFinished && !feedback ? (
+                        <View style={styles.centerBox}>
+                            <Text style={styles.intro}>Find the connection in 10s. Don't let the frame slip.</Text>
+                            <Pressable onPress={shuffle} style={styles.btn}>
+                                <Text style={styles.btnText}>START ROUND</Text>
+                            </Pressable>
+                        </View>
+                    ) : active ? (
                         <>
                             <View style={styles.timerBarBg}>
                                 <Animated.View style={[styles.timerBarFill, {
@@ -136,15 +130,11 @@ export default function LinkDrill() {
                                     <Text style={styles.word}>{word2}</Text>
                                 </GlassCard>
                             </View>
-	                            <GlassButton
-	                                label="Done"
-	                                onPress={finish}
-	                                tint="dark"
-	                                size="lg"
-	                                style={{ width: '100%', marginTop: 20 }}
-	                            />
-	                        </>
-	                    ) : (
+                            <Pressable onPress={finish} style={[styles.btn, { marginTop: 20, backgroundColor: Colors.accentPrimary }]}>
+                                <Text style={styles.btnText}>DONE</Text>
+                            </Pressable>
+                        </>
+                    ) : (
                         <View style={styles.feedbackSection}>
                             <View style={styles.wordsHeader}>
                                 <Text style={styles.wordSmall}>{word1}</Text>
@@ -155,42 +145,34 @@ export default function LinkDrill() {
                             {!feedback ? (
                                 <View style={styles.logSection}>
                                     <Text style={styles.label}>WHAT'S THE LINK?</Text>
-	                                    <TextInput
-	                                        style={styles.input}
-	                                        placeholder="Explain the connection..."
-	                                        placeholderTextColor="rgba(255,255,255,0.3)"
-	                                        value={response}
-	                                        onChangeText={setResponse}
-	                                        multiline
-	                                    />
-	                                    <GlassButton
-	                                        label={isLoading ? 'Analyzing...' : 'Analyze Link'}
-	                                        onPress={handleAnalyze}
-	                                        tint="blue"
-	                                        size="lg"
-	                                        glow
-	                                        disabled={isLoading || !response}
-	                                        style={{ width: '100%', marginTop: 12 }}
-	                                    />
-	                                </View>
-	                            ) : (
-	                                <View style={styles.resultContainer}>
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder="Explain the connection..."
+                                        placeholderTextColor="rgba(255,255,255,0.3)"
+                                        value={response}
+                                        onChangeText={setResponse}
+                                        multiline
+                                    />
+                                    <Pressable onPress={handleAnalyze} style={styles.submitBtn} disabled={isLoading || !response}>
+                                        {isLoading ? <ActivityIndicator color={Colors.bgPrimary} /> : <Text style={styles.btnTextDark}>ANALYZE LINK</Text>}
+                                    </Pressable>
+                                </View>
+                            ) : (
+                                <View style={styles.resultContainer}>
                                     <ScrollView style={styles.feedbackScroll} contentContainerStyle={styles.feedbackScrollContent}>
                                         <Text style={styles.feedbackText}>{feedback}</Text>
                                     </ScrollView>
-	                                    <GlassButton
-	                                        label={isLoading ? 'Analyzing...' : 'Next Round'}
-	                                        onPress={shuffle}
-	                                        tint="blue"
-	                                        size="lg"
-	                                        glow
-	                                        disabled={isLoading}
-	                                        style={{ width: '100%' }}
-	                                    />
-	                                </View>
-	                            )}
-	                        </View>
-	                    )}
+                                    <Pressable
+                                        onPress={shuffle}
+                                        style={[styles.btn, isLoading && { opacity: 0.5 }]}
+                                        disabled={isLoading}
+                                    >
+                                        <Text style={styles.btnText}>{isLoading ? 'ANALYZING...' : 'NEXT ROUND'}</Text>
+                                    </Pressable>
+                                </View>
+                            )}
+                        </View>
+                    )}
 
                     <View style={{ height: 40 }} />
                 </View>
@@ -202,40 +184,40 @@ export default function LinkDrill() {
 const styles = StyleSheet.create({
     container: { flex: 1 },
     header: { flexDirection: 'row', alignItems: 'center', paddingTop: 56, paddingBottom: 16, paddingHorizontal: 20 },
-	    backBtn: { width: 60 },
-	    headerSpacer: { width: 60 },
-	    backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12 },
-	    title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: '#FFFFFF', letterSpacing: 3, textAlign: 'center' },
+    backBtn: { width: 60 },
+    headerSpacer: { width: 60 },
+    backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12 },
+    title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: Colors.textPrimary, letterSpacing: 3, textAlign: 'center' },
 
     scrollContent: { flexGrow: 1 },
     content: { flex: 1, paddingHorizontal: Spacing.lg, gap: 16, paddingTop: 12 },
     centerBox: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 24 },
-	    intro: { color: '#FFFFFF', fontFamily: Fonts.body, fontSize: 16, textAlign: 'center' },
+    intro: { color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 16, textAlign: 'center' },
 
     timerBarBg: { width: '100%', height: 4, backgroundColor: 'rgba(255,255,255,0.1)' },
     timerBarFill: { height: '100%' },
-	    timerText: { color: '#FFFFFF', fontFamily: Fonts.heading, fontSize: 24, textAlign: 'center' },
+    timerText: { color: Colors.textPrimary, fontFamily: Fonts.heading, fontSize: 24, textAlign: 'center' },
 
     wordsContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, width: '100%' },
     wordCard: { width: '38%', aspectRatio: 1.2, justifyContent: 'center', alignItems: 'center', borderRadius: 16 },
-	    word: { fontFamily: Fonts.heading, fontSize: 18, color: '#FFFFFF', textAlign: 'center' },
-	    plus: { fontFamily: Fonts.heading, fontSize: 24, color: '#FFFFFF' },
+    word: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.textPrimary, textAlign: 'center' },
+    plus: { fontFamily: Fonts.heading, fontSize: 24, color: Colors.accentPrimary },
 
     btn: { backgroundColor: '#fff', paddingHorizontal: 30, paddingVertical: 14, borderRadius: 30, width: '100%', alignItems: 'center' },
     btnText: { fontFamily: Fonts.heading, fontSize: 14, color: Colors.bgPrimary, letterSpacing: 2 },
 
     feedbackSection: { width: '100%', gap: 16, flex: 1 },
     wordsHeader: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 10 },
-	    wordSmall: { fontFamily: Fonts.heading, fontSize: 16, color: '#FFFFFF' },
+    wordSmall: { fontFamily: Fonts.heading, fontSize: 16, color: Colors.textSecondary },
     plusSmall: { fontFamily: Fonts.heading, fontSize: 16, color: Colors.accentPrimary },
 
     logSection: { gap: 10 },
     label: { fontFamily: Fonts.mono, fontSize: 10, color: Colors.accentPrimary, letterSpacing: 2 },
-	    input: {
-	        backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: 14,
-	        color: '#FFFFFF', fontFamily: Fonts.body, fontSize: 16, minHeight: 80, textAlignVertical: 'top',
-	        borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
-	    },
+    input: {
+        backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: 14,
+        color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 16, minHeight: 80, textAlignVertical: 'top',
+        borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
+    },
     submitBtn: { backgroundColor: '#fff', paddingVertical: 14, borderRadius: 30, alignItems: 'center' },
     btnTextDark: { fontFamily: Fonts.heading, fontSize: 14, color: Colors.bgPrimary, letterSpacing: 2 },
 
@@ -249,5 +231,5 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(255,255,255,0.08)',
     },
     feedbackScrollContent: { padding: 18 },
-	    feedbackText: { color: '#FFFFFF', fontFamily: Fonts.body, fontSize: 14, lineHeight: 22 },
+    feedbackText: { color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 14, lineHeight: 22 },
 });

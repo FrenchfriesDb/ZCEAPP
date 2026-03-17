@@ -109,7 +109,7 @@ export default function AbsurdityEscalatorDrill() {
         <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/')} style={styles.backBtn}>
           <Text style={styles.backText}>← EXIT</Text>
         </Pressable>
-        <Text style={styles.title}>ABSURDITY ESCALATOR</Text>
+        <Text style={[styles.title, { color: systemColor }]}>ABSURDITY ESCALATOR</Text>
         <View style={{ width: 60 }} />
       </View>
 
@@ -117,7 +117,7 @@ export default function AbsurdityEscalatorDrill() {
         <View style={{ paddingHorizontal: Spacing.md, paddingTop: 6 }}>
           <GlassCard style={[styles.promptCard, { borderColor: systemColor + '44' }]}>
             <Text style={styles.promptLabel}>VOLLEY {voltCount + 1}/5:</Text>
-            <Text style={styles.promptText}>
+            <Text style={[styles.promptText, { color: systemColor }]}>
               {voltCount === 0 ? `"${initialPrompt}"` : aiResponse || 'Waiting for your absurdity...'}
             </Text>
           </GlassCard>
@@ -141,7 +141,7 @@ export default function AbsurdityEscalatorDrill() {
 
             <GlassCard style={styles.promptCard}>
               <Text style={styles.promptLabel}>STARTING PREMISE:</Text>
-              <Text style={styles.promptText}>
+              <Text style={[styles.promptText, { color: systemColor }]}>
                 "{initialPrompt}"
               </Text>
             </GlassCard>
@@ -175,7 +175,7 @@ export default function AbsurdityEscalatorDrill() {
                 <View key={idx} style={styles.volleyPair}>
                   <GlassCard style={[styles.exchangeCard, { backgroundColor: 'rgba(113, 195, 247, 0.08)' }]}>
                     <Text style={styles.exchangeLabel}>YOU:</Text>
-                    <Text style={styles.exchangeText}>{ex.user}</Text>
+                    <Text style={[styles.exchangeText, { color: systemColor }]}>{ex.user}</Text>
                   </GlassCard>
                   <GlassCard style={[styles.exchangeCard, { backgroundColor: 'rgba(255, 255, 255, 0.03)' }]}>
                     <Text style={styles.exchangeLabel}>ME:</Text>
@@ -255,27 +255,27 @@ const styles = StyleSheet.create({
   },
   backBtn: { padding: 8, minWidth: 60 },
   backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12, letterSpacing: 1 },
-  title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, letterSpacing: 3, textAlign: 'center', color: '#FFFFFF' },
+  title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, letterSpacing: 3, textAlign: 'center' },
 
   scrollContent: { padding: Spacing.md, alignItems: 'center', gap: 12, paddingBottom: 10 },
 
   infoCard: { width: '100%', padding: 12, backgroundColor: 'rgba(255,255,255,0.03)' },
   infoLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, marginBottom: 6 },
-  infoText: { fontFamily: Fonts.body, fontSize: 13, color: '#FFFFFF', lineHeight: 20 },
+  infoText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 20 },
 
   promptCard: { width: '100%', padding: 14, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.02)', borderWidth: 1 },
   promptLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 10 },
-  promptText: { fontFamily: Fonts.body, fontSize: 13, textAlign: 'center', lineHeight: 20, color: '#FFFFFF' },
+  promptText: { fontFamily: Fonts.body, fontSize: 13, textAlign: 'center', lineHeight: 20 },
 
   rulesCard: { width: '100%', padding: 12, backgroundColor: 'rgba(255,255,255,0.02)' },
   rulesLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 8 },
-  rulesText: { fontFamily: Fonts.body, fontSize: 12, color: '#FFFFFF', lineHeight: 18 },
+  rulesText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, lineHeight: 18 },
 
   volleys: { width: '100%', gap: 8 },
   volleyPair: { gap: 8 },
   exchangeCard: { padding: 10, borderRadius: Radius.md },
   exchangeLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 4 },
-  exchangeText: { fontFamily: Fonts.body, fontSize: 12, color: '#FFFFFF' },
+  exchangeText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary },
 
   input: {
     width: '100%',
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(113, 195, 247, 0.3)',
     borderRadius: Radius.md,
-    color: '#FFFFFF',
+    color: Colors.textPrimary,
     padding: 12,
     fontFamily: Fonts.body,
     fontSize: 13,
@@ -296,6 +296,6 @@ const styles = StyleSheet.create({
   skipText: { fontFamily: Fonts.body, fontSize: 11, color: 'rgba(255,255,255,0.4)', textDecorationLine: 'underline' },
 
   completeCard: { width: '100%', padding: 20, backgroundColor: 'rgba(0, 245, 255, 0.05)', borderColor: 'rgba(0, 245, 255, 0.2)', borderWidth: 1 },
-  completeTitle: { fontFamily: Fonts.heading, fontSize: 18, color: '#FFFFFF', marginBottom: 12 },
-  completeText: { fontFamily: Fonts.body, fontSize: 13, color: '#FFFFFF', lineHeight: 20 },
+  completeTitle: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.accentCyan, marginBottom: 12 },
+  completeText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 20 },
 });
