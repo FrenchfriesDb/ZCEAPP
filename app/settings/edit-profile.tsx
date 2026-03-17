@@ -5,6 +5,7 @@ import { Fonts, Radius } from '@/constants/theme';
 import { useUser } from '@/context/UserContext';
 import { useTimeColors } from '@/hooks/useTimeColors';
 import { formatDisplayName } from '@/utils/formatters';
+import { Ionicons } from '@expo/vector-icons';
 
 // Icons as emojis for now - can be replaced with icon library
 const ICONS = {
@@ -18,7 +19,8 @@ const ICONS = {
     restore: '🔄',
     privacy: '🛡️',
     terms: '📋',
-    signout: '🚪',
+    // Avoid emoji tofu boxes by using a real icon glyph instead of an emoji.
+    signout: <Ionicons name="log-out-outline" size={18} color="#fff" />,
     reset: '⚠️',
     delete: '☠️',
 };
@@ -256,7 +258,7 @@ export default function EditProfileScreen() {
         valueColor = 'rgba(255,255,255,0.6)',
         danger = false
     }: {
-        icon: string;
+        icon: React.ReactNode;
         label: string;
         value?: string;
         onPress?: () => void;
@@ -268,7 +270,11 @@ export default function EditProfileScreen() {
             onPress={onPress}
             style={[styles.row, !isLast && styles.rowWithDivider]}
         >
-            <Text style={styles.rowIcon}>{icon}</Text>
+            {typeof icon === 'string' ? (
+                <Text style={styles.rowIcon}>{icon}</Text>
+            ) : (
+                <View style={styles.rowIconWrap}>{icon}</View>
+            )}
             <Text style={[styles.rowLabel, danger && styles.dangerText]}>{label}</Text>
             <View style={styles.rowRight}>
                 {value && (
@@ -718,6 +724,12 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginRight: 12,
         color: '#fff',
+    },
+    rowIconWrap: {
+        width: 28,
+        marginRight: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     rowLabel: {
         flex: 1,

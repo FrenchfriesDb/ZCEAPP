@@ -5,6 +5,8 @@
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
+    "postinstall": "node ./scripts/patch-node-modules-ios.js",
+    "ios:device": "node ./scripts/patch-node-modules-ios.js && pod install --project-directory=ios && npx expo run:ios --device",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
