@@ -114,6 +114,26 @@ if (
   log(`[patch-node-modules-ios] Patched expo-av import in: ${path.relative(root, expoAvHeader)}`);
 }
 
+// expo-av video view still references `EXLegacyExpoViewProtocol`, which was removed in newer ExpoModulesCore.
+// The protocol is only used for legacy view registry wiring and is safe to drop for app builds.
+const expoAvVideoViewHeader = p('node_modules', 'expo-av', 'ios', 'EXAV', 'Video', 'EXVideoView.h');
+if (
+  replaceInFile(expoAvVideoViewHeader, (s) => {
+    let out = s.replace(
+      /#import\s+<ExpoModulesCore\/EXLegacyExpoViewProtocol\.h>\s*\n/g,
+      ''
+    );
+    // Remove protocol conformance from the interface declaration.
+    out = out.replace(/\s*,\s*EXLegacyExpoViewProtocol\s*>/g, '>');
+    out = out.replace(/\s*<\s*EXLegacyExpoViewProtocol\s*,/g, '<');
+    out = out.replace(/\s*<\s*EXLegacyExpoViewProtocol\s*>/g, '');
+    return out;
+  })
+) {
+  changed = true;
+  log(`[patch-node-modules-ios] Removed EXLegacyExpoViewProtocol from: ${path.relative(root, expoAvVideoViewHeader)}`);
+}
+
 if (!changed) {
   log('[patch-node-modules-ios] No changes needed.');
 }
