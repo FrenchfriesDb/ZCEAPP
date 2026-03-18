@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { Colors, Fonts, Radius } from '@/constants/theme';
@@ -35,8 +35,8 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
                 onPress={() => navigation.navigate(route.name)}
                 style={[styles.tabItem, focused && styles.tabItemActive]}
               >
-                <Text style={[styles.tabIcon, focused && styles.tabIconActive]}>
-                  <Text style={styles.emoji}>{tab.icon}</Text>
+                <Text allowFontScaling={false} style={[styles.tabIcon, focused && styles.tabIconActive]}>
+                  {tab.icon}
                 </Text>
                 {focused && <View style={styles.activeIndicator} />}
               </Pressable>
@@ -114,15 +114,6 @@ const styles = StyleSheet.create({
   tabIcon: {
     fontSize: 24,
     opacity: 0.35,
-  },
-  emoji: {
-    fontFamily: Platform.select({
-      ios: 'Apple Color Emoji',
-      web: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji',
-      default: undefined,
-    }),
-    fontWeight: 'normal',
-    letterSpacing: 0,
   },
   tabIconActive: {
     opacity: 1,
