@@ -1,18 +1,17 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { Tabs } from 'expo-router';
 import { BlurView } from 'expo-blur';
-import { Ionicons } from '@expo/vector-icons';
 import { Colors, Fonts, Radius } from '@/constants/theme';
 import { TextColorsProvider } from '@/context/TextColorsContext';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 
 const TAB_CONFIG = [
-  { name: 'index', label: 'Dojo', icon: 'home-outline' as const, activeIcon: 'home' as const },
-  { name: 'quests', label: 'Quests', icon: 'compass-outline' as const, activeIcon: 'compass' as const },
-  { name: 'drills', label: 'Drills', icon: 'flash-outline' as const, activeIcon: 'flash' as const },
-  { name: 'leaderboard', label: 'Board', icon: 'trophy-outline' as const, activeIcon: 'trophy' as const },
-  { name: 'profile', label: 'Profile', icon: 'person-outline' as const, activeIcon: 'person' as const },
+  { name: 'index', label: 'Dojo', icon: '⚔️' },
+  { name: 'quests', label: 'Quests', icon: '🎯' },
+  { name: 'drills', label: 'Drills', icon: '⚡' },
+  { name: 'leaderboard', label: 'Board', icon: '👑' },
+  { name: 'profile', label: 'Profile', icon: '🧬' },
 ];
 
 function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
@@ -36,12 +35,9 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
                 onPress={() => navigation.navigate(route.name)}
                 style={[styles.tabItem, focused && styles.tabItemActive]}
               >
-                <Ionicons
-                  name={focused ? tab.activeIcon : tab.icon}
-                  size={22}
-                  color={focused ? Colors.accentPrimary : 'rgba(255,255,255,0.38)'}
-                  style={[styles.tabIcon, focused && styles.tabIconActive]}
-                />
+                <Text style={[styles.tabIcon, focused && styles.tabIconActive]}>
+                  <Text style={styles.emoji}>{tab.icon}</Text>
+                </Text>
                 {focused && <View style={styles.activeIndicator} />}
               </Pressable>
             );
@@ -116,12 +112,21 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
   tabIcon: {
-    fontSize: 22,
+    fontSize: 24,
     opacity: 0.35,
+  },
+  emoji: {
+    fontFamily: Platform.select({
+      ios: 'Apple Color Emoji',
+      web: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji',
+      default: undefined,
+    }),
+    fontWeight: 'normal',
+    letterSpacing: 0,
   },
   tabIconActive: {
     opacity: 1,
-    fontSize: 22,
+    fontSize: 24,
     textShadowColor: Colors.accentPrimary,
     textShadowRadius: 15,
   },
