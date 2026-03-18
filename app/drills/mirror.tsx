@@ -2,27 +2,43 @@ import { View, Text, StyleSheet, Pressable, Animated, ScrollView, TextInput, Ale
 import { LinearGradient } from 'expo-linear-gradient';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { requireOptionalNativeModule } from 'expo-modules-core';
+import { Ionicons } from '@expo/vector-icons';
 // Web platform check
 const isWeb = Platform.OS === 'web';
 
-// Lazy-load expo-av at runtime. Some builds (custom dev clients) may not include it.
-let _cachedAudio: any | null | undefined;
-const loadAudio = async () => {
+type AudioBackend =
+    | { kind: 'expo-audio'; mod: any }
+    | { kind: 'expo-av'; Audio: any };
+
+// Prefer expo-audio (native module: ExpoAudio). Fallback to expo-av if available.
+let _cachedAudioBackend: AudioBackend | null | undefined;
+const loadAudioBackend = async (): Promise<AudioBackend | null> => {
     if (isWeb) return null;
-    if (_cachedAudio !== undefined) return _cachedAudio;
-    // Some custom dev clients expose an empty stub object for ExponentAV. Importing `expo-av`
-    // in that case still throws `Cannot find native module 'ExponentAV'` (and can redbox).
+    if (_cachedAudioBackend !== undefined) return _cachedAudioBackend;
+
+    const expoAudioNative = requireOptionalNativeModule<any>('ExpoAudio');
+    if (expoAudioNative && typeof expoAudioNative.setAudioModeAsync === 'function') {
+        try {
+            const mod = await import('expo-audio');
+            _cachedAudioBackend = { kind: 'expo-audio', mod };
+            return _cachedAudioBackend;
+        } catch {
+            // Continue to expo-av fallback.
+        }
+    }
+
     const exponentAV = requireOptionalNativeModule<any>('ExponentAV');
     if (!exponentAV || typeof exponentAV.setAudioMode !== 'function') {
-        _cachedAudio = null;
+        _cachedAudioBackend = null;
         return null;
     }
+
     try {
         const mod = await import('expo-av');
-        _cachedAudio = mod.Audio;
-        return _cachedAudio;
-    } catch (e) {
-        _cachedAudio = null;
+        _cachedAudioBackend = { kind: 'expo-av', Audio: mod.Audio };
+        return _cachedAudioBackend;
+    } catch {
+        _cachedAudioBackend = null;
         return null;
     }
 };
@@ -48,10 +64,10 @@ const ZANE_LINES = [
 ];
 
 const FLAVORS = [
-    { label: "😏 SMIRK", desc: "One corner of mouth up. Eyes locked." },
-    { label: "🧊 DEADPAN", desc: "Zero emotion. Flat voice. Intense stare." },
-    { label: "🐢 SLOW MOTION", desc: "Double your pause time. Make them wait." },
-    { label: "🤨 SKEPTICAL", desc: "One eyebrow raised. Lean back." },
+    { icon: 'happy-outline', label: 'SMIRK', desc: "One corner of mouth up. Eyes locked." },
+    { icon: 'remove-circle-outline', label: 'DEADPAN', desc: "Zero emotion. Flat voice. Intense stare." },
+    { icon: 'hourglass-outline', label: 'SLOW MOTION', desc: "Double your pause time. Make them wait." },
+    { icon: 'help-circle-outline', label: 'SKEPTICAL', desc: "One eyebrow raised. Lean back." },
 ];
 
 export default function MirrorDrill() {
@@ -68,8 +84,8 @@ export default function MirrorDrill() {
     const recordingRef = useRef<any>(null);
 
     // Playback state
-    const [sound, setSound] = useState<any>(null);
     const [isPlaying, setIsPlaying] = useState(false);
+    const playbackRef = useRef<any>(null);
 
     // Text proof
     const [textResponse, setTextResponse] = useState('');
@@ -97,20 +113,24 @@ export default function MirrorDrill() {
     // Clean up sound on unmount
     useEffect(() => {
         return () => {
-            sound?.unloadAsync();
+            try {
+                playbackRef.current?.unloadAsync?.();
+                playbackRef.current?.remove?.();
+            } catch { }
             if (recordingRef.current) {
-                recordingRef.current.stopAndUnloadAsync().catch(() => { });
+                recordingRef.current.stopAndUnloadAsync?.().catch(() => { });
+                recordingRef.current.stop?.().catch(() => { });
             }
         };
     }, []);
 
     // ── TAP TO TOGGLE RECORD / STOP ──
     const handleRecordToggle = async () => {
-        const Audio = await loadAudio();
-        if (!Audio) {
+        const backend = await loadAudioBackend();
+        if (!backend) {
             Alert.alert(
                 'Audio Not Available',
-                'This build does not include the audio module. If you are using a custom dev client, rebuild it with expo-av enabled.'
+                'This build does not include audio recording support. Rebuild your dev client after installing native audio modules.'
             );
             return;
         }
@@ -119,17 +139,28 @@ export default function MirrorDrill() {
             // STOP recording
             setIsRecording(false);
             try {
-                if (recordingRef.current) {
+                if (recordingRef.current && backend.kind === 'expo-av') {
                     await recordingRef.current.stopAndUnloadAsync();
-                    const uri = recordingRef.current.getURI();
+                    const uri = recordingRef.current.getURI?.() ?? null;
+                    setVoiceUri(uri || null);
+                    recordingRef.current = null;
+                } else if (recordingRef.current && backend.kind === 'expo-audio') {
+                    await recordingRef.current.stop();
+                    const uri = recordingRef.current.uri ?? null;
                     setVoiceUri(uri || null);
                     recordingRef.current = null;
                 }
-                // Switch audio mode back to playback
-                await Audio.setAudioModeAsync({
-                    allowsRecordingIOS: false,
-                    playsInSilentModeIOS: true,
-                });
+                if (backend.kind === 'expo-av') {
+                    await backend.Audio.setAudioModeAsync({
+                        allowsRecordingIOS: false,
+                        playsInSilentModeIOS: true,
+                    });
+                } else {
+                    await backend.mod.setAudioModeAsync({
+                        allowsRecording: false,
+                        playsInSilentMode: true,
+                    });
+                }
             } catch (err) {
                 console.error('[Mirror] Stop error:', err);
             }
@@ -137,33 +168,51 @@ export default function MirrorDrill() {
             // START recording — always clean up stale instance first
             setVoiceUri(null);
             setIsPlaying(false);
-            if (sound) {
-                await sound.unloadAsync();
-                setSound(null);
-            }
+            try {
+                playbackRef.current?.unloadAsync?.();
+                playbackRef.current?.remove?.();
+                playbackRef.current = null;
+            } catch { }
             try {
                 if (recordingRef.current) {
-                    try { await recordingRef.current.stopAndUnloadAsync(); } catch { }
+                    try { await recordingRef.current.stopAndUnloadAsync?.(); } catch { }
+                    try { await recordingRef.current.stop?.(); } catch { }
                     recordingRef.current = null;
                 }
 
-                // request permissions if available
-                if (typeof Audio.requestPermissionsAsync === 'function') {
-                    const { status } = await Audio.requestPermissionsAsync();
-                    if (status !== 'granted') {
+                if (backend.kind === 'expo-av') {
+                    if (typeof backend.Audio.requestPermissionsAsync === 'function') {
+                        const { status } = await backend.Audio.requestPermissionsAsync();
+                        if (status !== 'granted') {
+                            Alert.alert('Mic Permission Needed', 'Allow microphone access in Settings.');
+                            return;
+                        }
+                    }
+
+                    await backend.Audio.setAudioModeAsync({
+                        allowsRecordingIOS: true,
+                        playsInSilentModeIOS: true,
+                    });
+                    const { recording: rec } = await backend.Audio.createAsync(
+                        backend.Audio.RecordingOptionsPresets.HIGH_QUALITY
+                    );
+                    recordingRef.current = rec;
+                } else {
+                    const { granted } = await backend.mod.requestRecordingPermissionsAsync();
+                    if (!granted) {
                         Alert.alert('Mic Permission Needed', 'Allow microphone access in Settings.');
                         return;
                     }
-                }
 
-                await Audio.setAudioModeAsync({
-                    allowsRecordingIOS: true,
-                    playsInSilentModeIOS: true,
-                });
-                const { recording: rec } = await Audio.createAsync(
-                    Audio.RecordingOptionsPresets.HIGH_QUALITY
-                );
-                recordingRef.current = rec;
+                    await backend.mod.setAudioModeAsync({
+                        allowsRecording: true,
+                        playsInSilentMode: true,
+                    });
+                    const rec = new backend.mod.AudioRecorder(backend.mod.RecordingPresets.HIGH_QUALITY);
+                    await rec.prepareToRecordAsync();
+                    rec.record();
+                    recordingRef.current = rec;
+                }
                 setIsRecording(true);
             } catch (err: any) {
                 console.error('[Mirror] Start error:', err);
@@ -176,34 +225,48 @@ export default function MirrorDrill() {
     const handlePlayback = async () => {
         if (!voiceUri) return;
 
-        const Audio = await loadAudio();
-        if (!Audio) {
+        const backend = await loadAudioBackend();
+        if (!backend) {
             Alert.alert('Audio Not Available', 'Playback is not available in this build.');
             return;
         }
 
-        if (isPlaying && sound) {
-            await sound.pauseAsync();
+        if (isPlaying && playbackRef.current) {
+            await playbackRef.current.pauseAsync?.();
+            playbackRef.current.pause?.();
             setIsPlaying(false);
             return;
         }
 
         try {
-            if (sound) {
-                await sound.unloadAsync();
-                setSound(null);
+            if (playbackRef.current) {
+                await playbackRef.current.unloadAsync?.();
+                playbackRef.current.remove?.();
+                playbackRef.current = null;
             }
-            const { sound: newSound } = await Audio.Sound.createAsync(
-                { uri: voiceUri },
-                { shouldPlay: true }
-            );
-            setSound(newSound);
-            setIsPlaying(true);
-            newSound.setOnPlaybackStatusUpdate((status) => {
-                if (status.isLoaded && status.didJustFinish) {
-                    setIsPlaying(false);
-                }
-            });
+            if (backend.kind === 'expo-av') {
+                const { sound: newSound } = await backend.Audio.Sound.createAsync(
+                    { uri: voiceUri },
+                    { shouldPlay: true }
+                );
+                playbackRef.current = newSound;
+                setIsPlaying(true);
+                newSound.setOnPlaybackStatusUpdate((status: any) => {
+                    if (status.isLoaded && status.didJustFinish) {
+                        setIsPlaying(false);
+                    }
+                });
+            } else {
+                const player = backend.mod.createAudioPlayer(voiceUri);
+                playbackRef.current = player;
+                player.addListener('playbackStatusUpdate', (status: any) => {
+                    if (status?.didJustFinish || (status?.isLoaded && !status?.playing)) {
+                        setIsPlaying(false);
+                    }
+                });
+                player.play();
+                setIsPlaying(true);
+            }
         } catch (err) {
             console.error('[Mirror] Playback error:', err);
             Alert.alert('Playback Error', 'Could not play recording.');
@@ -215,7 +278,11 @@ export default function MirrorDrill() {
             Alert.alert('INTEGRITY CHECK', 'You must provide both a text response and a voice recording to verify this rep.');
             return;
         }
-        if (sound) await sound.unloadAsync();
+        try {
+            await playbackRef.current?.unloadAsync?.();
+            playbackRef.current?.remove?.();
+            playbackRef.current = null;
+        } catch { }
         await completeDrill(20);
         Alert.alert('REP VERIFIED', 'Operation logged. +20 XP awarded.', [
             { text: 'FINISH SESSION', onPress: () => router.replace('/') },
@@ -227,8 +294,11 @@ export default function MirrorDrill() {
         setTextResponse('');
         setVoiceUri(null);
         setIsPlaying(false);
-        sound?.unloadAsync();
-        setSound(null);
+        try {
+            playbackRef.current?.unloadAsync?.();
+            playbackRef.current?.remove?.();
+            playbackRef.current = null;
+        } catch { }
         Animated.timing(fadeAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => {
             setLineIdx(prev => (prev + 1) % ZANE_LINES.length);
             setFlavorIdx(prev => (prev + 1) % FLAVORS.length);
@@ -320,7 +390,7 @@ export default function MirrorDrill() {
                     <Text style={styles.label}>THE VIBE:</Text>
                     <Animated.View style={{ opacity: fadeAnim, alignItems: 'center' }}>
                         <Text style={[styles.flavorTitle, { color: systemColor }]}>
-                            <Text style={styles.emojiText}>{FLAVORS[flavorIdx].label.split(' ')[0]}</Text> {FLAVORS[flavorIdx].label.split(' ')[1]}
+                            <Ionicons name={FLAVORS[flavorIdx].icon as any} size={18} color={systemColor} /> {FLAVORS[flavorIdx].label}
                         </Text>
                         <Text style={styles.flavorDesc}>{FLAVORS[flavorIdx].desc}</Text>
                     </Animated.View>
@@ -349,9 +419,11 @@ export default function MirrorDrill() {
                         ]}
                     >
                         <Text style={[styles.voiceBtnText, isRecording && { color: '#00FF64' }]}>
-                            <Text style={styles.emojiText}>
-                                {isRecording ? '⏹️' : (voiceUri ? '🔴' : '🎙️')}
-                            </Text>{' '}
+                            <Ionicons
+                                name={isRecording ? 'stop-circle' : (voiceUri ? 'radio-button-on' : 'mic')}
+                                size={15}
+                                color={isRecording ? '#00FF64' : Colors.textPrimary}
+                            />{' '}
                             {isRecording ? 'TAP TO STOP' : (voiceUri ? 'RE-RECORD' : 'TAP TO RECORD')}
                         </Text>
                     </Pressable>
@@ -363,7 +435,7 @@ export default function MirrorDrill() {
                             style={[styles.voiceBtn, styles.playbackBtn]}
                         >
                             <Text style={[styles.voiceBtnText, { color: Colors.accentCyan }]}>
-                                <Text style={styles.emojiText}>{isPlaying ? '⏸️' : '▶️'}</Text>{' '}
+                                <Ionicons name={isPlaying ? 'pause-circle' : 'play-circle'} size={15} color={Colors.accentCyan} />{' '}
                                 {isPlaying ? 'PAUSE PLAYBACK' : 'HEAR YOURSELF BACK'}
                             </Text>
                         </Pressable>
@@ -438,11 +510,6 @@ const styles = StyleSheet.create({
     lineText: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.textPrimary, textAlign: 'center', lineHeight: 24 },
     divider: { width: 40, height: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginVertical: 10 },
     flavorTitle: { fontFamily: Fonts.heading, fontSize: 18, marginBottom: 0 },
-    emojiText: {
-        fontFamily: Platform.OS === 'ios' ? 'System' : undefined,
-        fontWeight: 'normal',
-        letterSpacing: 0,
-    },
     flavorDesc: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, textAlign: 'center' },
 
     proofSection: { width: '100%', gap: 6, marginTop: 2 },
