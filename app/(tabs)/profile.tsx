@@ -104,7 +104,12 @@ export default function ProfileScreen() {
 
                 {/* Velocity Monitor */}
                 <GlassCard themed style={styles.graphCard} intensity={20}>
-                    <ProgressGraph dailyXp={user.dailyXp || {}} color={systemColor} />
+                    <ProgressGraph
+                        dailyXp={user.dailyXp || {}}
+                        color={systemColor}
+                        totalXp={user.xp || 0}
+                        currentStreak={user.streak || 0}
+                    />
                 </GlassCard>
 
                 {/* Static Map Heatmap */}

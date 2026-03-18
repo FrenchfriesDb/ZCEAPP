@@ -34,6 +34,16 @@ const getRankLabel = (rank: number) => {
     return `${rank}`;
 };
 
+const getMetalPalette = (rank: number) => {
+    if (rank === 1) {
+        return { edge: '#FFD76A', light: 'rgba(255, 245, 204, 0.65)', fillA: 'rgba(255, 215, 0, 0.22)', fillB: 'rgba(255, 172, 28, 0.04)' };
+    }
+    if (rank === 2) {
+        return { edge: '#D3D3D3', light: 'rgba(255, 255, 255, 0.55)', fillA: 'rgba(210, 210, 210, 0.2)', fillB: 'rgba(115, 125, 138, 0.05)' };
+    }
+    return { edge: '#CD7F32', light: 'rgba(255, 216, 183, 0.55)', fillA: 'rgba(205, 127, 50, 0.2)', fillB: 'rgba(97, 54, 22, 0.05)' };
+};
+
 export default function LeaderboardScreen() {
     const { user } = useUser();
     const [activeTab, setActiveTab] = useState<'TACTICAL' | 'GLOBAL'>('TACTICAL');
@@ -111,7 +121,7 @@ export default function LeaderboardScreen() {
                                     style={[styles.tabPill, activeTab === tab && styles.tabPillActive]}
                                 >
                                     <Text style={[styles.tabPillText, activeTab === tab && styles.tabPillTextActive]}>
-                                        {tab === 'TACTICAL' ? 'SIM' : 'LIVE'}
+                                        {tab === 'TACTICAL' ? 'ARENA' : 'GLOBAL'}
                                     </Text>
                                 </Pressable>
                             ))}
@@ -126,14 +136,28 @@ export default function LeaderboardScreen() {
                             const podiumColors = ['#C0C0C0', '#FFD700', '#CD7F32'];
                             const heights = [80, 110, 60];
                             const displayName = entry.name;
+                            const metal = getMetalPalette(entry.rank);
                             return (
                                 <View key={entry.rank} style={styles.podiumSlot}>
                                     <Text style={styles.podiumName} numberOfLines={1}>{displayName.split('_')[0]}</Text>
                                     <View style={[styles.podiumBlock, {
                                         height: heights[i],
-                                        borderTopColor: podiumColors[i],
-                                        shadowColor: podiumColors[i],
+                                        borderTopColor: metal.edge,
+                                        borderColor: `${metal.edge}55`,
+                                        shadowColor: metal.edge,
                                     }]}>
+                                        <LinearGradient
+                                            colors={[metal.fillA, metal.fillB]}
+                                            start={{ x: 0, y: 0 }}
+                                            end={{ x: 1, y: 1 }}
+                                            style={StyleSheet.absoluteFill}
+                                        />
+                                        <LinearGradient
+                                            colors={[metal.light, 'rgba(255,255,255,0.06)', 'transparent']}
+                                            start={{ x: 0, y: 0 }}
+                                            end={{ x: 1, y: 1 }}
+                                            style={styles.podiumSheen}
+                                        />
                                         <BlurView intensity={15} tint="dark" style={StyleSheet.absoluteFill} />
                                         <Text style={[styles.podiumRank, { color: podiumColors[i] }]}>
                                             #{entry.rank}
@@ -303,18 +327,23 @@ const styles = StyleSheet.create({
     },
     podiumBlock: {
         width: '100%',
+        borderWidth: 1,
         borderTopWidth: 2,
         overflow: 'hidden',
         borderRadius: Radius.sm,
-        borderLeftColor: 'transparent',
-        borderRightColor: 'transparent',
-        borderBottomColor: 'transparent',
         backgroundColor: 'rgba(255,255,255,0.03)',
         justifyContent: 'center',
         alignItems: 'center',
         gap: 2,
         shadowOffset: { width: 0, height: 0 },
         shadowRadius: 16, shadowOpacity: 0.4,
+    },
+    podiumSheen: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '62%',
     },
     podiumRank: { fontFamily: Fonts.monoBold, fontSize: FontSizes.xl, fontWeight: '800' },
     podiumAura: { fontFamily: Fonts.mono, fontSize: 9, color: Colors.textTertiary, letterSpacing: 1 },

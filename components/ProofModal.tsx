@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
 import { useTimeColors } from '@/hooks/useTimeColors';
 import { useTextColors } from '@/context/TextColorsContext';
@@ -226,7 +227,7 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                                     <Image source={{ uri: photoUri }} style={styles.previewImage} />
                                 ) : (
                                     <View style={styles.mediaPlaceholder}>
-                                        <Text style={styles.mediaIcon}>📸</Text>
+                                        <Ionicons name="camera" size={30} color="rgba(255,255,255,0.86)" />
                                         <Text style={styles.mediaText}>PHOTO</Text>
                                         <Text style={styles.mediaHint}>Camera or Library</Text>
                                     </View>
@@ -240,7 +241,11 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                                 disabled={isWeb}
                             >
                                 <Animated.View style={{ transform: [{ scale: pulseAnim }], alignItems: 'center' }}>
-                                    <Text style={styles.mediaIcon}>🎙️</Text>
+                                    <Ionicons
+                                        name={isRecording ? 'radio' : 'mic'}
+                                        size={30}
+                                        color={isRecording ? Colors.accentCyan : 'rgba(255,255,255,0.86)'}
+                                    />
                                     <Text style={[styles.mediaText, isRecording && { color: Colors.accentCyan }, isWeb && { color: Colors.textTertiary }]}>
                                         {isWeb ? 'WEB\nDISABLED' : isRecording ? 'TAP TO\nSTOP' : voiceUri ? 'RECORDED ✓' : 'TAP TO\nRECORD'}
                                     </Text>
@@ -286,7 +291,8 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(255,255,255,0.1)',
         padding: Spacing.xl,
         paddingBottom: 36,
-        maxHeight: '88%',
+        minHeight: '84%',
+        maxHeight: '94%',
     },
     eyebrow: { fontFamily: Fonts.mono, fontSize: 10, color: Colors.accentCyan, letterSpacing: 3, marginBottom: 6, textAlign: 'center' },
     title: { fontFamily: Fonts.heading, fontSize: 18, color: '#fff', textAlign: 'center', marginBottom: 20, letterSpacing: 1, lineHeight: 24 },
@@ -310,7 +316,7 @@ const styles = StyleSheet.create({
     mediaRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
     mediaBtn: {
         flex: 1,
-        aspectRatio: 1,
+        minHeight: 150,
         backgroundColor: 'rgba(255,255,255,0.04)',
         borderRadius: Radius.md,
         borderWidth: 1,

@@ -9,26 +9,40 @@ type TimeRange = '1W' | '1M' | 'ALL';
 interface ProgressGraphProps {
     dailyXp: { [date: string]: number };
     color?: string;
+    totalXp?: number;
+    currentStreak?: number;
 }
 
 const CHART_HEIGHT = 80;
 
-function getDaysForRange(range: TimeRange, dailyXp: { [date: string]: number }): number {
+function getDaysForRange(range: TimeRange, dailyXp: { [date: string]: number }, earlyStage: boolean): number {
     if (range === '1W') return 7;
     if (range === '1M') return 30;
     const dates = Object.keys(dailyXp);
-    if (dates.length === 0) return 90;
+    if (dates.length === 0) return earlyStage ? 21 : 90;
     const today = new Date();
     const oldest = new Date(Math.min(...dates.map(d => new Date(d).getTime())));
     const diffDays = Math.floor((today.getTime() - oldest.getTime()) / (1000 * 60 * 60 * 24));
+    if (earlyStage) {
+        return Math.min(Math.max(diffDays + 1, 14), 45);
+    }
     return Math.min(Math.max(diffDays + 1, 30), 365);
 }
 
-export default function ProgressGraph({ dailyXp, color }: ProgressGraphProps) {
-    const [range, setRange] = useState<TimeRange>('1M');
+export default function ProgressGraph({ dailyXp, color, totalXp, currentStreak }: ProgressGraphProps) {
+    const completedDays = useMemo(
+        () => Object.values(dailyXp).filter(xp => xp > 0).length,
+        [dailyXp]
+    );
+    const accumulatedXp = useMemo(
+        () => totalXp ?? Object.values(dailyXp).reduce((sum, xp) => sum + xp, 0),
+        [dailyXp, totalXp]
+    );
+    const earlyStage = accumulatedXp < 1200 || completedDays < 10 || (currentStreak ?? 0) < 5;
+    const [range, setRange] = useState<TimeRange>(earlyStage ? '1W' : '1M');
     const { textPrimary, textSecondary, textTertiary } = useTextColors();
     const graphColor = color || textPrimary;
-    const days = getDaysForRange(range, dailyXp);
+    const days = getDaysForRange(range, dailyXp, earlyStage);
     const { width: screenWidth } = useWindowDimensions();
     const CHART_WIDTH = Math.max(200, screenWidth - (Spacing.lg * 2) - 64);
     const data = useMemo(() => {

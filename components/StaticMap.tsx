@@ -113,15 +113,15 @@ const StaticMap: React.FC<StaticMapProps> = ({ dailyXp, drillLogs = [] }) => {
 
     const getSquareColor = (xp: number, date: string) => {
         const isSelected = selectedDate === date;
-        if (date > todayStr) return 'rgba(255,255,255,0.01)';
+        if (date > todayStr) return 'rgba(255,255,255,0.03)';
 
-        if (xp === 0) return isSelected ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.02)';
+        if (xp === 0) return isSelected ? '#3A4552' : '#20262D';
 
-        if (xp >= 1000) return '#D3321D';
-        if (xp >= 500) return '#FF9500';
-        if (xp >= 151) return '#FFCF67';
-        if (xp >= 51) return '#8E8651';
-        if (xp >= 1) return '#2A291E';
+        if (xp >= 1000) return '#39D353';
+        if (xp >= 500) return '#26A641';
+        if (xp >= 151) return '#1F8A3D';
+        if (xp >= 51) return '#166534';
+        if (xp >= 1) return '#0E4429';
 
         return '#0A0A0A';
     };
@@ -186,7 +186,7 @@ const StaticMap: React.FC<StaticMapProps> = ({ dailyXp, drillLogs = [] }) => {
                     <Text style={[styles.title, { opacity: 0.3, marginTop: 4, fontSize: 8 }]}>MONDAY START</Text>
                 </View>
                 <View style={styles.legend}>
-                    <View style={[styles.legendBox, { backgroundColor: '#D3321D' }]} />
+                    <View style={[styles.legendBox, { backgroundColor: '#39D353' }]} />
                     <Text style={styles.legendText}>MAX SIGNAL (1K)</Text>
                 </View>
             </View>
