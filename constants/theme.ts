@@ -74,8 +74,8 @@ export const TimeColors = {
   preDawn: ['#000328', '#00458E'],
   // 5 AM — steel blue dawn
   earlierDawn: ['#243748', '#4B749F'],
-  // 6–7 AM — sunrise morning light
-  morning: ['#F5F5F5', '#71C3F7'],
+  // 6–7:09 AM, 7:31–8:29 AM — Sunrise pastel cloud
+  morning: ['#F6CFBE', '#B9DCF2'],
   // 8:30 AM – 4 PM — Cloud Drift (Vibrant Sky)
   day: ['#2C6CBC', '#71C3F7', '#F6F6F6'],
   // 5 PM — warm golden hour
@@ -119,9 +119,9 @@ export const getDynamicColors = (hour: number, minute: number) => {
   if (time < 5) textPrimaryColor = '#294861'; // Deep Abyss - last color (dark steel blue)
   else if (time < 6) textPrimaryColor = '#4B749F'; // Earlier Dawn - last color (light blue)  
   else if (time >= 7.166 && time <= 7.5) textPrimaryColor = '#F13C77'; // Sunset Flame - last color (hot pink)
-  else if (time < 8.5) textPrimaryColor = '#71C3F7'; // Morning - last color (sky blue)
+  else if (time < 8.5) textPrimaryColor = '#B9DCF2'; // Sunrise pastel cloud - last color (pastel blue)
   else if (time < 16) textPrimaryColor = '#F6F6F6'; // Cloud Drift - last color (white)
-  else if (time < 17) textPrimaryColor = '#71C3F7'; // Cloud Drift - last color (sky blue)
+  else if (time < 17) textPrimaryColor = '#B9DCF2'; // Morning daytime bridge - keep pastel cloud text
   else if (time < 17.5) textPrimaryColor = '#FFA585'; // Golden Hour - last color (orange)
   else if (time < 18) textPrimaryColor = '#C3E1FC'; // Dusk - last color (light blue)
   else if (time < 19) textPrimaryColor = '#F89B29'; // Sunset - last color (orange)

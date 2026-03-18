@@ -23,7 +23,7 @@ export const useXPBarColors = (): string[] => {
             if (time < 5) next = TimeColors.deepAbyss;
             else if (time < 6) next = TimeColors.earlierDawn;
             else if (time >= 7.166 && time <= 7.5) next = TimeColors.sunriseCitrus; // 7:10 AM - 7:30 AM
-            else if (time < 8) next = TimeColors.morning;
+            else if (time < 8.5) next = TimeColors.morning; // 7:31 AM - 8:29 AM
             else if (time < 17) next = TimeColors.day;
             else if (time < 17.5) next = TimeColors.goldenHour;
             else if (time < 18) next = TimeColors.dusk;

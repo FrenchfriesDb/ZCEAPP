@@ -8,7 +8,7 @@ import { TimeColors, getDynamicColors } from '@/constants/theme';
  * Palette slots and their hours:
  *   deepAbyss     0–4:59    — Deep Abyss
  *   earlierDawn   5–5:59    — steel blue
- *   morning       6–7:09, 7:31–8:29  — sunrise
+ *   morning       6–7:09, 7:31–8:29  — Sunrise pastel cloud
  *   sunriseCitrus 7:10–7:30 — Citrus Sunrise
  *   cloudDrift    8:30–15:59 — electric daylight
  *   goldenHour    17–17:29  — warm golden (#FFA585 → #FFEDA0)
