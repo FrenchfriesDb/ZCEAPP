@@ -15,6 +15,9 @@
  *    `jsi/*.h` headers there, which breaks Reanimated with `'jsi/jsi.h' file not found`.
  *    We mirror the React Native JSI headers into that pod header directory.
  *
+ * 4) React Native JSI: Xcode 26 treats `std::string::data()` as `const char *` in this
+ *    header context, which breaks `std::snprintf`. We switch it to `&buffer[0]`.
+ *
  * This script is idempotent and safe to run multiple times.
  */
 
@@ -168,6 +171,19 @@ if (fs.existsSync(reactNativeJsiDir)) {
       log(`[patch-node-modules-ios] Synced React JSI headers into: ${path.relative(root, podPublicJsiDir)}`);
     }
   } catch (_) {}
+}
+
+const reactNativeJsiHeader = p('node_modules', 'react-native', 'ReactCommon', 'jsi', 'jsi', 'jsi.h');
+if (
+  replaceInFile(reactNativeJsiHeader, (s) =>
+    s.replace(
+      /std::snprintf\(\s*buffer\.data\(\),/g,
+      'std::snprintf(\n        &buffer[0],'
+    )
+  )
+) {
+  changed = true;
+  log(`[patch-node-modules-ios] Patched React Native JSI header in: ${path.relative(root, reactNativeJsiHeader)}`);
 }
 
 if (!changed) {

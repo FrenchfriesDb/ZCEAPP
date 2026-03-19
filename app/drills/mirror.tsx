@@ -2,7 +2,6 @@ import { View, Text, StyleSheet, Pressable, Animated, ScrollView, TextInput, Ale
 import { LinearGradient } from 'expo-linear-gradient';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { requireOptionalNativeModule } from 'expo-modules-core';
-import { Ionicons } from '@expo/vector-icons';
 // Web platform check
 const isWeb = Platform.OS === 'web';
 
@@ -20,6 +19,9 @@ const loadAudioBackend = async (): Promise<AudioBackend | null> => {
     if (expoAudioNative && typeof expoAudioNative.setAudioModeAsync === 'function') {
         try {
             const mod = await import('expo-audio');
+            if (typeof (mod as any).AudioRecorder !== 'function' || !(mod as any).RecordingPresets) {
+                throw new Error('expo-audio recorder API not available');
+            }
             _cachedAudioBackend = { kind: 'expo-audio', mod };
             return _cachedAudioBackend;
         } catch {
@@ -64,10 +66,10 @@ const ZANE_LINES = [
 ];
 
 const FLAVORS = [
-    { icon: 'happy-outline', label: 'SMIRK', desc: "One corner of mouth up. Eyes locked." },
-    { icon: 'remove-circle-outline', label: 'DEADPAN', desc: "Zero emotion. Flat voice. Intense stare." },
-    { icon: 'hourglass-outline', label: 'SLOW MOTION', desc: "Double your pause time. Make them wait." },
-    { icon: 'help-circle-outline', label: 'SKEPTICAL', desc: "One eyebrow raised. Lean back." },
+    { emoji: '😏', label: 'SMIRK', desc: "One corner of mouth up. Eyes locked." },
+    { emoji: '🧊', label: 'DEADPAN', desc: "Zero emotion. Flat voice. Intense stare." },
+    { emoji: '🐢', label: 'SLOW MOTION', desc: "Double your pause time. Make them wait." },
+    { emoji: '🤨', label: 'SKEPTICAL', desc: "One eyebrow raised. Lean back." },
 ];
 
 export default function MirrorDrill() {
@@ -208,6 +210,9 @@ export default function MirrorDrill() {
                         allowsRecording: true,
                         playsInSilentMode: true,
                     });
+                    if (typeof backend.mod.AudioRecorder !== 'function' || !backend.mod.RecordingPresets?.HIGH_QUALITY) {
+                        throw new Error('Audio recorder is not available in this build. Please rebuild the dev client with audio support.');
+                    }
                     const rec = new backend.mod.AudioRecorder(backend.mod.RecordingPresets.HIGH_QUALITY);
                     await rec.prepareToRecordAsync();
                     rec.record();
@@ -390,7 +395,7 @@ export default function MirrorDrill() {
                     <Text style={styles.label}>THE VIBE:</Text>
                     <Animated.View style={{ opacity: fadeAnim, alignItems: 'center' }}>
                         <Text style={[styles.flavorTitle, { color: systemColor }]}>
-                            <Ionicons name={FLAVORS[flavorIdx].icon as any} size={18} color={systemColor} /> {FLAVORS[flavorIdx].label}
+                            <Text style={styles.emojiText}>{FLAVORS[flavorIdx].emoji}</Text> {FLAVORS[flavorIdx].label}
                         </Text>
                         <Text style={styles.flavorDesc}>{FLAVORS[flavorIdx].desc}</Text>
                     </Animated.View>
@@ -419,11 +424,9 @@ export default function MirrorDrill() {
                         ]}
                     >
                         <Text style={[styles.voiceBtnText, isRecording && { color: '#00FF64' }]}>
-                            <Ionicons
-                                name={isRecording ? 'stop-circle' : (voiceUri ? 'radio-button-on' : 'mic')}
-                                size={15}
-                                color={isRecording ? '#00FF64' : Colors.textPrimary}
-                            />{' '}
+                            <Text style={styles.emojiText}>
+                                {isRecording ? '⏹️' : (voiceUri ? '🔴' : '🎙️')}
+                            </Text>{' '}
                             {isRecording ? 'TAP TO STOP' : (voiceUri ? 'RE-RECORD' : 'TAP TO RECORD')}
                         </Text>
                     </Pressable>
@@ -435,7 +438,7 @@ export default function MirrorDrill() {
                             style={[styles.voiceBtn, styles.playbackBtn]}
                         >
                             <Text style={[styles.voiceBtnText, { color: Colors.accentCyan }]}>
-                                <Ionicons name={isPlaying ? 'pause-circle' : 'play-circle'} size={15} color={Colors.accentCyan} />{' '}
+                                <Text style={styles.emojiText}>{isPlaying ? '⏸️' : '▶️'}</Text>{' '}
                                 {isPlaying ? 'PAUSE PLAYBACK' : 'HEAR YOURSELF BACK'}
                             </Text>
                         </Pressable>
@@ -510,6 +513,15 @@ const styles = StyleSheet.create({
     lineText: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.textPrimary, textAlign: 'center', lineHeight: 24 },
     divider: { width: 40, height: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginVertical: 10 },
     flavorTitle: { fontFamily: Fonts.heading, fontSize: 18, marginBottom: 0 },
+    emojiText: {
+        fontFamily: Platform.select({
+            ios: 'Apple Color Emoji',
+            web: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji',
+            default: undefined,
+        }),
+        fontWeight: 'normal',
+        letterSpacing: 0,
+    },
     flavorDesc: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, textAlign: 'center' },
 
     proofSection: { width: '100%', gap: 6, marginTop: 2 },
