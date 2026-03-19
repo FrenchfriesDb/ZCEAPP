@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, Pressable, Alert, ScrollView, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useUser } from '@/context/UserContext';
 import { useTimeColors } from '@/hooks/useTimeColors';
 import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
@@ -21,6 +21,8 @@ const COMPLAINTS = [
   "I have to wake up at 6 AM tomorrow.",
 ];
 
+const VIBE_PIVOT_SECONDS = 8;
+
 export default function VibePivotDrill() {
   const { completeDrill } = useUser();
   const { palette: timePalette } = useTimeColors();
@@ -30,10 +32,39 @@ export default function VibePivotDrill() {
   const [response, setResponse] = useState('');
   const [showGrade, setShowGrade] = useState(false);
   const [grade, setGrade] = useState('');
+  const [timeLeft, setTimeLeft] = useState(VIBE_PIVOT_SECONDS);
+  const [isTimerActive, setIsTimerActive] = useState(false);
 
   useEffect(() => {
     setComplaintIdx(Math.floor(Math.random() * COMPLAINTS.length));
   }, []);
+
+  useEffect(() => {
+    if (!isTimerActive || showGrade) return;
+
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setIsTimerActive(false);
+
+          if (response.trim()) {
+            const generated = generateGrade(response);
+            setGrade(generated);
+            setShowGrade(true);
+          } else {
+            Alert.alert('TIME EXPIRED', 'No pivot landed. Reset and go again.');
+            setTimeLeft(VIBE_PIVOT_SECONDS);
+          }
+
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isTimerActive, showGrade, response]);
 
   const generateGrade = (input: string) => {
     // Very simple grading logic
@@ -60,6 +91,7 @@ export default function VibePivotDrill() {
       return;
     }
 
+    setIsTimerActive(false);
     const generated = generateGrade(response);
     setGrade(generated);
     setShowGrade(true);
@@ -70,11 +102,28 @@ export default function VibePivotDrill() {
       await completeDrill(15);
       Alert.alert('REP VERIFIED', 'Vibe pivoted. +15 XP awarded.', [
         { text: 'FINISH SESSION', onPress: () => router.replace('/') },
-        { text: 'NEXT REP', onPress: () => { setResponse(''); setShowGrade(false); setComplaintIdx(Math.floor(Math.random() * COMPLAINTS.length)); } },
+        {
+          text: 'NEXT REP',
+          onPress: () => {
+            setResponse('');
+            setShowGrade(false);
+            setGrade('');
+            setTimeLeft(VIBE_PIVOT_SECONDS);
+            setIsTimerActive(false);
+            setComplaintIdx(Math.floor(Math.random() * COMPLAINTS.length));
+          },
+        },
       ]);
     } catch (err) {
       console.error('Drill completion error:', err);
     }
+  };
+
+  const handleResponseChange = (value: string) => {
+    if (!isTimerActive && !showGrade && value.trim().length > 0) {
+      setIsTimerActive(true);
+    }
+    setResponse(value);
   };
 
   return (
@@ -117,13 +166,33 @@ export default function VibePivotDrill() {
               </Text>
             </GlassCard>
 
+            <GlassCard style={[styles.timerCard, { borderColor: (timeLeft <= 3 ? '#FF4444' : systemColor) + '55' }]}>
+              <Text style={[styles.timerText, { color: timeLeft <= 3 ? '#FF4444' : systemColor }]}>
+                {timeLeft}s
+              </Text>
+              <Text style={styles.timerLabel}>
+                {isTimerActive ? 'TIME TO PIVOT' : 'TIMER STARTS ON FIRST WORD'}
+              </Text>
+              <View style={styles.timerBarBg}>
+                <View
+                  style={[
+                    styles.timerBarFill,
+                    {
+                      width: `${(timeLeft / VIBE_PIVOT_SECONDS) * 100}%`,
+                      backgroundColor: timeLeft <= 3 ? '#FF4444' : systemColor,
+                    },
+                  ]}
+                />
+              </View>
+            </GlassCard>
+
             <Text style={styles.inputLabel}>YOUR PIVOT:</Text>
             <TextInput
               style={styles.responseInput}
               placeholder="Flip it into gold..."
               placeholderTextColor="rgba(255,255,255,0.3)"
               value={response}
-              onChangeText={setResponse}
+              onChangeText={handleResponseChange}
               autoFocus
               multiline
             />
@@ -188,6 +257,12 @@ const styles = StyleSheet.create({
   complaintCard: { width: '100%', padding: 14, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.02)', borderWidth: 1 },
   complaintLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 10 },
   complaintText: { fontFamily: Fonts.heading, fontSize: 15, textAlign: 'center', lineHeight: 22 },
+
+  timerCard: { width: '100%', padding: 14, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1 },
+  timerText: { fontFamily: Fonts.heading, fontSize: 40, lineHeight: 44, textAlign: 'center' },
+  timerLabel: { fontFamily: Fonts.mono, fontSize: 9, color: 'rgba(255,255,255,0.38)', letterSpacing: 1.6, marginTop: 4, marginBottom: 10 },
+  timerBarBg: { width: '100%', height: 5, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 999, overflow: 'hidden' },
+  timerBarFill: { height: '100%', borderRadius: 999 },
 
   inputLabel: { fontFamily: Fonts.mono, fontSize: 9, color: 'rgba(255,255,255,0.4)', letterSpacing: 1, alignSelf: 'flex-start', marginTop: 10 },
   responseInput: {
