@@ -7,6 +7,8 @@ import { useTimeColors } from '@/hooks/useTimeColors';
 import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
 import GlassCard from '@/components/GlassCard';
 import GlassButton from '@/components/GlassButton';
+import DrillFeedbackPanel from '@/components/DrillFeedbackPanel';
+import { AIService } from '@/services/ai';
 
 const COMPLAINTS = [
   "Coach is making us run 800s today, I'm going to die.",
@@ -34,6 +36,7 @@ export default function VibePivotDrill() {
   const [grade, setGrade] = useState('');
   const [timeLeft, setTimeLeft] = useState(VIBE_PIVOT_SECONDS);
   const [isTimerActive, setIsTimerActive] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   useEffect(() => {
     setComplaintIdx(Math.floor(Math.random() * COMPLAINTS.length));
@@ -49,9 +52,7 @@ export default function VibePivotDrill() {
           setIsTimerActive(false);
 
           if (response.trim()) {
-            const generated = generateGrade(response);
-            setGrade(generated);
-            setShowGrade(true);
+            void analyzePivot(response);
           } else {
             Alert.alert('TIME EXPIRED', 'No pivot landed. Reset and go again.');
             setTimeLeft(VIBE_PIVOT_SECONDS);
@@ -66,8 +67,7 @@ export default function VibePivotDrill() {
     return () => clearInterval(timer);
   }, [isTimerActive, showGrade, response]);
 
-  const generateGrade = (input: string) => {
-    // Very simple grading logic
+  const generateFallbackGrade = (input: string) => {
     const hasAbs = /absurd|ridiculous|conspiracy|secret|fake|made.*up|definitely|absolutely/.test(input.toLowerCase());
     const hasFlip = /flex|respect|actually|low key|big brain|goat|sigma/.test(input.toLowerCase());
     const hasDarkHumor = /dead|dying|never.*again|somehow|obviously/.test(input.toLowerCase());
@@ -77,12 +77,50 @@ export default function VibePivotDrill() {
     if (hasFlip) score += 20;
     if (hasDarkHumor) score += 20;
 
-    const grades = [
-      `MINDSET ANALYSIS: The Pivot Master 🩸\n\nYou took boring and turned it into absurdity. That's the skill. Most people stay stuck in complaining mode—you reprogrammed the entire conversation.\n\nGoggins says: "You pivoted from victim to victor in one line. That's what happens when you stop accepting the narrative they hand you."\n\nScore: ${score}/100`,
-      `MINDSET ANALYSIS: The Vibe Shifter\n\nYou didn't just deflect—you reframed the entire situation. Boring complaint turned into deadpan authority. That's the move.\n\nZane says: "The best comedy is when you say something ridiculous with complete certainty. You did that."\n\nScore: ${score}/100`,
-    ];
+    return `PERFORMANCE REVIEW: You understood the core mission: move the energy out of whining and into entertainment fast.
 
-    return grades[Math.floor(Math.random() * grades.length)];
+WHAT YOU DID WELL:
+- You actually pivoted instead of agreeing with the complaint.
+- Your line had some absurdity, which is what gives this drill life.
+
+WHAT MISSED:
+- The punch could still be sharper or more unexpected.
+- The frame needs a little more certainty to feel magnetic instead of just random.
+
+WHY IT WORKS / WHY IT FAILS:
+The whole drill is about killing boring reality and replacing it with a more fun frame. When you commit to absurdity with confidence, people follow you. When the pivot is soft, it feels like a joke attempt instead of a vibe shift.
+
+MAGNETIC VERSION: Say it smoother, like the situation was obviously beneath you the whole time.
+CEO VERSION: Frame the complaint like operational weakness and redirect with calm certainty.
+CLASS CLOWN VERSION: Lean harder into the chaos and make the absurdity feel reckless on purpose.
+FUNNY VERSION: Add one cleaner punchline instead of stacking too many ideas.
+WITTY VERSION: Keep it dry, tight, and a little smug.
+
+SCORE: ${Math.min(10, Math.max(3, Math.round(score / 10)))}/10`;
+  };
+
+  const analyzePivot = async (input: string) => {
+    setIsAnalyzing(true);
+    try {
+      const aiFeedback = await AIService.generateResponse([
+        {
+          role: 'user',
+          content: `DRILL: Vibe Pivot
+COMPLAINT: ${COMPLAINTS[complaintIdx]}
+USER PIVOT: ${input}
+
+Review this rep like a drill analyst. Focus on whether they successfully turned a boring complaint into entertainment, deadpan authority, absurdity, or a social frame shift. Give concrete notes and alternate versions. End with SCORE: X/10.`,
+        },
+      ], 'groq', 'AGENT', 1, 'drill');
+
+      setGrade(aiFeedback);
+    } catch (error) {
+      console.error('Vibe Pivot analysis error:', error);
+      setGrade(generateFallbackGrade(input));
+    } finally {
+      setShowGrade(true);
+      setIsAnalyzing(false);
+    }
   };
 
   const handleSubmit = () => {
@@ -92,9 +130,7 @@ export default function VibePivotDrill() {
     }
 
     setIsTimerActive(false);
-    const generated = generateGrade(response);
-    setGrade(generated);
-    setShowGrade(true);
+    void analyzePivot(response);
   };
 
   const handleComplete = async () => {
@@ -198,11 +234,12 @@ export default function VibePivotDrill() {
             />
 
             <GlassButton
-              label="SUBMIT PIVOT"
+              label={isAnalyzing ? 'ANALYZING...' : 'SUBMIT PIVOT'}
               onPress={handleSubmit}
               tint="blue"
               size="lg"
               glow={response.length > 10}
+              disabled={isAnalyzing}
               style={{ width: '100%', marginTop: 12 }}
             />
           </>
@@ -214,7 +251,7 @@ export default function VibePivotDrill() {
             </GlassCard>
 
             <GlassCard style={styles.gradeCard}>
-              <Text style={styles.gradeText}>{grade}</Text>
+              <DrillFeedbackPanel feedback={grade} maxHeight={460} />
             </GlassCard>
 
             <GlassButton
@@ -284,5 +321,4 @@ const styles = StyleSheet.create({
   responseText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textPrimary },
 
   gradeCard: { width: '100%', padding: 14, backgroundColor: 'rgba(255,255,255,0.03)' },
-  gradeText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, lineHeight: 20 },
 });
