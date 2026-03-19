@@ -8,6 +8,9 @@ const isWeb = Platform.OS === 'web';
 type AudioBackend =
     | { kind: 'expo-audio'; mod: any };
 
+const getExpoAudioRecorderClass = (audioMod: any) =>
+    audioMod?.AudioRecorder ?? audioMod?.AudioModule?.AudioRecorder ?? null;
+
 // Use expo-audio only. Some dev builds do not include expo-av, and even optional
 // imports can still trigger ExponentAV resolution errors at runtime.
 let _cachedAudioBackend: AudioBackend | null | undefined;
@@ -244,10 +247,11 @@ export default function MirrorDrill() {
                     allowsRecording: true,
                     playsInSilentMode: true,
                 });
-                if (typeof backend.mod.AudioRecorder !== 'function' || !backend.mod.RecordingPresets?.HIGH_QUALITY) {
-                    throw new Error('Audio recorder is not available in this build. Please rebuild the dev client with audio support.');
+                const AudioRecorderClass = getExpoAudioRecorderClass(backend.mod);
+                if (typeof AudioRecorderClass !== 'function' || !backend.mod.RecordingPresets?.HIGH_QUALITY) {
+                    throw new Error('expo-audio recorder API is missing from this runtime.');
                 }
-                const rec = new backend.mod.AudioRecorder(backend.mod.RecordingPresets.HIGH_QUALITY);
+                const rec = new AudioRecorderClass(backend.mod.RecordingPresets.HIGH_QUALITY);
                 await rec.prepareToRecordAsync();
                 rec.record();
                 recordingRef.current = rec;

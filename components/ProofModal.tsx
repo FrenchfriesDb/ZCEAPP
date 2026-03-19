@@ -47,6 +47,9 @@ const loadAudio = async () => {
     return _cachedAudio;
 };
 
+const getExpoAudioRecorderClass = (audioMod: any) =>
+    audioMod?.AudioRecorder ?? audioMod?.AudioModule?.AudioRecorder ?? null;
+
 interface ProofModalProps {
     visible: boolean;
     onClose: () => void;
@@ -254,7 +257,11 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                     allowsRecording: true,
                     playsInSilentMode: true,
                 });
-                const rec = new Audio.AudioRecorder(Audio.RecordingPresets.HIGH_QUALITY);
+                const AudioRecorderClass = getExpoAudioRecorderClass(Audio);
+                if (typeof AudioRecorderClass !== 'function' || !Audio.RecordingPresets?.HIGH_QUALITY) {
+                    throw new Error('expo-audio recorder API is missing from this runtime.');
+                }
+                const rec = new AudioRecorderClass(Audio.RecordingPresets.HIGH_QUALITY);
                 await rec.prepareToRecordAsync();
                 rec.record();
                 recordingRef.current = rec;
