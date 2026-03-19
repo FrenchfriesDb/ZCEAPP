@@ -8,19 +8,7 @@ import { db, auth } from '@/services/firebase';
 import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { useUser } from '@/context/UserContext';
 import { formatDisplayName, getFirstName } from '@/utils/formatters';
-
-const SIMULATED_DATA = [
-    { rank: 1, name: 'DarkCEO_Zane', level: 9, title: 'Dark CEO', xp: 4200, aura: 9850, streak: 47 },
-    { rank: 2, name: 'ShadowArchitect', level: 8, title: 'Social Architect', xp: 3400, aura: 8200, streak: 32 },
-    { rank: 3, name: 'MidnightWolf', level: 7, title: 'Charisma Lord', xp: 2800, aura: 6900, streak: 28 },
-    { rank: 4, name: 'IronMindset', level: 6, title: 'Magnetic', xp: 1900, aura: 4500, streak: 21 },
-    { rank: 5, name: 'TheProtocol', level: 5, title: 'Influencer', xp: 1200, aura: 3200, streak: 15 },
-    { rank: 6, name: 'NeuralEdge', level: 5, title: 'Influencer', xp: 1100, aura: 2900, streak: 12 },
-    { rank: 7, name: 'QuantumSocial', level: 4, title: 'Connector', xp: 800, aura: 2100, streak: 9 },
-    { rank: 8, name: 'ColdApproach99', level: 3, title: 'Socialite', xp: 500, aura: 1200, streak: 6 },
-    { rank: 9, name: 'SilentStorm', level: 2, title: 'Apprentice', xp: 200, aura: 600, streak: 3 },
-    { rank: 10, name: 'NewRecruit_42', level: 1, title: 'Observer', xp: 50, aura: 150, streak: 1 },
-];
+import { useTextColors } from '@/context/TextColorsContext';
 
 const getRankColor = (rank: number) => {
     if (rank === 1) return '#FFD700'; // Gold
@@ -46,14 +34,14 @@ const getMetalPalette = (rank: number) => {
 
 export default function LeaderboardScreen() {
     const { user } = useUser();
-    const [activeTab, setActiveTab] = useState<'TACTICAL' | 'GLOBAL'>('TACTICAL');
+    const { textSecondary } = useTextColors();
     const [globalData, setGlobalData] = useState<any[]>([]);
     const [myRank, setMyRank] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
-        if (activeTab === 'GLOBAL') fetchGlobalRankings();
-    }, [activeTab]);
+        fetchGlobalRankings();
+    }, []);
 
     const fetchGlobalRankings = async () => {
         setIsLoading(true);
@@ -94,7 +82,7 @@ export default function LeaderboardScreen() {
         }
     };
 
-    const currentData = activeTab === 'TACTICAL' ? SIMULATED_DATA : globalData;
+    const currentData = globalData;
 
     // My Display Info for Sticky (LIVE TAB ONLY)
     const myDisplayInfo = {
@@ -113,18 +101,16 @@ export default function LeaderboardScreen() {
                     <Text style={styles.headerEyebrow}>MAGNETIC AURA RANKINGS</Text>
                     <View style={styles.titleRow}>
                         <Text style={styles.headerTitle}>Board</Text>
-                        <View style={styles.tabSwitcher}>
-                            {(['TACTICAL', 'GLOBAL'] as const).map(tab => (
-                                <Pressable
-                                    key={tab}
-                                    onPress={() => setActiveTab(tab)}
-                                    style={[styles.tabPill, activeTab === tab && styles.tabPillActive]}
-                                >
-                                    <Text style={[styles.tabPillText, activeTab === tab && styles.tabPillTextActive]}>
-                                        {tab === 'TACTICAL' ? 'ARENA' : 'GLOBAL'}
-                                    </Text>
-                                </Pressable>
-                            ))}
+                        <View style={styles.livePillShell}>
+                            <BlurView intensity={28} tint="dark" style={StyleSheet.absoluteFill} />
+                            <LinearGradient
+                                colors={[`${textSecondary}55`, 'rgba(255,255,255,0.02)']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={StyleSheet.absoluteFill}
+                            />
+                            <View style={[styles.livePillHighlight, { backgroundColor: `${textSecondary}33` }]} />
+                            <Text style={[styles.livePillText, { color: textSecondary.replace(/88$/i, '') }]}>LIVE LEADERBOARD</Text>
                         </View>
                     </View>
                 </View>
@@ -228,16 +214,16 @@ export default function LeaderboardScreen() {
                                 </View>
                             );
                         })}
-                        {activeTab === 'GLOBAL' && currentData.length === 0 && (
+                        {currentData.length === 0 && (
                             <Text style={styles.emptyText}>NO AGENTS FOUND IN SECTOR.</Text>
                         )}
                     </View>
                 )}
-                <View style={{ height: activeTab === 'GLOBAL' ? 160 : 120 }} />
+                <View style={{ height: 160 }} />
             </ScrollView>
 
             {/* Floating Personal Rank Indicator (LIVE TAB ONLY) */}
-            {!isLoading && activeTab === 'GLOBAL' && (
+            {!isLoading && (
                 <View style={styles.floatingContainer}>
                     <View style={styles.floatingRankBubble}>
                         <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
@@ -296,21 +282,36 @@ const styles = StyleSheet.create({
         color: Colors.textPrimary,
         fontWeight: '800', letterSpacing: 0.5,
     },
-    tabSwitcher: {
-        flexDirection: 'row',
-        backgroundColor: 'rgba(255,255,255,0.04)',
-        borderRadius: Radius.pill,
-        padding: 3, gap: 4,
-        borderWidth: 1, borderColor: Colors.borderGlass,
+    livePillShell: {
+        minWidth: 142,
+        paddingHorizontal: 16,
+        paddingVertical: 9,
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.08)',
+        overflow: 'hidden',
+        position: 'relative',
+        shadowColor: '#FFFFFF',
+        shadowOffset: { width: 0, height: 10 },
+        shadowRadius: 18,
+        shadowOpacity: 0.08,
+        backgroundColor: 'rgba(255,255,255,0.03)',
     },
-    tabPill: { paddingHorizontal: 14, paddingVertical: 5, borderRadius: Radius.pill },
-    tabPillActive: {
-        backgroundColor: 'rgba(144, 202, 249, 0.12)',
-        shadowColor: Colors.accentPrimary,
-        shadowRadius: 8, shadowOpacity: 0.3,
+    livePillHighlight: {
+        position: 'absolute',
+        top: 1,
+        left: 10,
+        right: 10,
+        height: '48%',
+        borderRadius: 16,
+        opacity: 0.9,
     },
-    tabPillText: { fontFamily: Fonts.monoBold, fontSize: 9, color: Colors.textTertiary, letterSpacing: 1 },
-    tabPillTextActive: { color: Colors.accentPrimary },
+    livePillText: {
+        fontFamily: Fonts.monoBold,
+        fontSize: 9,
+        letterSpacing: 1.5,
+        textAlign: 'center',
+    },
 
     podium: {
         flexDirection: 'row',
