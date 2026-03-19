@@ -217,12 +217,28 @@ export default function DojoScreen() {
   const [recoveryAnswer, setRecoveryAnswer] = useState('');
   const [nudgeVisible, setNudgeVisible] = useState(false);
   const hasShownNudge = useRef(false);
+  const hasShownRecoveryPrompt = useRef(false);
 
   // Trigger Nudge: "Yesterday you chose average. Today choose power."
   useEffect(() => {
     if (user?.streakAtRisk && !hasShownNudge.current) {
       setNudgeVisible(true);
       hasShownNudge.current = true;
+    }
+    if (!user?.streakAtRisk) {
+      hasShownNudge.current = false;
+    }
+  }, [user?.streakAtRisk]);
+
+  useEffect(() => {
+    if (user?.streakAtRisk && !hasShownRecoveryPrompt.current) {
+      setRecoveryQuestion(RECOVERY_QUESTIONS[Math.floor(Math.random() * RECOVERY_QUESTIONS.length)]);
+      setRecoveryVisible(true);
+      hasShownRecoveryPrompt.current = true;
+    }
+    if (!user?.streakAtRisk) {
+      hasShownRecoveryPrompt.current = false;
+      setRecoveryVisible(false);
     }
   }, [user?.streakAtRisk]);
 

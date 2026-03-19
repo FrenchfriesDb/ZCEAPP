@@ -294,6 +294,26 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         return unsubscribe;
     }, []);
 
+    useEffect(() => {
+        if (isLoading || !user) return;
+
+        const today = getLocalDateStr();
+        const yesterday = getLocalDateStr(-1);
+        const lastDate = user.lastActivityDate;
+
+        if (!lastDate || lastDate === today || lastDate === yesterday) return;
+        if (user.streakAtRisk || (user.streak || 0) <= 1) return;
+
+        const previousStreak = user.previousStreak && user.previousStreak > 0
+            ? user.previousStreak
+            : user.streak;
+
+        _syncUpdate({
+            streakAtRisk: true,
+            previousStreak,
+        }).catch((err) => console.warn('[UserContext] Failed to mark streak at risk on load:', err));
+    }, [isLoading, user]);
+
     // --- CORE SYNC: writes to state, AsyncStorage, and Firestore atomically ---
     // IMPORTANT: reads userRef.current — NOT the stale closure `user`
     const _syncUpdate = async (updates: Partial<UserData>) => {
