@@ -6,10 +6,10 @@ import { requireOptionalNativeModule } from 'expo-modules-core';
 const isWeb = Platform.OS === 'web';
 
 type AudioBackend =
-    | { kind: 'expo-audio'; mod: any }
-    | { kind: 'expo-av'; Audio: any };
+    | { kind: 'expo-audio'; mod: any };
 
-// Prefer expo-audio (native module: ExpoAudio). Fallback to expo-av if available.
+// Use expo-audio only. Some dev builds do not include expo-av, and even optional
+// imports can still trigger ExponentAV resolution errors at runtime.
 let _cachedAudioBackend: AudioBackend | null | undefined;
 const loadAudioBackend = async (): Promise<AudioBackend | null> => {
     if (isWeb) return null;
@@ -25,24 +25,12 @@ const loadAudioBackend = async (): Promise<AudioBackend | null> => {
             _cachedAudioBackend = { kind: 'expo-audio', mod };
             return _cachedAudioBackend;
         } catch {
-            // Continue to expo-av fallback.
+            _cachedAudioBackend = null;
+            return null;
         }
     }
-
-    const exponentAV = requireOptionalNativeModule<any>('ExponentAV');
-    if (!exponentAV || typeof exponentAV.setAudioMode !== 'function') {
-        _cachedAudioBackend = null;
-        return null;
-    }
-
-    try {
-        const mod = await import('expo-av');
-        _cachedAudioBackend = { kind: 'expo-av', Audio: mod.Audio };
-        return _cachedAudioBackend;
-    } catch {
-        _cachedAudioBackend = null;
-        return null;
-    }
+    _cachedAudioBackend = null;
+    return null;
 };
 import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
 import { router } from 'expo-router';
@@ -141,28 +129,16 @@ export default function MirrorDrill() {
             // STOP recording
             setIsRecording(false);
             try {
-                if (recordingRef.current && backend.kind === 'expo-av') {
-                    await recordingRef.current.stopAndUnloadAsync();
-                    const uri = recordingRef.current.getURI?.() ?? null;
-                    setVoiceUri(uri || null);
-                    recordingRef.current = null;
-                } else if (recordingRef.current && backend.kind === 'expo-audio') {
+                if (recordingRef.current && backend.kind === 'expo-audio') {
                     await recordingRef.current.stop();
                     const uri = recordingRef.current.uri ?? null;
                     setVoiceUri(uri || null);
                     recordingRef.current = null;
                 }
-                if (backend.kind === 'expo-av') {
-                    await backend.Audio.setAudioModeAsync({
-                        allowsRecordingIOS: false,
-                        playsInSilentModeIOS: true,
-                    });
-                } else {
-                    await backend.mod.setAudioModeAsync({
-                        allowsRecording: false,
-                        playsInSilentMode: true,
-                    });
-                }
+                await backend.mod.setAudioModeAsync({
+                    allowsRecording: false,
+                    playsInSilentMode: true,
+                });
             } catch (err) {
                 console.error('[Mirror] Stop error:', err);
             }
@@ -181,43 +157,23 @@ export default function MirrorDrill() {
                     try { await recordingRef.current.stop?.(); } catch { }
                     recordingRef.current = null;
                 }
-
-                if (backend.kind === 'expo-av') {
-                    if (typeof backend.Audio.requestPermissionsAsync === 'function') {
-                        const { status } = await backend.Audio.requestPermissionsAsync();
-                        if (status !== 'granted') {
-                            Alert.alert('Mic Permission Needed', 'Allow microphone access in Settings.');
-                            return;
-                        }
-                    }
-
-                    await backend.Audio.setAudioModeAsync({
-                        allowsRecordingIOS: true,
-                        playsInSilentModeIOS: true,
-                    });
-                    const { recording: rec } = await backend.Audio.createAsync(
-                        backend.Audio.RecordingOptionsPresets.HIGH_QUALITY
-                    );
-                    recordingRef.current = rec;
-                } else {
-                    const { granted } = await backend.mod.requestRecordingPermissionsAsync();
-                    if (!granted) {
-                        Alert.alert('Mic Permission Needed', 'Allow microphone access in Settings.');
-                        return;
-                    }
-
-                    await backend.mod.setAudioModeAsync({
-                        allowsRecording: true,
-                        playsInSilentMode: true,
-                    });
-                    if (typeof backend.mod.AudioRecorder !== 'function' || !backend.mod.RecordingPresets?.HIGH_QUALITY) {
-                        throw new Error('Audio recorder is not available in this build. Please rebuild the dev client with audio support.');
-                    }
-                    const rec = new backend.mod.AudioRecorder(backend.mod.RecordingPresets.HIGH_QUALITY);
-                    await rec.prepareToRecordAsync();
-                    rec.record();
-                    recordingRef.current = rec;
+                const { granted } = await backend.mod.requestRecordingPermissionsAsync();
+                if (!granted) {
+                    Alert.alert('Mic Permission Needed', 'Allow microphone access in Settings.');
+                    return;
                 }
+
+                await backend.mod.setAudioModeAsync({
+                    allowsRecording: true,
+                    playsInSilentMode: true,
+                });
+                if (typeof backend.mod.AudioRecorder !== 'function' || !backend.mod.RecordingPresets?.HIGH_QUALITY) {
+                    throw new Error('Audio recorder is not available in this build. Please rebuild the dev client with audio support.');
+                }
+                const rec = new backend.mod.AudioRecorder(backend.mod.RecordingPresets.HIGH_QUALITY);
+                await rec.prepareToRecordAsync();
+                rec.record();
+                recordingRef.current = rec;
                 setIsRecording(true);
             } catch (err: any) {
                 console.error('[Mirror] Start error:', err);
@@ -249,29 +205,15 @@ export default function MirrorDrill() {
                 playbackRef.current.remove?.();
                 playbackRef.current = null;
             }
-            if (backend.kind === 'expo-av') {
-                const { sound: newSound } = await backend.Audio.Sound.createAsync(
-                    { uri: voiceUri },
-                    { shouldPlay: true }
-                );
-                playbackRef.current = newSound;
-                setIsPlaying(true);
-                newSound.setOnPlaybackStatusUpdate((status: any) => {
-                    if (status.isLoaded && status.didJustFinish) {
-                        setIsPlaying(false);
-                    }
-                });
-            } else {
-                const player = backend.mod.createAudioPlayer(voiceUri);
-                playbackRef.current = player;
-                player.addListener('playbackStatusUpdate', (status: any) => {
-                    if (status?.didJustFinish || (status?.isLoaded && !status?.playing)) {
-                        setIsPlaying(false);
-                    }
-                });
-                player.play();
-                setIsPlaying(true);
-            }
+            const player = backend.mod.createAudioPlayer(voiceUri);
+            playbackRef.current = player;
+            player.addListener('playbackStatusUpdate', (status: any) => {
+                if (status?.didJustFinish || (status?.isLoaded && !status?.playing)) {
+                    setIsPlaying(false);
+                }
+            });
+            player.play();
+            setIsPlaying(true);
         } catch (err) {
             console.error('[Mirror] Playback error:', err);
             Alert.alert('Playback Error', 'Could not play recording.');

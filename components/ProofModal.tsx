@@ -16,23 +16,21 @@ import { requireOptionalNativeModule } from 'expo-modules-core';
 // Web platform check
 const isWeb = Platform.OS === 'web';
 
-// Lazy-load expo-av at runtime. Some builds (custom dev clients) may not include it.
+// Use expo-audio only. Avoid touching expo-av in builds where ExponentAV is missing.
 let _cachedAudio: any | null | undefined;
 const loadAudio = async () => {
     if (Platform.OS === 'web') return null;
     if (_cachedAudio !== undefined) return _cachedAudio;
-    // Some custom dev clients expose an empty stub object for ExponentAV. Importing `expo-av`
-    // in that case still throws `Cannot find native module 'ExponentAV'` (and can redbox).
-    const exponentAV = requireOptionalNativeModule<any>('ExponentAV');
-    if (!exponentAV || typeof exponentAV.setAudioMode !== 'function') {
+    const expoAudio = requireOptionalNativeModule<any>('ExpoAudio');
+    if (!expoAudio || typeof expoAudio.setAudioModeAsync !== 'function') {
         _cachedAudio = null;
         return null;
     }
     try {
-        const mod = await import('expo-av');
-        _cachedAudio = mod.Audio;
+        const mod = await import('expo-audio');
+        _cachedAudio = mod;
         return _cachedAudio;
-    } catch (e) {
+    } catch {
         _cachedAudio = null;
         return null;
     }
@@ -141,7 +139,7 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
         if (!Audio) {
             Alert.alert(
                 'Audio Not Available',
-                'This build does not include the audio module. If you are using a custom dev client, rebuild it with expo-av enabled.'
+                'This build does not include the audio recorder. Rebuild the dev client with expo-audio enabled.'
             );
             return;
         }
@@ -151,8 +149,8 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
             setIsRecording(false);
             try {
                 if (recordingRef.current) {
-                    await recordingRef.current.stopAndUnloadAsync();
-                    const uri = recordingRef.current.getURI();
+                    await recordingRef.current.stop();
+                    const uri = recordingRef.current.uri;
                     setVoiceUri(uri || null);
                     recordingRef.current = null;
                 }
@@ -163,17 +161,23 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
             // — START — always clean up any stale instance first
             try {
                 if (recordingRef.current) {
-                    try { await recordingRef.current.stopAndUnloadAsync(); } catch { }
+                    try { await recordingRef.current.stop(); } catch { }
                     recordingRef.current = null;
                 }
 
+                const { granted } = await Audio.requestRecordingPermissionsAsync();
+                if (!granted) {
+                    Alert.alert('Mic Permission Needed', 'Allow microphone access in Settings.');
+                    return;
+                }
+
                 await Audio.setAudioModeAsync({
-                    allowsRecordingIOS: true,
-                    playsInSilentModeIOS: true,
+                    allowsRecording: true,
+                    playsInSilentMode: true,
                 });
-                const { recording: rec } = await Audio.createAsync(
-                    Audio.RecordingOptionsPresets.HIGH_QUALITY
-                );
+                const rec = new Audio.AudioRecorder(Audio.RecordingPresets.HIGH_QUALITY);
+                await rec.prepareToRecordAsync();
+                rec.record();
                 recordingRef.current = rec;
                 setIsRecording(true);
             } catch (err: any) {

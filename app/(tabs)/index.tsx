@@ -103,21 +103,19 @@ const RECOVERY_QUESTIONS = [
 
 const pick8 = (pool: any[]) => [...pool].sort(() => 0.5 - Math.random()).slice(0, 8);
 
-// Lazy-load expo-av at runtime. Some builds (custom dev clients) may not include it.
+// Use expo-audio only for playback. Avoid importing expo-av in builds that don't ship ExponentAV.
 let _cachedAudio: any | null | undefined;
 const loadAudio = async () => {
   if (Platform.OS === 'web') return null;
   if (_cachedAudio !== undefined) return _cachedAudio;
-  // Some custom dev clients expose an empty stub object for ExponentAV. Importing `expo-av`
-  // in that case still throws `Cannot find native module 'ExponentAV'` (and can redbox).
-  const exponentAV = requireOptionalNativeModule<any>('ExponentAV');
-  if (!exponentAV || typeof exponentAV.setAudioMode !== 'function') {
+  const expoAudio = requireOptionalNativeModule<any>('ExpoAudio');
+  if (!expoAudio || typeof expoAudio.setAudioModeAsync !== 'function') {
     _cachedAudio = null;
     return null;
   }
   try {
-    const mod = await import('expo-av');
-    _cachedAudio = mod.Audio;
+    const mod = await import('expo-audio');
+    _cachedAudio = mod;
     return _cachedAudio;
   } catch {
     _cachedAudio = null;
@@ -137,8 +135,14 @@ export default function DojoScreen() {
     textSecondary,
     textTertiary
   });
-  const systemColor = timePalette[timePalette.length - 1];
-  const middleColor = timePalette[Math.floor(timePalette.length / 2)];
+  const safeTimePalette = Array.isArray(timePalette) && timePalette.length > 0
+    ? timePalette
+    : Colors.gradientDark;
+
+  // Use textPrimary as the UI accent so time themes like Battle Glory remain readable
+  // (Battle Glory's last palette stop is a deep navy, which makes small UI text unreadable).
+  const systemColor = textPrimary;
+  const middleColor = safeTimePalette[Math.floor(safeTimePalette.length / 2)];
   // Convert hex to rgba for textShadowColor
   const hexToRgba = (hex: string, alpha: number) => {
     const r = parseInt(hex.slice(1, 3), 16);
@@ -184,16 +188,17 @@ export default function DojoScreen() {
       }
 
       setPlayingUri(uri);
-      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true, staysActiveInBackground: false });
-      const { sound } = await Audio.Sound.createAsync({ uri }, { shouldPlay: true });
-      playbackRef.current = sound;
-      sound.setOnPlaybackStatusUpdate((status: any) => {
-        if (status?.didJustFinish) {
-          try { sound.unloadAsync(); } catch (_) {}
+      await Audio.setAudioModeAsync({ playsInSilentMode: true });
+      const player = Audio.createAudioPlayer(uri);
+      playbackRef.current = player;
+      player.addListener('playbackStatusUpdate', (status: any) => {
+        if (status?.didJustFinish || (status?.isLoaded && !status?.playing)) {
+          try { player.remove?.(); } catch (_) {}
           playbackRef.current = null;
           setPlayingUri(null);
         }
       });
+      player.play();
     } catch (err) {
       console.error('Playback error', err);
       Alert.alert('Playback Error', 'Unable to play recording.');
