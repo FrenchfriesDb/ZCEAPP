@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { useState, useRef, useEffect } from 'react';
 import GlassCard from '@/components/GlassCard';
 import GlassButton from '@/components/GlassButton';
+import DrillFeedbackPanel from '@/components/DrillFeedbackPanel';
 import { LINK_WORDS } from '@/constants/zane';
 import { useUser } from '@/context/UserContext';
 import { AIService } from '@/services/ai';
@@ -183,9 +184,7 @@ export default function LinkDrill() {
                                 </View>
                             ) : (
                                 <View style={styles.resultContainer}>
-                                    <ScrollView style={styles.feedbackScroll} contentContainerStyle={styles.feedbackScrollContent}>
-                                        <Text style={styles.feedbackText}>{feedback}</Text>
-                                    </ScrollView>
+                                    <DrillFeedbackPanel feedback={feedback} maxHeight={420} />
                                     <GlassButton
                                         label={isLoading ? 'ANALYZING...' : 'NEXT ROUND'}
                                         onPress={shuffle}
@@ -247,14 +246,4 @@ const styles = StyleSheet.create({
     // Buttons use <GlassButton/> now (global liquid glass look)
 
     resultContainer: { gap: 16, flex: 1 },
-    feedbackScroll: {
-        flex: 1,
-        maxHeight: 350,
-        backgroundColor: 'rgba(255,255,255,0.04)',
-        borderRadius: Radius.lg,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.08)',
-    },
-    feedbackScrollContent: { padding: 18 },
-    feedbackText: { color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 14, lineHeight: 22 },
 });

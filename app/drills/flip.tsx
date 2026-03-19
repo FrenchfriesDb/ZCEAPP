@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import GlassCard from '@/components/GlassCard';
 import GlassButton from '@/components/GlassButton';
+import DrillFeedbackPanel from '@/components/DrillFeedbackPanel';
 import { AIService } from '@/services/ai';
 import { useUser } from '@/context/UserContext';
 import { FLIP_PROMPTS } from '@/constants/zane';
@@ -136,7 +137,7 @@ export default function FlipDrill() {
                 {analysis ? (
                     <GlassCard style={styles.resultCard} glowColor={Colors.accentPrimary}>
                         <Text style={styles.resultTitle}>Z.A.N.E. ANALYSIS</Text>
-                        <Text style={styles.analysisText}>{analysis}</Text>
+                        <DrillFeedbackPanel feedback={analysis} maxHeight={440} />
                     </GlassCard>
                 ) : null}
 
@@ -180,5 +181,4 @@ const styles = StyleSheet.create({
 
     resultCard: { padding: 20, marginTop: 10 },
     resultTitle: { fontFamily: Fonts.heading, fontSize: 16, color: Colors.accentPrimary, marginBottom: 12 },
-    analysisText: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textPrimary, lineHeight: 22 },
 });

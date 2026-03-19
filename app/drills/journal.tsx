@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { useUser } from '@/context/UserContext';
 import GlassCard from '@/components/GlassCard';
 import GlassButton from '@/components/GlassButton';
+import DrillFeedbackPanel from '@/components/DrillFeedbackPanel';
 import { AIService } from '@/services/ai';
 
 export default function JournalDrill() {
@@ -80,7 +81,7 @@ export default function JournalDrill() {
                     />
                 ) : (
                     <GlassCard style={styles.analysisCard} glowColor={Colors.accentPrimary}>
-                        <Text style={styles.analysisText}>{analysis}</Text>
+                        <DrillFeedbackPanel feedback={analysis} maxHeight={460} />
                         <GlassButton
                             label="ACKNOWLEDGED"
                             onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}
@@ -121,6 +122,5 @@ const styles = StyleSheet.create({
     // Buttons use <GlassButton/> now (global liquid glass look)
 
     analysisCard: { padding: 24, marginTop: 20 },
-    analysisText: { color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 16, lineHeight: 24, marginBottom: 20 },
     // Buttons use <GlassButton/> now (global liquid glass look)
 });

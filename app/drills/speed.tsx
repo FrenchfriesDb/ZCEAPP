@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { useState, useEffect, useRef } from 'react';
 import GlassCard from '@/components/GlassCard';
 import GlassButton from '@/components/GlassButton';
+import DrillFeedbackPanel from '@/components/DrillFeedbackPanel';
 import { SPEED_PROMPTS } from '@/constants/zane';
 import { useUser } from '@/context/UserContext';
 import { AIService } from '@/services/ai';
@@ -64,19 +65,19 @@ export default function SpeedDrill() {
                     PROMPT: ${prompt}
                     USER RESPONSE: ${response}
 
-                    Give drill feedback only.
-                    Explain what was strong or weak about the frame control, status, and speed.
-                    Then rewrite the response in these exact styles:
-                    - Magnetic
-                    - CEO
-                    - Class Clown
-                    - Funny
-                    - Witty
-                    End with SCORE: X/10
+                    1. Provide a psychological logic breakdown of why the user's response was strong or weak (frame control, status).
+                    2. Provide alternate versions in these 6 specific styles:
+                       - Magnetic (High status, effortless)
+                       - Witty/Funny (Sharp, clever)
+                       - Teasing/Warm (Playful but safe)
+                       - Flirty (Charismatic tension)
+                       - GenZ/Class Clown (Chronically online, chaotic, funny)
+                       - Bold/Direct (Pure honesty, no filter)
+                    Do NOT include a Brutal Truth section, Challenge section, or Quote section.
                 `;
                 const aiFeedback = await AIService.generateResponse([
                     { role: 'user', content: analysisRequest }
-                ], 'groq', user?.name || 'AGENT', user?.level || 1, 'drill');
+                ], 'groq', user?.name || 'AGENT', user?.level || 1, 'coach');
 
                 setFeedback(aiFeedback);
                 await completeDrill(20);
@@ -174,9 +175,7 @@ export default function SpeedDrill() {
 
                     {feedback ? (
                         <View style={styles.feedbackContainer}>
-                            <ScrollView style={styles.feedbackScroll} contentContainerStyle={styles.feedbackScrollContent}>
-                                <Text style={styles.feedbackText}>{feedback}</Text>
-                            </ScrollView>
+                            <DrillFeedbackPanel feedback={feedback} maxHeight={420} />
                             <GlassButton
                                 label={isLoading ? 'ANALYZING...' : 'NEXT ROUND'}
                                 onPress={generatePrompt}
@@ -224,14 +223,4 @@ const styles = StyleSheet.create({
     // Buttons use <GlassButton/> now (global liquid glass look)
 
     feedbackContainer: { flex: 1, gap: 16 },
-    feedbackScroll: {
-        flex: 1,
-        maxHeight: 350,
-        backgroundColor: 'rgba(255,255,255,0.04)',
-        borderRadius: Radius.lg,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.08)',
-    },
-    feedbackScrollContent: { padding: 18 },
-    feedbackText: { color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 14, lineHeight: 22 },
 });
