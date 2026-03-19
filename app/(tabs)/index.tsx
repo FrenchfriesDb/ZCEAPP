@@ -458,15 +458,26 @@ export default function DojoScreen() {
               </Text>
               <Text style={styles.backupBannerSub}>
                 {user.streakAtRisk
-                  ? "Your streak is offline. Deploy a backup now to repair the engine."
+                  ? "Your streak is offline. Answer the charisma recovery prompt to repair the engine."
                   : "9PM and zero reps. Use a System Backup or get to work."}
               </Text>
 
-              {(user.systemBackups || 0) > 0 ? (
+              {user.streakAtRisk ? (
+                <GlassButton
+                  label="OPEN RECOVERY PROTOCOL"
+                  onPress={() => {
+                    setRecoveryQuestion(RECOVERY_QUESTIONS[Math.floor(Math.random() * RECOVERY_QUESTIONS.length)]);
+                    setRecoveryVisible(true);
+                  }}
+                  tint="red"
+                  size="sm"
+                  style={{ marginTop: 12 }}
+                />
+              ) : (user.systemBackups || 0) > 0 ? (
                 <GlassButton
                   label={`DEPLOY SYSTEM BACKUP (${user.systemBackups} LEFT)`}
                   onPress={deploySystemBackup}
-                  tint={user.streakAtRisk ? "red" : "blue"}
+                  tint="blue"
                   size="sm"
                   style={{ marginTop: 12 }}
                 />

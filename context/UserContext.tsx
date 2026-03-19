@@ -781,6 +781,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         const current = userRef.current;
         if (!current || (current.systemBackups || 0) <= 0) return;
 
+        if (current.streakAtRisk) {
+            Alert.alert(
+                "RECOVERY PROTOCOL REQUIRED",
+                "System Backups can protect a streak before collapse, not repair one after the fact. Answer the charisma recovery prompt to earn it back."
+            );
+            return;
+        }
+
         console.log('[UserContext] DEPLOYING SYSTEM BACKUP');
         // Logic: Set lastActivityDate to yesterday so today's activity (when they next do it) 
         // continues the streak as if they did it yesterday.
