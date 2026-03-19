@@ -10,7 +10,6 @@ import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
 import { useTimeColors } from '@/hooks/useTimeColors';
 import { useTextColors } from '@/context/TextColorsContext';
 import GlassButton from './GlassButton';
-import { requireOptionalNativeModule } from 'expo-modules-core';
 import * as ExpoAudio from 'expo-audio';
 
 // Web platform check
@@ -44,12 +43,12 @@ let _cachedAudio: any | null | undefined;
 const loadAudio = async () => {
     if (Platform.OS === 'web') return null;
     if (_cachedAudio !== undefined) return _cachedAudio;
-    const expoAudio = requireOptionalNativeModule<any>('ExpoAudio');
-    if (!expoAudio || typeof expoAudio.setAudioModeAsync !== 'function') {
-        _cachedAudio = null;
-        return null;
-    }
-    if (typeof (ExpoAudio as any).AudioRecorder !== 'function' || !(ExpoAudio as any).RecordingPresets) {
+    if (
+        typeof (ExpoAudio as any).setAudioModeAsync !== 'function' ||
+        typeof (ExpoAudio as any).requestRecordingPermissionsAsync !== 'function' ||
+        typeof (ExpoAudio as any).AudioRecorder !== 'function' ||
+        !(ExpoAudio as any).RecordingPresets
+    ) {
         _cachedAudio = null;
         return null;
     }

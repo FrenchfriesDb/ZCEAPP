@@ -1,7 +1,6 @@
 import { View, Text, StyleSheet, Pressable, Animated, ScrollView, TextInput, Alert, Platform, KeyboardAvoidingView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { requireOptionalNativeModule } from 'expo-modules-core';
 import * as ExpoAudio from 'expo-audio';
 // Web platform check
 const isWeb = Platform.OS === 'web';
@@ -16,12 +15,12 @@ const loadAudioBackend = async (): Promise<AudioBackend | null> => {
     if (isWeb) return null;
     if (_cachedAudioBackend !== undefined) return _cachedAudioBackend;
 
-    const expoAudioNative = requireOptionalNativeModule<any>('ExpoAudio');
-    if (expoAudioNative && typeof expoAudioNative.setAudioModeAsync === 'function') {
-        if (typeof (ExpoAudio as any).AudioRecorder !== 'function' || !(ExpoAudio as any).RecordingPresets) {
-            _cachedAudioBackend = null;
-            return null;
-        }
+    if (
+        typeof (ExpoAudio as any).setAudioModeAsync === 'function' &&
+        typeof (ExpoAudio as any).requestRecordingPermissionsAsync === 'function' &&
+        typeof (ExpoAudio as any).AudioRecorder === 'function' &&
+        (ExpoAudio as any).RecordingPresets
+    ) {
         _cachedAudioBackend = { kind: 'expo-audio', mod: ExpoAudio };
         return _cachedAudioBackend;
     }
