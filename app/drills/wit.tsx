@@ -29,17 +29,17 @@ export default function WitDrill() {
                 ORIGINAL 2: ${line2}
                 REWRITE 2: ${rewrite2}
 
-                1. Analyze these rewrites. Did the user improve the wit? Explain the psychological logic of why it works or fails.
-                2. Provide alternate versions for these lines in the 6 styles:
-                   - Magnetic
-                   - Witty/Funny
-                   - Teasing/Warm
-                   - Flirty
-                   - GenZ/Class Clown
-                   - Bold/Direct
-                Do NOT include a Brutal Truth section, Challenge section, or Quote section.
+                Give drill feedback only.
+                Analyze whether the rewrites improved the wit, what got sharper, what stayed weak, and why.
+                Then provide better alternates in these exact styles:
+                - Magnetic
+                - CEO
+                - Class Clown
+                - Funny
+                - Witty
+                End with SCORE: X/10
             `;
-            const result = await AIService.generateResponse([{ role: 'user', content: promptText }], 'groq', user?.name || 'AGENT', user?.level || 1, 'coach');
+            const result = await AIService.generateResponse([{ role: 'user', content: promptText }], 'groq', user?.name || 'AGENT', user?.level || 1, 'drill');
             setFeedback(result);
             setSubmitted(true);
             await completeDrill(20);

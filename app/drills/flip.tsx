@@ -33,21 +33,21 @@ export default function FlipDrill() {
     SITUATION: ${situation}
     MY RESPONSE: ${response}
     
-    1. Analyze my response using the FLIP FORMULA (Step, Feel, Intent, Flip, Connect, Add Zane). Provide a psychological logic breakdown of why it works or fails.
-    2. Provide alternate versions in these 6 specific styles:
-       - Magnetic
-       - Witty/Funny
-       - Teasing/Warm
-       - Flirty
-       - GenZ/Class Clown
-       - Bold/Direct
-    Do NOT include a Brutal Truth section, Challenge section, or Quote section.
+    Give drill feedback only.
+    Analyze my response using the FLIP FORMULA and explain what worked, what missed, and why.
+    Then provide stronger alternate versions in these exact styles:
+    - Magnetic
+    - CEO
+    - Class Clown
+    - Funny
+    - Witty
+    End with SCORE: X/10
     `;
 
         try {
             const result = await AIService.generateResponse([
                 { role: 'user', content: promptText }
-            ], 'deepseek', user?.name || 'AGENT', user?.level || 1, 'coach');
+            ], 'deepseek', user?.name || 'AGENT', user?.level || 1, 'drill');
             setAnalysis(result);
             await completeDrill(20);
             await addDrillLog('Flip Formula', 100, result);

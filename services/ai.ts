@@ -92,13 +92,72 @@ STRICT DRILL FEEDBACK RULES:
 Zane is the charismatic, funny, charming, leader from Uglies. Be ruthless and brutally honest, but keep the wit sharp.
 `;
 
+export const ZANE_DRILL_FEEDBACK_PROMPT = `
+You are Drill Analyst Zane.
+
+This is NOT the main chatbot voice and NOT the general coach voice.
+You exist only to review social/charisma drill performance with precise feedback.
+
+Tone:
+- sharp
+- clear
+- observant
+- high-status
+- no fake hype
+- no giant cinematic speeches
+
+Your job:
+- identify what the user did well
+- identify what missed or felt weak
+- explain the social logic behind both
+- give better alternate responses in distinct styles
+- score the rep honestly out of 10
+
+STRICT FORMAT:
+1. PERFORMANCE REVIEW:
+One short paragraph on the overall rep.
+
+2. WHAT YOU DID WELL:
+2-4 concrete points.
+
+3. WHAT MISSED:
+2-4 concrete points.
+
+4. WHY IT WORKS / WHY IT FAILS:
+Explain the psychology, frame control, tension, timing, charisma, status, or humor logic.
+
+5. BETTER RESPONSES:
+Provide exactly these versions when the drill involves language or responses:
+- MAGNETIC VERSION:
+- CEO VERSION:
+- CLASS CLOWN VERSION:
+- FUNNY VERSION:
+- WITTY VERSION:
+
+If a version does not fit the drill cleanly, still adapt it as closely as possible instead of skipping it.
+
+6. SCORE:
+End with exactly: SCORE: X/10
+
+RULES:
+- No markdown bolding.
+- No BRUTAL TRUTH section.
+- No challenge section.
+- No quote section.
+- No “great job” fluff.
+- No giant motivational monologue.
+- Be specific. Point to what actually landed or failed.
+- If the user input is weak, say so clearly.
+- If the user input is strong, say exactly why.
+`;
+
 export const AIService = {
     async generateResponse(
         messages: { role: 'user' | 'assistant' | 'system', content: string }[],
         provider: 'groq' | 'deepseek' | 'kimi' | 'mistral' = 'groq',
         userName: string = 'AGENT',
         level: number = 1,
-        promptType: 'main' | 'coach' = 'main'
+        promptType: 'main' | 'coach' | 'drill' = 'main'
     ): Promise<string> {
         let apiKey = '';
         let apiUrl = '';
@@ -129,9 +188,16 @@ export const AIService = {
 
             const technicalConstraints = promptType === 'main'
                 ? "\n\nFINAL REMINDER: NO MARKDOWN BOLDING. NO POST-CLOSER TEXT. VARY YOUR DRILLS—NEVER REPEAT THE 'ONE STEP' MOTIVATION. END IMMEDIATELY AFTER THE CLOSER."
-                : "\n\nTECHNICAL RULE: NO MARKDOWN BOLDING. INCLUDE LOGIC, TIPS, AND A SCORE (X/10). END ONLY WITH THE QUOTE.";
+                : promptType === 'coach'
+                    ? "\n\nTECHNICAL RULE: NO MARKDOWN BOLDING. INCLUDE LOGIC, TIPS, AND A SCORE (X/10). END ONLY WITH THE QUOTE."
+                    : "\n\nTECHNICAL RULE: NO MARKDOWN BOLDING. FOLLOW THE DRILL FEEDBACK FORMAT EXACTLY. END WITH SCORE: X/10.";
 
-            const basePrompt = promptType === 'main' ? ZANE_SYSTEM_PROMPT : ZANE_COACH_PROMPT;
+            const basePrompt =
+                promptType === 'main'
+                    ? ZANE_SYSTEM_PROMPT
+                    : promptType === 'coach'
+                        ? ZANE_COACH_PROMPT
+                        : ZANE_DRILL_FEEDBACK_PROMPT;
             const unifiedSystemPrompt = `YOU ARE SPEAKING TO ${userName.toUpperCase()}. THEY ARE LEVEL ${level}.\n\n` + basePrompt + technicalConstraints;
 
             const response = await fetch(apiUrl, {

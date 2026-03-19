@@ -66,17 +66,17 @@ export default function LinkDrill() {
                 WORDS: ${word1} + ${word2}
                 USER'S LINK: ${response}
 
-                1. Provide a psychological logic breakdown of how creative and logical this link was.
-                2. Provide alternate versions in these 6 specific styles:
-                   - Magnetic
-                   - Witty/Funny
-                   - Teasing/Warm
-                   - Flirty
-                   - GenZ/Class Clown
-                   - Bold/Direct
-                Do NOT include a Brutal Truth section, Challenge section, or Quote section.
+                Give drill feedback only.
+                Analyze how creative, sharp, and socially interesting this link was.
+                Then provide stronger alternate versions in these exact styles:
+                - Magnetic
+                - CEO
+                - Class Clown
+                - Funny
+                - Witty
+                End with SCORE: X/10
             `;
-            const result = await AIService.generateResponse([{ role: 'user', content: promptText }], 'groq', user?.name || 'AGENT', user?.level || 1, 'coach');
+            const result = await AIService.generateResponse([{ role: 'user', content: promptText }], 'groq', user?.name || 'AGENT', user?.level || 1, 'drill');
             setFeedback(result);
             await completeDrill(20);
             await addDrillLog('Link Game', 100, result);

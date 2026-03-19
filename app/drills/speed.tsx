@@ -64,19 +64,19 @@ export default function SpeedDrill() {
                     PROMPT: ${prompt}
                     USER RESPONSE: ${response}
 
-                    1. Provide a psychological logic breakdown of why the user's response was strong or weak (frame control, status).
-                    2. Provide alternate versions in these 6 specific styles:
-                       - Magnetic (High status, effortless)
-                       - Witty/Funny (Sharp, clever)
-                       - Teasing/Warm (Playful but safe)
-                       - Flirty (Charismatic tension)
-                       - GenZ/Class Clown (Chronically online, chaotic, funny)
-                       - Bold/Direct (Pure honesty, no filter)
-                    Do NOT include a Brutal Truth section, Challenge section, or Quote section.
+                    Give drill feedback only.
+                    Explain what was strong or weak about the frame control, status, and speed.
+                    Then rewrite the response in these exact styles:
+                    - Magnetic
+                    - CEO
+                    - Class Clown
+                    - Funny
+                    - Witty
+                    End with SCORE: X/10
                 `;
                 const aiFeedback = await AIService.generateResponse([
                     { role: 'user', content: analysisRequest }
-                ], 'groq', user?.name || 'AGENT', user?.level || 1, 'coach');
+                ], 'groq', user?.name || 'AGENT', user?.level || 1, 'drill');
 
                 setFeedback(aiFeedback);
                 await completeDrill(20);

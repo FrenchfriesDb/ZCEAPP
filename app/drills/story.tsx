@@ -70,17 +70,17 @@ export default function StoryDrill() {
                 PROMPT: ${prompt}
                 USER'S STORY SUMMARY: ${response}
 
-                1. Provide a psychological logic breakdown of the story's hook and tension.
-                2. Provide alternate versions in these 6 specific styles:
-                   - Magnetic
-                   - Witty/Funny
-                   - Teasing/Warm
-                   - Flirty
-                   - GenZ/Class Clown
-                   - Bold/Direct
-                Do NOT include a Brutal Truth section, Challenge section, or Quote section.
+                Give drill feedback only.
+                Tell them what they did well, what missed, why the hook/tension worked or failed,
+                then provide better alternate versions in these exact styles:
+                - Magnetic
+                - CEO
+                - Class Clown
+                - Funny
+                - Witty
+                End with SCORE: X/10
             `;
-            const result = await AIService.generateResponse([{ role: 'user', content: promptText }], 'groq', user?.name || 'AGENT', user?.level || 1, 'coach');
+            const result = await AIService.generateResponse([{ role: 'user', content: promptText }], 'groq', user?.name || 'AGENT', user?.level || 1, 'drill');
             setFeedback(result);
             await completeDrill(20);
             await addDrillLog('Storytelling', 100, result);

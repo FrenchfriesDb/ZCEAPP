@@ -31,17 +31,17 @@ export default function ComedianDrill() {
                 SUBJECT: ${object}
                 USER'S LINE: ${response}
 
-                1. Analyze the comedy logic. Why was it funny or why did it miss? Breakdown the status play and frame.
-                2. Provide alternate versions in these 6 specific styles:
-                   - Magnetic
-                   - Witty/Funny
-                   - Teasing/Warm
-                   - Flirty
-                   - GenZ/Class Clown
-                   - Bold/Direct
-                Do NOT include a Brutal Truth section, Challenge section, or Quote section.
+                Give drill feedback only.
+                Analyze the comedy logic, what landed, what missed, and why.
+                Then provide stronger alternate versions in these exact styles:
+                - Magnetic
+                - CEO
+                - Class Clown
+                - Funny
+                - Witty
+                End with SCORE: X/10
             `;
-            const result = await AIService.generateResponse([{ role: 'user', content: promptText }], 'groq', user?.name || 'AGENT', user?.level || 1, 'coach');
+            const result = await AIService.generateResponse([{ role: 'user', content: promptText }], 'groq', user?.name || 'AGENT', user?.level || 1, 'drill');
             setFeedback(result);
             await completeDrill(20);
             await addDrillLog('Stand-Up Drill', 100, result);

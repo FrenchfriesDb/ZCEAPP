@@ -21,8 +21,8 @@ export default function JournalDrill() {
         setIsLoading(true);
         try {
             const aiFeedback = await AIService.generateResponse([
-                { role: 'user', content: `Analyze this journal entry about a social interaction. Rewrite it how a high-status elite would handle it and give me a mission to improve: ${entry}` }
-            ], 'groq', user?.name || 'AGENT', user?.level || 1, 'coach');
+                { role: 'user', content: `Analyze this journal entry about a social interaction. Give drill feedback only: what they did well, what they did wrong, why it worked or failed socially, then rewrite it in these exact styles: Magnetic, CEO, Class Clown, Funny, Witty. End with SCORE: X/10. Entry: ${entry}` }
+            ], 'groq', user?.name || 'AGENT', user?.level || 1, 'drill');
 
             await addJournalEntry(entry, aiFeedback);
             await completeDrill(20);
