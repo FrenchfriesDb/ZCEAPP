@@ -43,15 +43,6 @@ let _cachedAudio: any | null | undefined;
 const loadAudio = async () => {
     if (Platform.OS === 'web') return null;
     if (_cachedAudio !== undefined) return _cachedAudio;
-    if (
-        typeof (ExpoAudio as any).setAudioModeAsync !== 'function' ||
-        typeof (ExpoAudio as any).requestRecordingPermissionsAsync !== 'function' ||
-        typeof (ExpoAudio as any).AudioRecorder !== 'function' ||
-        !(ExpoAudio as any).RecordingPresets
-    ) {
-        _cachedAudio = null;
-        return null;
-    }
     _cachedAudio = ExpoAudio;
     return _cachedAudio;
 };
@@ -220,10 +211,14 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
         }
 
         const Audio = await loadAudio();
-        if (!Audio) {
+        if (!Audio || typeof Audio.requestRecordingPermissionsAsync !== 'function') {
+            console.error('[ProofModal] expo-audio support check failed', {
+                hasAudio: !!Audio,
+                keys: Audio ? Object.keys(Audio) : [],
+            });
             Alert.alert(
                 'Audio Not Available',
-                'This build does not include the audio recorder. Rebuild the dev client with expo-audio enabled.'
+                'expo-audio did not load correctly in this build. Try reinstalling the simulator app and relaunching the dev build.'
             );
             return;
         }

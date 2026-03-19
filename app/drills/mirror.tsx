@@ -14,18 +14,8 @@ let _cachedAudioBackend: AudioBackend | null | undefined;
 const loadAudioBackend = async (): Promise<AudioBackend | null> => {
     if (isWeb) return null;
     if (_cachedAudioBackend !== undefined) return _cachedAudioBackend;
-
-    if (
-        typeof (ExpoAudio as any).setAudioModeAsync === 'function' &&
-        typeof (ExpoAudio as any).requestRecordingPermissionsAsync === 'function' &&
-        typeof (ExpoAudio as any).AudioRecorder === 'function' &&
-        (ExpoAudio as any).RecordingPresets
-    ) {
-        _cachedAudioBackend = { kind: 'expo-audio', mod: ExpoAudio };
-        return _cachedAudioBackend;
-    }
-    _cachedAudioBackend = null;
-    return null;
+    _cachedAudioBackend = { kind: 'expo-audio', mod: ExpoAudio };
+    return _cachedAudioBackend;
 };
 import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
 import { router } from 'expo-router';
@@ -199,10 +189,14 @@ export default function MirrorDrill() {
         }
 
         const backend = await loadAudioBackend();
-        if (!backend) {
+        if (!backend || typeof backend.mod.requestRecordingPermissionsAsync !== 'function') {
+            console.error('[Mirror] expo-audio support check failed', {
+                hasBackend: !!backend,
+                keys: backend ? Object.keys(backend.mod ?? {}) : [],
+            });
             Alert.alert(
                 'Audio Not Available',
-                'This build does not include audio recording support. Rebuild your dev client after installing native audio modules.'
+                'expo-audio did not load correctly in this build. Try reinstalling the simulator app and relaunching the dev build.'
             );
             return;
         }
@@ -223,6 +217,7 @@ export default function MirrorDrill() {
                 });
             } catch (err) {
                 console.error('[Mirror] Stop error:', err);
+                Alert.alert('Recording Stop Failed', err instanceof Error ? err.message : 'Unable to stop the recording cleanly.');
             }
         } else {
             // START recording — always clean up stale instance first
