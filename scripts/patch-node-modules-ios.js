@@ -22,7 +22,11 @@
  *    redeclares block typedefs and the delegate protocol already defined in
  *    `UpdatesInterface.swift`, which breaks Swift compilation in Xcode 26. The newer
  *    `UpdatesDevLauncherInterface` declarations are the ones used by expo-dev-launcher,
- *    so we remove the duplicate legacy source.
+ *    so we keep the file path for Xcode/Pods, but replace its body with an empty shim.
+ *
+ * 6) expo-dev-menu ships both `DevMenuWindow.swift` and `DevMenuWindow-default.swift`,
+ *    which redeclare `PresentationControllerDelegate` and `DevMenuWindow`. We keep the
+ *    main `DevMenuWindow.swift` source and remove the duplicate `-default` variant.
  *
  * This script is idempotent and safe to run multiple times.
  */
@@ -200,12 +204,43 @@ const updatesExternalInterfaceSwift = p(
   'EXUpdatesInterface',
   'UpdatesExternalInterface.swift'
 );
-if (rmIfExists(updatesExternalInterfaceSwift)) {
+const updatesExternalInterfaceShim = `// Patched by scripts/patch-node-modules-ios.js
+// expo-updates-interface 55.1.3 duplicates declarations that already exist in UpdatesInterface.swift.
+// Keep this file present so CocoaPods/Xcode build inputs stay valid, but leave it empty.
+
+import Foundation
+import ExpoModulesCore
+`;
+if (
+  replaceInFile(updatesExternalInterfaceSwift, (s) => {
+    if (s === updatesExternalInterfaceShim) {
+      return s;
+    }
+    return updatesExternalInterfaceShim;
+  })
+) {
   changed = true;
   log(
-    `[patch-node-modules-ios] Removed duplicate expo-updates-interface source: ${path.relative(
+    `[patch-node-modules-ios] Replaced duplicate expo-updates-interface source with shim: ${path.relative(
       root,
       updatesExternalInterfaceSwift
+    )}`
+  );
+}
+
+// ---- expo-dev-menu duplicate Swift declarations ----
+const devMenuDefaultWindowSwift = p(
+  'node_modules',
+  'expo-dev-menu',
+  'ios',
+  'DevMenuWindow-default.swift'
+);
+if (rmIfExists(devMenuDefaultWindowSwift)) {
+  changed = true;
+  log(
+    `[patch-node-modules-ios] Removed duplicate expo-dev-menu source: ${path.relative(
+      root,
+      devMenuDefaultWindowSwift
     )}`
   );
 }
