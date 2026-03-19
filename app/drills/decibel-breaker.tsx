@@ -1,7 +1,8 @@
 import { View, Text, StyleSheet, Pressable, Alert, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import * as ExpoAudio from 'expo-audio';
 import { useUser } from '@/context/UserContext';
 import { useTimeColors } from '@/hooks/useTimeColors';
 import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
@@ -16,57 +17,299 @@ const TEXT_PASSAGES = [
   "The best part about you is that you don't need to prove anything to anyone. You already know.",
 ];
 
+const DRILL_SECONDS = 5;
+const METER_FLOOR = 40;
+const METER_CEILING = 95;
+
+type DrillStage = 'ready' | 'recording' | 'complete';
+
+const getExpoAudioRecorderClass = (audioMod: any) =>
+  audioMod?.AudioRecorder ?? audioMod?.AudioModule?.AudioRecorder ?? null;
+
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+// expo-audio metering on native is typically dBFS (-160..0). We convert that real input level
+// into a device-estimated dB display range for the UI. It's no longer random, but still not
+// lab-calibrated SPL because phone mics are not precision sound meters.
+const meteringToEstimatedDb = (metering?: number) => {
+  if (typeof metering !== 'number' || !Number.isFinite(metering)) return METER_FLOOR;
+  const normalized = clamp((metering + 60) / 60, 0, 1);
+  return METER_FLOOR + normalized * (METER_CEILING - METER_FLOOR);
+};
+
+const webAmplitudeToEstimatedDb = (amplitude: number) => {
+  const clamped = clamp(amplitude, 0, 1);
+  return METER_FLOOR + clamped * (METER_CEILING - METER_FLOOR);
+};
+
+const getDbQuality = (db: number) => {
+  if (db >= 72) return { label: 'excellent', xp: 18 };
+  if (db >= 64) return { label: 'good', xp: 15 };
+  return { label: 'needs improvement', xp: 12 };
+};
+
 export default function DecibelBreakerDrill() {
   const { completeDrill } = useUser();
   const { palette: timePalette } = useTimeColors();
   const systemColor = timePalette[timePalette.length - 1];
 
   const [passageIdx, setPassageIdx] = useState(0);
-  const [stage, setStage] = useState<'ready' | 'recording' | 'complete'>('ready');
+  const [stage, setStage] = useState<DrillStage>('ready');
   const [recordingTime, setRecordingTime] = useState(0);
-  const [simulatedDb, setSimulatedDb] = useState(50);
+  const [currentDb, setCurrentDb] = useState(METER_FLOOR);
+  const [peakDb, setPeakDb] = useState(METER_FLOOR);
+  const [averageDb, setAverageDb] = useState(METER_FLOOR);
+  const [voiceUri, setVoiceUri] = useState<string | null>(null);
+
+  const recorderRef = useRef<any>(null);
+  const meterIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const stopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dbSamplesRef = useRef<number[]>([]);
+
+  const webStreamRef = useRef<MediaStream | null>(null);
+  const webAudioContextRef = useRef<AudioContext | null>(null);
+  const webAnalyserRef = useRef<AnalyserNode | null>(null);
+  const webSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const webMediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const webChunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
     setPassageIdx(Math.floor(Math.random() * TEXT_PASSAGES.length));
   }, []);
 
-  // Simulate dB level during recording
   useEffect(() => {
-    if (stage !== 'recording') return;
+    return () => {
+      stopAllTimers();
+      cleanupNativeRecorder();
+      cleanupWebAudio();
+    };
+  }, []);
 
-    const timer = setInterval(() => {
-      setRecordingTime(prev => {
-        const next = prev + 1;
-        // Simulate varying dB levels as user "speaks"
-        const newDb = 50 + Math.sin(next * 0.5) * 15 + Math.random() * 10;
-        setSimulatedDb(Math.max(40, Math.min(95, newDb)));
+  const displayDb = stage === 'complete' ? averageDb : currentDb;
+  const meterPercent = useMemo(
+    () => ((displayDb - METER_FLOOR) / (METER_CEILING - METER_FLOOR)) * 100,
+    [displayDb]
+  );
 
-        if (next >= 5) {
-          setStage('complete');
-          setSimulatedDb(50);
-          return 5;
-        }
-        return next;
+  function stopAllTimers() {
+    if (meterIntervalRef.current) {
+      clearInterval(meterIntervalRef.current);
+      meterIntervalRef.current = null;
+    }
+    if (stopTimeoutRef.current) {
+      clearTimeout(stopTimeoutRef.current);
+      stopTimeoutRef.current = null;
+    }
+  }
+
+  function cleanupWebAudio() {
+    webMediaRecorderRef.current = null;
+    webSourceRef.current?.disconnect?.();
+    webSourceRef.current = null;
+    webAnalyserRef.current = null;
+    webStreamRef.current?.getTracks().forEach((track) => track.stop());
+    webStreamRef.current = null;
+    if (webAudioContextRef.current) {
+      webAudioContextRef.current.close().catch(() => {});
+      webAudioContextRef.current = null;
+    }
+  }
+
+  async function cleanupNativeRecorder() {
+    if (recorderRef.current) {
+      try { await recorderRef.current.stop?.(); } catch {}
+      recorderRef.current = null;
+    }
+    try {
+      await ExpoAudio.setAudioModeAsync({
+        allowsRecording: false,
+        playsInSilentMode: true,
       });
-    }, 1000);
+    } catch {}
+  }
 
-    return () => clearInterval(timer);
-  }, [stage]);
-
-  const handleStartRecording = () => {
-    setStage('recording');
+  const resetRunState = () => {
+    stopAllTimers();
+    dbSamplesRef.current = [];
     setRecordingTime(0);
+    setCurrentDb(METER_FLOOR);
+    setPeakDb(METER_FLOOR);
+    setAverageDb(METER_FLOOR);
+    setVoiceUri(null);
+  };
+
+  const pushDbSample = (nextDb: number) => {
+    dbSamplesRef.current.push(nextDb);
+    const peak = Math.max(...dbSamplesRef.current);
+    const avg = dbSamplesRef.current.reduce((sum, value) => sum + value, 0) / dbSamplesRef.current.length;
+    setCurrentDb(nextDb);
+    setPeakDb(peak);
+    setAverageDb(avg);
+  };
+
+  const finalizeRun = async (recordingUri?: string | null) => {
+    stopAllTimers();
+    setRecordingTime(DRILL_SECONDS);
+    if (recordingUri) setVoiceUri(recordingUri);
+    setStage('complete');
+  };
+
+  const startNativeMeteringLoop = (recorder: any) => {
+    meterIntervalRef.current = setInterval(() => {
+      const status = recorder.getStatus?.();
+      const nextTime = Math.min(DRILL_SECONDS, Math.floor((status?.durationMillis ?? 0) / 1000));
+      setRecordingTime(nextTime);
+      pushDbSample(meteringToEstimatedDb(status?.metering));
+    }, 120);
+  };
+
+  const finishNativeRecording = async () => {
+    if (!recorderRef.current) return;
+    const recorder = recorderRef.current;
+    recorderRef.current = null;
+    try {
+      await recorder.stop();
+    } catch {}
+    const uri = recorder.uri ?? null;
+    await cleanupNativeRecorder();
+    await finalizeRun(uri);
+  };
+
+  const startWebMeteringLoop = () => {
+    const analyser = webAnalyserRef.current;
+    if (!analyser) return;
+
+    const dataArray = new Uint8Array(analyser.fftSize);
+    meterIntervalRef.current = setInterval(() => {
+      analyser.getByteTimeDomainData(dataArray);
+      let sumSquares = 0;
+      for (let i = 0; i < dataArray.length; i += 1) {
+        const normalized = (dataArray[i] - 128) / 128;
+        sumSquares += normalized * normalized;
+      }
+      const rms = Math.sqrt(sumSquares / dataArray.length);
+      pushDbSample(webAmplitudeToEstimatedDb(rms * 3.2));
+      setRecordingTime((prev) => Math.min(DRILL_SECONDS, prev + 0.12));
+    }, 120);
+  };
+
+  const finishWebRecording = async () => {
+    stopAllTimers();
+    try {
+      webMediaRecorderRef.current?.stop();
+    } catch {}
+  };
+
+  const handleStartRecording = async () => {
+    resetRunState();
+
+    if (Platform.OS === 'web') {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const AudioContextCtor =
+          (globalThis as any).AudioContext || (globalThis as any).webkitAudioContext;
+        if (!AudioContextCtor) {
+          throw new Error('This browser does not support live audio metering.');
+        }
+
+        const audioContext = new AudioContextCtor();
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 2048;
+        const source = audioContext.createMediaStreamSource(stream);
+        source.connect(analyser);
+
+        webStreamRef.current = stream;
+        webAudioContextRef.current = audioContext;
+        webAnalyserRef.current = analyser;
+        webSourceRef.current = source;
+        webChunksRef.current = [];
+
+        const mimeType = typeof MediaRecorder !== 'undefined' && typeof MediaRecorder.isTypeSupported === 'function'
+          ? ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find((type) => MediaRecorder.isTypeSupported(type)) ?? ''
+          : '';
+        const mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data && event.data.size > 0) webChunksRef.current.push(event.data);
+        };
+        mediaRecorder.onstop = async () => {
+          const blob = new Blob(webChunksRef.current, { type: mimeType || webChunksRef.current[0]?.type || 'audio/webm' });
+          const uri = URL.createObjectURL(blob);
+          cleanupWebAudio();
+          await finalizeRun(uri);
+        };
+        mediaRecorder.start();
+        webMediaRecorderRef.current = mediaRecorder;
+
+        setStage('recording');
+        startWebMeteringLoop();
+        stopTimeoutRef.current = setTimeout(() => {
+          void finishWebRecording();
+        }, DRILL_SECONDS * 1000);
+        return;
+      } catch (err: any) {
+        console.error('[DecibelBreaker] Web record error:', err);
+        Alert.alert('Mic Error', err?.message ?? 'Unable to access the browser microphone.');
+        return;
+      }
+    }
+
+    try {
+      const { granted } = await ExpoAudio.requestRecordingPermissionsAsync();
+      if (!granted) {
+        Alert.alert('Mic Permission Needed', 'Allow microphone access in Settings.');
+        return;
+      }
+
+      await ExpoAudio.setAudioModeAsync({
+        allowsRecording: true,
+        playsInSilentMode: true,
+      });
+
+      const RecorderClass = getExpoAudioRecorderClass(ExpoAudio);
+      if (typeof RecorderClass !== 'function') {
+        throw new Error('expo-audio recorder API is missing from this runtime.');
+      }
+
+      const options = {
+        ...ExpoAudio.RecordingPresets.HIGH_QUALITY,
+        isMeteringEnabled: true,
+      };
+      const recorder = new RecorderClass(options);
+      await recorder.prepareToRecordAsync();
+      recorder.record();
+      recorderRef.current = recorder;
+
+      setStage('recording');
+      startNativeMeteringLoop(recorder);
+      stopTimeoutRef.current = setTimeout(() => {
+        void finishNativeRecording();
+      }, DRILL_SECONDS * 1000);
+    } catch (err: any) {
+      console.error('[DecibelBreaker] Native record error:', err);
+      Alert.alert('Mic Error', err?.message ?? 'Unable to start microphone metering.');
+    }
   };
 
   const handleComplete = async () => {
     try {
-      const dbQuality = simulatedDb > 70 ? 'excellent' : simulatedDb > 60 ? 'good' : 'needs improvement';
-      const xp = simulatedDb > 70 ? 18 : simulatedDb > 60 ? 15 : 12;
+      const resultDb = averageDb;
+      const { label, xp } = getDbQuality(resultDb);
       await completeDrill(xp);
-      Alert.alert('VOLUME PROJECTED', `Diaphragm power detected (${Math.round(simulatedDb)} dB). ${dbQuality}. +${xp} XP awarded.`, [
-        { text: 'FINISH SESSION', onPress: () => router.replace('/') },
-        { text: 'NEXT REP', onPress: () => { setStage('ready'); setRecordingTime(0); setSimulatedDb(50); setPassageIdx(Math.floor(Math.random() * TEXT_PASSAGES.length)); } },
-      ]);
+      Alert.alert(
+        'VOLUME PROJECTED',
+        `Live mic input tracked. Avg ${Math.round(resultDb)} dB, peak ${Math.round(peakDb)} dB. ${label}. +${xp} XP awarded.`,
+        [
+          { text: 'FINISH SESSION', onPress: () => router.replace('/') },
+          {
+            text: 'NEXT REP',
+            onPress: () => {
+              resetRunState();
+              setStage('ready');
+              setPassageIdx(Math.floor(Math.random() * TEXT_PASSAGES.length));
+            },
+          },
+        ]
+      );
     } catch (err) {
       console.error('Drill completion error:', err);
     }
@@ -110,7 +353,7 @@ export default function DecibelBreakerDrill() {
                 • Speak from your diaphragm, not your throat{'\n'}
                 • Project like you're talking to the back of a theater{'\n'}
                 • No mumbling. Every word crisp and strong.{'\n'}
-                • The app tracks dB level. Don't go soft.
+                • Uses live mic metering. Numbers are device-estimated, not lab-calibrated SPL.
               </Text>
             </GlassCard>
 
@@ -136,27 +379,29 @@ export default function DecibelBreakerDrill() {
 
             <GlassCard style={styles.recordingCard}>
               <Text style={[styles.recordingText, { color: '#FF4444' }]}>● RECORDING</Text>
-              <Text style={styles.recordingDesc}>Speak clearly. Project from diaphragm.</Text>
+              <Text style={styles.recordingDesc}>Speak clearly. Project from diaphragm. {Math.min(DRILL_SECONDS, Math.floor(recordingTime))}s / {DRILL_SECONDS}s</Text>
             </GlassCard>
 
-            {/* dB Level Meter */}
             <GlassCard style={styles.meterCard}>
-              <Text style={styles.meterLabel}>VOLUME LEVEL</Text>
-              <Text style={styles.dbValue}>{Math.round(simulatedDb)} dB</Text>
+              <Text style={styles.meterLabel}>LIVE INPUT LEVEL</Text>
+              <Text style={styles.dbValue}>{Math.round(currentDb)} dB</Text>
               <View style={styles.meterBar}>
-                <View style={[
-                  styles.meterFill,
-                  {
-                    width: `${((simulatedDb - 40) / 55) * 100}%`,
-                    backgroundColor: simulatedDb > 70 ? '#00FF00' : simulatedDb > 60 ? '#FFD700' : '#FF6B6B'
-                  }
-                ]} />
+                <View
+                  style={[
+                    styles.meterFill,
+                    {
+                      width: `${clamp(meterPercent, 0, 100)}%`,
+                      backgroundColor: currentDb > 72 ? '#00FF00' : currentDb > 64 ? '#FFD700' : '#FF6B6B',
+                    },
+                  ]}
+                />
               </View>
               <View style={styles.meterLabels}>
                 <Text style={styles.meterMin}>40 dB</Text>
-                <Text style={styles.meterMid}>65 dB (TARGET)</Text>
+                <Text style={styles.meterMid}>65 dB TARGET</Text>
                 <Text style={styles.meterMax}>95 dB</Text>
               </View>
+              <Text style={styles.liveStats}>Peak {Math.round(peakDb)} dB</Text>
             </GlassCard>
           </>
         )}
@@ -165,9 +410,10 @@ export default function DecibelBreakerDrill() {
           <>
             <GlassCard style={styles.completeCard}>
               <Text style={styles.completeTitle}>VOLUME LOCKED ✓</Text>
-              <Text style={styles.dbDisplay}>{Math.round(simulatedDb)} dB</Text>
+              <Text style={styles.dbDisplay}>{Math.round(averageDb)} dB</Text>
+              <Text style={styles.completeSub}>PEAK {Math.round(peakDb)} dB</Text>
               <Text style={styles.completeText}>
-                You just proved you can project with authority. No more mumbling. You own the room.
+                Real mic metering captured your run. This score now reflects your actual input level instead of simulated numbers.
               </Text>
             </GlassCard>
 
@@ -218,7 +464,7 @@ const styles = StyleSheet.create({
 
   recordingCard: { width: '100%', padding: 20, alignItems: 'center', backgroundColor: 'rgba(255, 68, 68, 0.05)', borderColor: 'rgba(255, 68, 68, 0.2)', borderWidth: 1 },
   recordingText: { fontFamily: Fonts.heading, fontSize: 24, marginBottom: 8 },
-  recordingDesc: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary },
+  recordingDesc: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, textAlign: 'center' },
 
   meterCard: { width: '100%', padding: 16, backgroundColor: 'rgba(255,255,255,0.02)' },
   meterLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 8 },
@@ -229,9 +475,11 @@ const styles = StyleSheet.create({
   meterMin: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)' },
   meterMid: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)' },
   meterMax: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)' },
+  liveStats: { fontFamily: Fonts.bodySemi, fontSize: 12, color: Colors.textSecondary, textAlign: 'center', marginTop: 12 },
 
   completeCard: { width: '100%', padding: 20, backgroundColor: 'rgba(0, 245, 255, 0.05)', borderColor: 'rgba(0, 245, 255, 0.2)', borderWidth: 1 },
   completeTitle: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.accentCyan, marginBottom: 12, textAlign: 'center' },
-  dbDisplay: { fontFamily: Fonts.heading, fontSize: 24, color: Colors.accentCyan, marginBottom: 12, textAlign: 'center' },
+  dbDisplay: { fontFamily: Fonts.heading, fontSize: 24, color: Colors.accentCyan, marginBottom: 6, textAlign: 'center' },
+  completeSub: { fontFamily: Fonts.monoBold, fontSize: 10, color: 'rgba(255,255,255,0.55)', letterSpacing: 2, marginBottom: 12, textAlign: 'center' },
   completeText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 20, textAlign: 'center' },
 });
