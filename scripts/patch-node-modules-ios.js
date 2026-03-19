@@ -10,6 +10,11 @@
  *    be available in some Xcode/toolchain setups, and can be picked up by pods builds.
  *    We remove the Tests sources (they are not needed for app builds).
  *
+ * 3) React Native / Reanimated: some CocoaPods/Xcode 26 setups generate the `React-jsi`
+ *    modulemap under `ios/Pods/Headers/Public/jsi` but fail to populate the actual
+ *    `jsi/*.h` headers there, which breaks Reanimated with `'jsi/jsi.h' file not found`.
+ *    We mirror the React Native JSI headers into that pod header directory.
+ *
  * This script is idempotent and safe to run multiple times.
  */
 
@@ -42,6 +47,14 @@ const replaceInFile = (absPath, replacer) => {
       fs.writeFileSync(absPath, after, 'utf8');
       return true;
     }
+  } catch (_) {}
+  return false;
+};
+
+const ensureDir = (absPath) => {
+  try {
+    fs.mkdirSync(absPath, { recursive: true });
+    return true;
   } catch (_) {}
   return false;
 };
@@ -132,6 +145,29 @@ if (
 ) {
   changed = true;
   log(`[patch-node-modules-ios] Removed EXLegacyExpoViewProtocol from: ${path.relative(root, expoAvVideoViewHeader)}`);
+}
+
+// ---- React JSI headers for Reanimated / Worklets ----
+const reactNativeJsiDir = p('node_modules', 'react-native', 'ReactCommon', 'jsi', 'jsi');
+const podPublicJsiDir = p('ios', 'Pods', 'Headers', 'Public', 'jsi', 'jsi');
+if (fs.existsSync(reactNativeJsiDir)) {
+  ensureDir(podPublicJsiDir);
+  try {
+    const headerFiles = fs.readdirSync(reactNativeJsiDir).filter((name) => name.endsWith('.h'));
+    for (const file of headerFiles) {
+      const source = path.join(reactNativeJsiDir, file);
+      const target = path.join(podPublicJsiDir, file);
+      const before = fs.existsSync(target) ? fs.readFileSync(target, 'utf8') : null;
+      const next = fs.readFileSync(source, 'utf8');
+      if (before !== next) {
+        fs.writeFileSync(target, next, 'utf8');
+        changed = true;
+      }
+    }
+    if (headerFiles.length > 0) {
+      log(`[patch-node-modules-ios] Synced React JSI headers into: ${path.relative(root, podPublicJsiDir)}`);
+    }
+  } catch (_) {}
 }
 
 if (!changed) {
