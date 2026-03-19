@@ -35,6 +35,7 @@ const Storage = {
 };
 
 const getRecentLoginError = () => "CRITICAL: Re-authentication Required. For security, you must log out and immediately log back in to change your agent credentials.";
+const STREAK_RECOVERY_GRACE_MS = 10 * 60 * 1000;
 
 
 // --- DEFAULT STATE ---
@@ -49,6 +50,7 @@ const DEFAULT_USER: Partial<UserData> = {
     streak: 0,
     previousStreak: 0,
     streakAtRisk: false,
+    streakRecoveryExpiresAt: null,
     joinDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
     lastActivityDate: null,
     journalLogs: [],
@@ -77,6 +79,7 @@ interface UserData {
     streak: number;
     previousStreak?: number;
     streakAtRisk?: boolean;
+    streakRecoveryExpiresAt?: string | null;
     joinDate: string;
     lastActivityDate: string | null;
     journalLogs: any[];
@@ -219,6 +222,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                             streak: 0,
                             previousStreak: 0,
                             streakAtRisk: false,
+                            streakRecoveryExpiresAt: null,
                             joinDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
                             lastActivityDate: null,
                             journalLogs: [],
@@ -300,6 +304,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         const today = getLocalDateStr();
         const yesterday = getLocalDateStr(-1);
         const lastDate = user.lastActivityDate;
+        const recoveryExpired = !!user.streakRecoveryExpiresAt && new Date(user.streakRecoveryExpiresAt).getTime() <= Date.now();
+
+        if (user.streakAtRisk && recoveryExpired) {
+            _syncUpdate({
+                streakAtRisk: false,
+                previousStreak: 0,
+                streakRecoveryExpiresAt: null,
+            }).catch((err) => console.warn('[UserContext] Failed to expire streak recovery window:', err));
+            return;
+        }
 
         if (!lastDate || lastDate === today || lastDate === yesterday) return;
         if (user.streakAtRisk || (user.streak || 0) <= 1) return;
@@ -311,6 +325,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         _syncUpdate({
             streakAtRisk: true,
             previousStreak,
+            streakRecoveryExpiresAt: new Date(Date.now() + STREAK_RECOVERY_GRACE_MS).toISOString(),
         }).catch((err) => console.warn('[UserContext] Failed to mark streak at risk on load:', err));
     }, [isLoading, user]);
 
@@ -464,6 +479,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 streak: 0,
                 previousStreak: 0,
                 streakAtRisk: false,
+                streakRecoveryExpiresAt: null,
                 journalLogs: [],
                 drillLogs: [],
                 completedQuests: [],
@@ -539,6 +555,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         let streak = Number(current.streak || 0);
         let streakAtRisk = !!current.streakAtRisk;
         let previousStreak = Number(current.previousStreak || 0);
+        let streakRecoveryExpiresAt = current.streakRecoveryExpiresAt || null;
 
         if (!lastDate) {
             console.log('[Streak Engine] First activity ever. Starting streak at 1.');
@@ -546,15 +563,18 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         } else if (lastDate === today) {
             console.log('[Streak Engine] Already active today. Keeping streak at', streak);
             streakAtRisk = false;
+            streakRecoveryExpiresAt = null;
         } else if (lastDate === yesterday) {
             streak += 1;
             streakAtRisk = false;
+            streakRecoveryExpiresAt = null;
             console.log('[Streak Engine] Consecutive day! Streak incremented to', streak);
         } else {
             console.log(`[Streak Engine] Day gap detected (Last: ${lastDate}). Resetting to 1.`);
             previousStreak = streak > 0 ? streak : previousStreak;
             streak = 1;
             streakAtRisk = (previousStreak > 1);
+            streakRecoveryExpiresAt = streakAtRisk ? new Date(Date.now() + STREAK_RECOVERY_GRACE_MS).toISOString() : null;
             if (streakAtRisk) {
                 NotificationService.sendStreakWarning();
             }
@@ -571,6 +591,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             streak,
             previousStreak,
             streakAtRisk,
+            streakRecoveryExpiresAt,
             dailyXp,
             lastActivityDate: today,
             drillLogs: [log, ...(current.drillLogs || [])],
@@ -602,18 +623,22 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         let streak = Number(current.streak || 0);
         let streakAtRisk = !!current.streakAtRisk;
         let previousStreak = Number(current.previousStreak || 0);
+        let streakRecoveryExpiresAt = current.streakRecoveryExpiresAt || null;
 
         if (!lastDate) {
             streak = 1;
         } else if (lastDate === today) {
             streakAtRisk = false;
+            streakRecoveryExpiresAt = null;
         } else if (lastDate === getLocalDateStr(-1)) {
             streak += 1;
             streakAtRisk = false;
+            streakRecoveryExpiresAt = null;
         } else {
             previousStreak = streak > 0 ? streak : previousStreak;
             streak = 1;
             streakAtRisk = previousStreak > 1;
+            streakRecoveryExpiresAt = streakAtRisk ? new Date(Date.now() + STREAK_RECOVERY_GRACE_MS).toISOString() : null;
             if (streakAtRisk) {
                 NotificationService.sendStreakWarning();
             }
@@ -645,6 +670,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             streak,
             previousStreak,
             streakAtRisk,
+            streakRecoveryExpiresAt,
             dailyXp,
             lastActivityDate: freshToday,
             completedQuests: newDayQuests,
@@ -655,6 +681,15 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const recoverStreak = async () => {
         const current = userRef.current;
         if (!current || !current.streakAtRisk) return;
+        if (current.streakRecoveryExpiresAt && new Date(current.streakRecoveryExpiresAt).getTime() <= Date.now()) {
+            await _syncUpdate({
+                streakAtRisk: false,
+                previousStreak: 0,
+                streakRecoveryExpiresAt: null,
+            });
+            Alert.alert('WINDOW CLOSED', 'The charisma recovery window expired. The streak loss is now locked.');
+            return;
+        }
 
         console.log(`[UserContext] Recovering Streak: ${current.previousStreak}`);
         const yesterday = getLocalDateStr(-1);
@@ -662,6 +697,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             streak: current.previousStreak || 1,
             streakAtRisk: false,
             previousStreak: 0,
+            streakRecoveryExpiresAt: null,
             lastActivityDate: yesterday // KEY FIX: Setting this allows today's activity to count as consecutive
         });
     };
@@ -763,6 +799,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             streak: 0,
             previousStreak: 0,
             streakAtRisk: false,
+            streakRecoveryExpiresAt: null,
             lastActivityDate: null,
             completedQuests: [],
             drillLogs: [],
@@ -798,6 +835,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             systemBackups: current.systemBackups - 1,
             lastActivityDate: yesterday,
             streakAtRisk: false, // It's safe now
+            streakRecoveryExpiresAt: null,
         });
 
         Alert.alert(

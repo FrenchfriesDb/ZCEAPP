@@ -218,6 +218,7 @@ export default function DojoScreen() {
   const [nudgeVisible, setNudgeVisible] = useState(false);
   const hasShownNudge = useRef(false);
   const hasShownRecoveryPrompt = useRef(false);
+  const recoveryWindowOpen = !!user?.streakRecoveryExpiresAt && new Date(user.streakRecoveryExpiresAt).getTime() > Date.now();
 
   // Trigger Nudge: "Yesterday you chose average. Today choose power."
   useEffect(() => {
@@ -231,16 +232,16 @@ export default function DojoScreen() {
   }, [user?.streakAtRisk]);
 
   useEffect(() => {
-    if (user?.streakAtRisk && !hasShownRecoveryPrompt.current) {
+    if (user?.streakAtRisk && recoveryWindowOpen && !hasShownRecoveryPrompt.current) {
       setRecoveryQuestion(RECOVERY_QUESTIONS[Math.floor(Math.random() * RECOVERY_QUESTIONS.length)]);
       setRecoveryVisible(true);
       hasShownRecoveryPrompt.current = true;
     }
-    if (!user?.streakAtRisk) {
+    if (!user?.streakAtRisk || !recoveryWindowOpen) {
       hasShownRecoveryPrompt.current = false;
       setRecoveryVisible(false);
     }
-  }, [user?.streakAtRisk]);
+  }, [user?.streakAtRisk, recoveryWindowOpen]);
 
   // Roast rotation with fade
   useEffect(() => {
@@ -289,7 +290,7 @@ export default function DojoScreen() {
 
   const handlePress = (item: any) => {
     if (completedIds.includes(item.id)) return;
-    if (user?.streakAtRisk) {
+    if (user?.streakAtRisk && recoveryWindowOpen) {
       setRecoveryQuestion(RECOVERY_QUESTIONS[Math.floor(Math.random() * RECOVERY_QUESTIONS.length)]);
       setRecoveryVisible(true);
       return;
@@ -450,7 +451,7 @@ export default function DojoScreen() {
         </View>
 
         {/* ═══ SYSTEM BACKUP ALERT ═══ */}
-        {user && (user.streakAtRisk || (new Date().getHours() >= 21 && user.xp === (user.dailyXp?.[new Date().toISOString().split('T')[0]] || 0) && (user.systemBackups || 0) > 0)) && (
+        {user && ((user.streakAtRisk && recoveryWindowOpen) || (new Date().getHours() >= 21 && user.xp === (user.dailyXp?.[new Date().toISOString().split('T')[0]] || 0) && (user.systemBackups || 0) > 0)) && (
           <GlassCard style={[styles.backupBanner, user.streakAtRisk && styles.backupBannerCritical]}>
             <View style={styles.backupBannerContent}>
               <Text style={styles.backupBannerTitle}>
@@ -846,11 +847,11 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   roastCardText: {
-    fontFamily: Fonts.body,
-    fontSize: 14,
+    fontFamily: Fonts.heading,
+    fontSize: 16,
     color: '#FFFFFF',
-    lineHeight: 22,
-    fontWeight: '500', // Making text slightly bolder for "light" feel
+    lineHeight: 24,
+    letterSpacing: 0.3,
   },
   // Backup Banner
   backupBanner: {
