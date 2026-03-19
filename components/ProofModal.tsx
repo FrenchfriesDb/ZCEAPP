@@ -6,7 +6,6 @@ import {
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
-import { Ionicons } from '@expo/vector-icons';
 import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
 import { useTimeColors } from '@/hooks/useTimeColors';
 import { useTextColors } from '@/context/TextColorsContext';
@@ -15,6 +14,11 @@ import { requireOptionalNativeModule } from 'expo-modules-core';
 
 // Web platform check
 const isWeb = Platform.OS === 'web';
+const webSans = 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+const proofBodyFont = isWeb ? webSans : Fonts.body;
+const proofHeadingFont = isWeb ? webSans : Fonts.heading;
+const proofMonoFont = isWeb ? webSans : Fonts.mono;
+const proofMonoBoldFont = isWeb ? webSans : Fonts.monoBold;
 
 const isBrowserAudioSupported = () =>
     typeof navigator !== 'undefined' &&
@@ -313,7 +317,7 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                                     <Image source={{ uri: photoUri }} style={styles.previewImage} />
                                 ) : (
                                     <View style={styles.mediaPlaceholder}>
-                                        <Ionicons name="camera" size={30} color="rgba(255,255,255,0.86)" />
+                                        <Text style={styles.mediaEmoji}>📷</Text>
                                         <Text style={styles.mediaText}>PHOTO</Text>
                                         <Text style={styles.mediaHint}>Camera or Library</Text>
                                     </View>
@@ -326,11 +330,7 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                                 style={[styles.mediaBtn, isRecording && styles.mediaBtnActive]}
                             >
                                 <Animated.View style={{ transform: [{ scale: pulseAnim }], alignItems: 'center' }}>
-                                    <Ionicons
-                                        name={isRecording ? 'radio' : 'mic'}
-                                        size={30}
-                                        color={isRecording ? Colors.accentCyan : 'rgba(255,255,255,0.86)'}
-                                    />
+                                    <Text style={styles.mediaEmoji}>{isRecording ? '🔴' : voiceUri ? '🎙️' : '🎤'}</Text>
                                     <Text style={[styles.mediaText, isRecording && { color: Colors.accentCyan }]}>
                                         {isRecording ? 'TAP TO\nSTOP' : voiceUri ? 'RECORDED ✓' : 'TAP TO\nRECORD'}
                                     </Text>
@@ -339,6 +339,7 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                         </View>
 
                         {/* Status confirmations */}
+                        {isRecording && <Text style={styles.statusMsg}>● Recording now. Tap the mic tile again to stop.</Text>}
                         {voiceUri && !isRecording && <Text style={styles.statusMsg}>✅ Voice proof ready.</Text>}
                         {photoUri && <Text style={styles.statusMsg}>✅ Photo proof attached.</Text>}
                     </ScrollView>
@@ -379,11 +380,11 @@ const styles = StyleSheet.create({
         minHeight: '68%',
         maxHeight: '86%',
     },
-    eyebrow: { fontFamily: Fonts.mono, fontSize: 10, color: Colors.accentCyan, letterSpacing: 3, marginBottom: 6, textAlign: 'center' },
-    title: { fontFamily: Fonts.heading, fontSize: 18, color: '#fff', textAlign: 'center', marginBottom: 20, letterSpacing: 1, lineHeight: 24 },
+    eyebrow: { fontFamily: proofMonoFont, fontSize: 10, color: Colors.accentCyan, letterSpacing: 3, marginBottom: 6, textAlign: 'center' },
+    title: { fontFamily: proofHeadingFont, fontSize: 18, color: '#fff', textAlign: 'center', marginBottom: 20, letterSpacing: 1, lineHeight: 24 },
 
     content: { marginBottom: 20 },
-    sectionLabel: { fontFamily: Fonts.monoBold, fontSize: 9, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, marginBottom: 10 },
+    sectionLabel: { fontFamily: proofMonoBoldFont, fontSize: 9, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, marginBottom: 10 },
     textInput: {
         backgroundColor: 'rgba(255,255,255,0.04)',
         borderWidth: 1,
@@ -391,7 +392,7 @@ const styles = StyleSheet.create({
         borderRadius: Radius.md,
         padding: 14,
         color: '#fff',
-        fontFamily: Fonts.body,
+        fontFamily: proofBodyFont,
         fontSize: 14,
         minHeight: 100,
         textAlignVertical: 'top',
@@ -415,9 +416,12 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0, 245, 255, 0.08)',
     },
     mediaPlaceholder: { alignItems: 'center', gap: 4 },
-    mediaIcon: { fontSize: 26 },
+    mediaEmoji: {
+        fontSize: 28,
+        marginBottom: 4,
+    },
     mediaText: {
-        fontFamily: Fonts.monoBold,
+        fontFamily: proofMonoBoldFont,
         fontSize: 9,
         color: 'rgba(255,255,255,0.35)',
         letterSpacing: 1,
@@ -425,7 +429,7 @@ const styles = StyleSheet.create({
         marginTop: 2,
     },
     mediaHint: {
-        fontFamily: Fonts.mono,
+        fontFamily: proofMonoFont,
         fontSize: 8,
         color: 'rgba(255,255,255,0.2)',
         textAlign: 'center',
@@ -435,7 +439,7 @@ const styles = StyleSheet.create({
         opacity: 0.4,
     },
     previewImage: { width: '100%', height: '100%' },
-    statusMsg: { fontFamily: Fonts.mono, fontSize: 10, color: Colors.accentCyan, marginTop: 4, letterSpacing: 1 },
+    statusMsg: { fontFamily: proofMonoFont, fontSize: 10, color: Colors.accentCyan, marginTop: 4, letterSpacing: 1 },
 
     footer: {
         flexDirection: 'row',
@@ -446,5 +450,5 @@ const styles = StyleSheet.create({
         borderTopColor: 'rgba(255,255,255,0.06)',
     },
     cancelBtn: { padding: 12 },
-    cancelText: { fontFamily: Fonts.monoBold, fontSize: 11, color: 'rgba(255,255,255,0.3)', letterSpacing: 2 },
+    cancelText: { fontFamily: proofMonoBoldFont, fontSize: 11, color: 'rgba(255,255,255,0.3)', letterSpacing: 2 },
 });
