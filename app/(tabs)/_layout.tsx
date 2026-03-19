@@ -78,7 +78,6 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
                 >
                   {tab.icon}
                 </Text>
-                {focused && <View style={[styles.activeIndicator, { backgroundColor: textPrimary, shadowColor: textPrimary }]} />}
               </Pressable>
             );
           })}
@@ -197,15 +196,5 @@ const styles = StyleSheet.create({
     color: Colors.accentPrimary,
     fontFamily: Fonts.monoBold,
     letterSpacing: 1,
-  },
-  activeIndicator: {
-    position: 'absolute',
-    bottom: -1,
-    width: 16,
-    height: 2,
-    borderRadius: 999,
-    shadowOffset: { width: 0, height: 0 },
-    shadowRadius: 4,
-    shadowOpacity: 0.18,
   },
 });
