@@ -11,6 +11,7 @@ import { useTimeColors } from '@/hooks/useTimeColors';
 import { useTextColors } from '@/context/TextColorsContext';
 import GlassButton from './GlassButton';
 import { requireOptionalNativeModule } from 'expo-modules-core';
+import * as ExpoAudio from 'expo-audio';
 
 // Web platform check
 const isWeb = Platform.OS === 'web';
@@ -48,14 +49,12 @@ const loadAudio = async () => {
         _cachedAudio = null;
         return null;
     }
-    try {
-        const mod = await import('expo-audio');
-        _cachedAudio = mod;
-        return _cachedAudio;
-    } catch {
+    if (typeof (ExpoAudio as any).AudioRecorder !== 'function' || !(ExpoAudio as any).RecordingPresets) {
         _cachedAudio = null;
         return null;
     }
+    _cachedAudio = ExpoAudio;
+    return _cachedAudio;
 };
 
 interface ProofModalProps {

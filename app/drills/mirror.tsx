@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, Pressable, Animated, ScrollView, TextInput, Ale
 import { LinearGradient } from 'expo-linear-gradient';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { requireOptionalNativeModule } from 'expo-modules-core';
+import * as ExpoAudio from 'expo-audio';
 // Web platform check
 const isWeb = Platform.OS === 'web';
 
@@ -17,17 +18,12 @@ const loadAudioBackend = async (): Promise<AudioBackend | null> => {
 
     const expoAudioNative = requireOptionalNativeModule<any>('ExpoAudio');
     if (expoAudioNative && typeof expoAudioNative.setAudioModeAsync === 'function') {
-        try {
-            const mod = await import('expo-audio');
-            if (typeof (mod as any).AudioRecorder !== 'function' || !(mod as any).RecordingPresets) {
-                throw new Error('expo-audio recorder API not available');
-            }
-            _cachedAudioBackend = { kind: 'expo-audio', mod };
-            return _cachedAudioBackend;
-        } catch {
+        if (typeof (ExpoAudio as any).AudioRecorder !== 'function' || !(ExpoAudio as any).RecordingPresets) {
             _cachedAudioBackend = null;
             return null;
         }
+        _cachedAudioBackend = { kind: 'expo-audio', mod: ExpoAudio };
+        return _cachedAudioBackend;
     }
     _cachedAudioBackend = null;
     return null;
