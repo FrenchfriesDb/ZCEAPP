@@ -40,6 +40,24 @@ import GlassCard from '@/components/GlassCard';
 import GlassButton from '@/components/GlassButton';
 import { useTimeColors } from '@/hooks/useTimeColors';
 
+const isBrowserAudioSupported = () =>
+    typeof navigator !== 'undefined' &&
+    !!navigator.mediaDevices?.getUserMedia &&
+    typeof MediaRecorder !== 'undefined';
+
+const getWebRecorderMimeType = () => {
+    if (typeof MediaRecorder === 'undefined' || typeof MediaRecorder.isTypeSupported !== 'function') {
+        return '';
+    }
+    const candidates = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/mp4',
+        'audio/ogg;codecs=opus',
+    ];
+    return candidates.find((type) => MediaRecorder.isTypeSupported(type)) ?? '';
+};
+
 const ZANE_LINES = [
     "I swear, you're 10% sass and 90% chaos.",
     "You've got main character energy — I like it.",
@@ -72,6 +90,8 @@ export default function MirrorDrill() {
     const [isRecording, setIsRecording] = useState(false);
     const [voiceUri, setVoiceUri] = useState<string | null>(null);
     const recordingRef = useRef<any>(null);
+    const webStreamRef = useRef<any>(null);
+    const webChunksRef = useRef<any[]>([]);
 
     // Playback state
     const [isPlaying, setIsPlaying] = useState(false);
@@ -104,6 +124,7 @@ export default function MirrorDrill() {
     useEffect(() => {
         return () => {
             try {
+                playbackRef.current?.pause?.();
                 playbackRef.current?.unloadAsync?.();
                 playbackRef.current?.remove?.();
             } catch { }
@@ -111,11 +132,77 @@ export default function MirrorDrill() {
                 recordingRef.current.stopAndUnloadAsync?.().catch(() => { });
                 recordingRef.current.stop?.().catch(() => { });
             }
+            if (webStreamRef.current) {
+                webStreamRef.current.getTracks?.().forEach((track: any) => track.stop());
+                webStreamRef.current = null;
+            }
+            if (voiceUri?.startsWith?.('blob:')) {
+                URL.revokeObjectURL(voiceUri);
+            }
         };
-    }, []);
+    }, [voiceUri]);
 
     // ── TAP TO TOGGLE RECORD / STOP ──
     const handleRecordToggle = async () => {
+        if (isWeb) {
+            if (!isBrowserAudioSupported()) {
+                Alert.alert('Audio Not Available', 'This browser does not support microphone recording.');
+                return;
+            }
+
+            if (isRecording) {
+                setIsRecording(false);
+                try {
+                    recordingRef.current?.stop?.();
+                } catch (err) {
+                    console.error('[Mirror] Web stop error:', err);
+                }
+                return;
+            }
+
+            try {
+                if (voiceUri?.startsWith?.('blob:')) {
+                    URL.revokeObjectURL(voiceUri);
+                }
+                setVoiceUri(null);
+                setIsPlaying(false);
+                playbackRef.current?.pause?.();
+                playbackRef.current = null;
+
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const mimeType = getWebRecorderMimeType();
+                const mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+
+                webStreamRef.current = stream;
+                webChunksRef.current = [];
+
+                mediaRecorder.ondataavailable = (event: any) => {
+                    if (event.data && event.data.size > 0) {
+                        webChunksRef.current.push(event.data);
+                    }
+                };
+                mediaRecorder.onstop = () => {
+                    const blobType = mimeType || webChunksRef.current[0]?.type || 'audio/webm';
+                    const blob = new Blob(webChunksRef.current, { type: blobType });
+                    const uri = URL.createObjectURL(blob);
+                    setVoiceUri(uri);
+                    webChunksRef.current = [];
+                    webStreamRef.current?.getTracks?.().forEach((track: any) => track.stop());
+                    webStreamRef.current = null;
+                    recordingRef.current = null;
+                };
+
+                mediaRecorder.start();
+                recordingRef.current = mediaRecorder;
+                setIsRecording(true);
+                return;
+            } catch (err: any) {
+                console.error('[Mirror] Web start error:', err);
+                Alert.alert('Mic Error', err?.message ?? 'Could not access your microphone in the browser.');
+                return;
+            }
+        }
+
         const backend = await loadAudioBackend();
         if (!backend) {
             Alert.alert(
@@ -185,6 +272,34 @@ export default function MirrorDrill() {
     // ── PLAY BACK the recording ──
     const handlePlayback = async () => {
         if (!voiceUri) return;
+
+        if (isWeb) {
+            try {
+                if (isPlaying && playbackRef.current) {
+                    playbackRef.current.pause();
+                    setIsPlaying(false);
+                    return;
+                }
+
+                if (playbackRef.current) {
+                    playbackRef.current.pause?.();
+                    playbackRef.current = null;
+                }
+
+                const audio = new Audio(voiceUri);
+                playbackRef.current = audio;
+                audio.onended = () => {
+                    setIsPlaying(false);
+                    playbackRef.current = null;
+                };
+                await audio.play();
+                setIsPlaying(true);
+            } catch (err) {
+                console.error('[Mirror] Web playback error:', err);
+                Alert.alert('Playback Error', 'Could not play recording in this browser.');
+            }
+            return;
+        }
 
         const backend = await loadAudioBackend();
         if (!backend) {

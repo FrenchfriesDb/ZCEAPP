@@ -16,6 +16,24 @@ import { requireOptionalNativeModule } from 'expo-modules-core';
 // Web platform check
 const isWeb = Platform.OS === 'web';
 
+const isBrowserAudioSupported = () =>
+    typeof navigator !== 'undefined' &&
+    !!navigator.mediaDevices?.getUserMedia &&
+    typeof MediaRecorder !== 'undefined';
+
+const getWebRecorderMimeType = () => {
+    if (typeof MediaRecorder === 'undefined' || typeof MediaRecorder.isTypeSupported !== 'function') {
+        return '';
+    }
+    const candidates = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/mp4',
+        'audio/ogg;codecs=opus',
+    ];
+    return candidates.find((type) => MediaRecorder.isTypeSupported(type)) ?? '';
+};
+
 // Use expo-audio only. Avoid touching expo-av in builds where ExponentAV is missing.
 let _cachedAudio: any | null | undefined;
 const loadAudio = async () => {
@@ -50,6 +68,8 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
     const [isRecording, setIsRecording] = useState(false);
     const pulseAnim = React.useRef(new Animated.Value(1)).current;
     const recordingRef = React.useRef<any>(null);
+    const webStreamRef = React.useRef<any>(null);
+    const webChunksRef = React.useRef<any[]>([]);
     const { textPrimary } = useTextColors();
     const { palette: timePalette } = useTimeColors();
     const systemColor = timePalette[timePalette.length - 1];
@@ -69,6 +89,18 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
             pulseAnim.setValue(1);
         }
     }, [isRecording, pulseAnim]);
+
+    useEffect(() => {
+        return () => {
+            if (webStreamRef.current) {
+                webStreamRef.current.getTracks?.().forEach((track: any) => track.stop());
+                webStreamRef.current = null;
+            }
+            if (voiceUri?.startsWith?.('blob:')) {
+                URL.revokeObjectURL(voiceUri);
+            }
+        };
+    }, [voiceUri]);
 
     // ── IMAGE: show action sheet on iOS (camera / library), just library on Android/web ──
     const handlePickImage = async () => {
@@ -131,7 +163,57 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
     // ── MIC: tap to toggle record/stop ──
     const handleMicToggle = async () => {
         if (isWeb) {
-            Alert.alert('Not Available', 'Voice recording is not available on web.');
+            if (!isBrowserAudioSupported()) {
+                Alert.alert('Not Available', 'This browser does not support microphone recording.');
+                return;
+            }
+
+            if (isRecording) {
+                setIsRecording(false);
+                try {
+                    recordingRef.current?.stop?.();
+                } catch (err: any) {
+                    console.error('Web recording stop error:', err);
+                }
+                return;
+            }
+
+            try {
+                if (voiceUri?.startsWith?.('blob:')) {
+                    URL.revokeObjectURL(voiceUri);
+                }
+                setVoiceUri(null);
+
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const mimeType = getWebRecorderMimeType();
+                const mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+
+                webStreamRef.current = stream;
+                webChunksRef.current = [];
+
+                mediaRecorder.ondataavailable = (event: any) => {
+                    if (event.data && event.data.size > 0) {
+                        webChunksRef.current.push(event.data);
+                    }
+                };
+                mediaRecorder.onstop = () => {
+                    const blobType = mimeType || webChunksRef.current[0]?.type || 'audio/webm';
+                    const blob = new Blob(webChunksRef.current, { type: blobType });
+                    const uri = URL.createObjectURL(blob);
+                    setVoiceUri(uri);
+                    webChunksRef.current = [];
+                    webStreamRef.current?.getTracks?.().forEach((track: any) => track.stop());
+                    webStreamRef.current = null;
+                    recordingRef.current = null;
+                };
+
+                mediaRecorder.start();
+                recordingRef.current = mediaRecorder;
+                setIsRecording(true);
+            } catch (err: any) {
+                console.error('Web recording start error:', err);
+                Alert.alert('Recording Failed', err?.message ?? 'Unable to start microphone in this browser.');
+            }
             return;
         }
 
@@ -241,8 +323,7 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                             {/* Voice — tap to toggle */}
                             <Pressable
                                 onPress={handleMicToggle}
-                                style={[styles.mediaBtn, isRecording && styles.mediaBtnActive, isWeb && styles.mediaBtnDisabled]}
-                                disabled={isWeb}
+                                style={[styles.mediaBtn, isRecording && styles.mediaBtnActive]}
                             >
                                 <Animated.View style={{ transform: [{ scale: pulseAnim }], alignItems: 'center' }}>
                                     <Ionicons
@@ -250,8 +331,8 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                                         size={30}
                                         color={isRecording ? Colors.accentCyan : 'rgba(255,255,255,0.86)'}
                                     />
-                                    <Text style={[styles.mediaText, isRecording && { color: Colors.accentCyan }, isWeb && { color: Colors.textTertiary }]}>
-                                        {isWeb ? 'WEB\nDISABLED' : isRecording ? 'TAP TO\nSTOP' : voiceUri ? 'RECORDED ✓' : 'TAP TO\nRECORD'}
+                                    <Text style={[styles.mediaText, isRecording && { color: Colors.accentCyan }]}>
+                                        {isRecording ? 'TAP TO\nSTOP' : voiceUri ? 'RECORDED ✓' : 'TAP TO\nRECORD'}
                                     </Text>
                                 </Animated.View>
                             </Pressable>

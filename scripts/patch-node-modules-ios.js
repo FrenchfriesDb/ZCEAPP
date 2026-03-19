@@ -18,6 +18,12 @@
  * 4) React Native JSI: Xcode 26 treats `std::string::data()` as `const char *` in this
  *    header context, which breaks `std::snprintf`. We switch it to `&buffer[0]`.
  *
+ * 5) expo-updates-interface@55.1.3 ships a legacy `UpdatesExternalInterface.swift` that
+ *    redeclares block typedefs and the delegate protocol already defined in
+ *    `UpdatesInterface.swift`, which breaks Swift compilation in Xcode 26. The newer
+ *    `UpdatesDevLauncherInterface` declarations are the ones used by expo-dev-launcher,
+ *    so we remove the duplicate legacy source.
+ *
  * This script is idempotent and safe to run multiple times.
  */
 
@@ -184,6 +190,24 @@ if (
 ) {
   changed = true;
   log(`[patch-node-modules-ios] Patched React Native JSI header in: ${path.relative(root, reactNativeJsiHeader)}`);
+}
+
+// ---- expo-updates-interface duplicate Swift declarations ----
+const updatesExternalInterfaceSwift = p(
+  'node_modules',
+  'expo-updates-interface',
+  'ios',
+  'EXUpdatesInterface',
+  'UpdatesExternalInterface.swift'
+);
+if (rmIfExists(updatesExternalInterfaceSwift)) {
+  changed = true;
+  log(
+    `[patch-node-modules-ios] Removed duplicate expo-updates-interface source: ${path.relative(
+      root,
+      updatesExternalInterfaceSwift
+    )}`
+  );
 }
 
 if (!changed) {
