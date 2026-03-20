@@ -7,13 +7,14 @@ import { Colors, Fonts, Radius } from '@/constants/theme';
 import { TextColorsProvider } from '@/context/TextColorsContext';
 import { useTextColors } from '@/context/TextColorsContext';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import FluentEmoji, { type FluentEmojiName } from '@/components/FluentEmoji';
 
 const TAB_CONFIG = [
-  { name: 'index', label: 'Dojo', icon: '⚔️' },
-  { name: 'quests', label: 'Quests', icon: '🎯' },
-  { name: 'drills', label: 'Drills', icon: '⚡' },
-  { name: 'leaderboard', label: 'Board', icon: '👑' },
-  { name: 'profile', label: 'Profile', icon: '🧬' },
+  { name: 'index', label: 'Dojo', icon: 'crossedSwords' as FluentEmojiName },
+  { name: 'quests', label: 'Quests', icon: 'bullseye' as FluentEmojiName },
+  { name: 'drills', label: 'Drills', icon: 'highVoltage' as FluentEmojiName },
+  { name: 'leaderboard', label: 'Board', icon: 'crown' as FluentEmojiName },
+  { name: 'profile', label: 'Profile', icon: 'dna' as FluentEmojiName },
 ];
 
 function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
@@ -67,17 +68,15 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
                   },
                 ]}
               >
-                <Text
-                  allowFontScaling={false}
+                <FluentEmoji
+                  name={tab.icon}
+                  size={focused ? 27 : 24}
+                  opacity={focused ? 1 : 0.58}
                   style={[
-                    styles.tabIcon,
-                    { color: 'rgba(255,255,255,0.46)' },
-                    focused && styles.tabIconActive,
-                    focused && { color: textPrimary, textShadowColor: textPrimary },
+                    styles.tabIconImage,
+                    focused && styles.tabIconImageActive,
                   ]}
-                >
-                  {tab.icon}
-                </Text>
+                />
               </Pressable>
             );
           })}
@@ -184,6 +183,12 @@ const styles = StyleSheet.create({
     opacity: 1,
     fontSize: 24,
     textShadowRadius: 15,
+  },
+  tabIconImage: {
+    marginVertical: 1,
+  },
+  tabIconImageActive: {
+    transform: [{ scale: 1.04 }],
   },
   tabLabel: {
     fontFamily: Fonts.mono,

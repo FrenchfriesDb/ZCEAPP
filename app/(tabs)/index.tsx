@@ -25,6 +25,7 @@ import ProofModal from '@/components/ProofModal';
 import GlassCard from '@/components/GlassCard';
 import GlassButton from '@/components/GlassButton';
 import XPBar from '@/components/XPBar';
+import FluentEmoji from '@/components/FluentEmoji';
 import { getFirstName, formatDisplayName } from '@/utils/formatters';
 import { AIService } from '@/services/ai';
 import { FIELD_OPS, MICRO_OPS, STANDING_ORDERS, getNightlyRiskSnapshot, pickAdaptiveDojoLoadout } from '@/constants/habitEngine';
@@ -637,7 +638,7 @@ export default function DojoScreen() {
         >
           <View style={styles.quoteHeader}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Text style={styles.emojiIcon}>⚡</Text>
+              <FluentEmoji name="highVoltage" size={18} style={styles.emojiIconImage} />
               <Text allowFontScaling={false} style={styles.quoteLabel}>DAILY QUOTE</Text>
             </View>
             <Text style={styles.quoteTap}>{quoteMode === 'classic' ? 'classic next' : 'personal next'}</Text>
@@ -728,7 +729,7 @@ export default function DojoScreen() {
         <View style={styles.divider} />
         <Pressable onPress={() => setHistoryVisible(true)} style={styles.archivesBtn}>
           <View style={styles.archivesBtnInner}>
-            <Text allowFontScaling={false} style={styles.archivesBtnIcon}>📂</Text>
+            <FluentEmoji name="openFileFolder" size={28} style={styles.archivesBtnIconImage} />
             <View style={{ flex: 1 }}>
               <Text style={styles.archivesBtnTitle}>Archives</Text>
               <Text style={styles.archivesBtnSub}>Training logs, mission journals, Zane entries</Text>
@@ -739,7 +740,7 @@ export default function DojoScreen() {
 
         <Pressable onPress={() => router.push('/research')} style={styles.archivesBtn}>
           <View style={styles.archivesBtnInner}>
-            <Text allowFontScaling={false} style={styles.archivesBtnIcon}>📖</Text>
+            <FluentEmoji name="blueBook" size={28} style={styles.archivesBtnIconImage} />
             <View style={{ flex: 1 }}>
               <Text style={styles.archivesBtnTitle}>Research & Lore</Text>
               <Text style={styles.archivesBtnSub}>Study the social engineering archives</Text>
@@ -1211,6 +1212,9 @@ const styles = StyleSheet.create({
     fontWeight: 'normal',
     letterSpacing: 0,
   },
+  archivesBtnIconImage: {
+    marginRight: 16,
+  },
   archivesBtnTitle: {
     fontFamily: Fonts.heading,
     fontSize: 16,
@@ -1299,6 +1303,9 @@ const styles = StyleSheet.create({
     }),
     fontWeight: 'normal',
     letterSpacing: 0,
+  },
+  emojiIconImage: {
+    marginRight: 2,
   },
   missionTitle: {
     fontFamily: Fonts.heading,

@@ -10,6 +10,7 @@ import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
 import { useTimeColors } from '@/hooks/useTimeColors';
 import { useTextColors } from '@/context/TextColorsContext';
 import GlassButton from './GlassButton';
+import FluentEmoji from './FluentEmoji';
 import * as ExpoAudio from 'expo-audio';
 
 // Web platform check
@@ -62,6 +63,7 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
     const [photoUri, setPhotoUri] = useState<string | null>(null);
     const [voiceUri, setVoiceUri] = useState<string | null>(null);
     const [isRecording, setIsRecording] = useState(false);
+    const [recordingSeconds, setRecordingSeconds] = useState(0);
     const pulseAnim = React.useRef(new Animated.Value(1)).current;
     const recordingRef = React.useRef<any>(null);
     const webStreamRef = React.useRef<any>(null);
@@ -85,6 +87,17 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
             pulseAnim.setValue(1);
         }
     }, [isRecording, pulseAnim]);
+
+    useEffect(() => {
+        if (!isRecording) {
+            setRecordingSeconds(0);
+            return;
+        }
+        const interval = setInterval(() => {
+            setRecordingSeconds((prev) => prev + 1);
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [isRecording]);
 
     useEffect(() => {
         return () => {
@@ -317,7 +330,7 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                                     <Image source={{ uri: photoUri }} style={styles.previewImage} />
                                 ) : (
                                     <View style={styles.mediaPlaceholder}>
-                                        <Text style={styles.mediaEmoji}>📷</Text>
+                                        <FluentEmoji name="camera" size={30} style={styles.mediaEmojiImage} />
                                         <Text style={styles.mediaText}>PHOTO</Text>
                                         <Text style={styles.mediaHint}>Camera or Library</Text>
                                     </View>
@@ -330,17 +343,26 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                                 style={[styles.mediaBtn, isRecording && styles.mediaBtnActive]}
                             >
                                 <Animated.View style={{ transform: [{ scale: pulseAnim }], alignItems: 'center' }}>
-                                    <Text style={styles.mediaEmoji}>{isRecording ? '🔴' : voiceUri ? '🎙️' : '🎤'}</Text>
+                                    {isRecording ? (
+                                        <View style={styles.recordingDot} />
+                                    ) : (
+                                        <FluentEmoji
+                                            name={voiceUri ? 'studioMicrophone' : 'microphone'}
+                                            size={30}
+                                            style={styles.mediaEmojiImage}
+                                        />
+                                    )}
                                     <Text style={[styles.mediaText, isRecording && { color: Colors.accentCyan }]}>
                                         {isRecording ? 'TAP TO\nSTOP' : voiceUri ? 'RECORDED ✓' : 'TAP TO\nRECORD'}
                                     </Text>
+                                    {isRecording && <Text style={styles.recordingCounter}>{recordingSeconds}s</Text>}
                                 </Animated.View>
                             </Pressable>
                         </View>
 
                         {/* Status confirmations */}
-                        {isRecording && <Text style={styles.statusMsg}>● Recording now. Tap the mic tile again to stop.</Text>}
-                        {voiceUri && !isRecording && <Text style={styles.statusMsg}>✅ Voice proof ready.</Text>}
+                        {isRecording && <Text style={styles.statusMsg}>● Recording now. Tap the mic tile again to stop. {recordingSeconds}s captured.</Text>}
+                        {voiceUri && !isRecording && <Text style={styles.statusMsg}>✅ Voice proof ready. Tap the mic tile again if you want a cleaner take.</Text>}
                         {photoUri && <Text style={styles.statusMsg}>✅ Photo proof attached.</Text>}
                     </ScrollView>
 
@@ -420,6 +442,9 @@ const styles = StyleSheet.create({
         fontSize: 28,
         marginBottom: 4,
     },
+    mediaEmojiImage: {
+        marginBottom: 4,
+    },
     mediaText: {
         fontFamily: proofMonoBoldFont,
         fontSize: 9,
@@ -440,6 +465,25 @@ const styles = StyleSheet.create({
     },
     previewImage: { width: '100%', height: '100%' },
     statusMsg: { fontFamily: proofMonoFont, fontSize: 10, color: Colors.accentCyan, marginTop: 4, letterSpacing: 1 },
+    recordingCounter: {
+        fontFamily: proofMonoBoldFont,
+        fontSize: 10,
+        color: Colors.accentCyan,
+        letterSpacing: 1.2,
+        marginTop: 6,
+    },
+    recordingDot: {
+        width: 16,
+        height: 16,
+        borderRadius: 999,
+        backgroundColor: '#FF3B30',
+        marginBottom: 10,
+        shadowColor: '#FF3B30',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.7,
+        shadowRadius: 10,
+        elevation: 5,
+    },
 
     footer: {
         flexDirection: 'row',

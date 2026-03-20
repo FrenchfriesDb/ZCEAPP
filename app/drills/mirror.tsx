@@ -26,6 +26,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useUser } from '@/context/UserContext';
 import GlassCard from '@/components/GlassCard';
 import GlassButton from '@/components/GlassButton';
+import FluentEmoji from '@/components/FluentEmoji';
 import { useTimeColors } from '@/hooks/useTimeColors';
 
 const isBrowserAudioSupported = () =>
@@ -77,6 +78,7 @@ export default function MirrorDrill() {
     // Recording state
     const [isRecording, setIsRecording] = useState(false);
     const [voiceUri, setVoiceUri] = useState<string | null>(null);
+    const [recordingSeconds, setRecordingSeconds] = useState(0);
     const recordingRef = useRef<any>(null);
     const webStreamRef = useRef<any>(null);
     const webChunksRef = useRef<any[]>([]);
@@ -106,6 +108,17 @@ export default function MirrorDrill() {
             glowAnim.stopAnimation();
             glowAnim.setValue(0);
         }
+    }, [isRecording]);
+
+    useEffect(() => {
+        if (!isRecording) {
+            setRecordingSeconds(0);
+            return;
+        }
+        const interval = setInterval(() => {
+            setRecordingSeconds((prev) => prev + 1);
+        }, 1000);
+        return () => clearInterval(interval);
     }, [isRecording]);
 
     // Clean up sound on unmount
@@ -432,7 +445,7 @@ export default function MirrorDrill() {
 
                 {/* Recording status label */}
                 {isRecording && (
-                    <Text style={styles.recordingLabel}>● REC</Text>
+                    <Text style={styles.recordingLabel}>● REC {recordingSeconds}s</Text>
                 )}
 
                 <GlassCard style={styles.promptCard}>
@@ -474,13 +487,31 @@ export default function MirrorDrill() {
                             pressed && { opacity: 0.75 },
                         ]}
                     >
-                        <Text style={[styles.voiceBtnText, isRecording && { color: '#00FF64' }]}>
-                            <Text style={styles.emojiText}>
-                                {isRecording ? '⏹️' : (voiceUri ? '🔴' : '🎙️')}
-                            </Text>{' '}
-                            {isRecording ? 'TAP TO STOP' : (voiceUri ? 'RE-RECORD' : 'TAP TO RECORD')}
-                        </Text>
+                        <View style={styles.voiceBtnContent}>
+                            {isRecording ? (
+                                <View style={styles.voiceIndicatorStop}>
+                                    <View style={styles.voiceIndicatorStopInner} />
+                                </View>
+                            ) : (
+                                <FluentEmoji
+                                    name={voiceUri ? 'microphone' : 'studioMicrophone'}
+                                    size={20}
+                                    style={styles.voiceEmojiImage}
+                                />
+                            )}
+                            <Text style={[styles.voiceBtnText, isRecording && { color: '#00FF64' }]}>
+                                {isRecording ? 'TAP TO STOP' : (voiceUri ? 'RE-RECORD' : 'TAP TO RECORD')}
+                            </Text>
+                        </View>
                     </Pressable>
+
+                    <Text style={styles.voiceStatusText}>
+                        {isRecording
+                            ? `Recording now. Tap again to stop. ${recordingSeconds}s captured.`
+                            : voiceUri
+                                ? (isPlaying ? 'Playback is active. Pause when you are done checking it.' : 'Voice rep captured. Play it back or record again.')
+                                : 'Record a clean voice rep to unlock submit.'}
+                    </Text>
 
                     {/* Playback button — shown after recording is stopped */}
                     {voiceUri && !isRecording && (
@@ -608,7 +639,38 @@ const styles = StyleSheet.create({
         borderColor: Colors.accentCyan + '55',
         backgroundColor: 'rgba(0, 245, 255, 0.05)',
     },
+    voiceBtnContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
     voiceBtnText: { fontFamily: Fonts.monoBold, fontSize: 11, color: Colors.textPrimary, letterSpacing: 1 },
+    voiceEmojiImage: {
+        marginRight: 6,
+    },
+    voiceIndicatorStop: {
+        width: 18,
+        height: 18,
+        borderRadius: 999,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(255, 59, 48, 0.22)',
+        marginRight: 6,
+    },
+    voiceIndicatorStopInner: {
+        width: 8,
+        height: 8,
+        borderRadius: 2,
+        backgroundColor: '#FF3B30',
+    },
+    voiceStatusText: {
+        color: 'rgba(255,255,255,0.72)',
+        fontFamily: Fonts.body,
+        fontSize: 12,
+        lineHeight: 18,
+        textAlign: 'center',
+        marginTop: 2,
+        marginBottom: 2,
+    },
 
     btn: { backgroundColor: '#fff', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 8, marginTop: 20 },
     // Buttons use <GlassButton/> now (global liquid glass look)

@@ -10,6 +10,7 @@ import { useTimeColors } from '@/hooks/useTimeColors';
 import { formatDisplayName } from '@/utils/formatters';
 import StaticMap from '@/components/StaticMap';
 import ProgressGraph from '@/components/ProgressGraph';
+import FluentEmoji from '@/components/FluentEmoji';
 
 export default function ProfileScreen() {
     const { user, signOut, changeUsername, purchaseSystemBackup } = useUser();
@@ -25,7 +26,7 @@ export default function ProfileScreen() {
 
     // Derived Constants
     const levelInfo = XPConfig.getLevel(user?.xp || 0);
-    const systemColor = timePalette[timePalette.length - 1];
+    const systemColor = textColors?.primary ?? textPrimary;
 
     if (!user) return (
         <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', gap: 24, padding: 32 }]}>
@@ -93,10 +94,10 @@ export default function ProfileScreen() {
 
                         <View style={styles.headerActions}>
                             <Pressable onPress={() => router.push('/settings/edit-profile')} style={styles.settingsBtn}>
-                                <Text style={styles.emojiFix}>⚙️</Text>
+                                <FluentEmoji name="gear" size={24} />
                             </Pressable>
                             <Pressable onPress={() => router.push('/settings/notification-settings')} style={styles.settingsBtn}>
-                                <Text style={styles.emojiFix}>🔔</Text>
+                                <FluentEmoji name="bell" size={24} />
                             </Pressable>
                         </View>
                     </View>
@@ -164,7 +165,7 @@ export default function ProfileScreen() {
                 {/* Archives Access */}
                 <GlassCard noPadding style={{ marginBottom: 12 }}>
                     <Pressable onPress={() => setArchivesVisible(true)} style={styles.archivesBtn}>
-                        <Text style={styles.emojiFix}>📂</Text>
+                        <FluentEmoji name="openFileFolder" size={28} />
                         <View style={{ flex: 1 }}>
                             <Text style={styles.archivesBtnTitle}>Archives</Text>
                             <Text style={styles.archivesBtnSub}>Training logs, mission journals, ZANE entries</Text>
