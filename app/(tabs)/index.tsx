@@ -27,8 +27,8 @@ import GlassButton from '@/components/GlassButton';
 import XPBar from '@/components/XPBar';
 import { getFirstName, formatDisplayName } from '@/utils/formatters';
 import { AIService } from '@/services/ai';
-import { FIELD_OPS, MICRO_OPS, STANDING_ORDERS, getNightlyRiskSnapshot, getHarvestReport, pickAdaptiveDojoLoadout } from '@/constants/habitEngine';
-import { buildZaneMemoryContext } from '@/utils/zaneMemory';
+import { FIELD_OPS, MICRO_OPS, STANDING_ORDERS, getNightlyRiskSnapshot, pickAdaptiveDojoLoadout } from '@/constants/habitEngine';
+import { buildZaneMemoryContext, getHarvestReport } from '@/utils/zaneMemory';
 
 const ROASTS = [
   "You didn't talk to anyone today? Bro, I'm a robot and even I'm disappointed.",
