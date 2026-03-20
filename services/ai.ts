@@ -258,8 +258,10 @@ Rules:
 - No fake greetings.
 - No multi-paragraph response.
 - No quotation marks around the whole output.
-- Keep it tight: ${kind === 'roast' ? '1-2 sharp sentences max.' : '1-2 cinematic sentences max.'}
-- If mode is PERSONALIZED, it must reference the user's real behavior, streak, XP, avoidance pattern, missed reps, or recent history when relevant.
+- Keep it tight: ${kind === 'roast' ? '1-2 sharp sentences max, ideally under 22 words.' : '1 short cinematic sentence, ideally under 18 words. Never ramble.'}
+- If mode is PERSONALIZED, it should feel tailored to the user, but it does NOT need to mention stats, streaks, XP, or chat history every time.
+- Personalized signals may reference user data, recent chat themes, emotional patterns, avoided reps, or current pressure when it helps.
+- Sometimes personalized should be subtle and intimate, not obviously data-driven.
 - If mode is CLASSIC, keep it universal and iconic.
 - Never output provider errors, meta commentary, or fallback notices.
 - Avoid repeating phrasing from recent signals.
@@ -270,10 +272,10 @@ ${memoryBlock}
         const userPrompt = kind === 'roast'
             ? mode === 'classic'
                 ? 'Write one brutal classic Zane roast for the home screen.'
-                : 'Write one personalized Zane roast for the home screen using the memory above. Make it specific, data-aware, and not generic.'
+                : 'Write one personalized Zane roast for the home screen using the memory above. Keep it short. Sometimes make it specifically data-aware, sometimes just emotionally or behaviorally personal.'
             : mode === 'classic'
                 ? 'Write one classic Zane quote for the home screen.'
-                : 'Write one personalized Zane quote for the home screen using the memory above. Make it quotable but clearly tied to the user’s real patterns.';
+                : 'Write one personalized Zane quote for the home screen using the memory above. Keep it very short and quotable. It can reference their patterns subtly instead of naming stats directly.';
 
         for (const provider of providers) {
             try {
