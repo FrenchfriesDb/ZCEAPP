@@ -220,8 +220,91 @@ Use the user's data and recent patterns naturally. Mention streaks, XP trends, a
 `;
 
 export type ZaneChatStyle = 'classic' | 'coach' | 'nervous';
+export type HomeSignalKind = 'quote' | 'roast';
+export type HomeSignalMode = 'classic' | 'personalized';
+
+type HomeSignalOptions = {
+    userName?: string;
+    level?: number;
+    kind: HomeSignalKind;
+    mode: HomeSignalMode;
+    memoryContext?: string;
+    recentSignals?: string[];
+};
 
 export const AIService = {
+    async generateHomeSignal({
+        userName = 'AGENT',
+        level = 1,
+        kind,
+        mode,
+        memoryContext,
+        recentSignals = [],
+    }: HomeSignalOptions): Promise<string | null> {
+        const providers: Array<'groq' | 'mistral' | 'deepseek'> = ['groq', 'mistral', 'deepseek'];
+        const recentBlock = recentSignals.length
+            ? `\n\nDO NOT REPEAT OR CLOSELY REWRITE THESE RECENT ${kind.toUpperCase()}S:\n- ${recentSignals.join('\n- ')}`
+            : '';
+        const memoryBlock = memoryContext ? `\n\n${memoryContext}` : '';
+        const systemPrompt = `
+You write only one home-screen ${kind} for ZCE.
+
+Mode: ${mode.toUpperCase()}
+
+Rules:
+- Return plain text only.
+- No markdown.
+- No labels.
+- No fake greetings.
+- No multi-paragraph response.
+- No quotation marks around the whole output.
+- Keep it tight: ${kind === 'roast' ? '1-2 sharp sentences max.' : '1-2 cinematic sentences max.'}
+- If mode is PERSONALIZED, it must reference the user's real behavior, streak, XP, avoidance pattern, missed reps, or recent history when relevant.
+- If mode is CLASSIC, keep it universal and iconic.
+- Never output provider errors, meta commentary, or fallback notices.
+- Avoid repeating phrasing from recent signals.
+${recentBlock}
+${memoryBlock}
+        `.trim();
+
+        const userPrompt = kind === 'roast'
+            ? mode === 'classic'
+                ? 'Write one brutal classic Zane roast for the home screen.'
+                : 'Write one personalized Zane roast for the home screen using the memory above. Make it specific, data-aware, and not generic.'
+            : mode === 'classic'
+                ? 'Write one classic Zane quote for the home screen.'
+                : 'Write one personalized Zane quote for the home screen using the memory above. Make it quotable but clearly tied to the user’s real patterns.';
+
+        for (const provider of providers) {
+            try {
+                const result = await this.generateResponse(
+                    [{ role: 'user', content: userPrompt }],
+                    provider,
+                    userName,
+                    level,
+                    'main',
+                    {
+                        chatStyle: mode === 'classic' ? 'classic' : 'coach',
+                        memoryContext: systemPrompt,
+                    }
+                );
+
+                if (
+                    !result ||
+                    /CRITICAL FAILURE|PROTOCOL ERROR|rate limit|429|console\.groq|billing|connection severed/i.test(result)
+                ) {
+                    continue;
+                }
+
+                return result.replace(/^"+|"+$/g, '').trim();
+            } catch {
+                continue;
+            }
+        }
+
+        return null;
+    },
+
     async generateResponse(
         messages: { role: 'user' | 'assistant' | 'system', content: string }[],
         provider: 'groq' | 'deepseek' | 'kimi' | 'mistral' = 'groq',
@@ -324,7 +407,7 @@ export const AIService = {
             return cleaned;
 
         } catch (error: any) {
-            console.error(`AI Service Error (${provider}):`, error.message);
+            console.warn(`AI Service Warning (${provider}):`, error.message);
 
             // Fallback for network errors too
             if (provider !== 'groq') {

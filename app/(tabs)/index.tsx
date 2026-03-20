@@ -127,6 +127,39 @@ const loadAudio = async () => {
   }
 };
 
+function dedupeSignalText(text: string) {
+  return text.replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+function buildPersonalizedHomeFallback(
+  kind: 'quote' | 'roast',
+  user: any,
+  harvestReport: { todayXp: number; streak: number; avoidedText: string; tone: string },
+  riskSnapshot: { xpAtRisk: number; titleAtRisk: string }
+) {
+  const name = getFirstName(user?.name || 'Agent').toUpperCase();
+  const streak = user?.streakAtRisk ? user?.previousStreak || 0 : user?.streak || 0;
+  const totalXp = Math.round(user?.xp || 0);
+
+  if (kind === 'roast') {
+    if (harvestReport.todayXp <= 0) {
+      return `${name}-la. Day ${streak} streak, 0 XP harvested, ${riskSnapshot.xpAtRisk} XP hanging over the ledge. You're protecting the number, not feeding it.`;
+    }
+    if (/rejection/.test(harvestReport.avoidedText)) {
+      return `${name}-la. ${totalXp} XP in the bank and you're still ducking rejection reps. You want confidence without impact trauma.`;
+    }
+    return `${name}-la. ${harvestReport.todayXp} XP today, but your avoidance pattern is still screaming ${harvestReport.avoidedText}. Cute progress. Incomplete war.`;
+  }
+
+  if (harvestReport.todayXp <= 0) {
+    return `${name}-la. A streak survives when the body moves before the excuse finishes speaking.`;
+  }
+  if (/voice|presence/.test(harvestReport.avoidedText)) {
+    return `${name}-la. Your next level is not hidden in thought. It's trapped behind one louder rep.`;
+  }
+  return `${name}-la. ${harvestReport.todayXp} XP means the system moved today. Now make tomorrow too expensive to skip.`;
+}
+
 export default function DojoScreen() {
   const { user, completeQuest, resetQuests, recoverStreak, deploySystemBackup } = useUser();
   const { palette: timePalette } = useTimeColors();
@@ -163,6 +196,8 @@ export default function DojoScreen() {
   const [roastMode, setRoastMode] = useState<'classic' | 'personalized'>('classic');
   const [quoteMode, setQuoteMode] = useState<'classic' | 'personalized'>('personalized');
   const memoryContext = buildZaneMemoryContext(user);
+  const recentRoastsRef = useRef<string[]>([]);
+  const recentQuotesRef = useRef<string[]>([]);
 
   // ... rest of the component state ...
   const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -288,38 +323,43 @@ export default function DojoScreen() {
     const fallback = kind === 'roast'
       ? ROASTS[(roastIndex + 1) % ROASTS.length]
       : ZANE_QUOTES[(quoteIndex + 1) % ZANE_QUOTES.length];
+    const recentSignalsRef = kind === 'roast' ? recentRoastsRef : recentQuotesRef;
+    const personalizedFallback = buildPersonalizedHomeFallback(kind, user, harvestReport, riskSnapshot);
 
     try {
-      const prompt = kind === 'roast'
-        ? mode === 'classic'
-          ? 'Write one short brutal Zane roast for the home screen. Keep it punchy, 1-2 sentences max.'
-          : 'Write one short personalized Zane roast for the home screen using the provided user memory. Mention real streak/XP/behavior patterns if relevant. 1-2 sentences max.'
-        : mode === 'classic'
-          ? 'Write one short classic Zane quote for the home screen. Cinematic, punchy, 1 sentence.'
-          : 'Write one short personalized Zane quote for the home screen using the provided user memory. It should feel intimate and data-aware, but still quotable. 1-2 sentences max.';
+      const response = await AIService.generateHomeSignal({
+        kind,
+        mode,
+        userName: user?.name || 'AGENT',
+        level: XPConfig.getLevel(user?.xp || 0).level,
+        memoryContext,
+        recentSignals: recentSignalsRef.current,
+      });
 
-      const response = await AIService.generateResponse(
-        [{ role: 'user', content: prompt }],
-        'groq',
-        user?.name || 'AGENT',
-        user?.level || 1,
-        'main',
-        { chatStyle: 'classic', memoryContext }
-      );
+      const nextSignal = (response || (mode === 'personalized' ? personalizedFallback : fallback)).trim();
+      const normalized = dedupeSignalText(nextSignal);
+      const recentNormalized = recentSignalsRef.current.map(dedupeSignalText);
+      const finalSignal = recentNormalized.includes(normalized)
+        ? (mode === 'personalized' ? personalizedFallback : fallback)
+        : nextSignal;
+      recentSignalsRef.current = [finalSignal, ...recentSignalsRef.current].slice(0, 6);
 
       if (kind === 'roast') {
-        setDynamicRoast(response.replace(/^"|"$/g, '').trim());
+        setDynamicRoast(finalSignal.replace(/^"|"$/g, '').trim());
         setRoastMode(mode === 'classic' ? 'personalized' : 'classic');
       } else {
-        setDynamicQuote(response.replace(/^"|"$/g, '').trim());
+        setDynamicQuote(finalSignal.replace(/^"|"$/g, '').trim());
         setQuoteMode(mode === 'classic' ? 'personalized' : 'classic');
       }
     } catch (error) {
+      const safeFallback = mode === 'personalized' ? personalizedFallback : fallback;
       if (kind === 'roast') {
-        setDynamicRoast(fallback);
+        setDynamicRoast(safeFallback);
+        recentRoastsRef.current = [safeFallback, ...recentRoastsRef.current].slice(0, 6);
         setRoastIndex((prev) => (prev + 1) % ROASTS.length);
       } else {
-        setDynamicQuote(fallback);
+        setDynamicQuote(safeFallback);
+        recentQuotesRef.current = [safeFallback, ...recentQuotesRef.current].slice(0, 6);
         setQuoteIndex((prev) => (prev + 1) % ZANE_QUOTES.length);
       }
     }
