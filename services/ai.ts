@@ -151,13 +151,78 @@ RULES:
 - If the user input is strong, say exactly why.
 `;
 
+export const ZANE_COACH_ANALYST_PROMPT = `
+You are Zane-Coach Protocol.
+
+You sound grounded, psychologically sharp, and direct.
+You validate real struggle without turning it into permission to stay weak.
+You do not baby the user. You do not fake-hype them either.
+
+Tone:
+- observant
+- practical
+- blunt
+- emotionally real
+- high standards
+
+Core style:
+- explain what their mind is doing
+- explain the reframe
+- give one brutal truth
+- give one small but real drill
+- end with a hard line worth remembering
+
+Preferred structure:
+1. Mindset Analysis
+2. Reprogramming
+3. 1 Brutal Truth
+4. Drill of the Day
+5. Zane-Style Quote to Embody
+
+Use the user's actual streaks, XP, avoided reps, and recent history whenever available.
+`;
+
+export const ZANE_NERVOUS_SYSTEM_PROMPT = `
+You are Nervous System Zane.
+
+You explain social fear, freeze, tension, shutdown, and recovery using real neuroscience and body-state language.
+You are still intense, still demanding, and still anti-excuse, but your tone is more diagnostic than theatrical.
+
+Tone:
+- body-aware
+- precise
+- psychologically literate
+- intimate
+- no therapy fluff
+- no fake comfort
+
+Focus:
+- nervous system state
+- ladder/activation/freeze/shutdown patterns
+- social threat detection
+- micro reps that help the user climb state
+- force action, not endless introspection
+
+Preferred structure:
+1. State Diagnosis
+2. Why the Body Is Doing This
+3. Repatterning / Climb Plan
+4. Non-Negotiable Reps
+5. Hard closer
+
+Use the user's data and recent patterns naturally. Mention streaks, XP trends, avoidance patterns, and prior chat themes when relevant.
+`;
+
+export type ZaneChatStyle = 'classic' | 'coach' | 'nervous';
+
 export const AIService = {
     async generateResponse(
         messages: { role: 'user' | 'assistant' | 'system', content: string }[],
         provider: 'groq' | 'deepseek' | 'kimi' | 'mistral' = 'groq',
         userName: string = 'AGENT',
         level: number = 1,
-        promptType: 'main' | 'coach' | 'drill' = 'main'
+        promptType: 'main' | 'coach' | 'drill' = 'main',
+        options?: { chatStyle?: ZaneChatStyle; memoryContext?: string }
     ): Promise<string> {
         let apiKey = '';
         let apiUrl = '';
@@ -187,18 +252,26 @@ export const AIService = {
             }
 
             const technicalConstraints = promptType === 'main'
-                ? "\n\nFINAL REMINDER: NO MARKDOWN BOLDING. NO POST-CLOSER TEXT. VARY YOUR DRILLS—NEVER REPEAT THE 'ONE STEP' MOTIVATION. END IMMEDIATELY AFTER THE CLOSER."
+                ? "\n\nFINAL REMINDER: NO MARKDOWN BOLDING. NO POST-CLOSER TEXT. VARY YOUR DRILLS—NEVER REPEAT THE SAME ADVICE. REFERENCE REAL USER DATA WHEN PROVIDED. END IMMEDIATELY AFTER THE CLOSER."
                 : promptType === 'coach'
                     ? "\n\nTECHNICAL RULE: NO MARKDOWN BOLDING. INCLUDE LOGIC, TIPS, AND A SCORE (X/10). END ONLY WITH THE QUOTE."
                     : "\n\nTECHNICAL RULE: NO MARKDOWN BOLDING. FOLLOW THE DRILL FEEDBACK FORMAT EXACTLY. END WITH SCORE: X/10.";
 
+            const mainPrompt =
+                options?.chatStyle === 'coach'
+                    ? ZANE_COACH_ANALYST_PROMPT
+                    : options?.chatStyle === 'nervous'
+                        ? ZANE_NERVOUS_SYSTEM_PROMPT
+                        : ZANE_SYSTEM_PROMPT;
+
             const basePrompt =
                 promptType === 'main'
-                    ? ZANE_SYSTEM_PROMPT
+                    ? mainPrompt
                     : promptType === 'coach'
                         ? ZANE_COACH_PROMPT
                         : ZANE_DRILL_FEEDBACK_PROMPT;
-            const unifiedSystemPrompt = `YOU ARE SPEAKING TO ${userName.toUpperCase()}. THEY ARE LEVEL ${level}.\n\n` + basePrompt + technicalConstraints;
+            const memoryContext = options?.memoryContext ? `\n\n${options.memoryContext}` : '';
+            const unifiedSystemPrompt = `YOU ARE SPEAKING TO ${userName.toUpperCase()}. THEY ARE LEVEL ${level}.\n\n` + basePrompt + technicalConstraints + memoryContext;
 
             const response = await fetch(apiUrl, {
                 method: 'POST',

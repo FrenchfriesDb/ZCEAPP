@@ -4,11 +4,12 @@ import { View, Text, StyleSheet, ScrollView, TextInput, Pressable, KeyboardAvoid
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Fonts, FontSizes, Spacing, Radius } from '@/constants/theme';
 import GlassCard from '@/components/GlassCard';
-import { AIService, ZANE_SYSTEM_PROMPT } from '@/services/ai';
+import { AIService, type ZaneChatStyle } from '@/services/ai';
 import { useUser } from '@/context/UserContext';
 import { useNavigation, router } from 'expo-router';
 import { useTimeColors } from '@/hooks/useTimeColors';
 import { getFirstName } from '@/utils/formatters';
+import { buildZaneMemoryContext } from '@/utils/zaneMemory';
 
 interface Message {
     id: number;
@@ -24,16 +25,22 @@ const getTimeString = () => {
 
 export default function ChatScreen() {
     const navigation = useNavigation();
-    const { user, addChatMessage, clearChat } = useUser();
+    const { user, addChatMessage, clearChat, updateProfile } = useUser();
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
+    const [chatStyle, setChatStyle] = useState<ZaneChatStyle>((user?.zaneChatStyle as ZaneChatStyle) || 'classic');
     const scrollRef = useRef<ScrollView>(null);
     const [isKeyboardActive, setIsKeyboardActive] = useState(false);
     const timePalette = useTimeColors();
     const systemColor = timePalette[0];
     const dotAnim = useRef(new Animated.Value(0)).current;
     const pulseAnim = useRef(new Animated.Value(1)).current;
+    const memoryContext = buildZaneMemoryContext(user);
+
+    useEffect(() => {
+        setChatStyle((user?.zaneChatStyle as ZaneChatStyle) || 'classic');
+    }, [user?.zaneChatStyle]);
 
     useEffect(() => {
         Animated.loop(
@@ -75,7 +82,9 @@ export default function ChatScreen() {
                         [{ role: 'user', content: 'REQUEST: AUDIT OPENING. Start the session.' }],
                         'groq',
                         user?.name?.split(' ')[0] || 'AGENT',
-                        user?.level || 1
+                        user?.level || 1,
+                        'main',
+                        { chatStyle, memoryContext }
                     );
                     setMessages([{
                         id: 0,
@@ -94,7 +103,7 @@ export default function ChatScreen() {
             };
             fetchWelcome();
         }
-    }, [user?.email]);
+    }, [user?.email, chatStyle]);
 
     useEffect(() => {
         if (isTyping) {
@@ -150,7 +159,9 @@ export default function ChatScreen() {
                 history,
                 'groq',
                 user?.name || 'AGENT',
-                user?.level || 1
+                user?.level || 1,
+                'main',
+                { chatStyle, memoryContext }
             );
 
             // Fail-safe: Strip any trailing fluff added after the official closer
@@ -207,6 +218,32 @@ export default function ChatScreen() {
                     <Text style={styles.purgeText}>PURGE HISTORY</Text>
                 </Pressable>
             </View>
+
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.styleSelectorScroll}
+                contentContainerStyle={styles.styleSelectorRow}
+            >
+                {([
+                    { id: 'classic', label: 'CLASSIC ZANE' },
+                    { id: 'coach', label: 'ZANE-COACH' },
+                    { id: 'nervous', label: 'NERVOUS SYSTEM' },
+                ] as { id: ZaneChatStyle; label: string }[]).map((option) => (
+                    <Pressable
+                        key={option.id}
+                        onPress={async () => {
+                            setChatStyle(option.id);
+                            await updateProfile({ zaneChatStyle: option.id });
+                        }}
+                        style={[styles.stylePill, chatStyle === option.id && styles.stylePillActive]}
+                    >
+                        <Text style={[styles.stylePillText, chatStyle === option.id && styles.stylePillTextActive]}>
+                            {option.label}
+                        </Text>
+                    </Pressable>
+                ))}
+            </ScrollView>
 
             <KeyboardAvoidingView
                 style={styles.chatArea}
@@ -312,6 +349,29 @@ const styles = StyleSheet.create({
     backIconHeader: { color: '#fff', fontSize: 18, fontWeight: '800' },
     purgeBtn: { padding: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', borderRadius: 4 },
     purgeText: { color: Colors.textTertiary, fontSize: 8, fontFamily: Fonts.monoBold },
+    styleSelectorScroll: { maxHeight: 46 },
+    styleSelectorRow: { paddingHorizontal: Spacing.lg, paddingBottom: 8, gap: 8 },
+    stylePill: {
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: Radius.pill,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.08)',
+        backgroundColor: 'rgba(255,255,255,0.03)',
+    },
+    stylePillActive: {
+        borderColor: 'rgba(255,255,255,0.18)',
+        backgroundColor: 'rgba(255,255,255,0.08)',
+    },
+    stylePillText: {
+        color: 'rgba(255,255,255,0.55)',
+        fontSize: 9,
+        fontFamily: Fonts.monoBold,
+        letterSpacing: 1,
+    },
+    stylePillTextActive: {
+        color: '#FFFFFF',
+    },
 
     chatArea: { flex: 1 },
     messages: { flex: 1 },

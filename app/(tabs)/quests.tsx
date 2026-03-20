@@ -9,6 +9,7 @@ import ProofModal from '@/components/ProofModal';
 import { useUser } from '@/context/UserContext';
 import { useTextColors } from '@/context/TextColorsContext';
 import { useTimeColors } from '@/hooks/useTimeColors';
+import { MICRO_OPS, getQuestTierProfile } from '@/constants/habitEngine';
 
 const CATEGORIES = [
     { id: 'all', label: 'ALL', color: '#FFFFFF' },
@@ -80,6 +81,8 @@ export default function QuestsScreen() {
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [questBatch, setQuestBatch] = useState(0);
     const [shuffledQuests, setShuffledQuests] = useState(() => shuffleArray(QUESTS));
+    const tierProfile = getQuestTierProfile(user);
+    const featuredMicroOps = useMemo(() => shuffleArray(MICRO_OPS).slice(0, Math.max(3, tierProfile.microCount + 1)), [user?.streak, user?.xp]);
 
     const systemColor = timePalette[timePalette.length - 1];
     const questPrimary = timePalette[0] ?? themeTextPrimary ?? '#FF0F7B';
@@ -197,6 +200,39 @@ export default function QuestsScreen() {
                         </View>
                     </View>
                 </View>
+
+                <GlassCard style={styles.microOpsCard}>
+                    <Text style={styles.microOpsLabel}>MICRO OPS</Text>
+                    <Text style={styles.microOpsBody}>
+                        These are your low-friction streak savers. They do not replace Standing Orders or Field Quests. They make sure you always have a first rep.
+                    </Text>
+                    <View style={styles.microOpsList}>
+                        {featuredMicroOps.map((op) => {
+                            const completed = completedIds.includes(op.id);
+                            return (
+                                <Pressable
+                                    key={op.id}
+                                    onPress={() => !completed && handleToggle({
+                                        id: op.id,
+                                        icon: op.icon,
+                                        title: op.title,
+                                        description: op.desc,
+                                        xpReward: op.xp,
+                                        category: op.category || 'social',
+                                    })}
+                                    style={[styles.microOpRow, completed && styles.microOpRowDone]}
+                                >
+                                    <Text style={styles.microOpIcon}>{completed ? '✓' : op.icon}</Text>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={styles.microOpTitle}>{op.title}</Text>
+                                        <Text style={styles.microOpDesc}>{op.desc}</Text>
+                                    </View>
+                                    <Text style={styles.microOpXp}>{completed ? 'DONE' : `+${op.xp}`}</Text>
+                                </Pressable>
+                            );
+                        })}
+                    </View>
+                </GlassCard>
 
                 {allDone && selectedCategory === 'all' && (
                     <View style={styles.rotateContainer}>
@@ -358,6 +394,68 @@ const styles = StyleSheet.create({
         fontSize: 10,
         color: 'rgba(255,255,255,0.5)',
         letterSpacing: 2,
+    },
+    microOpsCard: {
+        width: '100%',
+        padding: 16,
+        backgroundColor: 'rgba(255,255,255,0.035)',
+        borderColor: 'rgba(255,255,255,0.08)',
+        marginBottom: 6,
+    },
+    microOpsLabel: {
+        fontFamily: Fonts.monoBold,
+        fontSize: 10,
+        color: '#8D8D8D',
+        letterSpacing: 2.5,
+        marginBottom: 8,
+    },
+    microOpsBody: {
+        fontFamily: Fonts.body,
+        fontSize: 13,
+        color: 'rgba(255,255,255,0.62)',
+        lineHeight: 19,
+    },
+    microOpsList: {
+        gap: 10,
+        marginTop: 14,
+    },
+    microOpRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 10,
+        padding: 12,
+        borderRadius: Radius.md,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.08)',
+        backgroundColor: 'rgba(255,255,255,0.025)',
+    },
+    microOpRowDone: {
+        opacity: 0.5,
+    },
+    microOpIcon: {
+        fontSize: 18,
+        width: 24,
+        textAlign: 'center',
+    },
+    microOpTitle: {
+        fontFamily: Fonts.heading,
+        fontSize: 12,
+        color: '#FFFFFF',
+        marginBottom: 4,
+        letterSpacing: 0.4,
+    },
+    microOpDesc: {
+        fontFamily: Fonts.body,
+        fontSize: 12,
+        color: 'rgba(255,255,255,0.55)',
+        lineHeight: 17,
+    },
+    microOpXp: {
+        fontFamily: Fonts.monoBold,
+        fontSize: 9,
+        color: Colors.accentCyan,
+        letterSpacing: 1,
+        marginTop: 2,
     },
     categoryContainer: {
         paddingHorizontal: Spacing.lg,

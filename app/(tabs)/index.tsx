@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   View, Text, ScrollView, Pressable, Animated, Dimensions,
-  KeyboardAvoidingView, Platform, TextInput, Modal, Alert, StyleSheet, FlatList, Image,
+  KeyboardAvoidingView, Platform, TextInput, Modal, Alert, StyleSheet, FlatList, Image, Share,
 } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -26,6 +26,9 @@ import GlassCard from '@/components/GlassCard';
 import GlassButton from '@/components/GlassButton';
 import XPBar from '@/components/XPBar';
 import { getFirstName, formatDisplayName } from '@/utils/formatters';
+import { AIService } from '@/services/ai';
+import { FIELD_OPS, MICRO_OPS, STANDING_ORDERS, getNightlyRiskSnapshot, getHarvestReport, pickAdaptiveDojoLoadout } from '@/constants/habitEngine';
+import { buildZaneMemoryContext } from '@/utils/zaneMemory';
 
 const ROASTS = [
   "You didn't talk to anyone today? Bro, I'm a robot and even I'm disappointed.",
@@ -154,6 +157,11 @@ export default function DojoScreen() {
   const xpBarColors = useXPBarColors();
   const [roastIndex, setRoastIndex] = useState(() => Math.floor(Math.random() * ROASTS.length));
   const [quoteIndex, setQuoteIndex] = useState(() => Math.floor(Math.random() * ZANE_QUOTES.length));
+  const [dynamicRoast, setDynamicRoast] = useState<string | null>(null);
+  const [dynamicQuote, setDynamicQuote] = useState<string | null>(null);
+  const [roastMode, setRoastMode] = useState<'classic' | 'personalized'>('classic');
+  const [quoteMode, setQuoteMode] = useState<'classic' | 'personalized'>('personalized');
+  const memoryContext = buildZaneMemoryContext(user);
 
   // ... rest of the component state ...
   const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -206,8 +214,10 @@ export default function DojoScreen() {
     }
   };
 
-  const [dailyMissions, setDailyMissions] = useState<any[]>(() => pick8(DAILY_MISSION_POOL));
-  const [fieldQuests, setFieldQuests] = useState<any[]>(() => pick8(QUEST_POOL));
+  const initialLoadout = useMemo(() => pickAdaptiveDojoLoadout(user), [user?.email]);
+  const [microOps, setMicroOps] = useState<any[]>(() => initialLoadout.microOps);
+  const [dailyMissions, setDailyMissions] = useState<any[]>(() => initialLoadout.standingOrders);
+  const [fieldQuests, setFieldQuests] = useState<any[]>(() => initialLoadout.fieldOps);
   const [modalVisible, setModalVisible] = useState(false);
   const [historyVisible, setHistoryVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
@@ -219,6 +229,24 @@ export default function DojoScreen() {
   const hasShownNudge = useRef(false);
   const hasShownRecoveryPrompt = useRef(false);
   const recoveryWindowOpen = !!user?.streakRecoveryExpiresAt && new Date(user.streakRecoveryExpiresAt).getTime() > Date.now();
+  const riskSnapshot = useMemo(() => getNightlyRiskSnapshot(user), [user]);
+  const harvestReport = useMemo(() => getHarvestReport(user), [user]);
+  const midnightCountdown = useMemo(() => {
+    const now = new Date();
+    const midnight = new Date(now);
+    midnight.setHours(24, 0, 0, 0);
+    const diff = Math.max(0, midnight.getTime() - now.getTime());
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    return `${hours}H ${String(minutes).padStart(2, '0')}M`;
+  }, [user?.lastActivityDate, user?.dailyXp, user?.streakAtRisk]);
+
+  useEffect(() => {
+    const loadout = pickAdaptiveDojoLoadout(user);
+    setMicroOps(loadout.microOps);
+    setDailyMissions(loadout.standingOrders);
+    setFieldQuests(loadout.fieldOps);
+  }, [user?.email]);
 
   // Trigger Nudge: "Yesterday you chose average. Today choose power."
   useEffect(() => {
@@ -254,11 +282,59 @@ export default function DojoScreen() {
     return () => clearInterval(interval);
   }, [fadeAnim]);
 
+  const refreshSignal = async (kind: 'roast' | 'quote', modeOverride?: 'classic' | 'personalized') => {
+    const mode = modeOverride || (kind === 'roast' ? roastMode : quoteMode);
+    const fallback = kind === 'roast'
+      ? ROASTS[(roastIndex + 1) % ROASTS.length]
+      : ZANE_QUOTES[(quoteIndex + 1) % ZANE_QUOTES.length];
+
+    try {
+      const prompt = kind === 'roast'
+        ? mode === 'classic'
+          ? 'Write one short brutal Zane roast for the home screen. Keep it punchy, 1-2 sentences max.'
+          : 'Write one short personalized Zane roast for the home screen using the provided user memory. Mention real streak/XP/behavior patterns if relevant. 1-2 sentences max.'
+        : mode === 'classic'
+          ? 'Write one short classic Zane quote for the home screen. Cinematic, punchy, 1 sentence.'
+          : 'Write one short personalized Zane quote for the home screen using the provided user memory. It should feel intimate and data-aware, but still quotable. 1-2 sentences max.';
+
+      const response = await AIService.generateResponse(
+        [{ role: 'user', content: prompt }],
+        'groq',
+        user?.name || 'AGENT',
+        user?.level || 1,
+        'main',
+        { chatStyle: 'classic', memoryContext }
+      );
+
+      if (kind === 'roast') {
+        setDynamicRoast(response.replace(/^"|"$/g, '').trim());
+        setRoastMode(mode === 'classic' ? 'personalized' : 'classic');
+      } else {
+        setDynamicQuote(response.replace(/^"|"$/g, '').trim());
+        setQuoteMode(mode === 'classic' ? 'personalized' : 'classic');
+      }
+    } catch (error) {
+      if (kind === 'roast') {
+        setDynamicRoast(fallback);
+        setRoastIndex((prev) => (prev + 1) % ROASTS.length);
+      } else {
+        setDynamicQuote(fallback);
+        setQuoteIndex((prev) => (prev + 1) % ZANE_QUOTES.length);
+      }
+    }
+  };
+
+  useEffect(() => {
+    void refreshSignal('roast', 'classic');
+    void refreshSignal('quote', 'personalized');
+  }, [user?.email]);
+
 
 
 
 
   const completedIds = user?.completedQuests || [];
+  const allMicroDone = microOps.length > 0 && microOps.every(q => completedIds.includes(q.id));
   const allQuestsDone = fieldQuests.length > 0 && fieldQuests.every(q => completedIds.includes(q.id));
   const allDailyDone = dailyMissions.length > 0 && dailyMissions.every(m => completedIds.includes(m.id));
 
@@ -279,13 +355,33 @@ export default function DojoScreen() {
   const rebootDaily = async () => {
     const oldIds = dailyMissions.map(m => m.id);
     await resetQuests(oldIds);
-    setDailyMissions(pick8(DAILY_MISSION_POOL));
+    setDailyMissions(pickAdaptiveDojoLoadout(user).standingOrders);
   };
 
   const rebootQuests = async () => {
     const oldIds = fieldQuests.map(q => q.id);
     await resetQuests(oldIds);
-    setFieldQuests(pick8(QUEST_POOL));
+    setFieldQuests(pickAdaptiveDojoLoadout(user).fieldOps);
+  };
+
+  const rebootMicro = async () => {
+    const oldIds = microOps.map(q => q.id);
+    await resetQuests(oldIds);
+    setMicroOps(pickAdaptiveDojoLoadout(user).microOps);
+  };
+
+  const shareFriendChallenge = async () => {
+    const challenge = fieldQuests[0] || dailyMissions[0] || microOps[0];
+    if (!challenge) return;
+    await Share.share({
+      message: `ZCE FRIEND CHALLENGE\n\nQuest: ${challenge.title}\n${challenge.desc}\nReward: +${challenge.xp} XP\n\nMeet me in the app and complete it today.`,
+    });
+  };
+
+  const shareHarvestReport = async () => {
+    await Share.share({
+      message: `ZCE HARVEST REPORT\n\n${getFirstName(user?.name)}\nStreak: ${harvestReport.streak} days\nXP Today: ${harvestReport.todayXp}\nStatus: ${harvestReport.tone.toUpperCase()}\nAvoided: ${harvestReport.avoidedText}\n\nBuilt in ZCE.`,
+    });
   };
 
   const handlePress = (item: any) => {
@@ -462,6 +558,20 @@ export default function DojoScreen() {
                   ? "Your streak is offline. Answer the charisma recovery prompt to repair the engine."
                   : "9PM and zero reps. Use a System Backup or get to work."}
               </Text>
+              <View style={styles.riskMetricsRow}>
+                <View style={styles.riskMetricPill}>
+                  <Text style={styles.riskMetricLabel}>AT RISK</Text>
+                  <Text style={styles.riskMetricValue}>{riskSnapshot.xpAtRisk} XP</Text>
+                </View>
+                <View style={styles.riskMetricPill}>
+                  <Text style={styles.riskMetricLabel}>WINDOW</Text>
+                  <Text style={styles.riskMetricValue}>{midnightCountdown}</Text>
+                </View>
+                <View style={styles.riskMetricPill}>
+                  <Text style={styles.riskMetricLabel}>COST</Text>
+                  <Text style={styles.riskMetricValue}>{riskSnapshot.titleAtRisk}</Text>
+                </View>
+              </View>
 
               {user.streakAtRisk ? (
                 <GlassButton
@@ -507,7 +617,7 @@ export default function DojoScreen() {
 
         {/* ═══ ZANE ROAST OF THE DAY ═══ */}
         <GlassCard
-          onPress={() => setRoastIndex((roastIndex + 1) % ROASTS.length)}
+          onPress={() => { void refreshSignal('roast'); }}
           style={styles.roastCard}
         >
           <View style={styles.roastHeader}>
@@ -515,14 +625,14 @@ export default function DojoScreen() {
               <Text style={styles.emojiIcon}>🔥</Text>
               <Text allowFontScaling={false} style={styles.roastLabel}>ZANE&apos;S ROAST</Text>
             </View>
-            <Text style={styles.roastTap}>tap to refresh</Text>
+            <Text style={styles.roastTap}>{roastMode === 'classic' ? 'classic next' : 'personal next'}</Text>
           </View>
-          <Text style={styles.roastCardText}>“{ROASTS[roastIndex]}”</Text>
+          <Text style={styles.roastCardText}>“{dynamicRoast || ROASTS[roastIndex]}”</Text>
         </GlassCard>
 
         {/* ═══ DAILY QUOTE ═══ */}
         <GlassCard
-          onPress={() => setQuoteIndex((quoteIndex + 1) % ZANE_QUOTES.length)}
+          onPress={() => { void refreshSignal('quote'); }}
           style={styles.quoteCard}
         >
           <View style={styles.quoteHeader}>
@@ -530,16 +640,47 @@ export default function DojoScreen() {
               <Text style={styles.emojiIcon}>⚡</Text>
               <Text allowFontScaling={false} style={styles.quoteLabel}>DAILY QUOTE</Text>
             </View>
-            <Text style={styles.quoteTap}>tap to refresh</Text>
+            <Text style={styles.quoteTap}>{quoteMode === 'classic' ? 'classic next' : 'personal next'}</Text>
           </View>
-          <Text style={[styles.quoteTextMain, { color: '#FFFFFF' }]}>“{ZANE_QUOTES[quoteIndex]}”</Text>
+          <Text style={[styles.quoteTextMain, { color: '#FFFFFF' }]}>“{dynamicQuote || ZANE_QUOTES[quoteIndex]}”</Text>
           <Text style={[styles.quoteAttr, { color: 'rgba(255,255,255,0.7)' }]}>— Zane × Goggins Engine</Text>
+        </GlassCard>
+
+        <GlassCard style={styles.harvestCard}>
+          <View style={styles.harvestHeader}>
+            <Text style={styles.harvestLabel}>NIGHTLY HARVEST REPORT</Text>
+            <Text style={styles.harvestTone}>{harvestReport.tone.toUpperCase()}</Text>
+          </View>
+          <Text style={styles.harvestHeadline}>
+            Today you harvested {harvestReport.todayXp} XP. Current streak pressure: {harvestReport.streak} days.
+          </Text>
+          <Text style={styles.harvestBody}>
+            Avoidance pattern: {harvestReport.avoidedText}. If you stop now, midnight hits in {midnightCountdown}.
+          </Text>
+          <GlassButton
+            label="SHARE HARVEST"
+            onPress={shareHarvestReport}
+            size="sm"
+            tint="blue"
+            style={{ alignSelf: 'flex-start', marginTop: 12 }}
+          />
         </GlassCard>
 
         {/* ═══ DIVIDER ═══ */}
         <View style={styles.divider} />
 
+        {/* ═══ MICRO OPS ═══ */}
+        <SectionHeader
+          title="TODAY'S MINIMUM MOVE"
+          done={allMicroDone}
+          onReboot={rebootMicro}
+          count={microOps.filter(m => completedIds.includes(m.id)).length}
+          total={microOps.length}
+        />
+        {microOps.map(m => <MissionRow key={m.id} item={m} />)}
+
         {/* ═══ STANDING ORDERS ═══ */}
+        <View style={styles.divider} />
         <SectionHeader
           title="STANDING ORDERS"
           done={allDailyDone}
@@ -559,6 +700,29 @@ export default function DojoScreen() {
           total={fieldQuests.length}
         />
         {fieldQuests.map(q => <MissionRow key={q.id} item={q} />)}
+
+        <GlassCard style={styles.friendOpsCard}>
+          <Text style={styles.friendOpsLabel}>FRIEND OPS</Text>
+          <Text style={styles.friendOpsText}>
+            Send today&apos;s pressure to someone else. If they complete it too, you just turned retention into recruitment.
+          </Text>
+          <View style={styles.friendOpsButtons}>
+            <GlassButton
+              label="CHALLENGE A FRIEND"
+              onPress={shareFriendChallenge}
+              size="sm"
+              tint="dark"
+              style={{ flex: 1 }}
+            />
+            <GlassButton
+              label="SHARE REPORT"
+              onPress={shareHarvestReport}
+              size="sm"
+              tint="blue"
+              style={{ flex: 1 }}
+            />
+          </View>
+        </GlassCard>
 
         {/* ═══ ARCHIVES ═══ */}
         <View style={styles.divider} />
@@ -888,6 +1052,35 @@ const styles = StyleSheet.create({
     marginTop: 12,
     letterSpacing: 1,
   },
+  riskMetricsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+  riskMetricPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: Radius.md,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    minWidth: 92,
+  },
+  riskMetricLabel: {
+    fontFamily: Fonts.monoBold,
+    fontSize: 8,
+    letterSpacing: 1,
+    color: 'rgba(255,255,255,0.35)',
+    marginBottom: 4,
+  },
+  riskMetricValue: {
+    fontFamily: Fonts.body,
+    fontSize: 12,
+    lineHeight: 16,
+    color: '#FFFFFF',
+  },
   quoteCard: {
     backgroundColor: 'rgba(125, 125, 125, 0.04)',
     borderRadius: 16,
@@ -927,10 +1120,70 @@ const styles = StyleSheet.create({
     marginTop: 10,
     letterSpacing: 1,
   },
+  harvestCard: {
+    backgroundColor: 'rgba(255,255,255,0.035)',
+    borderColor: 'rgba(255,255,255,0.08)',
+    padding: 18,
+  },
+  harvestHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  harvestLabel: {
+    fontFamily: Fonts.monoBold,
+    fontSize: 10,
+    color: '#9B9B9B',
+    letterSpacing: 2.5,
+  },
+  harvestTone: {
+    fontFamily: Fonts.monoBold,
+    fontSize: 8,
+    color: '#FFFFFF',
+    letterSpacing: 1,
+    opacity: 0.5,
+  },
+  harvestHeadline: {
+    fontFamily: Fonts.heading,
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#FFFFFF',
+  },
+  harvestBody: {
+    fontFamily: Fonts.body,
+    fontSize: 13,
+    lineHeight: 20,
+    color: 'rgba(255,255,255,0.6)',
+    marginTop: 8,
+  },
   divider: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: 'rgba(255,255,255,0.08)',
     marginVertical: 4,
+  },
+  friendOpsCard: {
+    padding: 18,
+    backgroundColor: 'rgba(255,255,255,0.035)',
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  friendOpsLabel: {
+    fontFamily: Fonts.monoBold,
+    fontSize: 10,
+    color: '#8E8E8E',
+    letterSpacing: 2.5,
+    marginBottom: 8,
+  },
+  friendOpsText: {
+    fontFamily: Fonts.body,
+    fontSize: 13,
+    lineHeight: 20,
+    color: 'rgba(255,255,255,0.62)',
+  },
+  friendOpsButtons: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 14,
   },
   archivesBtn: {
     marginTop: 8,

@@ -62,6 +62,7 @@ const DEFAULT_USER: Partial<UserData> = {
     usernameLastChanged: null,
     systemBackups: 1,
     lastBackupMonth: '',
+    zaneChatStyle: 'classic',
     socialLevel: 'NPC',
     primaryMission: 'General',
     commitment: '30 days',
@@ -91,6 +92,7 @@ interface UserData {
     usernameLastChanged: string | null;
     systemBackups: number;
     lastBackupMonth: string;
+    zaneChatStyle?: 'classic' | 'coach' | 'nervous';
     // Onboarding data - saved permanently to profile
     socialLevel: string; // NPC, Side Character, Lead
     primaryMission: string; // Social anxiety, Dating, etc.
@@ -234,6 +236,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                             usernameLastChanged: null,
                             systemBackups: 1,
                             lastBackupMonth: '',
+                            zaneChatStyle: 'classic',
                             socialLevel: 'NPC',
                             primaryMission: 'General',
                             commitment: '30 days',
@@ -487,6 +490,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 dailyXp: {},
                 systemBackups: 1,
                 lastBackupMonth: '',
+                zaneChatStyle: 'classic',
                 // Save onboarding data permanently to profile
                 socialLevel: onboardingData.level,
                 primaryMission: onboardingData.goal,
