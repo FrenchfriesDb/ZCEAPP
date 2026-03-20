@@ -9,6 +9,7 @@ import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { useUser } from '@/context/UserContext';
 import { formatDisplayName, getFirstName } from '@/utils/formatters';
 import { useTextColors } from '@/context/TextColorsContext';
+import { useTimeColors } from '@/hooks/useTimeColors';
 
 const getRankColor = (rank: number) => {
     if (rank === 1) return '#FFD700'; // Gold
@@ -35,7 +36,8 @@ const getMetalPalette = (rank: number) => {
 export default function LeaderboardScreen() {
     const { user } = useUser();
     const { textSecondary } = useTextColors();
-    const selfHighlight = textSecondary.replace(/88$/i, '');
+    const { palette } = useTimeColors();
+    const selfHighlight = (palette?.[1] || palette?.[palette.length - 1] || textSecondary.replace(/88$/i, '')).replace(/88$/i, '');
     const [globalData, setGlobalData] = useState<any[]>([]);
     const [myRank, setMyRank] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -175,7 +177,7 @@ export default function LeaderboardScreen() {
                                     key={i}
                                     style={[
                                         styles.row,
-                                        isMe && styles.rowMe,
+                                        isMe && [styles.rowMe, { borderColor: `${selfHighlight}50`, shadowColor: selfHighlight }],
                                         isTop3 && { borderColor: `${rankColor}30` },
                                     ]}
                                 >
@@ -226,15 +228,15 @@ export default function LeaderboardScreen() {
             {/* Floating Personal Rank Indicator (LIVE TAB ONLY) */}
             {!isLoading && (
                 <View style={styles.floatingContainer}>
-                    <View style={[styles.floatingRankBubble, { borderColor: `${textSecondary}33`, shadowColor: textSecondary.replace(/88$/i, '') }]}>
+                    <View style={[styles.floatingRankBubble, { borderColor: `${selfHighlight}33`, shadowColor: selfHighlight }]}>
                         <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
                         <LinearGradient
-                            colors={[`${textSecondary}44`, 'rgba(255, 255, 255, 0.03)']}
+                            colors={[`${selfHighlight}44`, 'rgba(255, 255, 255, 0.03)']}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 1 }}
                             style={StyleSheet.absoluteFill}
                         />
-                        <View style={[styles.floatingTopSheen, { backgroundColor: `${textSecondary}22` }]} />
+                        <View style={[styles.floatingTopSheen, { backgroundColor: `${selfHighlight}22` }]} />
                         <View style={styles.floatingContent}>
                             <View style={styles.floatingInfo}>
                                 <Text style={styles.floatingLabel}>YOUR STANDING</Text>
@@ -244,11 +246,11 @@ export default function LeaderboardScreen() {
                             <View style={styles.floatingDivider} />
 
                             <View style={styles.floatingStats}>
-                                <View style={[styles.rankPill, { borderColor: `${textSecondary}40`, backgroundColor: `${textSecondary}18` }]}>
-                                    <Text style={[styles.rankPillValue, { color: textSecondary.replace(/88$/i, '') }]}>#{myDisplayInfo.rank}</Text>
+                                <View style={[styles.rankPill, { borderColor: `${selfHighlight}40`, backgroundColor: `${selfHighlight}18` }]}>
+                                    <Text style={[styles.rankPillValue, { color: selfHighlight }]}>#{myDisplayInfo.rank}</Text>
                                 </View>
                                 <View style={styles.auraBox}>
-                                    <Text style={[styles.auraVal, { color: textSecondary.replace(/88$/i, '') }]}>{myDisplayInfo.aura.toLocaleString()}</Text>
+                                    <Text style={[styles.auraVal, { color: selfHighlight }]}>{myDisplayInfo.aura.toLocaleString()}</Text>
                                     <Text style={styles.auraSub}>AURA</Text>
                                 </View>
                             </View>
@@ -364,8 +366,6 @@ const styles = StyleSheet.create({
         position: 'relative',
     },
     rowMe: {
-        borderColor: 'rgba(179, 224, 255, 0.5)',
-        shadowColor: '#B3E0FF',
         shadowOffset: { width: 0, height: 0 },
         shadowRadius: 16,
         shadowOpacity: 0.25,
