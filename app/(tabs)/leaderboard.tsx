@@ -35,6 +35,7 @@ const getMetalPalette = (rank: number) => {
 export default function LeaderboardScreen() {
     const { user } = useUser();
     const { textSecondary } = useTextColors();
+    const selfHighlight = textSecondary.replace(/88$/i, '');
     const [globalData, setGlobalData] = useState<any[]>([]);
     const [myRank, setMyRank] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -163,11 +164,11 @@ export default function LeaderboardScreen() {
                         <Text style={styles.loaderText}>SCANNING ENCRYPTED DATA...</Text>
                     </View>
                 ) : (
-                    <View style={styles.listContainer}>
+                        <View style={styles.listContainer}>
                         {currentData.map((entry, i) => {
-                            const isMe = activeTab === 'GLOBAL' && entry.isMe;
+                            const isMe = !!entry.isMe;
                             const isTop3 = entry.rank <= 3;
-                            const rankColor = isMe ? '#B3E0FF' : getRankColor(entry.rank);
+                            const rankColor = isMe ? selfHighlight : getRankColor(entry.rank);
 
                             return (
                                 <View
@@ -181,7 +182,7 @@ export default function LeaderboardScreen() {
                                     <BlurView intensity={isMe ? 30 : 12} tint="dark" style={StyleSheet.absoluteFill} />
 
                                     {/* Left accent line */}
-                                    {isMe && <View style={[styles.meAccent, { backgroundColor: '#B3E0FF' }]} />}
+                                    {isMe && <View style={[styles.meAccent, { backgroundColor: selfHighlight }]} />}
 
                                     {/* Rank badge */}
                                     <View style={[styles.rankBadge, { borderColor: `${rankColor}50` }]}>
@@ -192,7 +193,7 @@ export default function LeaderboardScreen() {
 
                                     {/* User info */}
                                     <View style={styles.rowContent}>
-                                        <Text style={[styles.rowName, isMe && { color: '#B3E0FF' }]}>
+                                        <Text style={[styles.rowName, isMe && { color: selfHighlight }]}>
                                             {entry.name}
                                             {isMe ? ' ◈ YOU' : ''}
                                         </Text>
@@ -206,7 +207,7 @@ export default function LeaderboardScreen() {
 
                                     {/* Aura score */}
                                     <View style={styles.rowRight}>
-                                        <Text style={[styles.auraScore, { color: isMe ? '#B3E0FF' : (isTop3 ? rankColor : Colors.accentPrimary) }]}>
+                                        <Text style={[styles.auraScore, { color: isMe ? selfHighlight : (isTop3 ? rankColor : Colors.accentPrimary) }]}>
                                             {entry.aura.toLocaleString()}
                                         </Text>
                                         <Text style={styles.auraLabel}>AURA</Text>
@@ -225,14 +226,15 @@ export default function LeaderboardScreen() {
             {/* Floating Personal Rank Indicator (LIVE TAB ONLY) */}
             {!isLoading && (
                 <View style={styles.floatingContainer}>
-                    <View style={styles.floatingRankBubble}>
+                    <View style={[styles.floatingRankBubble, { borderColor: `${textSecondary}33`, shadowColor: textSecondary.replace(/88$/i, '') }]}>
                         <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
                         <LinearGradient
-                            colors={['rgba(179, 224, 255, 0.15)', 'rgba(255, 255, 255, 0.03)']}
+                            colors={[`${textSecondary}44`, 'rgba(255, 255, 255, 0.03)']}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 1 }}
                             style={StyleSheet.absoluteFill}
                         />
+                        <View style={[styles.floatingTopSheen, { backgroundColor: `${textSecondary}22` }]} />
                         <View style={styles.floatingContent}>
                             <View style={styles.floatingInfo}>
                                 <Text style={styles.floatingLabel}>YOUR STANDING</Text>
@@ -242,11 +244,11 @@ export default function LeaderboardScreen() {
                             <View style={styles.floatingDivider} />
 
                             <View style={styles.floatingStats}>
-                                <View style={styles.rankPill}>
-                                    <Text style={styles.rankPillValue}>#{myDisplayInfo.rank}</Text>
+                                <View style={[styles.rankPill, { borderColor: `${textSecondary}40`, backgroundColor: `${textSecondary}18` }]}>
+                                    <Text style={[styles.rankPillValue, { color: textSecondary.replace(/88$/i, '') }]}>#{myDisplayInfo.rank}</Text>
                                 </View>
                                 <View style={styles.auraBox}>
-                                    <Text style={styles.auraVal}>{myDisplayInfo.aura.toLocaleString()}</Text>
+                                    <Text style={[styles.auraVal, { color: textSecondary.replace(/88$/i, '') }]}>{myDisplayInfo.aura.toLocaleString()}</Text>
                                     <Text style={styles.auraSub}>AURA</Text>
                                 </View>
                             </View>
@@ -417,12 +419,19 @@ const styles = StyleSheet.create({
         height: 72,
         borderRadius: 20,
         borderWidth: 1,
-        borderColor: 'rgba(179, 224, 255, 0.4)',
         overflow: 'hidden',
-        shadowColor: '#B3E0FF',
         shadowOffset: { width: 0, height: 8 },
         shadowRadius: 20,
         shadowOpacity: 0.15,
+        backgroundColor: 'rgba(255,255,255,0.03)',
+    },
+    floatingTopSheen: {
+        position: 'absolute',
+        top: 2,
+        left: 12,
+        right: 12,
+        height: '46%',
+        borderRadius: 18,
     },
     floatingContent: {
         flex: 1,
@@ -441,13 +450,13 @@ const styles = StyleSheet.create({
     },
     floatingStats: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     rankPill: {
-        backgroundColor: '#B3E0FF',
         paddingHorizontal: 10,
         paddingVertical: 5,
         borderRadius: 10,
+        borderWidth: 1,
     },
-    rankPillValue: { fontFamily: Fonts.monoBold, fontSize: 18, color: '#000' },
+    rankPillValue: { fontFamily: Fonts.monoBold, fontSize: 18 },
     auraBox: { alignItems: 'flex-end' },
-    auraVal: { fontFamily: Fonts.monoBold, fontSize: 15, color: '#B3E0FF' },
+    auraVal: { fontFamily: Fonts.monoBold, fontSize: 15 },
     auraSub: { fontFamily: Fonts.mono, fontSize: 7, color: 'rgba(255,255,255,0.4)', letterSpacing: 1 },
 });
