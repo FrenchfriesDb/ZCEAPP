@@ -228,15 +228,15 @@ export default function LeaderboardScreen() {
             {/* Floating Personal Rank Indicator (LIVE TAB ONLY) */}
             {!isLoading && (
                 <View style={styles.floatingContainer}>
-                    <View style={[styles.floatingRankBubble, { borderColor: `${selfHighlight}33`, shadowColor: selfHighlight }]}>
+                    <View style={[styles.floatingRankBubble, { borderColor: `${textSecondary}33`, shadowColor: textSecondary.replace(/88$/i, '') }]}>
                         <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
                         <LinearGradient
-                            colors={[`${selfHighlight}44`, 'rgba(255, 255, 255, 0.03)']}
+                            colors={[`${textSecondary}44`, 'rgba(255, 255, 255, 0.03)']}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 1 }}
                             style={StyleSheet.absoluteFill}
                         />
-                        <View style={[styles.floatingTopSheen, { backgroundColor: `${selfHighlight}22` }]} />
+                        <View style={[styles.floatingTopSheen, { backgroundColor: `${textSecondary}22` }]} />
                         <View style={styles.floatingContent}>
                             <View style={styles.floatingInfo}>
                                 <Text style={styles.floatingLabel}>YOUR STANDING</Text>
@@ -246,11 +246,11 @@ export default function LeaderboardScreen() {
                             <View style={styles.floatingDivider} />
 
                             <View style={styles.floatingStats}>
-                                <View style={[styles.rankPill, { borderColor: `${selfHighlight}40`, backgroundColor: `${selfHighlight}18` }]}>
-                                    <Text style={[styles.rankPillValue, { color: selfHighlight }]}>#{myDisplayInfo.rank}</Text>
+                                <View style={[styles.rankPill, { borderColor: `${textSecondary}40`, backgroundColor: `${textSecondary}18` }]}>
+                                    <Text style={[styles.rankPillValue, { color: textSecondary.replace(/88$/i, '') }]}>#{myDisplayInfo.rank}</Text>
                                 </View>
                                 <View style={styles.auraBox}>
-                                    <Text style={[styles.auraVal, { color: selfHighlight }]}>{myDisplayInfo.aura.toLocaleString()}</Text>
+                                    <Text style={[styles.auraVal, { color: textSecondary.replace(/88$/i, '') }]}>{myDisplayInfo.aura.toLocaleString()}</Text>
                                     <Text style={styles.auraSub}>AURA</Text>
                                 </View>
                             </View>
