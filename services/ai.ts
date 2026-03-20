@@ -262,6 +262,9 @@ Rules:
 - If mode is PERSONALIZED, it should feel tailored to the user, but it does NOT need to mention stats, streaks, XP, or chat history every time.
 - Personalized signals may reference user data, recent chat themes, emotional patterns, avoided reps, or current pressure when it helps.
 - Sometimes personalized should be subtle and intimate, not obviously data-driven.
+- Rotate naturally across themes: motivation, brutal truth, success, discipline, charisma, social skill pressure, identity, momentum, self-respect.
+- Do not make every line about anxiety, streaks, or XP. Vary the lens.
+- Roughly sometimes reference memory directly, sometimes imply it, sometimes go universal-but-personal.
 - If mode is CLASSIC, keep it universal and iconic.
 - Never output provider errors, meta commentary, or fallback notices.
 - Avoid repeating phrasing from recent signals.
@@ -272,10 +275,10 @@ ${memoryBlock}
         const userPrompt = kind === 'roast'
             ? mode === 'classic'
                 ? 'Write one brutal classic Zane roast for the home screen.'
-                : 'Write one personalized Zane roast for the home screen using the memory above. Keep it short. Sometimes make it specifically data-aware, sometimes just emotionally or behaviorally personal.'
+                : 'Write one personalized Zane roast for the home screen using the memory above. Keep it short. Sometimes reference streaks, XP, or recent chat patterns directly, but not every time. Mix themes like brutal truth, discipline, charisma, social pressure, and ambition.'
             : mode === 'classic'
                 ? 'Write one classic Zane quote for the home screen.'
-                : 'Write one personalized Zane quote for the home screen using the memory above. Keep it very short and quotable. It can reference their patterns subtly instead of naming stats directly.';
+                : 'Write one personalized Zane quote for the home screen using the memory above. Keep it very short and quotable. Sometimes reference their real patterns or chat history, sometimes keep it subtler. Mix motivation, discipline, charisma, social skill, success, and identity themes.';
 
         for (const provider of providers) {
             try {
