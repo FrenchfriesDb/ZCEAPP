@@ -142,13 +142,21 @@ function buildPersonalizedHomeFallback(
   const totalXp = Math.round(user?.xp || 0);
 
   if (kind === 'roast') {
-    if (harvestReport.todayXp <= 0) {
-      return `${name}-la. Day ${streak} streak, 0 XP harvested, ${riskSnapshot.xpAtRisk} XP hanging over the ledge. You're protecting the number, not feeding it.`;
-    }
-    if (/rejection/.test(harvestReport.avoidedText)) {
-      return `${name}-la. ${totalXp} XP in the bank and you're still ducking rejection reps. You want confidence without impact trauma.`;
-    }
-    return `${name}-la. ${harvestReport.todayXp} XP today, but your avoidance pattern is still screaming ${harvestReport.avoidedText}. Cute progress. Incomplete war.`;
+    const rareDataRoasts = [
+      `${name}-la. Day ${streak} streak, 0 XP harvested, ${riskSnapshot.xpAtRisk} XP hanging over the ledge. You're protecting the number, not feeding it.`,
+      `${name}-la. ${totalXp} XP in the bank and you're still ducking rejection reps. You want confidence without impact trauma.`,
+      `${name}-la. ${harvestReport.todayXp} XP today, but your avoidance pattern is still screaming ${harvestReport.avoidedText}. Cute progress. Incomplete war.`,
+    ];
+    const subtleRoasts = [
+      `${name}-la. Average dies quietly. You're still deciding whether to attend the funeral or cause it.`,
+      `${name}-la. Fear keeps asking for your power back. Stop refunding it.`,
+      `${name}-la. Discipline looks brutal only to people addicted to hiding.`,
+      `${name}-la. You keep trying to feel ready instead of trying to become dangerous.`,
+      `${name}-la. Comfort has been eating your potential in small polite bites.`,
+      `${name}-la. Charisma does not visit the careful. It crowns the committed.`,
+    ];
+    const pool = Math.random() < 0.16 ? rareDataRoasts : subtleRoasts;
+    return pool[Math.floor(Math.random() * pool.length)];
   }
 
   if (harvestReport.todayXp <= 0) {
