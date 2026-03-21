@@ -48,8 +48,9 @@ export const useTimeColors = () => {
             else if (time < 19) next = TimeColors.sunset;        // 6–7 PM
             else if (time < 19.5) next = TimeColors.twilight;      // 7–7:30 PM
             else if (time < 20) next = TimeColors.battleGlory;     // 7:30-8 PM
-            else if (time < 20.5) next = TimeColors.eveningNavy;     // 8-8:30 PM
-            else if (time < 22) next = TimeColors.nightDive;        // 9-10 PM Moon Dust  
+            else if (time < 20.5) next = TimeColors.marsEcho;      // 8-8:30 PM
+            else if (time < 21) next = TimeColors.plumGlow;        // 8:30-9 PM
+            else if (time < 22) next = TimeColors.nightDive;       // 9-10 PM Moon Dust
             else if (time < 23) next = TimeColors.voidSpark;       // 10-11 PM VOID SPARK
             else next = TimeColors.midnightMist;                     // 11 PM-12 AM
 
@@ -57,19 +58,11 @@ export const useTimeColors = () => {
             const isWhiteMoonTheme = time >= 21 && time < 22; // 9-10 PM "Moon Dust": force pure-white accents for readability
 
             setPalette(isWhiteMoonTheme ? ['#FFFFFF', '#FFFFFF'] : next);
-            setTextColors(
-                isWhiteMoonTheme
-                    ? {
-                        primary: '#FFFFFF',
-                        secondary: 'rgba(255, 255, 255, 0.65)',
-                        tertiary: 'rgba(255, 255, 255, 0.35)',
-                    }
-                    : {
-                        primary: dyn.textPrimary,
-                        secondary: dyn.textSecondary,
-                        tertiary: dyn.textTertiary,
-                    }
-            );
+            setTextColors({
+                primary: dyn.textPrimary,
+                secondary: dyn.textSecondary,
+                tertiary: dyn.textTertiary,
+            });
         };
 
         updateColors();

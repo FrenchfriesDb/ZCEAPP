@@ -114,7 +114,29 @@ export const getTimeAccent = (palette: string[]) => palette[0];
 // PATTERN: Use the LAST gradient color for each theme as the primary text color
 export const getDynamicColors = (hour: number, minute: number) => {
   const time = hour + minute / 60;
+  const pickPalette = () => {
+    if (time < 5) return TimeColors.deepAbyss;
+    if (time < 6) return TimeColors.earlierDawn;
+    if (time >= 7.166 && time <= 7.5) return TimeColors.sunriseCitrus;
+    if (time < 8.5) return TimeColors.morning;
+    if (time < 16) return TimeColors.cloudDrift;
+    if (time < 17) return TimeColors.morning;
+    if (time < 17.5) return TimeColors.goldenHour;
+    if (time < 18) return TimeColors.dusk;
+    if (time < 19) return TimeColors.sunset;
+    if (time < 19.5) return TimeColors.twilight;
+    if (time < 20) return TimeColors.battleGlory;
+    if (time < 20.5) return TimeColors.marsEcho;
+    if (time < 21) return TimeColors.plumGlow;
+    if (time < 22) return TimeColors.nightDive;
+    if (time < 23) return TimeColors.voidSpark;
+    return TimeColors.midnightMist;
+  };
+
+  const palette = pickPalette();
+  const middleStop = palette[Math.floor((palette.length - 1) / 2)] || palette[0] || '#E8E8E8';
   let textPrimaryColor = '#E8E8E8'; // default
+  let textSecondaryColor = middleStop;
   
   if (time < 5) textPrimaryColor = '#294861'; // Deep Abyss - last color (dark steel blue)
   else if (time < 6) textPrimaryColor = '#4B749F'; // Earlier Dawn - last color (light blue)  
@@ -126,7 +148,11 @@ export const getDynamicColors = (hour: number, minute: number) => {
   else if (time < 18) textPrimaryColor = '#C3E1FC'; // Dusk - last color (light blue)
   else if (time < 19) textPrimaryColor = '#F89B29'; // Sunset - last color (orange)
   else if (time < 19.5) textPrimaryColor = '#45CAFF'; // Twilight - last color (cyan)
-  else if (time < 20) textPrimaryColor = '#1A2766'; // Battle Glory - last color (deep blue)
+  else if (time < 20) {
+    // Battle Glory (7:30–8 PM): keep readable red primary with warm secondary.
+    textPrimaryColor = '#AE1B1E'; // red
+    textSecondaryColor = '#FC9F32'; // yellow-orange
+  }
   else if (time < 20.5) textPrimaryColor = '#34073D'; // Mars Echo - last color (deep purple)
   else if (time < 21) textPrimaryColor = '#FFC07C'; // Plum Glow - last color (peach)
   else if (time < 22) textPrimaryColor = '#FFFFFF'; // Moon Dust/Night Dive - force white for contrast
@@ -135,8 +161,8 @@ export const getDynamicColors = (hour: number, minute: number) => {
   
   return {
     textPrimary: textPrimaryColor,
-    textSecondary: `${textPrimaryColor}88`, // 50% opacity
-    textTertiary: `${textPrimaryColor}44`, // 25% opacity
+    textSecondary: textSecondaryColor,
+    textTertiary: `${textSecondaryColor}88`,
   };
 };
 
