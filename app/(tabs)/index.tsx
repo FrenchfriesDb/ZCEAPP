@@ -596,7 +596,7 @@ export default function DojoScreen() {
             <Text style={[
               styles.heroNumber,
               { 
-                color: textPrimary,
+                color: '#FFFFFF',
                 textShadowColor: glowColor,
                 textShadowOffset: { width: 0, height: 0 },
                 textShadowRadius: 40
