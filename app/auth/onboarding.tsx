@@ -9,6 +9,7 @@ import Svg, { Path, G, Circle, Line, Defs, LinearGradient as SvgGrad, Stop } fro
 import { Colors, Fonts } from '@/constants/theme';
 import { useUser } from '@/context/UserContext';
 import SwipeSlider from '@/components/SwipeSlider';
+import FluentEmoji, { resolveFluentEmojiName } from '@/components/FluentEmoji';
 
 const { width: W, height: H } = Dimensions.get('window');
 const CYAN = '#333333';
@@ -147,11 +148,16 @@ function TerminalLine({ text, delay, color }: { text: string; delay: number; col
 function OptionBtn({ label, icon, selected, onPress }: {
     label: string; icon: string; selected: boolean; onPress: () => void;
 }) {
+    const fluentName = resolveFluentEmojiName(icon);
     return (
         <Pressable onPress={onPress} style={styles.optPressable}>
             {({ pressed }) => (
                 <View style={[styles.optBtn, selected && styles.optBtnActive, pressed && styles.optBtnPressed]}>
-                    <Text style={[styles.optIcon]}>{icon}</Text>
+                    {fluentName ? (
+                        <FluentEmoji name={fluentName} size={20} style={styles.optIconImage} />
+                    ) : (
+                        <Text style={[styles.optIcon]}>{icon}</Text>
+                    )}
                     <Text style={[styles.optText, selected && styles.optTextActive]} numberOfLines={2}>{label}</Text>
                     {selected && <Text style={styles.optCheck}>◆</Text>}
                 </View>
@@ -687,6 +693,7 @@ const styles = StyleSheet.create({
     },
     optBtnPressed: { borderColor: 'rgba(255, 255, 255, 0.9)', transform: [{ scale: 0.97 }] },
     optIcon: { fontSize: 18, opacity: 0.9, color: '#FFFFFF' },
+    optIconImage: { opacity: 0.95 },
     optText: { fontFamily: Fonts.body, color: 'rgba(255,255,255,0.6)', fontSize: 14, flex: 1, flexShrink: 1, minWidth: 0, fontWeight: '500' },
     optTextActive: { color: '#FFFFFF', fontWeight: '700' },
     optCheck: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },

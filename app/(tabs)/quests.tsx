@@ -6,6 +6,7 @@ import QuestCard from '@/components/QuestCard';
 import GlassCard from '@/components/GlassCard';
 import GlassButton from '@/components/GlassButton';
 import ProofModal from '@/components/ProofModal';
+import FluentEmoji, { resolveFluentEmojiName } from '@/components/FluentEmoji';
 import { useUser } from '@/context/UserContext';
 import { useTextColors } from '@/context/TextColorsContext';
 import { useTimeColors } from '@/hooks/useTimeColors';
@@ -209,6 +210,7 @@ export default function QuestsScreen() {
                     <View style={styles.microOpsList}>
                         {featuredMicroOps.map((op) => {
                             const completed = completedIds.includes(op.id);
+                            const fluentName = resolveFluentEmojiName(op.icon);
                             return (
                                 <Pressable
                                     key={op.id}
@@ -222,7 +224,13 @@ export default function QuestsScreen() {
                                     })}
                                     style={[styles.microOpRow, completed && styles.microOpRowDone]}
                                 >
-                                    <Text style={styles.microOpIcon}>{completed ? '✓' : op.icon}</Text>
+                                    {completed ? (
+                                        <Text style={styles.microOpIcon}>✓</Text>
+                                    ) : fluentName ? (
+                                        <FluentEmoji name={fluentName} size={22} style={styles.microOpIconImage} />
+                                    ) : (
+                                        <Text style={styles.microOpIcon}>{op.icon}</Text>
+                                    )}
                                     <View style={{ flex: 1 }}>
                                         <Text style={styles.microOpTitle}>{op.title}</Text>
                                         <Text style={styles.microOpDesc}>{op.desc}</Text>
@@ -436,6 +444,11 @@ const styles = StyleSheet.create({
         fontSize: 18,
         width: 24,
         textAlign: 'center',
+    },
+    microOpIconImage: {
+        width: 24,
+        height: 24,
+        alignSelf: 'center',
     },
     microOpTitle: {
         fontFamily: Fonts.heading,

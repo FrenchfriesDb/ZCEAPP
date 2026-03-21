@@ -26,7 +26,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useUser } from '@/context/UserContext';
 import GlassCard from '@/components/GlassCard';
 import GlassButton from '@/components/GlassButton';
-import FluentEmoji from '@/components/FluentEmoji';
+import FluentEmoji, { resolveFluentEmojiName } from '@/components/FluentEmoji';
 import { useTimeColors } from '@/hooks/useTimeColors';
 
 const isBrowserAudioSupported = () =>
@@ -73,6 +73,7 @@ export default function MirrorDrill() {
     const systemColor = Colors.accentPrimary;
     const [lineIdx, setLineIdx] = useState(0);
     const [flavorIdx, setFlavorIdx] = useState(0);
+    const activeFlavorEmoji = resolveFluentEmojiName(FLAVORS[flavorIdx]?.emoji);
     const fadeAnim = useRef(new Animated.Value(1)).current;
 
     // Recording state
@@ -459,7 +460,12 @@ export default function MirrorDrill() {
                     <Text style={styles.label}>THE VIBE:</Text>
                     <Animated.View style={{ opacity: fadeAnim, alignItems: 'center' }}>
                         <Text style={[styles.flavorTitle, { color: systemColor }]}>
-                            <Text style={styles.emojiText}>{FLAVORS[flavorIdx].emoji}</Text> {FLAVORS[flavorIdx].label}
+                            {activeFlavorEmoji ? (
+                                <FluentEmoji name={activeFlavorEmoji} size={18} style={styles.emojiInlineImage} />
+                            ) : (
+                                <Text style={styles.emojiText}>{FLAVORS[flavorIdx].emoji}</Text>
+                            )}{' '}
+                            {FLAVORS[flavorIdx].label}
                         </Text>
                         <Text style={styles.flavorDesc}>{FLAVORS[flavorIdx].desc}</Text>
                     </Animated.View>
@@ -603,6 +609,10 @@ const styles = StyleSheet.create({
         }),
         fontWeight: 'normal',
         letterSpacing: 0,
+    },
+    emojiInlineImage: {
+        width: 18,
+        height: 18,
     },
     flavorDesc: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, textAlign: 'center' },
 
