@@ -9,7 +9,6 @@ import ProofModal from '@/components/ProofModal';
 import FluentEmoji, { resolveFluentEmojiName } from '@/components/FluentEmoji';
 import { useUser } from '@/context/UserContext';
 import { useTextColors } from '@/context/TextColorsContext';
-import { useTimeColors } from '@/hooks/useTimeColors';
 import { MICRO_OPS, getQuestTierProfile } from '@/constants/habitEngine';
 
 const CATEGORIES = [
@@ -73,8 +72,7 @@ const QUESTS = [
 
 export default function QuestsScreen() {
     const { user, completeQuest, resetQuests } = useUser();
-    const { palette: timePalette } = useTimeColors();
-    const { textPrimary: themeTextPrimary, textSecondary: themeTextSecondary } = useTextColors();
+    const { textPrimary, textSecondary, textTertiary } = useTextColors();
     const completedIds = user?.completedQuests || [];
 
     const [selectedQuest, setSelectedQuest] = useState<typeof QUESTS[0] | null>(null);
@@ -85,16 +83,23 @@ export default function QuestsScreen() {
     const tierProfile = getQuestTierProfile(user);
     const featuredMicroOps = useMemo(() => shuffleArray(MICRO_OPS).slice(0, Math.max(3, tierProfile.microCount + 1)), [user?.streak, user?.xp]);
 
-    const questPrimary = themeTextSecondary || timePalette[0] || themeTextPrimary || '#FF0F7B';
-    const questPrimaryText = questPrimary;
-    // Convert hex to rgba for textShadowColor
-    const hexToRgba = (hex: string, alpha: number) => {
-        const r = parseInt(hex.slice(1, 3), 16);
-        const g = parseInt(hex.slice(3, 5), 16);
-        const b = parseInt(hex.slice(5, 7), 16);
-        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    const withAlpha = (color: string, alpha: number) => {
+        if (color.startsWith('rgba(')) {
+            return color.replace(/rgba\(([^)]+),\s*[\d.]+\)/, `rgba($1, ${alpha})`);
+        }
+        if (color.startsWith('rgb(')) {
+            return color.replace('rgb(', 'rgba(').replace(')', `, ${alpha})`);
+        }
+        const hex = color.replace('#', '');
+        if (hex.length === 6) {
+            const r = parseInt(hex.slice(0, 2), 16);
+            const g = parseInt(hex.slice(2, 4), 16);
+            const b = parseInt(hex.slice(4, 6), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+        return `rgba(255,255,255,${alpha})`;
     };
-    const glowColor = hexToRgba(questPrimary, 1.0);
+    const glowColor = withAlpha(textSecondary, 0.95);
 
     // Reshuffle when batch changes
     useMemo(() => {
@@ -174,18 +179,18 @@ export default function QuestsScreen() {
                                 textShadowColor: glowColor,
                                 textShadowOffset: { width: 0, height: 0 },
                                 textShadowRadius: 40,
-                                color: questPrimary
+                                color: textPrimary
                             }
                         ]}>{completedCount}</Text>
-                        <Text style={[styles.heroUnit, { color: questPrimaryText }]}>OF {visibleQuests.length} QUESTS</Text>
+                        <Text style={[styles.heroUnit, { color: textSecondary }]}>OF {visibleQuests.length} QUESTS</Text>
                     </View>
-                    <Text style={[styles.welcomeText, { color: questPrimaryText }]}>
+                    <Text style={[styles.welcomeText, { color: textTertiary }]}>
                         Harvesting status. Stay in frame.
                     </Text>
 
                     <View style={styles.heroXPContainer}>
-                        <View style={[styles.xpEarned, { borderColor: questPrimary + '33' }]}>
-                            <Text style={[styles.xpEarnedText, { color: questPrimaryText }]}>+{totalXP} XP EXTRACTED TODAY</Text>
+                        <View style={[styles.xpEarned, { borderColor: withAlpha(textSecondary, 0.35) }]}>
+                            <Text style={[styles.xpEarnedText, { color: textSecondary }]}>+{totalXP} XP EXTRACTED TODAY</Text>
                         </View>
                     </View>
                 </View>

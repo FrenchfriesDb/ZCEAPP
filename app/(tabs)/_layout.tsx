@@ -70,7 +70,7 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
                 {focused && (
                   <View style={styles.tabItemSheen} pointerEvents="none">
                     <LinearGradient
-                      colors={['rgba(255,255,255,0.28)', 'rgba(255,255,255,0.08)', 'rgba(255,255,255,0.00)']}
+                      colors={['rgba(255,255,255,0.16)', 'rgba(255,255,255,0.04)', 'rgba(255,255,255,0.00)']}
                       start={{ x: 0.5, y: 0 }}
                       end={{ x: 0.5, y: 1 }}
                       style={styles.tabItemSheenGradient}
@@ -178,9 +178,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   tabItemActive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.07)',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.22,
+    shadowOpacity: 0.14,
     shadowRadius: 16,
   },
   tabItemSheen: {
