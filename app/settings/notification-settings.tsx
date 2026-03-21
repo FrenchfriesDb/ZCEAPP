@@ -118,6 +118,13 @@ export default function NotificationSettingsScreen() {
         setTimeout(() => setSaved(false), 1500);
     };
 
+    const rules = [
+        { icon: '📵', text: 'Never fires between 10 PM - 7 AM' },
+        { icon: '📊', text: 'Maximum 3 notifications per day' },
+        { icon: '👤', text: 'Always addressed to you by name' },
+        { icon: '⏰', text: 'All times in your local timezone' },
+    ];
+
     return (
         <View style={styles.container}>
             <LinearGradient colors={['#050508', '#080816', '#000000']} style={StyleSheet.absoluteFill} />
@@ -145,10 +152,19 @@ export default function NotificationSettingsScreen() {
                 {/* Rules overview */}
                 <View style={styles.rulesCard}>
                     <Text style={styles.rulesTitle}>STANDING RULES</Text>
-                    <Text style={styles.rulesLine}>📵  Never fires between 10 PM – 7 AM</Text>
-                    <Text style={styles.rulesLine}>📊  Maximum 3 notifications per day</Text>
-                    <Text style={styles.rulesLine}>👤  Always addressed to you by name</Text>
-                    <Text style={styles.rulesLine}>⏰  All times in your local timezone</Text>
+                    {rules.map((rule) => {
+                        const fluentName = resolveFluentEmojiName(rule.icon);
+                        return (
+                            <View key={rule.text} style={styles.rulesLineRow}>
+                                {fluentName ? (
+                                    <FluentEmoji name={fluentName} size={18} style={styles.rulesLineEmojiImage} />
+                                ) : (
+                                    <Text style={styles.rulesLineEmoji}>{rule.icon}</Text>
+                                )}
+                                <Text style={styles.rulesLine}>{rule.text}</Text>
+                            </View>
+                        );
+                    })}
                 </View>
 
                 {/* Toggle list */}
@@ -255,7 +271,23 @@ const styles = StyleSheet.create({
         letterSpacing: 2,
         marginBottom: 4,
     },
+    rulesLineRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
+    rulesLineEmoji: {
+        width: 18,
+        fontSize: 14,
+        color: 'rgba(255,255,255,0.7)',
+        textAlign: 'center',
+    },
+    rulesLineEmojiImage: {
+        width: 18,
+        height: 18,
+    },
     rulesLine: {
+        flex: 1,
         fontFamily: Fonts.body,
         fontSize: 13,
         color: 'rgba(255,255,255,0.5)',

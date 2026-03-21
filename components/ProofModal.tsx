@@ -151,7 +151,7 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
             ActionSheetIOS.showActionSheetWithOptions(
                 {
                     title: 'PHOTO PROOF',
-                    options: ['Cancel', '📷  Take Photo', '🖼️  Choose from Library'],
+                    options: ['Cancel', 'Take Photo', 'Choose from Library'],
                     cancelButtonIndex: 0,
                 },
                 async (index) => {

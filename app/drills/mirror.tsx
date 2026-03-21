@@ -526,8 +526,7 @@ export default function MirrorDrill() {
                             style={[styles.voiceBtn, styles.playbackBtn]}
                         >
                             <Text style={[styles.voiceBtnText, { color: Colors.accentCyan }]}>
-                                <Text style={styles.emojiText}>{isPlaying ? '⏸️' : '▶️'}</Text>{' '}
-                                {isPlaying ? 'PAUSE PLAYBACK' : 'HEAR YOURSELF BACK'}
+                                {isPlaying ? 'PAUSE PLAYBACK' : 'PLAY BACK RECORDING'}
                             </Text>
                         </Pressable>
                     )}
