@@ -4,6 +4,7 @@ import { Colors, Fonts, FontSizes, Spacing, Radius } from '@/constants/theme';
 import GlassCard from './GlassCard';
 import { useTimeColors } from '@/hooks/useTimeColors';
 import { useTextColors } from '@/context/TextColorsContext';
+import FluentEmoji, { resolveFluentEmojiName } from './FluentEmoji';
 
 interface QuestCardProps {
     icon: string;
@@ -33,6 +34,7 @@ export default function QuestCard({ icon, title, description, xpReward, complete
     };
 
     const categoryColor = getCategoryColor(category);
+    const fluentIcon = resolveFluentEmojiName(icon);
 
     return (
         <GlassCard
@@ -45,9 +47,13 @@ export default function QuestCard({ icon, title, description, xpReward, complete
                 <View
                     style={[styles.iconBox, completed && { borderColor: systemColor + '33' }]}
                 >
-                    <Text style={[styles.icon, completed && { opacity: 0.8 }]}>
-                        <Text style={styles.emojiFix}>{icon}</Text>
-                    </Text>
+                    {fluentIcon ? (
+                        <FluentEmoji name={fluentIcon} size={24} opacity={completed ? 0.8 : 1} />
+                    ) : (
+                        <Text style={[styles.icon, completed && { opacity: 0.8 }]}>
+                            <Text style={styles.emojiFix}>{icon}</Text>
+                        </Text>
+                    )}
                 </View>
 
                 <View style={styles.content}>

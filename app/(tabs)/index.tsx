@@ -25,7 +25,7 @@ import ProofModal from '@/components/ProofModal';
 import GlassCard from '@/components/GlassCard';
 import GlassButton from '@/components/GlassButton';
 import XPBar from '@/components/XPBar';
-import FluentEmoji from '@/components/FluentEmoji';
+import FluentEmoji, { resolveFluentEmojiName } from '@/components/FluentEmoji';
 import { getFirstName, formatDisplayName } from '@/utils/formatters';
 import { AIService } from '@/services/ai';
 import { FIELD_OPS, MICRO_OPS, STANDING_ORDERS, getNightlyRiskSnapshot, pickAdaptiveDojoLoadout } from '@/constants/habitEngine';
@@ -528,7 +528,13 @@ export default function DojoScreen() {
 
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 12, paddingLeft: 20, gap: 10 }}>
           <View style={[styles.missionIconBadge, isDone && styles.missionIconBadgeDone]}>
-            <Text allowFontScaling={false} style={[styles.missionIcon, { color: '#FFFFFF', fontSize: 16 }, isDone && { opacity: 0.5 }]}>{isDone ? '✓' : item.icon}</Text>
+            {isDone ? (
+              <Text allowFontScaling={false} style={[styles.missionIcon, { color: '#FFFFFF', fontSize: 16 }, isDone && { opacity: 0.5 }]}>✓</Text>
+            ) : resolveFluentEmojiName(item.icon) ? (
+              <FluentEmoji name={resolveFluentEmojiName(item.icon)!} size={20} />
+            ) : (
+              <Text allowFontScaling={false} style={[styles.missionIcon, { color: '#FFFFFF', fontSize: 16 }, isDone && { opacity: 0.5 }]}>{item.icon}</Text>
+            )}
           </View>
 
           <View style={{ flex: 1, gap: 1 }}>
@@ -697,7 +703,7 @@ export default function DojoScreen() {
         >
           <View style={styles.roastHeader}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Text style={styles.emojiIcon}>🔥</Text>
+              <FluentEmoji name="fire" size={18} style={styles.emojiIconImage} />
               <Text allowFontScaling={false} style={styles.roastLabel}>ZANE&apos;S ROAST</Text>
             </View>
             <Text style={styles.roastTap}>personal</Text>

@@ -6,6 +6,7 @@ import { useUser } from '@/context/UserContext';
 import { useTimeColors } from '@/hooks/useTimeColors';
 import { formatDisplayName } from '@/utils/formatters';
 import { Ionicons } from '@expo/vector-icons';
+import FluentEmoji, { resolveFluentEmojiName } from '@/components/FluentEmoji';
 
 // Icons as emojis for now - can be replaced with icon library
 const ICONS = {
@@ -271,7 +272,13 @@ export default function EditProfileScreen() {
             style={[styles.row, !isLast && styles.rowWithDivider]}
         >
             {typeof icon === 'string' ? (
-                <Text style={styles.rowIcon}>{icon}</Text>
+                resolveFluentEmojiName(icon) ? (
+                    <View style={styles.rowIconWrap}>
+                        <FluentEmoji name={resolveFluentEmojiName(icon)!} size={22} />
+                    </View>
+                ) : (
+                    <Text style={styles.rowIcon}>{icon}</Text>
+                )
             ) : (
                 <View style={styles.rowIconWrap}>{icon}</View>
             )}

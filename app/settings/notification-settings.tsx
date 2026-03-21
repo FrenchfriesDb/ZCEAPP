@@ -9,6 +9,7 @@ import {
     loadNotifSettings, saveNotifSettings, DEFAULT_SETTINGS, NotifSettings
 } from '@/services/notifications';
 import { useTimeColors } from '@/hooks/useTimeColors';
+import FluentEmoji, { resolveFluentEmojiName } from '@/components/FluentEmoji';
 
 const NOTIFICATION_ITEMS: {
     key: keyof NotifSettings;
@@ -159,7 +160,11 @@ export default function NotificationSettingsScreen() {
                         android_ripple={{ color: 'rgba(255,255,255,0.04)' }}
                     >
                         <View style={styles.rowLeft}>
-                            <Text style={styles.rowEmoji}>{item.emoji}</Text>
+                            {resolveFluentEmojiName(item.emoji) ? (
+                                <FluentEmoji name={resolveFluentEmojiName(item.emoji)!} size={24} style={styles.rowEmojiImage} />
+                            ) : (
+                                <Text style={styles.rowEmoji}>{item.emoji}</Text>
+                            )}
                             <View style={styles.rowText}>
                                 <Text style={[
                                     styles.rowTitle,
@@ -272,6 +277,7 @@ const styles = StyleSheet.create({
     },
     rowLeft: { flex: 1, flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
     rowEmoji: { fontSize: 22, marginTop: 2 },
+    rowEmojiImage: { marginTop: 2 },
     rowText: { flex: 1, gap: 2 },
     rowTitle: {
         fontFamily: Fonts.monoBold,
