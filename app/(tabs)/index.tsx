@@ -160,6 +160,11 @@ function buildPersonalizedHomeFallback(
   return `${name}-la. ${harvestReport.todayXp} XP means the system moved today. Now make tomorrow too expensive to skip.`;
 }
 
+function getNextSignalMode(kind: 'roast' | 'quote'): 'classic' | 'personalized' {
+  if (kind === 'roast') return 'personalized';
+  return Math.random() < 0.22 ? 'personalized' : 'classic';
+}
+
 export default function DojoScreen() {
   const { user, completeQuest, resetQuests, recoverStreak, deploySystemBackup } = useUser();
   const { palette: timePalette } = useTimeColors();
@@ -193,8 +198,8 @@ export default function DojoScreen() {
   const [quoteIndex, setQuoteIndex] = useState(() => Math.floor(Math.random() * ZANE_QUOTES.length));
   const [dynamicRoast, setDynamicRoast] = useState<string | null>(null);
   const [dynamicQuote, setDynamicQuote] = useState<string | null>(null);
-  const [roastMode, setRoastMode] = useState<'classic' | 'personalized'>('classic');
-  const [quoteMode, setQuoteMode] = useState<'classic' | 'personalized'>('personalized');
+  const [roastMode, setRoastMode] = useState<'classic' | 'personalized'>('personalized');
+  const [quoteMode, setQuoteMode] = useState<'classic' | 'personalized'>('classic');
   const memoryContext = buildZaneMemoryContext(user);
   const recentRoastsRef = useRef<string[]>([]);
   const recentQuotesRef = useRef<string[]>([]);
@@ -319,7 +324,7 @@ export default function DojoScreen() {
   }, [fadeAnim]);
 
   const refreshSignal = async (kind: 'roast' | 'quote', modeOverride?: 'classic' | 'personalized') => {
-    const mode = modeOverride || (kind === 'roast' ? roastMode : quoteMode);
+    const mode = modeOverride || (kind === 'roast' ? 'personalized' : getNextSignalMode('quote'));
     const fallback = kind === 'roast'
       ? ROASTS[(roastIndex + 1) % ROASTS.length]
       : ZANE_QUOTES[(quoteIndex + 1) % ZANE_QUOTES.length];
@@ -346,28 +351,30 @@ export default function DojoScreen() {
 
       if (kind === 'roast') {
         setDynamicRoast(finalSignal.replace(/^"|"$/g, '').trim());
-        setRoastMode(mode === 'classic' ? 'personalized' : 'classic');
+        setRoastMode('personalized');
       } else {
         setDynamicQuote(finalSignal.replace(/^"|"$/g, '').trim());
-        setQuoteMode(mode === 'classic' ? 'personalized' : 'classic');
+        setQuoteMode(mode);
       }
     } catch (error) {
       const safeFallback = mode === 'personalized' ? personalizedFallback : fallback;
       if (kind === 'roast') {
         setDynamicRoast(safeFallback);
         recentRoastsRef.current = [safeFallback, ...recentRoastsRef.current].slice(0, 6);
+        setRoastMode('personalized');
         setRoastIndex((prev) => (prev + 1) % ROASTS.length);
       } else {
         setDynamicQuote(safeFallback);
         recentQuotesRef.current = [safeFallback, ...recentQuotesRef.current].slice(0, 6);
+        setQuoteMode(mode);
         setQuoteIndex((prev) => (prev + 1) % ZANE_QUOTES.length);
       }
     }
   };
 
   useEffect(() => {
-    void refreshSignal('roast', 'classic');
-    void refreshSignal('quote', 'personalized');
+    void refreshSignal('roast', 'personalized');
+    void refreshSignal('quote', 'classic');
   }, [user?.email]);
 
 
@@ -666,7 +673,7 @@ export default function DojoScreen() {
               <Text style={styles.emojiIcon}>🔥</Text>
               <Text allowFontScaling={false} style={styles.roastLabel}>ZANE&apos;S ROAST</Text>
             </View>
-            <Text style={styles.roastTap}>{roastMode === 'classic' ? 'classic next' : 'personal next'}</Text>
+            <Text style={styles.roastTap}>personal</Text>
           </View>
           <Text style={styles.roastCardText}>“{dynamicRoast || ROASTS[roastIndex]}”</Text>
         </GlassCard>
@@ -681,7 +688,7 @@ export default function DojoScreen() {
               <FluentEmoji name="highVoltage" size={18} style={styles.emojiIconImage} />
               <Text allowFontScaling={false} style={styles.quoteLabel}>DAILY QUOTE</Text>
             </View>
-            <Text style={styles.quoteTap}>{quoteMode === 'classic' ? 'classic next' : 'personal next'}</Text>
+            <Text style={styles.quoteTap}>{quoteMode === 'personalized' ? 'rare personal' : 'classic'}</Text>
           </View>
           <Text style={[styles.quoteTextMain, { color: '#FFFFFF' }]}>“{dynamicQuote || ZANE_QUOTES[quoteIndex]}”</Text>
           <Text style={[styles.quoteAttr, { color: 'rgba(255,255,255,0.7)' }]}>— Zane × Goggins Engine</Text>

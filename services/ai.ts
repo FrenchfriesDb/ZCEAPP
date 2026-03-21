@@ -275,7 +275,7 @@ ${memoryBlock}
         const userPrompt = kind === 'roast'
             ? mode === 'classic'
                 ? 'Write one brutal classic Zane roast for the home screen.'
-                : 'Write one personalized Zane roast for the home screen using the memory above. Keep it short. Sometimes reference streaks, XP, or recent chat patterns directly, but not every time. Mix themes like brutal truth, discipline, charisma, social pressure, and ambition.'
+                : 'Write one personalized Zane roast for the home screen using the memory above. Keep it short, surgical, and savage. Sometimes reference streaks, XP, or recent chat patterns directly, but not every time. Mix themes like brutal truth, discipline, charisma, social pressure, ambition, and missed reps.'
             : mode === 'classic'
                 ? 'Write one classic Zane quote for the home screen.'
                 : 'Write one personalized Zane quote for the home screen using the memory above. Keep it very short and quotable. Sometimes reference their real patterns or chat history, sometimes keep it subtler. Mix motivation, discipline, charisma, social skill, success, and identity themes.';
