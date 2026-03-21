@@ -40,15 +40,29 @@ const getSolidThemeAccent = (color: string) => {
     return color.replace(/88$/i, '').replace(/44$/i, '');
 };
 
-const LEADERBOARD_GLASS_ACCENT = '#BFD7F2';
-const LEADERBOARD_GLASS_BORDER = 'rgba(191, 215, 242, 0.24)';
-const LEADERBOARD_GLASS_FILL = 'rgba(191, 215, 242, 0.12)';
-const LEADERBOARD_GLASS_TEXT = '#CDE4F8';
+const getThemeTint = (color: string, alpha: number) => {
+    const rgbMatch = color.match(/rgb\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)/i);
+    if (rgbMatch) {
+        return `rgba(${rgbMatch[1]}, ${rgbMatch[2]}, ${rgbMatch[3]}, ${alpha})`;
+    }
+
+    const hexMatch = color.match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
+    if (hexMatch) {
+        return `rgba(${parseInt(hexMatch[1], 16)}, ${parseInt(hexMatch[2], 16)}, ${parseInt(hexMatch[3], 16)}, ${alpha})`;
+    }
+
+    return color;
+};
 
 export default function LeaderboardScreen() {
     const { user } = useUser();
     const { textSecondary } = useTextColors();
     const selfHighlight = getSolidThemeAccent(textSecondary);
+    const glassBorder = getThemeTint(selfHighlight, 0.24);
+    const glassFill = getThemeTint(selfHighlight, 0.12);
+    const glassFillSoft = getThemeTint(selfHighlight, 0.1);
+    const glassText = selfHighlight;
+    const glassSheen = getThemeTint(selfHighlight, 0.14);
     const [globalData, setGlobalData] = useState<any[]>([]);
     const [myRank, setMyRank] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -118,13 +132,13 @@ export default function LeaderboardScreen() {
                         <View style={styles.livePillShell}>
                             <BlurView intensity={28} tint="dark" style={StyleSheet.absoluteFill} />
                             <LinearGradient
-                                colors={[LEADERBOARD_GLASS_FILL, 'rgba(255,255,255,0.02)']}
+                                colors={[glassFill, 'rgba(255,255,255,0.02)']}
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 1, y: 1 }}
                                 style={StyleSheet.absoluteFill}
                             />
-                            <View style={[styles.livePillHighlight, { backgroundColor: 'rgba(255,255,255,0.10)' }]} />
-                            <Text style={[styles.livePillText, { color: LEADERBOARD_GLASS_TEXT }]}>LIVE LEADERBOARD</Text>
+                            <View style={[styles.livePillHighlight, { backgroundColor: glassSheen }]} />
+                            <Text style={[styles.livePillText, { color: glassText }]}>LIVE LEADERBOARD</Text>
                         </View>
                     </View>
                 </View>
@@ -239,15 +253,15 @@ export default function LeaderboardScreen() {
             {/* Floating Personal Rank Indicator (LIVE TAB ONLY) */}
             {!isLoading && (
                 <View style={styles.floatingContainer}>
-                    <View style={[styles.floatingRankBubble, { borderColor: LEADERBOARD_GLASS_BORDER, shadowColor: LEADERBOARD_GLASS_ACCENT }]}>
+                    <View style={[styles.floatingRankBubble, { borderColor: glassBorder, shadowColor: glassText }]}>
                         <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
                         <LinearGradient
-                            colors={[LEADERBOARD_GLASS_FILL, 'rgba(255, 255, 255, 0.03)']}
+                            colors={[glassFill, 'rgba(255, 255, 255, 0.03)']}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 1 }}
                             style={StyleSheet.absoluteFill}
                         />
-                        <View style={[styles.floatingTopSheen, { backgroundColor: 'rgba(255,255,255,0.09)' }]} />
+                        <View style={[styles.floatingTopSheen, { backgroundColor: glassSheen }]} />
                         <View style={styles.floatingContent}>
                             <View style={styles.floatingInfo}>
                                 <Text style={styles.floatingLabel}>YOUR STANDING</Text>
@@ -257,11 +271,11 @@ export default function LeaderboardScreen() {
                             <View style={styles.floatingDivider} />
 
                             <View style={styles.floatingStats}>
-                                <View style={[styles.rankPill, { borderColor: 'rgba(191, 215, 242, 0.30)', backgroundColor: 'rgba(191, 215, 242, 0.10)' }]}>
-                                    <Text style={[styles.rankPillValue, { color: LEADERBOARD_GLASS_TEXT }]}>#{myDisplayInfo.rank}</Text>
+                                <View style={[styles.rankPill, { borderColor: glassBorder, backgroundColor: glassFillSoft }]}>
+                                    <Text style={[styles.rankPillValue, { color: glassText }]}>#{myDisplayInfo.rank}</Text>
                                 </View>
                                 <View style={styles.auraBox}>
-                                    <Text style={[styles.auraVal, { color: LEADERBOARD_GLASS_TEXT }]}>{myDisplayInfo.aura.toLocaleString()}</Text>
+                                    <Text style={[styles.auraVal, { color: glassText }]}>{myDisplayInfo.aura.toLocaleString()}</Text>
                                     <Text style={styles.auraSub}>AURA</Text>
                                 </View>
                             </View>
