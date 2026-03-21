@@ -179,7 +179,7 @@ export default function QuestsScreen() {
                                 textShadowColor: glowColor,
                                 textShadowOffset: { width: 0, height: 0 },
                                 textShadowRadius: 40,
-                                color: textPrimary
+                                color: '#FFFFFF'
                             }
                         ]}>{completedCount}</Text>
                         <Text style={[styles.heroUnit, { color: textSecondary }]}>OF {visibleQuests.length} QUESTS</Text>
