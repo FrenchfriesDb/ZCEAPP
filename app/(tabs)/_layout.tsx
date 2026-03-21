@@ -17,6 +17,22 @@ const TAB_CONFIG = [
   { name: 'profile', label: 'Profile', icon: 'dna' as FluentEmojiName },
 ];
 
+const getSolidAccent = (color: string) => {
+  const rgbaMatch = color.match(/rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)/i);
+  if (rgbaMatch) {
+    return `rgb(${rgbaMatch[1]}, ${rgbaMatch[2]}, ${rgbaMatch[3]})`;
+  }
+  return color.replace(/88$/i, '').replace(/44$/i, '');
+};
+
+const tintWithAlpha = (color: string, alpha: number) => {
+  const rgbMatch = color.match(/rgb\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)/i);
+  if (rgbMatch) {
+    return `rgba(${rgbMatch[1]}, ${rgbMatch[2]}, ${rgbMatch[3]}, ${alpha})`;
+  }
+  return color;
+};
+
 function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const routes = Array.isArray(state?.routes) ? state.routes : [];
   const { textPrimary, textSecondary } = useTextColors();
@@ -54,6 +70,9 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
             const focused = state.index === index;
             const tab = TAB_CONFIG.find(t => t.name === route.name);
             if (!tab) return null;
+            const drillsAccent = getSolidAccent(textSecondary);
+            const defaultAccent = getSolidAccent(textPrimary);
+            const activeAccent = route.name === 'drills' ? drillsAccent : defaultAccent;
 
             return (
               <Pressable
@@ -63,11 +82,24 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
                   styles.tabItem,
                   focused && styles.tabItemActive,
                   focused && {
-                    borderColor: 'rgba(255,255,255,0.08)',
-                    shadowColor: 'rgba(0,0,0,0.9)',
+                    borderColor: tintWithAlpha(activeAccent, route.name === 'drills' ? 0.42 : 0.18),
+                    backgroundColor: tintWithAlpha(activeAccent, route.name === 'drills' ? 0.14 : 0.08),
+                    shadowColor: activeAccent,
+                    shadowOpacity: route.name === 'drills' ? 0.32 : 0.16,
+                    shadowRadius: route.name === 'drills' ? 18 : 10,
                   },
                 ]}
               >
+                {focused && (
+                  <View
+                    style={[
+                      styles.activeGlow,
+                      {
+                        backgroundColor: tintWithAlpha(activeAccent, route.name === 'drills' ? 0.18 : 0.08),
+                      },
+                    ]}
+                  />
+                )}
                 <FluentEmoji
                   name={tab.icon}
                   size={focused ? 27 : 24}
@@ -77,6 +109,18 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
                     focused && styles.tabIconImageActive,
                   ]}
                 />
+                {focused && (
+                  <View
+                    style={[
+                      styles.activeIndicator,
+                      {
+                        backgroundColor: activeAccent,
+                        shadowColor: activeAccent,
+                        opacity: route.name === 'drills' ? 0.95 : 0.55,
+                      },
+                    ]}
+                  />
+                )}
               </Pressable>
             );
           })}
@@ -170,10 +214,13 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   tabItemActive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
+    shadowOpacity: 0.16,
+    shadowRadius: 12,
+  },
+  activeGlow: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: Radius.pill,
   },
   tabIcon: {
     fontSize: 24,
@@ -189,6 +236,16 @@ const styles = StyleSheet.create({
   },
   tabIconImageActive: {
     transform: [{ scale: 1.04 }],
+  },
+  activeIndicator: {
+    position: 'absolute',
+    bottom: 3,
+    width: 18,
+    height: 3,
+    borderRadius: 999,
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 8,
+    shadowOpacity: 0.55,
   },
   tabLabel: {
     fontFamily: Fonts.mono,
