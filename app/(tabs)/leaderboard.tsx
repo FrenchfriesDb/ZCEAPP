@@ -33,11 +33,18 @@ const getMetalPalette = (rank: number) => {
     return { edge: '#CD7F32', light: 'rgba(255, 216, 183, 0.55)', fillA: 'rgba(205, 127, 50, 0.2)', fillB: 'rgba(97, 54, 22, 0.05)' };
 };
 
+const getSolidThemeAccent = (color: string) => {
+    const rgbaMatch = color.match(/rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)/i);
+    if (rgbaMatch) {
+        return `rgb(${rgbaMatch[1]}, ${rgbaMatch[2]}, ${rgbaMatch[3]})`;
+    }
+    return color.replace(/88$/i, '').replace(/44$/i, '');
+};
+
 export default function LeaderboardScreen() {
     const { user } = useUser();
     const { textSecondary } = useTextColors();
-    const { palette } = useTimeColors();
-    const selfHighlight = (palette?.[1] || palette?.[palette.length - 1] || textSecondary.replace(/88$/i, '')).replace(/88$/i, '');
+    const selfHighlight = getSolidThemeAccent(textSecondary);
     const [globalData, setGlobalData] = useState<any[]>([]);
     const [myRank, setMyRank] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(false);
