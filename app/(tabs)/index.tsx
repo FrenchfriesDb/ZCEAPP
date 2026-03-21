@@ -562,7 +562,7 @@ export default function DojoScreen() {
       <View style={styles.sectionHeader}>
         <View style={{ flex: 1 }}>
           <Text style={[styles.sectionTitle, { color: title === 'STANDING ORDERS' ? systemColor : textPrimary }]}>{title}</Text>
-          <Text style={[styles.sectionSub, { color: textTertiary }]}>{count}/{total} COMPLETED</Text>
+          <Text style={[styles.sectionSub, { color: textPrimary }]}>{count}/{total} COMPLETED</Text>
         </View>
         {done ? (
           <GlassButton
@@ -596,7 +596,7 @@ export default function DojoScreen() {
             <Text style={[
               styles.heroNumber,
               { 
-                color: '#FFFFFF', // White number
+                color: textPrimary,
                 textShadowColor: glowColor,
                 textShadowOffset: { width: 0, height: 0 },
                 textShadowRadius: 40

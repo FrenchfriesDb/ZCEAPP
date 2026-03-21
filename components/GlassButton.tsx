@@ -169,7 +169,7 @@ export default function GlassButton({
     const scaleAnim = useRef(new Animated.Value(1)).current;
     const glowAnim = useRef(new Animated.Value(0.4)).current;
     const timeColors = useTimeColors();
-    const { textSecondary } = useTextColors();
+    const { textPrimary } = useTextColors();
     const safeTimePalette = Array.isArray(timeColors?.palette) ? timeColors.palette : [];
     const themeAccent = safeTimePalette[0] ?? Colors.accentCyan;
 
@@ -220,10 +220,10 @@ export default function GlassButton({
         ? (
             tint === 'red'
                 ? Colors.accentDanger
-                : tint === 'monochrome'
+                    : tint === 'monochrome'
                     ? '#FFFFFF'
                     : tint === 'blue'
-                        ? textSecondary
+                        ? textPrimary
                         : themeAccent
         )
         : null;

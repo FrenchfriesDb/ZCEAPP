@@ -107,7 +107,7 @@ export default function ProfileScreen() {
                 <GlassCard themed style={styles.graphCard} intensity={20}>
                     <ProgressGraph
                         dailyXp={user.dailyXp || {}}
-                        color={systemColor}
+                        color={textPrimary}
                         totalXp={user.xp || 0}
                         currentStreak={user.streak || 0}
                     />

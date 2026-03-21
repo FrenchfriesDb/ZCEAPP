@@ -40,7 +40,7 @@ export default function ProgressGraph({ dailyXp, color, totalXp, currentStreak }
     );
     const earlyStage = accumulatedXp < 1200 || completedDays < 10 || (currentStreak ?? 0) < 5;
     const [range, setRange] = useState<TimeRange>(earlyStage ? '1W' : '1M');
-    const { textPrimary, textSecondary, textTertiary } = useTextColors();
+    const { textPrimary } = useTextColors();
     const graphColor = color || textPrimary;
     const days = getDaysForRange(range, dailyXp, earlyStage);
     const { width: screenWidth } = useWindowDimensions();
@@ -76,9 +76,9 @@ export default function ProgressGraph({ dailyXp, color, totalXp, currentStreak }
             <View style={styles.header}>
                 <View>
                     <Text style={[styles.title, { color: textPrimary }]}>VELOCITY MONITOR</Text>
-                    <Text style={[styles.subtitle, { color: textSecondary }]}>{days} DAY PERFORMANCE</Text>
+                    <Text style={[styles.subtitle, { color: textPrimary }]}>{days} DAY PERFORMANCE</Text>
                 </View>
-                <Text style={[styles.peakText, { color: textTertiary }]}>PEAK: {Math.max(...data.map(d => d.xp), 0)} XP</Text>
+                <Text style={[styles.peakText, { color: textPrimary }]}>PEAK: {Math.max(...data.map(d => d.xp), 0)} XP</Text>
             </View>
 
             <View style={styles.toggleRow}>
@@ -88,7 +88,7 @@ export default function ProgressGraph({ dailyXp, color, totalXp, currentStreak }
                         onPress={() => setRange(r)}
                         style={[styles.toggleBtn, range === r && [styles.toggleBtnActive, { borderColor: graphColor + '66', backgroundColor: graphColor + '22' }]]}
                     >
-                        <Text style={[styles.toggleText, { color: textSecondary }, range === r && [styles.toggleTextActive, { color: textPrimary }]]}>{r}</Text>
+                        <Text style={[styles.toggleText, { color: textPrimary }, range === r && [styles.toggleTextActive, { color: textPrimary }]]}>{r}</Text>
                     </Pressable>
                 ))}
             </View>
@@ -151,11 +151,11 @@ export default function ProgressGraph({ dailyXp, color, totalXp, currentStreak }
             <View style={styles.footer}>
                 <View style={styles.legendItem}>
                     <View style={[styles.dot, { backgroundColor: '#34C759' }]} />
-                    <Text style={[styles.legendText, { color: textSecondary }]}>CHAINED</Text>
+                    <Text style={[styles.legendText, { color: textPrimary }]}>CHAINED</Text>
                 </View>
                 <View style={styles.legendItem}>
                     <View style={[styles.dot, { backgroundColor: '#FF3B30' }]} />
-                    <Text style={[styles.legendText, { color: textSecondary }]}>MISSED</Text>
+                    <Text style={[styles.legendText, { color: textPrimary }]}>MISSED</Text>
                 </View>
             </View>
         </View>
