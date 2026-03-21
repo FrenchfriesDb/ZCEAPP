@@ -13,6 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Colors, Fonts, FontSizes, Radius } from '@/constants/theme';
 import { useTimeColors } from '@/hooks/useTimeColors';
+import { useTextColors } from '@/context/TextColorsContext';
 
 /**
  * Ultra-realistic "water-glass" button.
@@ -167,8 +168,27 @@ export default function GlassButton({
 }: GlassButtonProps) {
     const scaleAnim = useRef(new Animated.Value(1)).current;
     const glowAnim = useRef(new Animated.Value(0.4)).current;
-    const { palette: timePalette } = useTimeColors();
-    const themeAccent = timePalette[0] ?? Colors.accentCyan;
+    const timeColors = useTimeColors();
+    const { textSecondary } = useTextColors();
+    const safeTimePalette = Array.isArray(timeColors?.palette) ? timeColors.palette : [];
+    const themeAccent = safeTimePalette[0] ?? Colors.accentCyan;
+
+    const withAlpha = (color: string, alpha: number) => {
+        if (color.startsWith('rgba(')) {
+            return color.replace(/rgba\(([^)]+),\s*[\d.]+\)/, `rgba($1, ${alpha})`);
+        }
+        if (color.startsWith('rgb(')) {
+            return color.replace('rgb(', 'rgba(').replace(')', `, ${alpha})`);
+        }
+        const hex = color.replace('#', '');
+        if (hex.length === 6) {
+            const r = parseInt(hex.slice(0, 2), 16);
+            const g = parseInt(hex.slice(2, 4), 16);
+            const b = parseInt(hex.slice(4, 6), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+        return `rgba(255,255,255,${alpha})`;
+    };
 
     // glow halo pulse
     useEffect(() => {
@@ -197,11 +217,19 @@ export default function GlassButton({
     const isVerify = look === 'verify';
     const wantsAccent = isVerify || (isGlass && tint !== 'dark');
     const accentColor = wantsAccent
-        ? (tint === 'red' ? Colors.accentDanger : tint === 'monochrome' ? '#FFFFFF' : themeAccent)
+        ? (
+            tint === 'red'
+                ? Colors.accentDanger
+                : tint === 'monochrome'
+                    ? '#FFFFFF'
+                    : tint === 'blue'
+                        ? textSecondary
+                        : themeAccent
+        )
         : null;
 
     const rimColors = (isVerify || isGlass) && accentColor
-        ? ([`${accentColor}44`, 'rgba(255,255,255,0.08)', 'rgba(0,0,0,0.86)'] as const)
+        ? ([withAlpha(accentColor, 0.26), 'rgba(255,255,255,0.08)', 'rgba(0,0,0,0.86)'] as const)
         : t.rimColors;
     const labelColor = '#FFFFFF';
     const blurIntensity = (isVerify || isGlass) ? 70 : 100;
@@ -228,7 +256,7 @@ export default function GlassButton({
     const phEff = Math.max(14, Math.round(ph * phScale));
     const pvEff = Math.max(10, Math.round(pv * pvScale));
 
-    const haloColor = accentColor ? `${accentColor}24` : (tint === 'red' ? Colors.accentDanger : t.glowColor);
+    const haloColor = accentColor ? withAlpha(accentColor, 0.14) : (tint === 'red' ? Colors.accentDanger : t.glowColor);
 
     return (
         <Animated.View style={[{ transform: [{ scale: scaleAnim }] }, style]}>

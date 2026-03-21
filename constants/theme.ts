@@ -134,7 +134,7 @@ export const getDynamicColors = (hour: number, minute: number) => {
   };
 
   const palette = pickPalette();
-  const middleStop = palette[Math.floor((palette.length - 1) / 2)] || palette[0] || '#E8E8E8';
+  const middleStop = palette[Math.floor(palette.length / 2)] || palette[0] || '#E8E8E8';
   let textPrimaryColor = '#E8E8E8'; // default
   let textSecondaryColor = middleStop;
   
@@ -157,7 +157,10 @@ export const getDynamicColors = (hour: number, minute: number) => {
   else if (time < 21) textPrimaryColor = '#FFC07C'; // Plum Glow - last color (peach)
   else if (time < 22) textPrimaryColor = '#FFFFFF'; // Moon Dust/Night Dive - force white for contrast
   else if (time < 23) textPrimaryColor = '#00458E'; // Void Spark - last color (deep blue)
-  else textPrimaryColor = '#918CA9'; // Midnight Mist - last color (lavender gray)
+  else {
+    textPrimaryColor = '#918CA9'; // Midnight Mist primary: light purple
+    textSecondaryColor = '#FFFFFF'; // Midnight Mist secondary: white
+  }
   
   return {
     textPrimary: textPrimaryColor,
