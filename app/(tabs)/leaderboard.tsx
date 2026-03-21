@@ -9,6 +9,7 @@ import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { useUser } from '@/context/UserContext';
 import { formatDisplayName } from '@/utils/formatters';
 import { useTextColors } from '@/context/TextColorsContext';
+import { useTimeColors } from '@/hooks/useTimeColors';
 
 const getRankColor = (rank: number) => {
     if (rank === 1) return '#FFD700'; // Gold
@@ -54,15 +55,30 @@ const getThemeTint = (color: string, alpha: number) => {
     return color;
 };
 
+const pickBrightAccentFromPalette = (palette: string[]) => {
+    const getLuminance = (color: string) => {
+        const hex = color.replace('#', '');
+        if (hex.length !== 6) return 0;
+        const r = parseInt(hex.slice(0, 2), 16);
+        const g = parseInt(hex.slice(2, 4), 16);
+        const b = parseInt(hex.slice(4, 6), 16);
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+
+    return [...palette].sort((a, b) => getLuminance(b) - getLuminance(a))[0] ?? '#FFFFFF';
+};
+
 export default function LeaderboardScreen() {
     const { user } = useUser();
     const { textSecondary } = useTextColors();
+    const { palette } = useTimeColors();
     const selfHighlight = getSolidThemeAccent(textSecondary);
-    const glassBorder = getThemeTint(selfHighlight, 0.24);
-    const glassFill = getThemeTint(selfHighlight, 0.12);
-    const glassFillSoft = getThemeTint(selfHighlight, 0.1);
-    const glassText = selfHighlight;
-    const glassSheen = getThemeTint(selfHighlight, 0.14);
+    const leaderboardGlassAccent = pickBrightAccentFromPalette(palette);
+    const glassBorder = getThemeTint(leaderboardGlassAccent, 0.24);
+    const glassFill = getThemeTint(leaderboardGlassAccent, 0.12);
+    const glassFillSoft = getThemeTint(leaderboardGlassAccent, 0.1);
+    const glassText = leaderboardGlassAccent;
+    const glassSheen = getThemeTint(leaderboardGlassAccent, 0.14);
     const [globalData, setGlobalData] = useState<any[]>([]);
     const [myRank, setMyRank] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(false);
