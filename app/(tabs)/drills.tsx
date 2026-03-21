@@ -6,6 +6,7 @@ import GlassButton from '@/components/GlassButton';
 import { router } from 'expo-router';
 import { useTimeColors } from '@/hooks/useTimeColors';
 import { useState } from 'react';
+import { useTextColors } from '@/context/TextColorsContext';
 
 const DRILL_CATEGORIES = [
     {
@@ -54,6 +55,8 @@ const DRILL_CATEGORIES = [
 export default function DrillsScreen() {
     const timePalette = useTimeColors();
     const systemColor = timePalette[0];
+    const warmAccent = timePalette[1] ?? timePalette[0];
+    const { textSecondary } = useTextColors();
     const [selectedFilter, setSelectedFilter] = useState<string>('all');
 
     const FILTER_TABS = [
@@ -77,8 +80,15 @@ export default function DrillsScreen() {
     return (
         <View style={styles.container}>
             <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
-            <View style={[styles.ambientGlow, { top: -50, right: -50, backgroundColor: systemColor + '0A' }]} />
-            <View style={[styles.ambientGlow, { bottom: 100, left: -40, backgroundColor: systemColor + '05' }]} />
+            <LinearGradient
+                colors={['rgba(255,255,255,0.035)', 'rgba(255,255,255,0.012)', 'rgba(0,0,0,0)']}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 1 }}
+                style={styles.pageSheen}
+            />
+            <View style={[styles.ambientGlow, { top: -58, right: -42, backgroundColor: `${textSecondary}12` }]} />
+            <View style={[styles.ambientGlow, { top: 96, left: -72, backgroundColor: `${warmAccent}10` }]} />
+            <View style={[styles.ambientGlow, { bottom: 92, right: -70, backgroundColor: `${systemColor}08` }]} />
 
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
@@ -86,7 +96,7 @@ export default function DrillsScreen() {
             >
                 {/* Header */}
                 <View style={styles.header}>
-                    <Text style={[styles.headerEyebrow, { color: systemColor }]}>Z.A.N.E. PROTOCOL</Text>
+                    <Text style={[styles.headerEyebrow, { color: textSecondary }]}>Z.A.N.E. PROTOCOL</Text>
                     <Text style={styles.headerTitle}>Training Modules</Text>
                     <Text style={styles.headerSub}>Select a protocol to begin your session.</Text>
                 </View>
@@ -103,12 +113,27 @@ export default function DrillsScreen() {
                             onPress={() => setSelectedFilter(tab.id)}
                             style={[
                                 styles.filterTab,
-                                selectedFilter === tab.id && [styles.filterTabActive, { borderColor: systemColor, backgroundColor: `${systemColor}15` }]
+                                selectedFilter === tab.id && [
+                                    styles.filterTabActive,
+                                    {
+                                        borderColor: textSecondary,
+                                        backgroundColor: `${textSecondary}18`,
+                                        shadowColor: textSecondary,
+                                    }
+                                ]
                             ]}
                         >
+                            {selectedFilter === tab.id && (
+                                <LinearGradient
+                                    colors={['rgba(255,255,255,0.22)', 'rgba(255,255,255,0.04)', 'rgba(255,255,255,0)']}
+                                    start={{ x: 0.5, y: 0 }}
+                                    end={{ x: 0.5, y: 1 }}
+                                    style={styles.filterTabSheen}
+                                />
+                            )}
                             <Text style={[
                                 styles.filterTabText,
-                                selectedFilter === tab.id && { color: systemColor, fontWeight: '700' }
+                                selectedFilter === tab.id && { color: textSecondary, fontWeight: '700' }
                             ]}>
                                 {tab.label}
                             </Text>
@@ -120,7 +145,7 @@ export default function DrillsScreen() {
                 {filteredCategories.map((category, catIdx) => (
                     <View key={catIdx} style={styles.categorySection}>
                         <View style={styles.categoryHeader}>
-                            <Text style={[styles.categoryTitle, { color: systemColor }]}>{category.category}</Text>
+                            <Text style={[styles.categoryTitle, { color: textSecondary }]}>{category.category}</Text>
                             <Text style={styles.categoryDesc}>{category.desc}</Text>
                         </View>
                         <View style={styles.grid}>
@@ -130,8 +155,15 @@ export default function DrillsScreen() {
                                     onPress={() => router.push(drill.route as any)}
                                     style={({ pressed }) => [styles.cardWrapper, pressed && { opacity: 0.85 }]}
                                 >
-                                    <View style={[styles.card, { shadowColor: drill.accent }]}>
+                                    <View style={[styles.card, { shadowColor: drill.accent, borderColor: `${drill.accent}24` }]}>
                                         <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+                                        <LinearGradient
+                                            colors={['rgba(255,255,255,0.10)', 'rgba(255,255,255,0.03)', 'rgba(255,255,255,0)']}
+                                            start={{ x: 0.5, y: 0 }}
+                                            end={{ x: 0.5, y: 1 }}
+                                            style={styles.cardSheen}
+                                        />
+                                        <View style={[styles.cardGlow, { backgroundColor: `${drill.accent}14` }]} />
                                         {/* Left accent bar */}
                                         <View style={[styles.accentBar, { backgroundColor: drill.accent }]} />
 
@@ -176,6 +208,13 @@ export default function DrillsScreen() {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#000000' },
     scrollContent: { padding: Spacing.lg, paddingTop: 64 },
+    pageSheen: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 220,
+    },
 
     header: { marginBottom: 28 },
     headerEyebrow: {
@@ -218,6 +257,19 @@ const styles = StyleSheet.create({
         shadowRadius: 18,
         shadowOpacity: 0.15,
         elevation: 8,
+        position: 'relative',
+    },
+    cardSheen: {
+        ...StyleSheet.absoluteFillObject,
+    },
+    cardGlow: {
+        position: 'absolute',
+        top: -18,
+        right: -18,
+        width: 92,
+        height: 92,
+        borderRadius: 999,
+        opacity: 0.34,
     },
     accentBar: {
         width: 3,
@@ -278,9 +330,16 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.1)',
         backgroundColor: 'transparent',
+        overflow: 'hidden',
     },
     filterTabActive: {
         borderWidth: 1,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.18,
+        shadowRadius: 14,
+    },
+    filterTabSheen: {
+        ...StyleSheet.absoluteFillObject,
     },
     filterTabText: {
         fontFamily: Fonts.monoBold,
