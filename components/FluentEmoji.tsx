@@ -30,6 +30,7 @@ const FLUENT_EMOJI_MAP = {
   ghost: require('@/assets/fluent-emoji/ghost.png'),
   speakingHead: require('@/assets/fluent-emoji/speaking_head.png'),
   repeatButton: require('@/assets/fluent-emoji/repeat_button.png'),
+  wavingHand: require('@/assets/fluent-emoji/waving_hand.png'),
 } as const;
 
 export type FluentEmojiName = keyof typeof FLUENT_EMOJI_MAP;
@@ -64,6 +65,7 @@ const EMOJI_ALIAS_MAP: Record<string, FluentEmojiName> = {
   '👻': 'ghost',
   '🗣️': 'speakingHead',
   '🔄': 'repeatButton',
+  '👋': 'wavingHand',
 };
 
 export function resolveFluentEmojiName(value?: string | null): FluentEmojiName | null {
