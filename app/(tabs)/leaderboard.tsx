@@ -7,9 +7,8 @@ import GlassCard from '@/components/GlassCard';
 import { db, auth } from '@/services/firebase';
 import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { useUser } from '@/context/UserContext';
-import { formatDisplayName, getFirstName } from '@/utils/formatters';
+import { formatDisplayName } from '@/utils/formatters';
 import { useTextColors } from '@/context/TextColorsContext';
-import { useTimeColors } from '@/hooks/useTimeColors';
 
 const getRankColor = (rank: number) => {
     if (rank === 1) return '#FFD700'; // Gold
@@ -40,6 +39,11 @@ const getSolidThemeAccent = (color: string) => {
     }
     return color.replace(/88$/i, '').replace(/44$/i, '');
 };
+
+const LEADERBOARD_GLASS_ACCENT = '#BFD7F2';
+const LEADERBOARD_GLASS_BORDER = 'rgba(191, 215, 242, 0.24)';
+const LEADERBOARD_GLASS_FILL = 'rgba(191, 215, 242, 0.12)';
+const LEADERBOARD_GLASS_TEXT = '#CDE4F8';
 
 export default function LeaderboardScreen() {
     const { user } = useUser();
@@ -114,13 +118,13 @@ export default function LeaderboardScreen() {
                         <View style={styles.livePillShell}>
                             <BlurView intensity={28} tint="dark" style={StyleSheet.absoluteFill} />
                             <LinearGradient
-                                colors={[`${textSecondary}55`, 'rgba(255,255,255,0.02)']}
+                                colors={[LEADERBOARD_GLASS_FILL, 'rgba(255,255,255,0.02)']}
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 1, y: 1 }}
                                 style={StyleSheet.absoluteFill}
                             />
-                            <View style={[styles.livePillHighlight, { backgroundColor: `${textSecondary}33` }]} />
-                            <Text style={[styles.livePillText, { color: textSecondary.replace(/88$/i, '') }]}>LIVE LEADERBOARD</Text>
+                            <View style={[styles.livePillHighlight, { backgroundColor: 'rgba(255,255,255,0.10)' }]} />
+                            <Text style={[styles.livePillText, { color: LEADERBOARD_GLASS_TEXT }]}>LIVE LEADERBOARD</Text>
                         </View>
                     </View>
                 </View>
@@ -235,15 +239,15 @@ export default function LeaderboardScreen() {
             {/* Floating Personal Rank Indicator (LIVE TAB ONLY) */}
             {!isLoading && (
                 <View style={styles.floatingContainer}>
-                    <View style={[styles.floatingRankBubble, { borderColor: `${textSecondary}33`, shadowColor: textSecondary.replace(/88$/i, '') }]}>
+                    <View style={[styles.floatingRankBubble, { borderColor: LEADERBOARD_GLASS_BORDER, shadowColor: LEADERBOARD_GLASS_ACCENT }]}>
                         <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
                         <LinearGradient
-                            colors={[`${textSecondary}44`, 'rgba(255, 255, 255, 0.03)']}
+                            colors={[LEADERBOARD_GLASS_FILL, 'rgba(255, 255, 255, 0.03)']}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 1 }}
                             style={StyleSheet.absoluteFill}
                         />
-                        <View style={[styles.floatingTopSheen, { backgroundColor: `${textSecondary}22` }]} />
+                        <View style={[styles.floatingTopSheen, { backgroundColor: 'rgba(255,255,255,0.09)' }]} />
                         <View style={styles.floatingContent}>
                             <View style={styles.floatingInfo}>
                                 <Text style={styles.floatingLabel}>YOUR STANDING</Text>
@@ -253,11 +257,11 @@ export default function LeaderboardScreen() {
                             <View style={styles.floatingDivider} />
 
                             <View style={styles.floatingStats}>
-                                <View style={[styles.rankPill, { borderColor: `${textSecondary}40`, backgroundColor: `${textSecondary}18` }]}>
-                                    <Text style={[styles.rankPillValue, { color: textSecondary.replace(/88$/i, '') }]}>#{myDisplayInfo.rank}</Text>
+                                <View style={[styles.rankPill, { borderColor: 'rgba(191, 215, 242, 0.30)', backgroundColor: 'rgba(191, 215, 242, 0.10)' }]}>
+                                    <Text style={[styles.rankPillValue, { color: LEADERBOARD_GLASS_TEXT }]}>#{myDisplayInfo.rank}</Text>
                                 </View>
                                 <View style={styles.auraBox}>
-                                    <Text style={[styles.auraVal, { color: textSecondary.replace(/88$/i, '') }]}>{myDisplayInfo.aura.toLocaleString()}</Text>
+                                    <Text style={[styles.auraVal, { color: LEADERBOARD_GLASS_TEXT }]}>{myDisplayInfo.aura.toLocaleString()}</Text>
                                     <Text style={styles.auraSub}>AURA</Text>
                                 </View>
                             </View>
