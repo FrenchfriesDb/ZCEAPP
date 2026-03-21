@@ -271,7 +271,7 @@ export const AIService = {
         recentSignals = [],
     }: HomeSignalOptions): Promise<string | null> {
         const providers: Array<'groq' | 'mistral' | 'deepseek'> = ['groq', 'mistral', 'deepseek'];
-        const dataDrivenRoast = kind === 'roast' && mode === 'personalized' && Math.random() < 0.16;
+        const dataDrivenRoast = kind === 'roast' && mode === 'personalized' && Math.random() < 0.08;
         const roastAngles = [
             'brutal truth',
             'discipline',
@@ -309,7 +309,7 @@ Rules:
 - No fake greetings.
 - No multi-paragraph response.
 - No quotation marks around the whole output.
-- Keep it tight: ${kind === 'roast' ? '1-2 sharp sentences max, ideally under 22 words.' : '1 short cinematic sentence, ideally under 18 words. Never ramble.'}
+- Keep it tight: ${kind === 'roast' ? 'Exactly 1 sharp sentence, ideally under 14 words. Never exceed 16 words.' : '1 short cinematic sentence, ideally under 18 words. Never ramble.'}
 - If mode is PERSONALIZED, it should feel tailored to the user, but it does NOT need to mention stats, streaks, XP, or chat history every time.
 - Personalized signals may reference user data, recent chat themes, emotional patterns, avoided reps, or current pressure when it helps.
 - Sometimes personalized should be subtle and intimate, not obviously data-driven.
@@ -356,7 +356,7 @@ ${memoryBlock}
                             { role: 'user', content: userPrompt },
                         ],
                         temperature: 0.95,
-                        max_tokens: 120,
+                        max_tokens: 64,
                         top_p: 1,
                         stream: false,
                         ...(provider === 'kimi' ? { chat_template_kwargs: { thinking: false } } : {})
