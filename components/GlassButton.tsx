@@ -215,13 +215,15 @@ export default function GlassButton({
 
     const isGlass = look === 'glass';
     const isVerify = look === 'verify';
-    const wantsAccent = isVerify || (isGlass && tint !== 'dark');
+    const wantsAccent = isVerify || isGlass;
     const accentColor = wantsAccent
         ? (
             tint === 'red'
                 ? Colors.accentDanger
                     : tint === 'monochrome'
                     ? '#FFFFFF'
+                    : tint === 'dark'
+                        ? textPrimary
                     : tint === 'blue'
                         ? textPrimary
                         : themeAccent

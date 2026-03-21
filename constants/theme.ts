@@ -155,7 +155,10 @@ export const getDynamicColors = (hour: number, minute: number) => {
   }
   else if (time < 20.5) textPrimaryColor = '#34073D'; // Mars Echo - last color (deep purple)
   else if (time < 21) textPrimaryColor = '#FFC07C'; // Plum Glow - last color (peach)
-  else if (time < 22) textPrimaryColor = '#FFFFFF'; // Moon Dust/Night Dive - force white for contrast
+  else if (time < 22) {
+    textPrimaryColor = '#CCB3D1'; // Night Dive primary: light purple
+    textSecondaryColor = '#FFFFFF'; // Night Dive secondary: white
+  }
   else if (time < 23) textPrimaryColor = '#00458E'; // Void Spark - last color (deep blue)
   else {
     textPrimaryColor = '#918CA9'; // Midnight Mist primary: light purple

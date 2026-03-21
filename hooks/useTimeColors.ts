@@ -55,9 +55,7 @@ export const useTimeColors = () => {
             else next = TimeColors.midnightMist;                     // 11 PM-12 AM
 
             const dyn = getDynamicColors(h, m);
-            const isWhiteMoonTheme = time >= 21 && time < 22; // 9-10 PM "Moon Dust": force pure-white accents for readability
-
-            setPalette(isWhiteMoonTheme ? ['#FFFFFF', '#FFFFFF'] : next);
+            setPalette(next);
             setTextColors({
                 primary: dyn.textPrimary,
                 secondary: dyn.textSecondary,
