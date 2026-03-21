@@ -4,7 +4,6 @@ import { BlurView } from 'expo-blur';
 import { Colors, Fonts, FontSizes, Spacing, Radius } from '@/constants/theme';
 import GlassButton from '@/components/GlassButton';
 import { router } from 'expo-router';
-import { useTimeColors } from '@/hooks/useTimeColors';
 import { useState } from 'react';
 import { useTextColors } from '@/context/TextColorsContext';
 
@@ -53,10 +52,7 @@ const DRILL_CATEGORIES = [
 ];
 
 export default function DrillsScreen() {
-    const timePalette = useTimeColors();
-    const systemColor = timePalette[0];
-    const warmAccent = timePalette[1] ?? timePalette[0];
-    const { textSecondary } = useTextColors();
+    const { textPrimary } = useTextColors();
     const [selectedFilter, setSelectedFilter] = useState<string>('all');
 
     const FILTER_TABS = [
@@ -86,9 +82,6 @@ export default function DrillsScreen() {
                 end={{ x: 0.5, y: 1 }}
                 style={styles.pageSheen}
             />
-            <View style={[styles.ambientGlow, { top: -58, right: -42, backgroundColor: `${textSecondary}12` }]} />
-            <View style={[styles.ambientGlow, { top: 96, left: -72, backgroundColor: `${warmAccent}10` }]} />
-            <View style={[styles.ambientGlow, { bottom: 92, right: -70, backgroundColor: `${systemColor}08` }]} />
 
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
@@ -96,7 +89,7 @@ export default function DrillsScreen() {
             >
                 {/* Header */}
                 <View style={styles.header}>
-                    <Text style={[styles.headerEyebrow, { color: textSecondary }]}>Z.A.N.E. PROTOCOL</Text>
+                    <Text style={[styles.headerEyebrow, { color: textPrimary }]}>Z.A.N.E. PROTOCOL</Text>
                     <Text style={styles.headerTitle}>Training Modules</Text>
                     <Text style={styles.headerSub}>Select a protocol to begin your session.</Text>
                 </View>
@@ -116,9 +109,8 @@ export default function DrillsScreen() {
                                 selectedFilter === tab.id && [
                                     styles.filterTabActive,
                                     {
-                                        borderColor: textSecondary,
-                                        backgroundColor: `${textSecondary}18`,
-                                        shadowColor: textSecondary,
+                                        borderColor: 'rgba(255,255,255,0.16)',
+                                        backgroundColor: 'rgba(255,255,255,0.06)',
                                     }
                                 ]
                             ]}
@@ -133,7 +125,7 @@ export default function DrillsScreen() {
                             )}
                             <Text style={[
                                 styles.filterTabText,
-                                selectedFilter === tab.id && { color: textSecondary, fontWeight: '700' }
+                                selectedFilter === tab.id && { color: textPrimary, fontWeight: '700' }
                             ]}>
                                 {tab.label}
                             </Text>
@@ -145,7 +137,7 @@ export default function DrillsScreen() {
                 {filteredCategories.map((category, catIdx) => (
                     <View key={catIdx} style={styles.categorySection}>
                         <View style={styles.categoryHeader}>
-                            <Text style={[styles.categoryTitle, { color: textSecondary }]}>{category.category}</Text>
+                            <Text style={[styles.categoryTitle, { color: textPrimary }]}>{category.category}</Text>
                             <Text style={styles.categoryDesc}>{category.desc}</Text>
                         </View>
                         <View style={styles.grid}>
@@ -155,7 +147,7 @@ export default function DrillsScreen() {
                                     onPress={() => router.push(drill.route as any)}
                                     style={({ pressed }) => [styles.cardWrapper, pressed && { opacity: 0.85 }]}
                                 >
-                                    <View style={[styles.card, { shadowColor: drill.accent, borderColor: `${drill.accent}24` }]}>
+                                    <View style={[styles.card, { shadowColor: 'rgba(255,255,255,0.08)' }]}>
                                         <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
                                         <LinearGradient
                                             colors={['rgba(255,255,255,0.10)', 'rgba(255,255,255,0.03)', 'rgba(255,255,255,0)']}
@@ -163,7 +155,6 @@ export default function DrillsScreen() {
                                             end={{ x: 0.5, y: 1 }}
                                             style={styles.cardSheen}
                                         />
-                                        <View style={[styles.cardGlow, { backgroundColor: `${drill.accent}14` }]} />
                                         {/* Left accent bar */}
                                         <View style={[styles.accentBar, { backgroundColor: drill.accent }]} />
 
@@ -262,15 +253,6 @@ const styles = StyleSheet.create({
     cardSheen: {
         ...StyleSheet.absoluteFillObject,
     },
-    cardGlow: {
-        position: 'absolute',
-        top: -18,
-        right: -18,
-        width: 92,
-        height: 92,
-        borderRadius: 999,
-        opacity: 0.34,
-    },
     accentBar: {
         width: 3,
         height: '100%',
@@ -335,8 +317,9 @@ const styles = StyleSheet.create({
     filterTabActive: {
         borderWidth: 1,
         shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.18,
+        shadowOpacity: 0.12,
         shadowRadius: 14,
+        shadowColor: 'rgba(255,255,255,0.22)',
     },
     filterTabSheen: {
         ...StyleSheet.absoluteFillObject,
@@ -358,11 +341,5 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: Colors.textSecondary,
         lineHeight: 16,
-    },
-    ambientGlow: {
-        position: 'absolute',
-        width: 250,
-        height: 250,
-        borderRadius: 125,
     },
 });
