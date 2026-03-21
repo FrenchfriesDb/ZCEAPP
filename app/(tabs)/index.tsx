@@ -330,6 +330,10 @@ export default function DojoScreen() {
       : ZANE_QUOTES[(quoteIndex + 1) % ZANE_QUOTES.length];
     const recentSignalsRef = kind === 'roast' ? recentRoastsRef : recentQuotesRef;
     const personalizedFallback = buildPersonalizedHomeFallback(kind, user, harvestReport, riskSnapshot);
+    const currentlyShown = kind === 'roast' ? dynamicRoast : dynamicQuote;
+    if (currentlyShown) {
+      recentSignalsRef.current = [currentlyShown, ...recentSignalsRef.current].slice(0, 6);
+    }
 
     try {
       const response = await AIService.generateHomeSignal({
@@ -352,9 +356,11 @@ export default function DojoScreen() {
       if (kind === 'roast') {
         setDynamicRoast(finalSignal.replace(/^"|"$/g, '').trim());
         setRoastMode('personalized');
+        setRoastIndex((prev) => (prev + 1) % ROASTS.length);
       } else {
         setDynamicQuote(finalSignal.replace(/^"|"$/g, '').trim());
         setQuoteMode(mode);
+        setQuoteIndex((prev) => (prev + 1) % ZANE_QUOTES.length);
       }
     } catch (error) {
       const safeFallback = mode === 'personalized' ? personalizedFallback : fallback;

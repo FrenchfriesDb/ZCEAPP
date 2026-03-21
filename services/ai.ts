@@ -232,6 +232,35 @@ type HomeSignalOptions = {
     recentSignals?: string[];
 };
 
+function getProviderConfig(provider: 'groq' | 'deepseek' | 'kimi' | 'mistral') {
+    if (provider === 'groq') {
+        return {
+            apiKey: GROQ_API_KEY,
+            apiUrl: GROQ_URL,
+            model: 'llama-3.3-70b-versatile',
+        };
+    }
+    if (provider === 'deepseek') {
+        return {
+            apiKey: DEEPSEEK_API_KEY,
+            apiUrl: DEEPSEEK_URL,
+            model: 'deepseek-chat',
+        };
+    }
+    if (provider === 'kimi') {
+        return {
+            apiKey: NVIDIA_KEY_KIMI,
+            apiUrl: NVIDIA_URL,
+            model: 'moonshotai/kimi-k2.5',
+        };
+    }
+    return {
+        apiKey: NVIDIA_KEY_MISTRAL,
+        apiUrl: NVIDIA_URL,
+        model: 'mistralai/mistral-large-3-675b-instruct-2512',
+    };
+}
+
 export const AIService = {
     async generateHomeSignal({
         userName = 'AGENT',
@@ -242,6 +271,27 @@ export const AIService = {
         recentSignals = [],
     }: HomeSignalOptions): Promise<string | null> {
         const providers: Array<'groq' | 'mistral' | 'deepseek'> = ['groq', 'mistral', 'deepseek'];
+        const roastAngles = [
+            'brutal truth',
+            'discipline',
+            'status',
+            'social pressure',
+            'average vs legendary',
+            'fear and avoidance',
+            'charisma and presence',
+            'ambition',
+        ];
+        const quoteAngles = [
+            'discipline',
+            'charisma',
+            'social courage',
+            'self-respect',
+            'status',
+            'identity',
+            'momentum',
+            'success',
+        ];
+        const selectedAngle = (kind === 'roast' ? roastAngles : quoteAngles)[Math.floor(Math.random() * (kind === 'roast' ? roastAngles.length : quoteAngles.length))];
         const recentBlock = recentSignals.length
             ? `\n\nDO NOT REPEAT OR CLOSELY REWRITE THESE RECENT ${kind.toUpperCase()}S:\n- ${recentSignals.join('\n- ')}`
             : '';
@@ -269,6 +319,7 @@ Rules:
 - If mode is CLASSIC, keep it universal and iconic.
 - Never output provider errors, meta commentary, or fallback notices.
 - Avoid repeating phrasing from recent signals.
+- CURRENT ANGLE TO FAVOR FOR THIS GENERATION: ${selectedAngle.toUpperCase()}
 ${recentBlock}
 ${memoryBlock}
         `.trim();
@@ -283,26 +334,48 @@ ${memoryBlock}
 
         for (const provider of providers) {
             try {
-                const result = await this.generateResponse(
-                    [{ role: 'user', content: userPrompt }],
-                    provider,
-                    userName,
-                    level,
-                    'main',
-                    {
-                        chatStyle: mode === 'classic' ? 'classic' : 'coach',
-                        memoryContext: systemPrompt,
-                    }
-                );
+                const { apiKey, apiUrl, model } = getProviderConfig(provider);
+                if (!apiKey || apiKey.includes('PASTE_YOUR')) continue;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model,
+                        messages: [
+                            { role: 'system', content: `YOU ARE WRITING FOR ${userName.toUpperCase()}, LEVEL ${level}.\n\n${systemPrompt}` },
+                            { role: 'user', content: userPrompt },
+                        ],
+                        temperature: 0.95,
+                        max_tokens: 120,
+                        top_p: 1,
+                        stream: false,
+                        ...(provider === 'kimi' ? { chat_template_kwargs: { thinking: false } } : {})
+                    }),
+                });
+
+                if (!response.ok) {
+                    continue;
+                }
+
+                const data = await response.json();
+                const result: string = data?.choices?.[0]?.message?.content?.trim?.() || '';
 
                 if (
                     !result ||
-                    /CRITICAL FAILURE|PROTOCOL ERROR|rate limit|429|console\.groq|billing|connection severed/i.test(result)
+                    /BRUTAL TRUTH:|ONE NON-NEGOTIABLE DRILL:|ONE ZANE QUOTE TO EMBODY:|DRILL OF THE DAY|Mindset Analysis|Reprogramming|SCORE:|rate limit|429|console\.groq|billing|connection severed/i.test(result)
                 ) {
                     continue;
                 }
 
-                return result.replace(/^"+|"+$/g, '').trim();
+                return result
+                    .replace(/^"+|"+$/g, '')
+                    .replace(/\s{3,}/g, ' ')
+                    .trim();
             } catch {
                 continue;
             }
@@ -319,27 +392,7 @@ ${memoryBlock}
         promptType: 'main' | 'coach' | 'drill' = 'main',
         options?: { chatStyle?: ZaneChatStyle; memoryContext?: string }
     ): Promise<string> {
-        let apiKey = '';
-        let apiUrl = '';
-        let model = '';
-
-        if (provider === 'groq') {
-            apiKey = GROQ_API_KEY;
-            apiUrl = GROQ_URL;
-            model = 'llama-3.3-70b-versatile';
-        } else if (provider === 'deepseek') {
-            apiKey = DEEPSEEK_API_KEY;
-            apiUrl = DEEPSEEK_URL;
-            model = 'deepseek-chat';
-        } else if (provider === 'kimi') {
-            apiKey = NVIDIA_KEY_KIMI;
-            apiUrl = NVIDIA_URL;
-            model = 'moonshotai/kimi-k2.5';
-        } else if (provider === 'mistral') {
-            apiKey = NVIDIA_KEY_MISTRAL;
-            apiUrl = NVIDIA_URL;
-            model = 'mistralai/mistral-large-3-675b-instruct-2512';
-        }
+        const { apiKey, apiUrl, model } = getProviderConfig(provider);
 
         try {
             if (!apiKey || apiKey.includes('PASTE_YOUR')) {
