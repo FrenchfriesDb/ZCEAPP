@@ -262,6 +262,7 @@ Rules:
 - If mode is PERSONALIZED, it should feel tailored to the user, but it does NOT need to mention stats, streaks, XP, or chat history every time.
 - Personalized signals may reference user data, recent chat themes, emotional patterns, avoided reps, or current pressure when it helps.
 - Sometimes personalized should be subtle and intimate, not obviously data-driven.
+- For PERSONALIZED ROASTS specifically: some should be surgical and specific, others should be broader philosophical gut-punches that still feel aimed at the user's current war.
 - Rotate naturally across themes: motivation, brutal truth, success, discipline, charisma, social skill pressure, identity, momentum, self-respect.
 - Do not make every line about anxiety, streaks, or XP. Vary the lens.
 - Roughly sometimes reference memory directly, sometimes imply it, sometimes go universal-but-personal.
@@ -275,7 +276,7 @@ ${memoryBlock}
         const userPrompt = kind === 'roast'
             ? mode === 'classic'
                 ? 'Write one brutal classic Zane roast for the home screen.'
-                : 'Write one personalized Zane roast for the home screen using the memory above. Keep it short, surgical, and savage. Sometimes reference streaks, XP, or recent chat patterns directly, but not every time. Mix themes like brutal truth, discipline, charisma, social pressure, ambition, and missed reps.'
+                : 'Write one personalized Zane roast for the home screen using the memory above. Keep it short, surgical, and savage. Do NOT force stats or history into every roast. Some roasts should be direct and specific, others should feel like dark philosophical truth about discipline, fear, status, average vs legendary, or giving power away.'
             : mode === 'classic'
                 ? 'Write one classic Zane quote for the home screen.'
                 : 'Write one personalized Zane quote for the home screen using the memory above. Keep it very short and quotable. Sometimes reference their real patterns or chat history, sometimes keep it subtler. Mix motivation, discipline, charisma, social skill, success, and identity themes.';
