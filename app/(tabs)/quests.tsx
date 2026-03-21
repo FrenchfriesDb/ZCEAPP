@@ -74,7 +74,7 @@ const QUESTS = [
 export default function QuestsScreen() {
     const { user, completeQuest, resetQuests } = useUser();
     const { palette: timePalette } = useTimeColors();
-    const { textPrimary: themeTextPrimary } = useTextColors();
+    const { textPrimary: themeTextPrimary, textSecondary: themeTextSecondary } = useTextColors();
     const completedIds = user?.completedQuests || [];
 
     const [selectedQuest, setSelectedQuest] = useState<typeof QUESTS[0] | null>(null);
@@ -85,20 +85,8 @@ export default function QuestsScreen() {
     const tierProfile = getQuestTierProfile(user);
     const featuredMicroOps = useMemo(() => shuffleArray(MICRO_OPS).slice(0, Math.max(3, tierProfile.microCount + 1)), [user?.streak, user?.xp]);
 
-    const systemColor = timePalette[timePalette.length - 1];
-    const questPrimary = timePalette[0] ?? themeTextPrimary ?? '#FF0F7B';
-    // Some themes (e.g. Moon Dust) start with a very dark first stop; keep key header text readable.
-    const isDarkHex = (hex: string) => {
-        const h = hex.replace('#', '');
-        if (h.length !== 6) return false;
-        const r = parseInt(h.slice(0, 2), 16) / 255;
-        const g = parseInt(h.slice(2, 4), 16) / 255;
-        const b = parseInt(h.slice(4, 6), 16) / 255;
-        const toLin = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
-        const L = 0.2126 * toLin(r) + 0.7152 * toLin(g) + 0.0722 * toLin(b);
-        return L < 0.22;
-    };
-    const questPrimaryText = isDarkHex(questPrimary) ? '#FFFFFF' : questPrimary;
+    const questPrimary = themeTextSecondary || timePalette[0] || themeTextPrimary || '#FF0F7B';
+    const questPrimaryText = questPrimary;
     // Convert hex to rgba for textShadowColor
     const hexToRgba = (hex: string, alpha: number) => {
         const r = parseInt(hex.slice(1, 3), 16);
@@ -186,7 +174,7 @@ export default function QuestsScreen() {
                                 textShadowColor: glowColor,
                                 textShadowOffset: { width: 0, height: 0 },
                                 textShadowRadius: 40,
-                                color: '#FFFFFF' // White number
+                                color: questPrimary
                             }
                         ]}>{completedCount}</Text>
                         <Text style={[styles.heroUnit, { color: questPrimaryText }]}>OF {visibleQuests.length} QUESTS</Text>

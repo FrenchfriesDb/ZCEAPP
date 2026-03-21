@@ -19,7 +19,7 @@ const TAB_CONFIG = [
 
 function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const routes = Array.isArray(state?.routes) ? state.routes : [];
-  const { textPrimary } = useTextColors();
+  const { textSecondary } = useTextColors();
   if (routes.length === 0) return null;
 
   const currentRoute = routes[state.index]?.name;
@@ -28,13 +28,13 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   return (
     <View style={styles.tabBarOuter}>
       <View style={styles.tabBarContainer}>
-        <BlurView intensity={85} tint="dark" style={StyleSheet.absoluteFill} />
+        <BlurView intensity={92} tint="dark" style={StyleSheet.absoluteFill} />
         <LinearGradient
           colors={[
-            'rgba(255,255,255,0.18)',
-            'rgba(255,255,255,0.05)',
-            'rgba(0,0,0,0.16)',
-            'rgba(0,0,0,0.36)',
+            'rgba(255,255,255,0.12)',
+            'rgba(255,255,255,0.03)',
+            'rgba(0,0,0,0.22)',
+            'rgba(0,0,0,0.46)',
           ]}
           start={{ x: 0.15, y: 0 }}
           end={{ x: 0.85, y: 1 }}
@@ -63,15 +63,24 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
                   styles.tabItem,
                   focused && styles.tabItemActive,
                   focused && {
-                    borderColor: 'rgba(255,255,255,0.08)',
-                    shadowColor: 'rgba(0,0,0,0.9)',
+                    shadowColor: textSecondary,
                   },
                 ]}
               >
+                {focused && (
+                  <View style={styles.tabItemSheen} pointerEvents="none">
+                    <LinearGradient
+                      colors={['rgba(255,255,255,0.28)', 'rgba(255,255,255,0.08)', 'rgba(255,255,255,0.00)']}
+                      start={{ x: 0.5, y: 0 }}
+                      end={{ x: 0.5, y: 1 }}
+                      style={styles.tabItemSheenGradient}
+                    />
+                  </View>
+                )}
                 <FluentEmoji
                   name={tab.icon}
                   size={focused ? 27 : 24}
-                  opacity={focused ? 1 : 0.58}
+                  opacity={focused ? 1 : 0.56}
                   style={[
                     styles.tabIconImage,
                     focused && styles.tabIconImageActive,
@@ -120,22 +129,22 @@ const styles = StyleSheet.create({
   tabBarContainer: {
     borderRadius: Radius.pill,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.06)',
     overflow: 'hidden',
     width: '100%',
-    backgroundColor: 'rgba(2, 2, 6, 0.72)',
+    backgroundColor: 'rgba(2, 2, 7, 0.54)',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.34,
-    shadowRadius: 24,
+    shadowOpacity: 0.42,
+    shadowRadius: 28,
     elevation: 24,
   },
   glassSheen: {
     position: 'absolute',
     top: 2,
-    left: 8,
-    right: 8,
-    height: '46%',
+    left: 7,
+    right: 7,
+    height: '50%',
     borderRadius: Radius.pill,
     overflow: 'hidden',
   },
@@ -146,17 +155,17 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     borderRadius: Radius.pill,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.03)',
+    borderColor: 'rgba(255,255,255,0.02)',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 18 },
-    shadowOpacity: 0.58,
-    shadowRadius: 22,
+    shadowOpacity: 0.62,
+    shadowRadius: 26,
   },
   tabRow: {
     flexDirection: 'row',
     paddingVertical: 10,
     paddingHorizontal: 12,
-    backgroundColor: 'rgba(2, 2, 6, 0.68)',
+    backgroundColor: 'rgba(2, 2, 7, 0.5)',
   },
   tabItem: {
     flex: 1,
@@ -165,15 +174,21 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: Radius.pill,
     marginHorizontal: 3,
-    borderWidth: 1,
-    borderColor: 'transparent',
     position: 'relative',
+    overflow: 'hidden',
   },
   tabItemActive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: 'rgba(255, 255, 255, 0.07)',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
+    shadowOpacity: 0.22,
+    shadowRadius: 16,
+  },
+  tabItemSheen: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: Radius.pill,
+  },
+  tabItemSheenGradient: {
+    flex: 1,
   },
   tabIcon: {
     fontSize: 24,
