@@ -328,11 +328,28 @@ export default function DojoScreen() {
     const fallback = kind === 'roast'
       ? ROASTS[(roastIndex + 1) % ROASTS.length]
       : ZANE_QUOTES[(quoteIndex + 1) % ZANE_QUOTES.length];
+    const fallbackAlt = kind === 'roast'
+      ? ROASTS[(roastIndex + 2) % ROASTS.length]
+      : ZANE_QUOTES[(quoteIndex + 2) % ZANE_QUOTES.length];
     const recentSignalsRef = kind === 'roast' ? recentRoastsRef : recentQuotesRef;
     const personalizedFallback = buildPersonalizedHomeFallback(kind, user, harvestReport, riskSnapshot);
     const currentlyShown = kind === 'roast' ? dynamicRoast : dynamicQuote;
     if (currentlyShown) {
       recentSignalsRef.current = [currentlyShown, ...recentSignalsRef.current].slice(0, 6);
+    }
+    const optimisticSignalBase = mode === 'personalized' ? personalizedFallback : fallback;
+    const optimisticSignal = dedupeSignalText(optimisticSignalBase) === dedupeSignalText(currentlyShown || '')
+      ? fallbackAlt
+      : optimisticSignalBase;
+
+    if (kind === 'roast') {
+      setDynamicRoast(optimisticSignal);
+      setRoastMode('personalized');
+      setRoastIndex((prev) => (prev + 1) % ROASTS.length);
+    } else {
+      setDynamicQuote(optimisticSignal);
+      setQuoteMode(mode);
+      setQuoteIndex((prev) => (prev + 1) % ZANE_QUOTES.length);
     }
 
     try {
@@ -356,11 +373,9 @@ export default function DojoScreen() {
       if (kind === 'roast') {
         setDynamicRoast(finalSignal.replace(/^"|"$/g, '').trim());
         setRoastMode('personalized');
-        setRoastIndex((prev) => (prev + 1) % ROASTS.length);
       } else {
         setDynamicQuote(finalSignal.replace(/^"|"$/g, '').trim());
         setQuoteMode(mode);
-        setQuoteIndex((prev) => (prev + 1) % ZANE_QUOTES.length);
       }
     } catch (error) {
       const safeFallback = mode === 'personalized' ? personalizedFallback : fallback;
@@ -368,12 +383,10 @@ export default function DojoScreen() {
         setDynamicRoast(safeFallback);
         recentRoastsRef.current = [safeFallback, ...recentRoastsRef.current].slice(0, 6);
         setRoastMode('personalized');
-        setRoastIndex((prev) => (prev + 1) % ROASTS.length);
       } else {
         setDynamicQuote(safeFallback);
         recentQuotesRef.current = [safeFallback, ...recentQuotesRef.current].slice(0, 6);
         setQuoteMode(mode);
-        setQuoteIndex((prev) => (prev + 1) % ZANE_QUOTES.length);
       }
     }
   };
