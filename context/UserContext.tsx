@@ -8,7 +8,6 @@ import {
     onAuthStateChanged,
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
-    signInAnonymously,
     updateEmail,
     updatePassword,
     sendPasswordResetEmail,
@@ -395,6 +394,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             if (!emailOrUsername || !password) {
                 throw new Error('Credentials required.');
             }
+
+            if (auth.currentUser) {
+                try { await fbSignOut(auth); } catch {}
+                setUser(null);
+                userRef.current = null;
+                try { await Storage.deleteItem('zce_user'); } catch {}
+            }
+
             let loginEmail = emailOrUsername.trim().toLowerCase();
 
             // If it doesn't look like an email, treat it as a username — look up the real email
