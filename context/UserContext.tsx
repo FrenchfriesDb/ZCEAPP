@@ -412,16 +412,23 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 try { await Storage.deleteItem('zce_user'); } catch {}
             }
 
-            let loginEmail = emailOrUsername.trim().toLowerCase();
+            const rawInput = emailOrUsername.trim();
+            let loginEmail = rawInput.toLowerCase();
 
             // If it doesn't look like an email, treat it as a username — look up the real email
             if (!loginEmail.includes('@')) {
-                const q = query(collection(db, 'users'), where('username', '==', loginEmail));
-                const snap = await getDocs(q);
+                const normalizedUsername = rawInput.replace(/^@+/, '').trim().toLowerCase();
+
+                let snap = await getDocs(query(collection(db, 'users'), where('username', '==', normalizedUsername)));
+
                 if (snap.empty) {
-                    setIsLoading(false);
-                    Alert.alert("Access Denied", "No agent found with that username.");
-                    throw new Error("Username not found.");
+                    snap = await getDocs(query(collection(db, 'users'), where('username', '==', rawInput)));
+                }
+
+                if (snap.empty) {
+                    const usernameErr: any = new Error('Username not found.');
+                    usernameErr.code = 'auth/user-not-found';
+                    throw usernameErr;
                 }
                 loginEmail = snap.docs[0].data().email;
             }
@@ -429,7 +436,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             await signInWithEmailAndPassword(auth, loginEmail, password);
             router.replace('/(tabs)');
         } catch (e: any) {
-            if (e.message === "Username not found.") throw e;
             let msg = getFriendlyAuthError(e.code || '');
             if (e.code === 'auth/firebase-app-check-token-is-invalid' || e.message?.includes('app-check')) {
                 msg = "SECURITY: App Check is blocking this login. In Firebase Console -> App Check, set Authentication to 'Unenforced'.";
@@ -438,6 +444,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             try { await fbSignOut(auth); } catch { }
             setUser(null);
             userRef.current = null;
+            try { await Storage.deleteItem('zce_user'); } catch { }
+            router.replace('/auth/login');
             setIsLoading(false);
             Alert.alert("Access Denied", msg);
             throw new Error(msg);
