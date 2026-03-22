@@ -175,6 +175,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             console.log('[UserContext] Auth state changed. User:', firebaseUser?.uid ?? 'null');
             if (firebaseUser) {
+                if (firebaseUser.isAnonymous) {
+                    console.log('[UserContext] Anonymous session detected. Forcing logout.');
+                    try { await fbSignOut(auth); } catch (e) { console.warn('[UserContext] Failed to sign out anonymous user:', e); }
+                    setUser(null);
+                    userRef.current = null;
+                    await Storage.deleteItem('zce_user');
+                    setIsLoading(false);
+                    return;
+                }
+
                 try {
                     const docRef = doc(db, 'users', firebaseUser.uid);
                     const docSnap = await getDoc(docRef);
