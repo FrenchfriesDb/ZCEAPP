@@ -22,8 +22,7 @@ const STEP2_FIELDS = [
 ];
 
 export default function SignupScreen() {
-    const { signIn, signUp, setHasCompletedOnboarding, setReturnToOnboardingStage } = useUser();
-    const [showWarning, setShowWarning] = useState(false);
+    const { signUp, setHasCompletedOnboarding, setReturnToOnboardingStage } = useUser();
     const [name, setName] = useState('');
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
@@ -306,24 +305,6 @@ export default function SignupScreen() {
                         <Text style={styles.loginLinkText}>ALREADY HAVE ACCESS?  </Text>
                         <Text style={[styles.loginLinkText, styles.loginLinkAccent]}>LOG IN →</Text>
                     </Pressable>
-
-                    <Pressable 
-                        onPress={() => {
-                            setShowWarning(true);
-                            setTimeout(() => {
-                                signIn();
-                            }, 2000);
-                        }} 
-                        style={styles.npcLink}
-                    >
-                        <Text style={styles.npcLinkText}>PROCEED AS NPC (Training Wheels Mode)</Text>
-                    </Pressable>
-
-                    {showWarning && (
-                        <View style={styles.warningToast}>
-                            <Text style={styles.warningText}>Real growth requires blood. Demo = spectator sport.</Text>
-                        </View>
-                    )}
 
                 </Animated.View>
             </ScrollView>

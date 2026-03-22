@@ -104,7 +104,7 @@ interface UserData {
 interface UserContextType {
     user: UserData | null;
     isLoading: boolean;
-    signIn: (emailOrUsername?: string, password?: string) => Promise<void>;
+    signIn: (emailOrUsername: string, password: string) => Promise<void>;
     signUp: (email: string, password: string, name: string, username?: string) => Promise<void>;
     signOut: () => Promise<void>;
     forgotPassword: (email: string) => Promise<void>;
@@ -308,6 +308,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         const yesterday = getLocalDateStr(-1);
         const lastDate = user.lastActivityDate;
         const recoveryExpired = !!user.streakRecoveryExpiresAt && new Date(user.streakRecoveryExpiresAt).getTime() <= Date.now();
+        const safePreviousStreak = Math.max(Number(user.previousStreak || 0), Number(user.streak || 0));
+
+        // Self-heal any stale risk snapshot where previousStreak is lower than current streak.
+        // This prevents visual regressions like "8 yesterday, 7 today" while in at-risk mode.
+        if (user.streakAtRisk && safePreviousStreak !== Number(user.previousStreak || 0)) {
+            _syncUpdate({ previousStreak: safePreviousStreak }).catch((err) =>
+                console.warn('[UserContext] Failed to normalize previous streak at risk:', err)
+            );
+            return;
+        }
 
         if (user.streakAtRisk && recoveryExpired) {
             _syncUpdate({
@@ -321,9 +331,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         if (!lastDate || lastDate === today || lastDate === yesterday) return;
         if (user.streakAtRisk || (user.streak || 0) <= 1) return;
 
-        const previousStreak = user.previousStreak && user.previousStreak > 0
-            ? user.previousStreak
-            : user.streak;
+        const previousStreak = Math.max(Number(user.streak || 0), Number(user.previousStreak || 0));
 
         _syncUpdate({
             streakAtRisk: true,
@@ -381,31 +389,28 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     };
 
     // --- AUTH ---
-    const signIn = async (emailOrUsername?: string, password?: string) => {
+    const signIn = async (emailOrUsername: string, password: string) => {
         setIsLoading(true);
         try {
-            if (emailOrUsername && password) {
-                let loginEmail = emailOrUsername.trim().toLowerCase();
-
-                // If it doesn't look like an email, treat it as a username — look up the real email
-                if (!loginEmail.includes('@')) {
-                    const q = query(collection(db, 'users'), where('username', '==', loginEmail));
-                    const snap = await getDocs(q);
-                    if (snap.empty) {
-                        setIsLoading(false);
-                        Alert.alert("Access Denied", "No agent found with that username.");
-                        throw new Error("Username not found.");
-                    }
-                    loginEmail = snap.docs[0].data().email;
-                }
-
-                await signInWithEmailAndPassword(auth, loginEmail, password);
-                router.replace('/(tabs)');
-            } else {
-                // Anonymous guest mode
-                await signInAnonymously(auth);
-                router.replace('/(tabs)');
+            if (!emailOrUsername || !password) {
+                throw new Error('Credentials required.');
             }
+            let loginEmail = emailOrUsername.trim().toLowerCase();
+
+            // If it doesn't look like an email, treat it as a username — look up the real email
+            if (!loginEmail.includes('@')) {
+                const q = query(collection(db, 'users'), where('username', '==', loginEmail));
+                const snap = await getDocs(q);
+                if (snap.empty) {
+                    setIsLoading(false);
+                    Alert.alert("Access Denied", "No agent found with that username.");
+                    throw new Error("Username not found.");
+                }
+                loginEmail = snap.docs[0].data().email;
+            }
+
+            await signInWithEmailAndPassword(auth, loginEmail, password);
+            router.replace('/(tabs)');
         } catch (e: any) {
             if (e.message === "Username not found.") throw e;
             let msg = getFriendlyAuthError(e.code || '');
@@ -530,14 +535,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         } catch (e) {
             console.warn('[signOut] Firebase signOut failed, forcing local clear:', e);
         }
-        // Clear every known storage key — leave no ghost session behind
+        // Clear only user session data
         try {
-            await AsyncStorage.multiRemove(['zce_user', 'zce_onboarding_done']);
+            await AsyncStorage.removeItem('zce_user');
         } catch (e) {
             console.warn('[signOut] Storage clear failed:', e);
         }
-        setHasCompletedOnboarding(false);
-        router.replace('/auth/onboarding');
+        router.replace('/auth/login');
     };
 
     // --- GAMEPLAY ---
@@ -575,7 +579,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             console.log('[Streak Engine] Consecutive day! Streak incremented to', streak);
         } else {
             console.log(`[Streak Engine] Day gap detected (Last: ${lastDate}). Resetting to 1.`);
-            previousStreak = streak > 0 ? streak : previousStreak;
+            previousStreak = Math.max(streak, previousStreak);
             streak = 1;
             streakAtRisk = (previousStreak > 1);
             streakRecoveryExpiresAt = streakAtRisk ? new Date(Date.now() + STREAK_RECOVERY_GRACE_MS).toISOString() : null;
@@ -639,7 +643,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             streakAtRisk = false;
             streakRecoveryExpiresAt = null;
         } else {
-            previousStreak = streak > 0 ? streak : previousStreak;
+            previousStreak = Math.max(streak, previousStreak);
             streak = 1;
             streakAtRisk = previousStreak > 1;
             streakRecoveryExpiresAt = streakAtRisk ? new Date(Date.now() + STREAK_RECOVERY_GRACE_MS).toISOString() : null;
@@ -697,8 +701,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
         console.log(`[UserContext] Recovering Streak: ${current.previousStreak}`);
         const yesterday = getLocalDateStr(-1);
+        const recoveredStreak = Math.max(Number(current.previousStreak || 0), Number(current.streak || 0), 1);
         await _syncUpdate({
-            streak: current.previousStreak || 1,
+            streak: recoveredStreak,
             streakAtRisk: false,
             previousStreak: 0,
             streakRecoveryExpiresAt: null,

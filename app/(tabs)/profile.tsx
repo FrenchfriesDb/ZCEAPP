@@ -13,7 +13,7 @@ import ProgressGraph from '@/components/ProgressGraph';
 import FluentEmoji from '@/components/FluentEmoji';
 
 export default function ProfileScreen() {
-    const { user, signOut, changeUsername, purchaseSystemBackup } = useUser();
+    const { user, isLoading, signOut, changeUsername, purchaseSystemBackup } = useUser();
     const { palette: timePalette, textColors } = useTimeColors();
     const { textPrimary, textSecondary, textTertiary } = useTextColors();
 
@@ -27,6 +27,14 @@ export default function ProfileScreen() {
     // Derived Constants
     const levelInfo = XPConfig.getLevel(user?.xp || 0);
     const systemColor = textColors?.primary ?? textPrimary;
+    const velocityColor = textSecondary;
+
+    if (isLoading) return (
+        <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', padding: 32 }]}> 
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
+            <ActivityIndicator color={textPrimary} />
+        </View>
+    );
 
     if (!user) return (
         <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', gap: 24, padding: 32 }]}>
@@ -107,7 +115,7 @@ export default function ProfileScreen() {
                 <GlassCard themed style={styles.graphCard} intensity={20}>
                     <ProgressGraph
                         dailyXp={user.dailyXp || {}}
-                        color={textPrimary}
+                        color={velocityColor}
                         totalXp={user.xp || 0}
                         currentStreak={user.streak || 0}
                     />
