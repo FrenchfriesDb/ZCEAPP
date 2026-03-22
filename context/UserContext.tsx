@@ -174,15 +174,23 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const cacheUsernameEmail = async (username?: string, email?: string) => {
         const normalizedUsername = (username || '').replace(/^@+/, '').trim().toLowerCase();
         const normalizedEmail = (email || '').trim().toLowerCase();
-        if (!normalizedUsername || !normalizedEmail) return;
+        if (!normalizedEmail) return;
+
+        const emailLocalPart = normalizedEmail.includes('@') ? normalizedEmail.split('@')[0] : '';
 
         try {
             const raw = await Storage.getItem(USERNAME_EMAIL_MAP_KEY);
             const map = raw ? JSON.parse(raw) as Record<string, string> : {};
-            if (map[normalizedUsername] !== normalizedEmail) {
+
+            if (normalizedUsername && map[normalizedUsername] !== normalizedEmail) {
                 map[normalizedUsername] = normalizedEmail;
-                await Storage.setItem(USERNAME_EMAIL_MAP_KEY, JSON.stringify(map));
             }
+
+            if (emailLocalPart && map[emailLocalPart] !== normalizedEmail) {
+                map[emailLocalPart] = normalizedEmail;
+            }
+
+            await Storage.setItem(USERNAME_EMAIL_MAP_KEY, JSON.stringify(map));
         } catch (err) {
             console.warn('[UserContext] Failed caching username map:', err);
         }
@@ -485,7 +493,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             setUser(null);
             userRef.current = null;
             try { await Storage.deleteItem('zce_user'); } catch { }
-            router.replace('/auth/login');
             setIsLoading(false);
             Alert.alert("Access Denied", msg);
             throw new Error(msg);

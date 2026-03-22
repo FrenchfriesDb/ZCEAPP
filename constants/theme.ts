@@ -137,10 +137,22 @@ export const getTimePalette = (hour: number, minute: number): string[] => {
 export const getDynamicColors = (hour: number, minute: number) => {
   const time = hour + minute / 60;
   const palette = getTimePalette(hour, minute);
+  const isCloudDrift =
+    palette[0] === TimeColors.cloudDrift[0] &&
+    palette[1] === TimeColors.cloudDrift[1] &&
+    palette[2] === TimeColors.cloudDrift[2];
   const middleStop = palette[Math.floor(palette.length / 2)] || palette[0] || '#E8E8E8';
   let textPrimaryColor = '#E8E8E8'; // default
   let textSecondaryColor = middleStop;
   let textTertiaryColor: string | null = null;
+
+  if (isCloudDrift) {
+    return {
+      textPrimary: '#71C3F7',
+      textSecondary: '#F6F6F6',
+      textTertiary: '#F6F6F688',
+    };
+  }
   
   if (time < 5) textPrimaryColor = '#294861'; // Deep Abyss - last color (dark steel blue)
   else if (time < 6) textPrimaryColor = '#4B749F'; // Earlier Dawn - last color (light blue)  
