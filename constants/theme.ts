@@ -120,9 +120,9 @@ export const getTimePalette = (hour: number, minute: number): string[] => {
   if (time < 7.5) return TimeColors.sunriseCitrus;
   if (time < 7.6667) return TimeColors.morning;
   if (time < 8) return TimeColors.blushSky;
-  if (time < 16) return TimeColors.cloudDrift;
-  if (time < 18) return TimeColors.goldenHour;
-  if (time < 19) return TimeColors.sunset;
+  if (time < 18) return TimeColors.cloudDrift;
+  if (time < 19) return TimeColors.goldenHour;
+  if (time < 20) return TimeColors.sunset;
   if (time < 19.5) return TimeColors.twilight;
   if (time < 20) return TimeColors.battleGlory;
   if (time < 20.5) return TimeColors.marsEcho;
@@ -177,17 +177,17 @@ export const getDynamicColors = (hour: number, minute: number) => {
     textSecondaryColor = '#C3E1FC';
     textTertiaryColor = '#E0A9BB';
   }
-  else if (time < 16) {
+  else if (time < 18) {
     // Daytime (Cloud Drift): primary light blue, secondary white
     textPrimaryColor = '#71C3F7';
     textSecondaryColor = '#F6F6F6';
   }
-  else if (time < 18) {
+  else if (time < 19) {
     // Golden Hour (4–6 PM): use peach as primary so text matches gradient and avoids harsh yellow
     textPrimaryColor = '#FFA585';
     textSecondaryColor = '#FFEDA0';
   }
-  else if (time < 19) textPrimaryColor = '#F89B29'; // Sunset - last color (orange)
+  else if (time < 20) textPrimaryColor = '#F89B29'; // Sunset - last color (orange)
   else if (time < 19.5) textPrimaryColor = '#45CAFF'; // Twilight - last color (cyan)
   else if (time < 20) {
     // Battle Glory (7:30–8 PM): keep readable red primary with warm secondary.

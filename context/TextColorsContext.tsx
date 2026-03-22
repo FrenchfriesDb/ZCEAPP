@@ -38,7 +38,18 @@ export const TextColorsProvider: React.FC<{ children: ReactNode }> = ({ children
     const hour = now.getHours();
     const minute = now.getMinutes();
     const colors = getDynamicColors(hour, minute);
-    console.log('INITIAL - Hour:', hour, 'Minute:', minute, 'Color:', colors.textPrimary);
+    console.log(
+      'INITIAL - Hour:',
+      hour,
+      'Minute:',
+      minute,
+      'Primary:',
+      colors.textPrimary,
+      'Secondary:',
+      colors.textSecondary,
+      'Tertiary:',
+      colors.textTertiary
+    );
     return colors;
   });
 
@@ -48,7 +59,18 @@ export const TextColorsProvider: React.FC<{ children: ReactNode }> = ({ children
       const hour = now.getHours();
       const minute = now.getMinutes();
       const colors = getDynamicColors(hour, minute);
-      console.log('UPDATE - Hour:', hour, 'Minute:', minute, 'Color:', colors.textPrimary);
+      console.log(
+        'UPDATE - Hour:',
+        hour,
+        'Minute:',
+        minute,
+        'Primary:',
+        colors.textPrimary,
+        'Secondary:',
+        colors.textSecondary,
+        'Tertiary:',
+        colors.textTertiary
+      );
       setTextColors(colors);
     };
 
