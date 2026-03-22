@@ -6,10 +6,10 @@ import {
 import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import { router, useFocusEffect } from 'expo-router';
 import Svg, { Path, G, Circle, Line, Defs, LinearGradient as SvgGrad, Stop } from 'react-native-svg';
-import { Colors, Fonts } from '@/constants/theme';
+import { Fonts } from '@/constants/theme';
 import { useUser } from '@/context/UserContext';
 import SwipeSlider from '@/components/SwipeSlider';
-import FluentEmoji, { resolveFluentEmojiName } from '@/components/FluentEmoji';
+import FluentEmoji, { resolveFluentEmojiName, type FluentEmojiName } from '@/components/FluentEmoji';
 
 const { width: W, height: H } = Dimensions.get('window');
 const CYAN = '#333333';
@@ -166,6 +166,53 @@ function OptionBtn({ label, icon, selected, onPress }: {
     );
 }
 
+function AnimatedEmojiRail({ stage }: { stage: number }) {
+    const STAGE_EMOJI_MAP: Record<number, FluentEmojiName[]> = {
+        1: ['movieCamera', 'barChart', 'megaphone', 'eyes', 'brain', 'highVoltage'],
+        2: ['ghost', 'performingArts', 'highVoltage', 'bullseye', 'speakingHead', 'catFace'],
+        3: ['bullseye', 'fire', 'crown', 'crossedSwords', 'brain', 'gemStone'],
+        4: ['stopwatch', 'calendar', 'infinity', 'warning', 'foldedHands', 'wing'],
+        5: ['star', 'crown', 'highVoltage', 'gemStone', 'redHeart', 'dizzy'],
+        6: ['idButton', 'locked', 'mirror', 'notebook', 'label', 'bustInSilhouette'],
+        7: ['locked', 'warning', 'skullAndCrossbones', 'eyes', 'rightFacingFist', 'personInLotusPosition'],
+    };
+    const icons = STAGE_EMOJI_MAP[stage] ?? STAGE_EMOJI_MAP[1];
+
+    const motions = useRef(Array.from({ length: 10 }, () => new Animated.Value(0))).current;
+
+    useEffect(() => {
+        const loops = motions.slice(0, icons.length).map((motion, idx) =>
+            Animated.loop(
+                Animated.sequence([
+                    Animated.delay(idx * 90),
+                    Animated.timing(motion, { toValue: 1, duration: 1400, useNativeDriver: true }),
+                    Animated.timing(motion, { toValue: 0, duration: 1400, useNativeDriver: true }),
+                ])
+            )
+        );
+        loops.forEach(loop => loop.start());
+        return () => loops.forEach(loop => loop.stop());
+    }, [motions, icons.length, stage]);
+
+    return (
+        <View style={styles.emojiRail}>
+            {icons.map((name, idx) => {
+                const translateY = motions[idx].interpolate({ inputRange: [0, 1], outputRange: [0, -6] });
+                const scale = motions[idx].interpolate({ inputRange: [0, 1], outputRange: [1, 1.08] });
+                const opacity = motions[idx].interpolate({ inputRange: [0, 1], outputRange: [0.75, 1] });
+                return (
+                    <Animated.View
+                        key={`${name}-${idx}`}
+                        style={[styles.emojiRailItem, { transform: [{ translateY }, { scale }], opacity }]}
+                    >
+                        <FluentEmoji name={name} size={26} />
+                    </Animated.View>
+                );
+            })}
+        </View>
+    );
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function OnboardingScreen() {
     const { signUp, signIn, setOnboardingData, onboardingData, completeOnboarding, returnToOnboardingStage, setReturnToOnboardingStage } = useUser();
@@ -244,11 +291,13 @@ export default function OnboardingScreen() {
     };
 
     const handleSkip = async () => {
+        if (showWarning) return;
         setShowWarning(true);
         setTimeout(() => {
             setOnboardingData({ level: 'NPC', goal: 'General', commitment: '30 days' });
             setStage(6);
-        }, 2000);
+            setShowWarning(false);
+        }, 1600);
     };
 
     const handleBack = () => {
@@ -315,19 +364,25 @@ export default function OnboardingScreen() {
             <SafeAreaView style={styles.safe}>
                 {/* Top bar */}
                 <View style={styles.topBar}>
-                    {stage > 1 && (
-                        <Pressable onPress={handleBack} style={({ pressed }) => [styles.backBtn, pressed && styles.backBtnPressed]}>
-                            <Text style={styles.backText}>←</Text>
-                        </Pressable>
-                    )}
-                    <View style={styles.dotsRow}>
+                    <View style={styles.topSide}>
+                        {stage > 1 ? (
+                            <Pressable onPress={handleBack} style={({ pressed }) => [styles.backBtn, pressed && styles.backBtnPressed]}>
+                                <Text style={styles.backText}>←</Text>
+                            </Pressable>
+                        ) : (
+                            <View style={styles.sideSpacer} />
+                        )}
+                    </View>
+                    <View style={styles.topCenter}>
                         {[1, 2, 3, 4, 5, 6, 7].map(n => (
                             <View key={n} style={[styles.dot, stage === n && styles.dotActive]} />
                         ))}
                     </View>
-                    <Pressable onPress={handleSkip} style={({ pressed }) => [styles.skipBtn, pressed && styles.skipBtnPressed]}>
-                        <Text style={styles.skipText}>SKIP (Training Wheels) →</Text>
-                    </Pressable>
+                    <View style={[styles.topSide, { alignItems: 'flex-end' }]}>
+                        <Pressable onPress={handleSkip} style={({ pressed }) => [styles.skipBtn, pressed && styles.skipBtnPressed]}>
+                            <Text style={styles.skipText}>SKIP →</Text>
+                        </Pressable>
+                    </View>
                 </View>
 
                 {/* Head */}
@@ -342,6 +397,7 @@ export default function OnboardingScreen() {
                              'CONFIRM MISSION'}
                         </Text>
                     </View>
+                    <AnimatedEmojiRail stage={stage} />
                 </View>
 
                 {/* Stage content - scrollable to prevent overlap and overflow */}
@@ -502,7 +558,7 @@ export default function OnboardingScreen() {
                             <SwipeSlider 
                                 onSwipeComplete={handleNext}
                                 label="SLIDE TO ENTER THE ENGINE →"
-                                width={320}
+                                width={Math.min(320, W - 48)}
                                 height={60}
                             />
                         </View>
@@ -594,7 +650,7 @@ export default function OnboardingScreen() {
 }
 
 const styles = StyleSheet.create({
-    root: { flex: 1, backgroundColor: Colors.bgPrimary },
+    root: { flex: 1, backgroundColor: '#000000' },
     safe: { flex: 1 },
 
     blob: {
@@ -603,19 +659,38 @@ const styles = StyleSheet.create({
     },
 
     topBar: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-        paddingHorizontal: 20, paddingTop: 12, paddingBottom: 4,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingTop: 10,
+        paddingBottom: 4,
+        gap: 10,
     },
-    dotsRow: { flexDirection: 'row', gap: 10, flex: 1, justifyContent: 'center' },
+    topSide: {
+        width: 96,
+        justifyContent: 'center',
+    },
+    topCenter: {
+        flexDirection: 'row',
+        gap: 10,
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    sideSpacer: {
+        width: 44,
+        height: 40,
+    },
     dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.15)' },
     dotActive: { width: 22, borderRadius: 3, backgroundColor: '#FFFFFF' },
     skipBtn: {
-        position: 'absolute', right: 20, paddingVertical: 8, paddingHorizontal: 12,
+        paddingVertical: 8, paddingHorizontal: 10,
         borderRadius: 12, borderWidth: 1.5, borderColor: 'rgba(0, 212, 255, 0.4)',
         backgroundColor: 'rgba(0, 212, 255, 0.08)',
     },
     skipBtnPressed: { borderColor: 'rgba(0, 212, 255, 0.9)', transform: [{ scale: 0.97 }] },
-    skipText: { fontFamily: Fonts.monoBold, color: '#FFFFFF', fontSize: 10, letterSpacing: 3, fontWeight: '800' },
+    skipText: { fontFamily: Fonts.monoBold, color: '#FFFFFF', fontSize: 10, letterSpacing: 1.2, fontWeight: '800' },
 
     headArea: { alignItems: 'center', paddingVertical: 12, overflow: 'hidden' },
     scanBadge: {
@@ -626,11 +701,30 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     scanBadgeText: { fontFamily: Fonts.monoBold, fontSize: 9, color: '#FFFFFF', letterSpacing: 3, fontWeight: '700', textAlign: 'center' },
+    emojiRail: {
+        marginTop: 10,
+        width: '100%',
+        maxWidth: 360,
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        gap: 8,
+        paddingHorizontal: 8,
+    },
+    emojiRailItem: {
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.08)',
+        backgroundColor: 'rgba(255,255,255,0.03)',
+        borderRadius: 12,
+        padding: 6,
+    },
 
     content: {
         flex: 1,
         minHeight: 0,
         width: '100%',
+        maxWidth: 560,
+        alignSelf: 'center',
         paddingHorizontal: 24,
     },
     scrollContentCentered: {
@@ -684,7 +778,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 1,
         shadowRadius: 20,
         elevation: 5,
-        flexWrap: 'wrap',
     },
     optBtnActive: {
         borderColor: 'rgba(255, 255, 255, 0.9)',
@@ -696,7 +789,7 @@ const styles = StyleSheet.create({
     optIconImage: { opacity: 0.95 },
     optText: { fontFamily: Fonts.body, color: 'rgba(255,255,255,0.6)', fontSize: 14, flex: 1, flexShrink: 1, minWidth: 0, fontWeight: '500' },
     optTextActive: { color: '#FFFFFF', fontWeight: '700' },
-    optCheck: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
+    optCheck: { color: '#FFFFFF', fontSize: 12, fontWeight: '800', marginLeft: 'auto' },
 
     frameBadge: {
         alignSelf: 'center', borderWidth: 1, borderColor: '#FFFFFF',
@@ -708,7 +801,6 @@ const styles = StyleSheet.create({
 
     backBtn: {
         paddingHorizontal: 14, paddingVertical: 10,
-        position: 'absolute', left: 0, top: 0,
         borderRadius: 12,
         borderWidth: 1.5, borderColor: 'rgba(255, 255, 255, 0.4)',
         backgroundColor: 'rgba(255, 255, 255, 0.08)',
