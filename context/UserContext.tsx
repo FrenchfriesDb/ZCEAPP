@@ -33,6 +33,8 @@ const Storage = {
     deleteItem: async (key: string) => AsyncStorage.removeItem(key),
 };
 
+const USERNAME_EMAIL_MAP_KEY = 'zce_username_email_map';
+
 const getRecentLoginError = () => "CRITICAL: Re-authentication Required. For security, you must log out and immediately log back in to change your agent credentials.";
 const STREAK_RECOVERY_GRACE_MS = 10 * 60 * 1000;
 
@@ -169,6 +171,57 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         userRef.current = user;
     }, [user]);
 
+    const cacheUsernameEmail = async (username?: string, email?: string) => {
+        const normalizedUsername = (username || '').replace(/^@+/, '').trim().toLowerCase();
+        const normalizedEmail = (email || '').trim().toLowerCase();
+        if (!normalizedUsername || !normalizedEmail) return;
+
+        try {
+            const raw = await Storage.getItem(USERNAME_EMAIL_MAP_KEY);
+            const map = raw ? JSON.parse(raw) as Record<string, string> : {};
+            if (map[normalizedUsername] !== normalizedEmail) {
+                map[normalizedUsername] = normalizedEmail;
+                await Storage.setItem(USERNAME_EMAIL_MAP_KEY, JSON.stringify(map));
+            }
+        } catch (err) {
+            console.warn('[UserContext] Failed caching username map:', err);
+        }
+    };
+
+    const resolveEmailFromUsername = async (usernameInput: string): Promise<string | null> => {
+        const normalizedUsername = usernameInput.replace(/^@+/, '').trim().toLowerCase();
+        if (!normalizedUsername) return null;
+
+        try {
+            const raw = await Storage.getItem(USERNAME_EMAIL_MAP_KEY);
+            if (raw) {
+                const map = JSON.parse(raw) as Record<string, string>;
+                const cached = map[normalizedUsername];
+                if (cached) return cached;
+            }
+        } catch (err) {
+            console.warn('[UserContext] Failed reading username map cache:', err);
+        }
+
+        try {
+            let snap = await getDocs(query(collection(db, 'users'), where('username', '==', normalizedUsername)));
+            if (snap.empty) {
+                snap = await getDocs(query(collection(db, 'users'), where('username', '==', usernameInput)));
+            }
+            if (!snap.empty) {
+                const email = String(snap.docs[0].data().email || '').trim().toLowerCase();
+                if (email) {
+                    await cacheUsernameEmail(normalizedUsername, email);
+                    return email;
+                }
+            }
+        } catch (err: any) {
+            console.warn('[UserContext] Firestore username lookup failed:', err?.code || err?.message || err);
+        }
+
+        return null;
+    };
+
     // --- INITIALIZATION ---
     useEffect(() => {
         console.log('[UserContext] INIT V3');
@@ -216,6 +269,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                         setUser(data);
                         userRef.current = data;
                         await Storage.setItem('zce_user', JSON.stringify(data));
+                        await cacheUsernameEmail(data.username, data.email);
                         console.log('[UserContext] User loaded from Firestore:', data.email);
                     } else {
                         // ❌ No Firestore doc found for this Firebase user.
@@ -255,6 +309,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                         setUser(defaultData);
                         userRef.current = defaultData;
                         await Storage.setItem('zce_user', JSON.stringify(defaultData));
+                        await cacheUsernameEmail(defaultData.username, defaultData.email);
                     }
                 } catch (err: any) {
                     console.warn('[UserContext] Firestore read failed:', err.code ?? err.message);
@@ -405,32 +460,18 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 throw new Error('Credentials required.');
             }
 
-            if (auth.currentUser) {
-                try { await fbSignOut(auth); } catch {}
-                setUser(null);
-                userRef.current = null;
-                try { await Storage.deleteItem('zce_user'); } catch {}
-            }
-
             const rawInput = emailOrUsername.trim();
             let loginEmail = rawInput.toLowerCase();
 
             // If it doesn't look like an email, treat it as a username — look up the real email
             if (!loginEmail.includes('@')) {
-                const normalizedUsername = rawInput.replace(/^@+/, '').trim().toLowerCase();
-
-                let snap = await getDocs(query(collection(db, 'users'), where('username', '==', normalizedUsername)));
-
-                if (snap.empty) {
-                    snap = await getDocs(query(collection(db, 'users'), where('username', '==', rawInput)));
-                }
-
-                if (snap.empty) {
+                const resolvedEmail = await resolveEmailFromUsername(rawInput);
+                if (!resolvedEmail) {
                     const usernameErr: any = new Error('Username not found.');
                     usernameErr.code = 'auth/user-not-found';
                     throw usernameErr;
                 }
-                loginEmail = snap.docs[0].data().email;
+                loginEmail = resolvedEmail;
             }
 
             await signInWithEmailAndPassword(auth, loginEmail, password);
@@ -441,7 +482,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 msg = "SECURITY: App Check is blocking this login. In Firebase Console -> App Check, set Authentication to 'Unenforced'.";
             }
             console.log('[signIn Error]', e.code, e.message);
-            try { await fbSignOut(auth); } catch { }
             setUser(null);
             userRef.current = null;
             try { await Storage.deleteItem('zce_user'); } catch { }
