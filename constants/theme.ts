@@ -112,30 +112,31 @@ export const TimeColors = {
 // Helper: derive the dominant accent color (first stop) for any single-color usage
 export const getTimeAccent = (palette: string[]) => palette[0];
 
+export const getTimePalette = (hour: number, minute: number): string[] => {
+  const time = hour + minute / 60;
+  if (time < 5) return TimeColors.deepAbyss;
+  if (time < 6) return TimeColors.earlierDawn;
+  if (time < 7.166) return TimeColors.morning;
+  if (time < 7.5) return TimeColors.sunriseCitrus;
+  if (time < 7.6667) return TimeColors.morning;
+  if (time < 8) return TimeColors.blushSky;
+  if (time < 16) return TimeColors.cloudDrift;
+  if (time < 18) return TimeColors.goldenHour;
+  if (time < 19) return TimeColors.sunset;
+  if (time < 19.5) return TimeColors.twilight;
+  if (time < 20) return TimeColors.battleGlory;
+  if (time < 20.5) return TimeColors.marsEcho;
+  if (time < 21) return TimeColors.plumGlow;
+  if (time < 22) return TimeColors.nightDive;
+  if (time < 23) return TimeColors.voidSpark;
+  return TimeColors.midnightMist;
+};
+
 // Dynamic text colors that match each theme's gradient colors
 // PATTERN: Use the LAST gradient color for each theme as the primary text color
 export const getDynamicColors = (hour: number, minute: number) => {
   const time = hour + minute / 60;
-  const pickPalette = () => {
-    if (time < 5) return TimeColors.deepAbyss;
-    if (time < 6) return TimeColors.earlierDawn;
-    if (time < 7.166) return TimeColors.morning;           // 6:00–7:09
-    if (time < 7.5) return TimeColors.sunriseCitrus;       // 7:10–7:29
-    if (time < 7.6667) return TimeColors.morning;          // 7:30–7:39
-    if (time < 8) return TimeColors.blushSky;              // 7:40–7:59
-    if (time < 16) return TimeColors.cloudDrift;
-    if (time < 18) return TimeColors.goldenHour;
-    if (time < 19) return TimeColors.sunset;
-    if (time < 19.5) return TimeColors.twilight;
-    if (time < 20) return TimeColors.battleGlory;
-    if (time < 20.5) return TimeColors.marsEcho;
-    if (time < 21) return TimeColors.plumGlow;
-    if (time < 22) return TimeColors.nightDive;
-    if (time < 23) return TimeColors.voidSpark;
-    return TimeColors.midnightMist;
-  };
-
-  const palette = pickPalette();
+  const palette = getTimePalette(hour, minute);
   const middleStop = palette[Math.floor(palette.length / 2)] || palette[0] || '#E8E8E8';
   let textPrimaryColor = '#E8E8E8'; // default
   let textSecondaryColor = middleStop;
