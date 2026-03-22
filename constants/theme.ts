@@ -103,6 +103,8 @@ export const TimeColors = {
   // 7:10 AM – 7:30 AM — Citrus Sunrise
   // Sunset Flame (warm cream → hot pink)
   sunriseCitrus: ['#F5E6AD', '#F13C77'],
+  // 7:40 AM – 8:00 AM — Blush Sky
+  blushSky: ['#DD83AD', '#C3E1FC'],
   // Cloud Drift Alias for clarity
   cloudDrift: ['#2C6CBC', '#71C3F7', '#F6F6F6'],
 };
@@ -117,12 +119,12 @@ export const getDynamicColors = (hour: number, minute: number) => {
   const pickPalette = () => {
     if (time < 5) return TimeColors.deepAbyss;
     if (time < 6) return TimeColors.earlierDawn;
-    if (time >= 7.166 && time <= 7.5) return TimeColors.sunriseCitrus;
-    if (time < 8.5) return TimeColors.morning;
+    if (time < 7.166) return TimeColors.morning;           // 6:00–7:09
+    if (time < 7.5) return TimeColors.sunriseCitrus;       // 7:10–7:29
+    if (time < 7.6667) return TimeColors.morning;          // 7:30–7:39
+    if (time < 8) return TimeColors.blushSky;              // 7:40–7:59
     if (time < 16) return TimeColors.cloudDrift;
-    if (time < 17) return TimeColors.morning;
-    if (time < 17.5) return TimeColors.goldenHour;
-    if (time < 18) return TimeColors.dusk;
+    if (time < 18) return TimeColors.goldenHour;
     if (time < 19) return TimeColors.sunset;
     if (time < 19.5) return TimeColors.twilight;
     if (time < 20) return TimeColors.battleGlory;
@@ -137,15 +139,41 @@ export const getDynamicColors = (hour: number, minute: number) => {
   const middleStop = palette[Math.floor(palette.length / 2)] || palette[0] || '#E8E8E8';
   let textPrimaryColor = '#E8E8E8'; // default
   let textSecondaryColor = middleStop;
+  let textTertiaryColor: string | null = null;
   
   if (time < 5) textPrimaryColor = '#294861'; // Deep Abyss - last color (dark steel blue)
   else if (time < 6) textPrimaryColor = '#4B749F'; // Earlier Dawn - last color (light blue)  
-  else if (time >= 7.166 && time <= 7.5) textPrimaryColor = '#F13C77'; // Sunset Flame - last color (hot pink)
-  else if (time < 8.5) textPrimaryColor = '#B9DCF2'; // Sunrise pastel cloud - last color (pastel blue)
-  else if (time < 16) textPrimaryColor = '#F6F6F6'; // Cloud Drift - last color (white)
-  else if (time < 17) textPrimaryColor = '#B9DCF2'; // Morning daytime bridge - keep pastel cloud text
-  else if (time < 17.5) textPrimaryColor = '#FFA585'; // Golden Hour - last color (orange)
-  else if (time < 18) textPrimaryColor = '#C3E1FC'; // Dusk - last color (light blue)
+  else if (time < 7.166) {
+    // Morning 6:00–7:09
+    textPrimaryColor = '#B9DCF2';
+    textSecondaryColor = '#F6CFBE';
+  }
+  else if (time < 7.5) {
+    // Sunset Flame 7:10–7:30
+    textPrimaryColor = '#F5E6AD';
+    textSecondaryColor = '#F13C77';
+  }
+  else if (time < 7.6667) {
+    // Sunrise pastel cloud 7:30–7:40
+    textPrimaryColor = '#B9DCF2';
+    textSecondaryColor = '#F6CFBE';
+  }
+  else if (time < 8) {
+    // Blush Sky 7:40–8:00
+    textPrimaryColor = '#DD83AD';
+    textSecondaryColor = '#C3E1FC';
+    textTertiaryColor = '#E0A9BB';
+  }
+  else if (time < 16) {
+    // Daytime (Cloud Drift): primary light blue, secondary white
+    textPrimaryColor = '#71C3F7';
+    textSecondaryColor = '#F6F6F6';
+  }
+  else if (time < 18) {
+    // Golden Hour (4–6 PM): use peach as primary so text matches gradient and avoids harsh yellow
+    textPrimaryColor = '#FFA585';
+    textSecondaryColor = '#FFEDA0';
+  }
   else if (time < 19) textPrimaryColor = '#F89B29'; // Sunset - last color (orange)
   else if (time < 19.5) textPrimaryColor = '#45CAFF'; // Twilight - last color (cyan)
   else if (time < 20) {
@@ -156,19 +184,25 @@ export const getDynamicColors = (hour: number, minute: number) => {
   else if (time < 20.5) textPrimaryColor = '#34073D'; // Mars Echo - last color (deep purple)
   else if (time < 21) textPrimaryColor = '#FFC07C'; // Plum Glow - last color (peach)
   else if (time < 22) {
-    textPrimaryColor = '#CCB3D1'; // Night Dive primary: light purple
-    textSecondaryColor = '#FFFFFF'; // Night Dive secondary: white
+    // Night Dive (9–10 PM): keep original mapping
+    textPrimaryColor = '#CCB3D1';
+    textSecondaryColor = '#FFFFFF';
   }
-  else if (time < 23) textPrimaryColor = '#00458E'; // Void Spark - last color (deep blue)
+  else if (time < 23) {
+    // Void Spark (10–11 PM): agreed mapping
+    textPrimaryColor = '#F6F6F6'; // white primary
+    textSecondaryColor = '#00458E'; // blue secondary
+  }
   else {
-    textPrimaryColor = '#918CA9'; // Midnight Mist primary: light purple
-    textSecondaryColor = '#FFFFFF'; // Midnight Mist secondary: white
+    // Midnight Mist (11 PM–12 AM): keep original mapping
+    textPrimaryColor = '#918CA9';
+    textSecondaryColor = '#FFFFFF';
   }
   
   return {
     textPrimary: textPrimaryColor,
     textSecondary: textSecondaryColor,
-    textTertiary: `${textSecondaryColor}88`,
+    textTertiary: textTertiaryColor ?? `${textSecondaryColor}88`,
   };
 };
 
