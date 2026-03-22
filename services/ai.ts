@@ -232,6 +232,34 @@ type HomeSignalOptions = {
     recentSignals?: string[];
 };
 
+function normalizeHomeSignalResult(kind: HomeSignalKind, text: string): string {
+    let cleaned = text
+        .replace(/^"+|"+$/g, '')
+        .replace(/\s{3,}/g, ' ')
+        .trim();
+
+    if (kind !== 'roast') {
+        return cleaned;
+    }
+
+    const sentenceParts = cleaned
+        .split(/(?<=[.!?])\s+/)
+        .filter(Boolean)
+        .slice(0, 2);
+
+    cleaned = sentenceParts.join(' ').trim();
+
+    const words = cleaned.split(/\s+/).filter(Boolean);
+    if (words.length > 35) {
+        cleaned = words.slice(0, 35).join(' ').replace(/[,:;\-]+$/g, '').trim();
+        if (!/[.!?]$/.test(cleaned)) {
+            cleaned += '.';
+        }
+    }
+
+    return cleaned;
+}
+
 function getProviderConfig(provider: 'groq' | 'deepseek' | 'kimi' | 'mistral') {
     if (provider === 'groq') {
         return {
@@ -271,7 +299,7 @@ export const AIService = {
         recentSignals = [],
     }: HomeSignalOptions): Promise<string | null> {
         const providers: Array<'groq' | 'mistral' | 'deepseek'> = ['groq', 'mistral', 'deepseek'];
-        const dataDrivenRoast = kind === 'roast' && mode === 'personalized' && Math.random() < 0.08;
+        const dataDrivenRoast = kind === 'roast' && mode === 'personalized' && Math.random() < (1 / 30);
         const roastAngles = [
             'brutal truth',
             'discipline',
@@ -309,12 +337,12 @@ Rules:
 - No fake greetings.
 - No multi-paragraph response.
 - No quotation marks around the whole output.
-- Keep it tight: ${kind === 'roast' ? 'Exactly 1 sharp sentence, ideally under 14 words. Never exceed 16 words.' : '1 short cinematic sentence, ideally under 18 words. Never ramble.'}
+- Keep it tight: ${kind === 'roast' ? '1-2 sentences max, 15-35 words total, screen-ready without scrolling.' : '1 short cinematic sentence, ideally under 18 words. Never ramble.'}
 - If mode is PERSONALIZED, it should feel tailored to the user, but it does NOT need to mention stats, streaks, XP, or chat history every time.
 - Personalized signals may reference user data, recent chat themes, emotional patterns, avoided reps, or current pressure when it helps.
 - Sometimes personalized should be subtle and intimate, not obviously data-driven.
 - For PERSONALIZED ROASTS specifically: some should be surgical and specific, others should be broader philosophical gut-punches that still feel aimed at the user's current war.
-- For PERSONALIZED ROASTS specifically: explicit references to streaks, XP, quest history, or chat history should be RARE, not common.
+- For PERSONALIZED ROASTS specifically: explicit references to streaks, XP, quest history, or chat history should be VERY RARE (about 1 in 30 roasts).
 - Most personalized roasts should feel pointed without sounding like a stats dashboard.
 - Rotate naturally across themes: motivation, brutal truth, success, discipline, charisma, social skill pressure, identity, momentum, self-respect.
 - Do not make every line about anxiety, streaks, or XP. Vary the lens.
@@ -322,6 +350,10 @@ Rules:
 - If mode is CLASSIC, keep it universal and iconic.
 - Never output provider errors, meta commentary, or fallback notices.
 - Avoid repeating phrasing from recent signals.
+- Roast tone lock: David Goggins savage intensity + Zane's sharp charismatic cynicism.
+- Roast flow lock: expose weakness/excuse first, then force immediate action.
+- Roast ending lock: close with an urgent command/challenge (e.g. Now. Move. Prove it. Go.).
+- Roast ban list: no comfort language, no therapy tone, no "it's okay", no long explanation.
 - CURRENT ANGLE TO FAVOR FOR THIS GENERATION: ${selectedAngle.toUpperCase()}
 ${recentBlock}
 ${memoryBlock}
@@ -329,10 +361,10 @@ ${memoryBlock}
 
         const userPrompt = kind === 'roast'
             ? mode === 'classic'
-                ? 'Write one brutal classic Zane roast for the home screen.'
+                ? 'Write one brutal classic Zane roast for the dojo home screen. Make it short, savage, electric, and action-forcing.'
                 : dataDrivenRoast
-                    ? 'Write one personalized Zane roast for the home screen using the memory above. Keep it short, surgical, and savage. This time you MAY explicitly reference the user’s streak, XP, quest history, or recent chat pattern if it lands hard.'
-                    : 'Write one personalized Zane roast for the home screen using the memory above. Keep it short, surgical, and savage. Do NOT explicitly mention streaks, XP, stats, or chat history unless absolutely necessary. Make it feel aimed at the user through psychology, fear, status, discipline, average vs legendary, self-respect, or giving power away.'
+                    ? 'Write one personalized Zane roast for the dojo home screen using memory above. 1-2 sentences, 15-35 words. Cut first, then command immediate action. You MAY explicitly reference streak/XP/history if it lands hard.'
+                    : 'Write one personalized Zane roast for the dojo home screen using memory above. 1-2 sentences, 15-35 words. Cut first, then command immediate action. Do NOT explicitly mention streak/XP/history unless necessary. Keep it psychological, sharp, and urgent.'
             : mode === 'classic'
                 ? 'Write one classic Zane quote for the home screen.'
                 : 'Write one personalized Zane quote for the home screen using the memory above. Keep it very short and quotable. Sometimes reference their real patterns or chat history, sometimes keep it subtler. Mix motivation, discipline, charisma, social skill, success, and identity themes.';
@@ -377,10 +409,7 @@ ${memoryBlock}
                     continue;
                 }
 
-                return result
-                    .replace(/^"+|"+$/g, '')
-                    .replace(/\s{3,}/g, ' ')
-                    .trim();
+                return normalizeHomeSignalResult(kind, result);
             } catch {
                 continue;
             }

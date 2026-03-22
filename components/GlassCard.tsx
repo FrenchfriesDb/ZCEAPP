@@ -61,6 +61,7 @@ export default function GlassCard({
         <Pressable
             disabled={!onPress}
             onPress={onPress}
+            unstable_pressDelay={Platform.OS === 'ios' ? 85 : 0}
             style={({ pressed }) => [
                 styles.outer,
                 {

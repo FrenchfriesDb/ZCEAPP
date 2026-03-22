@@ -32,21 +32,21 @@ import { FIELD_OPS, MICRO_OPS, STANDING_ORDERS, getNightlyRiskSnapshot, pickAdap
 import { buildZaneMemoryContext, getHarvestReport } from '@/utils/zaneMemory';
 
 const ROASTS = [
-  "You didn't talk to anyone today? Bro, I'm a robot and even I'm disappointed.",
-  "Still reading motivational quotes instead of being the quote? Classic.",
-  "Your social battery is at 100% because you never use it. That's not a flex.",
-  "I ran your confidence level through my algorithms. We need to talk.",
-  "Another day of watching people socialize from the sidelines? Bold strategy.",
-  "You rehearsed that conversation 47 times in the shower... then said nothing. Elite.",
-  "Your comfort zone has a comfort zone. Think about that.",
-  "Goggins runs 100 miles. You can't even run a 10-second conversation.",
-  "I've seen NPCs with more dialogue options than you.",
-  "Your eye contact game is so weak, even blind people look away.",
-  "You ghosted a real conversation to read about being charismatic. Irony is alive.",
-  "The only thing you've been consistent at is being inconsistent. Let's fix that.",
-  "You treat small talk like it's a final boss. It's literally level 1.",
-  "Every excuse you make is a rep you didn't do. And you've got a LOT of reps.",
-  "You think confidence is genetic? Nah. It's reps. And your rep count is tragic.",
+  "I've seen NPCs with more dialogue than you. Wake the beast or stay background noise.",
+  "Skipped reps again? Your future self is watching and he's disgusted. 50 push-ups. Now.",
+  "Still hiding in whisper mode? The cage is open. Step out or stay a ghost forever.",
+  "You're letting comfort choke your fire. Feel that burn? Feed it 30 burpees. Go.",
+  "Too shy to talk? The room's waiting for your chaos. Drop one loud line today or stay forgettable.",
+  "You keep rehearsing and never pulling the trigger. One bold opener in the next hour. Move.",
+  "Your fear is loud because your reps are quiet. Make your effort louder right now.",
+  "You want legendary results with civilian effort. Ten hard reps, then come back dangerous.",
+  "You keep bowing to comfort like it's a king. Break posture, claim space, and lead.",
+  "You don't need more motivation, you need violence in your execution. Start one social rep now.",
+  "You keep asking for confidence instead of earning it. Eye contact, smile, open—do it today.",
+  "You're acting like a side character in your own mission. Seize one room before sunset.",
+  "That excuse sounded elegant, still cowardice. Burn it with action and report a win.",
+  "You've been training your doubt more than your charisma. Flip that script this minute.",
+  "You want the crown but worship comfort. Choose pain, choose reps, choose power. Now.",
 ];
 
 const ZANE_QUOTES = [
@@ -143,19 +143,19 @@ function buildPersonalizedHomeFallback(
 
   if (kind === 'roast') {
     const rareDataRoasts = [
-      `${name}-la. Day ${streak} streak, 0 XP. You're preserving numbers, not identity.`,
-      `${name}-la. ${totalXp} XP and still dodging rejection reps. Confidence doesn't grow in hiding.`,
-      `${name}-la. ${harvestReport.todayXp} XP today, but ${harvestReport.avoidedText} still owns your behavior.`,
+      `${name}, day ${streak} and your engine still hesitates. Prove you're alive—one savage rep in the next 10 minutes.`,
+      `${name}, ${totalXp} XP means nothing if you still hide in safe mode. Hunt discomfort right now.`,
+      `${name}, ${harvestReport.todayXp} XP and ${harvestReport.avoidedText} still owns you. Break that pattern today.`,
     ];
     const subtleRoasts = [
-      `${name}-la. Average dies quietly. Decide if you're attending or ending the funeral.`,
-      `${name}-la. Fear keeps asking for your power back. Stop refunding it.`,
-      `${name}-la. Discipline only feels cruel to people addicted to hiding.`,
-      `${name}-la. You're waiting to feel ready instead of becoming dangerous.`,
-      `${name}-la. Comfort is chewing your potential in polite little bites.`,
-      `${name}-la. Charisma crowns the committed, never the careful.`,
+      `${name}, average dies quietly. End the funeral—take one hard social rep now.`,
+      `${name}, fear keeps taxing your potential. Stop paying it and move first.`,
+      `${name}, discipline hurts less than regret. Choose pain with purpose today.`,
+      `${name}, waiting to feel ready is how ghosts are made. Act loud, act now.`,
+      `${name}, comfort is eating your future in tiny bites. Bite back with action.`,
+      `${name}, charisma crowns the committed, never the careful. Commit one bold move today.`,
     ];
-    const pool = Math.random() < 0.08 ? rareDataRoasts : subtleRoasts;
+    const pool = Math.random() < (1 / 30) ? rareDataRoasts : subtleRoasts;
     return pool[Math.floor(Math.random() * pool.length)];
   }
 
@@ -177,14 +177,7 @@ export default function DojoScreen() {
   const { user, completeQuest, resetQuests, recoverStreak, deploySystemBackup } = useUser();
   const { palette: timePalette } = useTimeColors();
   const { textPrimary, textSecondary, textTertiary } = useTextColors();
-  
-  // Debug: Log current theme
-  console.log('Current theme at', new Date().toLocaleTimeString(), ':', {
-    timePalette,
-    textPrimary,
-    textSecondary,
-    textTertiary
-  });
+
   const safeTimePalette = Array.isArray(timePalette) && timePalette.length > 0
     ? timePalette
     : Colors.gradientDark;
@@ -613,11 +606,22 @@ export default function DojoScreen() {
     <View style={styles.container}>
       <LinearGradient
         colors={['#00000033', '#33333333']} // ~20% opacity black/gray gradient
+        pointerEvents="none"
         style={StyleSheet.absoluteFill}
       />
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.85)' }]} />
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.85)' }]} />
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
+        canCancelContentTouches
+        directionalLockEnabled
+        alwaysBounceVertical
+        bounces
+      >
         {/* Profile Header — Clean Spacing */}
         <View style={styles.header}>
           {/* XP Bar moved below hero streak */}
