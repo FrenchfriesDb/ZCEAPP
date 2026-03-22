@@ -1,9 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
-import { Colors, Fonts, FontSizes, Spacing, Radius } from '@/constants/theme';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { Colors, Fonts } from '@/constants/theme';
 import GlassCard from './GlassCard';
 import { useTimeColors } from '@/hooks/useTimeColors';
-import { useTextColors } from '@/context/TextColorsContext';
 import FluentEmoji, { resolveFluentEmojiName } from './FluentEmoji';
 
 interface QuestCardProps {
@@ -18,7 +17,6 @@ interface QuestCardProps {
 
 export default function QuestCard({ icon, title, description, xpReward, completed, onToggle, category }: QuestCardProps) {
     const { palette: timePalette } = useTimeColors();
-    const { textPrimary } = useTextColors();
     const systemColor = timePalette[0];
 
     // Map category to color
@@ -35,6 +33,8 @@ export default function QuestCard({ icon, title, description, xpReward, complete
 
     const categoryColor = getCategoryColor(category);
     const fluentIcon = resolveFluentEmojiName(icon);
+    const titleGlowColor = `${systemColor}CC`;
+    const bodyGlowColor = `${systemColor}88`;
 
     return (
         <GlassCard
@@ -50,20 +50,18 @@ export default function QuestCard({ icon, title, description, xpReward, complete
                     {fluentIcon ? (
                         <FluentEmoji name={fluentIcon} size={24} opacity={completed ? 0.8 : 1} />
                     ) : (
-                        <Text style={[styles.icon, completed && { opacity: 0.8 }]}>
-                            <Text style={styles.emojiFix}>{icon}</Text>
-                        </Text>
+                        <Text style={[styles.icon, completed && { opacity: 0.8 }]}>{icon || '•'}</Text>
                     )}
                 </View>
 
                 <View style={styles.content}>
-                    <Text style={[styles.title, completed && styles.completedText, { color: textPrimary }]}>{title}</Text>
-                    <Text style={styles.description}>{description}</Text>
+                    <Text style={[styles.title, completed && styles.completedText, { color: '#FFFFFF', textShadowColor: titleGlowColor }]}>{title}</Text>
+                    <Text style={[styles.description, { color: '#FFFFFF', textShadowColor: bodyGlowColor }]}>{description}</Text>
                 </View>
 
                 <View style={styles.right}>
                     <View style={[styles.xpBadge, { borderColor: systemColor + '44' }, completed && { opacity: 0.5 }]}>
-                        <Text style={[styles.xpText, { color: textPrimary }]}>+{xpReward} XP</Text>
+                        <Text style={[styles.xpText, { color: '#FFFFFF', textShadowColor: bodyGlowColor }]}>+{xpReward} XP</Text>
                     </View>
 
                     <Pressable onPress={onToggle} style={({ pressed }) => [
@@ -105,15 +103,6 @@ const styles = StyleSheet.create({
     icon: {
         fontSize: 24,
     },
-    emojiFix: {
-        fontFamily: Platform.select({
-            ios: 'Apple Color Emoji',
-            web: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji',
-            default: undefined,
-        }),
-        fontWeight: 'normal',
-        letterSpacing: 0,
-    },
     content: {
         flex: 1,
         gap: 4,
@@ -132,6 +121,8 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: 'rgba(255, 255, 255, 0.5)',
         lineHeight: 18,
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: 6,
     },
     right: {
         alignItems: 'flex-end',
@@ -148,6 +139,8 @@ const styles = StyleSheet.create({
         fontFamily: Fonts.monoBold,
         fontSize: 10,
         letterSpacing: 1,
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: 6,
     },
     checkbox: {
         width: 28,

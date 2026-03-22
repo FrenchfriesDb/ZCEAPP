@@ -201,6 +201,7 @@ export default function DojoScreen() {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   };
   const glowColor = hexToRgba(textPrimary, 1.0);
+  const subtleGlowColor = hexToRgba(textPrimary, 0.78);
   const xpBarColors = useXPBarColors();
   const [roastIndex, setRoastIndex] = useState(() => Math.floor(Math.random() * ROASTS.length));
   const [quoteIndex, setQuoteIndex] = useState(() => Math.floor(Math.random() * ZANE_QUOTES.length));
@@ -487,6 +488,7 @@ export default function DojoScreen() {
   // ── MISSION ROW ──────────────────────────────────────────────────────────────
   const MissionRow = ({ item }: { item: any }) => {
     const isDone = completedIds.includes(item.id);
+    const fluentIconName = resolveFluentEmojiName(item.icon);
     const accentGradient = isDone
       ? ['rgba(255,255,255,0.2)', 'rgba(255,255,255,0.05)'] as const
       : xpBarColors as any;
@@ -530,10 +532,16 @@ export default function DojoScreen() {
           <View style={[styles.missionIconBadge, isDone && styles.missionIconBadgeDone]}>
             {isDone ? (
               <Text allowFontScaling={false} style={[styles.missionIcon, { color: '#FFFFFF', fontSize: 16 }, isDone && { opacity: 0.5 }]}>✓</Text>
-            ) : resolveFluentEmojiName(item.icon) ? (
-              <FluentEmoji name={resolveFluentEmojiName(item.icon)!} size={20} />
+            ) : fluentIconName ? (
+              <FluentEmoji
+                name={fluentIconName}
+                size={20}
+                style={isDone ? { opacity: 0.5 } : undefined}
+              />
             ) : (
-              <Text allowFontScaling={false} style={[styles.missionIcon, { color: '#FFFFFF', fontSize: 16 }, isDone && { opacity: 0.5 }]}>{item.icon}</Text>
+              <Text allowFontScaling={false} style={[styles.missionIcon, { color: '#FFFFFF', fontSize: 16 }, isDone && { opacity: 0.5 }]}>
+                {item.icon || '•'}
+              </Text>
             )}
           </View>
 
@@ -561,8 +569,32 @@ export default function DojoScreen() {
     return (
       <View style={styles.sectionHeader}>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.sectionTitle, { color: title === 'STANDING ORDERS' ? systemColor : textPrimary }]}>{title}</Text>
-          <Text style={[styles.sectionSub, { color: textPrimary }]}>{count}/{total} COMPLETED</Text>
+          <Text
+            style={[
+              styles.sectionTitle,
+              {
+                color: '#FFFFFF',
+                textShadowColor: subtleGlowColor,
+                textShadowOffset: { width: 0, height: 0 },
+                textShadowRadius: 8,
+              },
+            ]}
+          >
+            {title}
+          </Text>
+          <Text
+            style={[
+              styles.sectionSub,
+              {
+                color: '#FFFFFF',
+                textShadowColor: subtleGlowColor,
+                textShadowOffset: { width: 0, height: 0 },
+                textShadowRadius: 6,
+              },
+            ]}
+          >
+            {count}/{total} COMPLETED
+          </Text>
         </View>
         {done ? (
           <GlassButton
@@ -599,7 +631,9 @@ export default function DojoScreen() {
                 color: '#FFFFFF',
                 textShadowColor: glowColor,
                 textShadowOffset: { width: 0, height: 0 },
-                textShadowRadius: 40
+                textShadowRadius: 58,
+                fontSize: 184,
+                lineHeight: 225
               },
               (user?.streakAtRisk && streakCount > 0) && { color: Colors.accentDanger }
             ]}>
@@ -607,21 +641,46 @@ export default function DojoScreen() {
             </Text>
             <Text style={[
               styles.heroUnit,
-              { color: textPrimary },
+              {
+                color: '#FFFFFF',
+                textShadowColor: subtleGlowColor,
+                textShadowOffset: { width: 0, height: 0 },
+                textShadowRadius: 10,
+              },
               (user?.streakAtRisk && streakCount > 0) && { color: Colors.accentDanger, opacity: 1 }
             ]}>
               {(user?.streakAtRisk && streakCount > 0) ? 'REPAIR REQUIRED' : 'DAY STREAK'}
             </Text>
           </View>
 
-          <Text style={[styles.welcomeText, { color: textPrimary }]}>
+          <Text style={[
+            styles.welcomeText,
+            {
+              color: '#FFFFFF',
+              textShadowColor: subtleGlowColor,
+              textShadowOffset: { width: 0, height: 0 },
+              textShadowRadius: 8,
+            },
+          ]}>
             Welcome back, {getFirstName(user?.name)}.
           </Text>
 
           {/* XP Progression — Directly below streak as requested */}
           <View style={styles.heroXPContainer}>
             <XPBar xp={user?.xp || 0} />
-            <Text style={[styles.xpSubLabel, { color: textPrimary }]} numberOfLines={1} adjustsFontSizeToFit>
+            <Text
+              style={[
+                styles.xpSubLabel,
+                {
+                  color: '#FFFFFF',
+                  textShadowColor: subtleGlowColor,
+                  textShadowOffset: { width: 0, height: 0 },
+                  textShadowRadius: 6,
+                },
+              ]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
               CHARISMA ENGINE // PROGRESSION {user?.xp || 0} XP TOTAL
             </Text>
           </View>
@@ -1362,6 +1421,15 @@ const styles = StyleSheet.create({
   missionIconBadgeDone: {
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
     borderColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  missionIconStack: {
+    width: 22,
+    height: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  missionIconImageOverlay: {
+    position: 'absolute',
   },
   missionIcon: {
     fontSize: 16,
