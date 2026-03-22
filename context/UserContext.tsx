@@ -328,6 +328,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                             const data = JSON.parse(cached) as UserData;
                             setUser(data);
                             userRef.current = data;
+                            await cacheUsernameEmail(data.username, data.email);
                             console.log('[UserContext] Loaded from local cache (offline fallback)');
                         } catch {
                             // Cache corrupted — sign out
@@ -438,13 +439,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     };
 
     // --- AUTH HELPERS ---
-    const getFriendlyAuthError = (code: string): string => {
+    const getFriendlyAuthError = (code: string, forUsernameLogin: boolean = false): string => {
         switch (code) {
             case 'auth/wrong-password':
             case 'auth/invalid-credential':
                 return 'Incorrect password.';
             case 'auth/user-not-found':
-                return "Email does not exist.";
+                return forUsernameLogin ? 'Username not found.' : 'Email does not exist.';
             case 'auth/email-already-in-use':
                 return 'Email already in use.';
             case 'auth/invalid-email':
@@ -469,10 +470,19 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             }
 
             const rawInput = emailOrUsername.trim();
+            const isUsernameLogin = !rawInput.includes('@');
+
+            if (auth.currentUser) {
+                try { await fbSignOut(auth); } catch { }
+                setUser(null);
+                userRef.current = null;
+                try { await Storage.deleteItem('zce_user'); } catch { }
+            }
+
             let loginEmail = rawInput.toLowerCase();
 
             // If it doesn't look like an email, treat it as a username — look up the real email
-            if (!loginEmail.includes('@')) {
+            if (isUsernameLogin) {
                 const resolvedEmail = await resolveEmailFromUsername(rawInput);
                 if (!resolvedEmail) {
                     const usernameErr: any = new Error('Username not found.');
@@ -483,9 +493,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             }
 
             await signInWithEmailAndPassword(auth, loginEmail, password);
+            await cacheUsernameEmail(isUsernameLogin ? rawInput : undefined, loginEmail);
             router.replace('/(tabs)');
         } catch (e: any) {
-            let msg = getFriendlyAuthError(e.code || '');
+            const rawInput = emailOrUsername.trim();
+            const isUsernameLogin = !rawInput.includes('@');
+            let msg = getFriendlyAuthError(e.code || '', isUsernameLogin);
             if (e.code === 'auth/firebase-app-check-token-is-invalid' || e.message?.includes('app-check')) {
                 msg = "SECURITY: App Check is blocking this login. In Firebase Console -> App Check, set Authentication to 'Unenforced'.";
             }
@@ -578,6 +591,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             setUser(initialData);
             userRef.current = initialData;
             await Storage.setItem('zce_user', JSON.stringify(initialData));
+            await cacheUsernameEmail(initialData.username, initialData.email);
             // Complete onboarding after successful signup
             await completeOnboarding();
             router.replace('/(tabs)');
