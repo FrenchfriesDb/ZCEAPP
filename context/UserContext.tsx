@@ -34,6 +34,7 @@ const Storage = {
 };
 
 const USERNAME_EMAIL_MAP_KEY = 'zce_username_email_map';
+const LAST_SUCCESS_EMAIL_KEY = 'zce_last_success_email';
 
 const getRecentLoginError = () => "CRITICAL: Re-authentication Required. For security, you must log out and immediately log back in to change your agent credentials.";
 const STREAK_RECOVERY_GRACE_MS = 10 * 60 * 1000;
@@ -209,6 +210,19 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             }
         } catch (err) {
             console.warn('[UserContext] Failed reading username map cache:', err);
+        }
+
+        try {
+            const lastEmail = (await Storage.getItem(LAST_SUCCESS_EMAIL_KEY) || '').trim().toLowerCase();
+            if (lastEmail && lastEmail.includes('@')) {
+                const lastLocalPart = lastEmail.split('@')[0];
+                if (lastLocalPart === normalizedUsername) {
+                    await cacheUsernameEmail(normalizedUsername, lastEmail);
+                    return lastEmail;
+                }
+            }
+        } catch (err) {
+            console.warn('[UserContext] Failed reading last success email:', err);
         }
 
         try {
@@ -494,6 +508,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
             await signInWithEmailAndPassword(auth, loginEmail, password);
             await cacheUsernameEmail(isUsernameLogin ? rawInput : undefined, loginEmail);
+            await Storage.setItem(LAST_SUCCESS_EMAIL_KEY, loginEmail);
             router.replace('/(tabs)');
         } catch (e: any) {
             const rawInput = emailOrUsername.trim();
@@ -592,6 +607,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             userRef.current = initialData;
             await Storage.setItem('zce_user', JSON.stringify(initialData));
             await cacheUsernameEmail(initialData.username, initialData.email);
+            await Storage.setItem(LAST_SUCCESS_EMAIL_KEY, initialData.email);
             // Complete onboarding after successful signup
             await completeOnboarding();
             router.replace('/(tabs)');

@@ -57,7 +57,7 @@ export default function RootLayout() {
   }, []);
 
   if (!fontsLoaded) {
-    return <CustomSplashScreen onFinish={() => {}} />;
+    return <LoadingScreen />;
   }
 
   return (
@@ -89,6 +89,7 @@ function RootLayoutNav() {
     const s1 = segments[1] as string | undefined;
 
     const inAuthGroup = s0 === 'auth';
+    const inTabsGroup = s0 === '(tabs)';
     const isOnboarding = inAuthGroup && s1 === 'onboarding';
     const isLoginOrSignup = inAuthGroup && (s1 === 'login' || s1 === 'signup');
     const isForgotPassword = inAuthGroup && s1 === 'forgot-password';
@@ -101,6 +102,16 @@ function RootLayoutNav() {
       if (isLoginOrSignup || isForgotPassword) {
         // Allow users to stay on auth pages if they came from onboarding flow
         // Don't redirect them back to onboarding
+        return;
+      }
+
+      // 1.5 If unauthenticated user is in tabs (or any non-auth route), route to the correct auth entry.
+      if (inTabsGroup || !inAuthGroup) {
+        if (hasCompletedOnboarding) {
+          router.replace('/auth/login');
+        } else {
+          router.replace('/auth/onboarding');
+        }
         return;
       }
 
