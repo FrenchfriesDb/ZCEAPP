@@ -485,7 +485,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             }
 
             const rawInput = emailOrUsername.trim();
-            const isUsernameLogin = !rawInput.includes('@');
+            const looksLikeEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawInput);
+            const isUsernameLogin = !looksLikeEmail;
 
             if (auth.currentUser) {
                 try { await fbSignOut(auth); } catch { }
@@ -513,7 +514,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             router.replace('/(tabs)');
         } catch (e: any) {
             const rawInput = emailOrUsername.trim();
-            const isUsernameLogin = !rawInput.includes('@');
+            const looksLikeEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawInput);
+            const isUsernameLogin = !looksLikeEmail;
             let msg = getFriendlyAuthError(e.code || '', isUsernameLogin);
             if (e.code === 'auth/firebase-app-check-token-is-invalid' || e.message?.includes('app-check')) {
                 msg = "SECURITY: App Check is blocking this login. In Firebase Console -> App Check, set Authentication to 'Unenforced'.";
