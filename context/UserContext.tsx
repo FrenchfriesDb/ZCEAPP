@@ -593,8 +593,22 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const signUp = async (email: string, password: string, name: string, username: string = '') => {
         setIsLoading(true);
         const cleanEmail = email.trim().toLowerCase();
-        const normalizedUsername = (username || name.toLowerCase().replace(/\s+/g, '_').slice(0, 20)).toLowerCase();
+        const normalizedUsername = username.trim().toLowerCase().replace(/^@+/, '');
+        const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/;
         try {
+            if (!cleanEmail) {
+                throw new Error('Email is required.');
+            }
+            if (!password) {
+                throw new Error('Password is required.');
+            }
+            if (!normalizedUsername) {
+                throw new Error('Username is required.');
+            }
+            if (!USERNAME_REGEX.test(normalizedUsername)) {
+                throw new Error('Username must be 3–20 characters: letters, numbers, underscores only.');
+            }
+
             const usernameSnap = await getDocs(query(collection(db, 'users'), where('username', '==', normalizedUsername)));
             if (!usernameSnap.empty) {
                 const usernameTakenError: any = new Error('Username already in use.');
@@ -647,6 +661,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             let msg = getFriendlyAuthError(e.code || '');
             if (e.code === 'auth/username-already-in-use') {
                 msg = 'Username already in use.';
+            }
+            if (e.message === 'Email is required.' || e.message === 'Password is required.' || e.message === 'Username is required.' || e.message?.startsWith('Username must be')) {
+                msg = e.message;
             }
             if (e.code === 'auth/firebase-app-check-token-is-invalid' || e.message?.includes('app-check')) {
                 msg = "SECURITY ALERT: App Check is blocking this login. Go to Firebase Console -> App Check and set Authentication to 'Unenforced'.";
