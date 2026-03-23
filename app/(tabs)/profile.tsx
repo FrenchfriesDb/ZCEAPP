@@ -182,11 +182,6 @@ export default function ProfileScreen() {
                     </Pressable>
                 </GlassCard>
 
-                {/* Sign Out */}
-                <Pressable onPress={() => signOut()} style={styles.signOutBtn}>
-                    <Text style={styles.signOutText}>⏻  SIGN OUT</Text>
-                </Pressable>
-
                 <View style={styles.footer}>
                     <Pressable onPress={() => Alert.alert('LEGAL PROTOCOL', 'By using the Engine, you agree to Forge your character without excuses.')}>
                         <Text style={styles.footerLink}>TERMS OF SERVICE</Text>
