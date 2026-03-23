@@ -440,6 +440,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         setUser(merged);
         userRef.current = merged;
         await Storage.setItem('zce_user', JSON.stringify(merged));
+        await cacheUsernameEmail(merged.username, merged.email);
 
         if (auth.currentUser) {
             try {
@@ -553,6 +554,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             username: newUsername.toLowerCase(),
             usernameLastChanged: new Date().toISOString(),
         });
+        await cacheUsernameEmail(newUsername.toLowerCase(), userRef.current.email);
     };
 
     const forgotPassword = async (email: string) => {
@@ -570,12 +572,20 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const signUp = async (email: string, password: string, name: string, username: string = '') => {
         setIsLoading(true);
         const cleanEmail = email.trim().toLowerCase();
+        const normalizedUsername = (username || name.toLowerCase().replace(/\s+/g, '_').slice(0, 20)).toLowerCase();
         try {
+            const usernameSnap = await getDocs(query(collection(db, 'users'), where('username', '==', normalizedUsername)));
+            if (!usernameSnap.empty) {
+                const usernameTakenError: any = new Error('Username already in use.');
+                usernameTakenError.code = 'auth/username-already-in-use';
+                throw usernameTakenError;
+            }
+
             const cred = await createUserWithEmailAndPassword(auth, cleanEmail, password);
             const initialData: UserData = {
                 email: cleanEmail,
                 name: name || 'Agent 808',
-                username: username || name.toLowerCase().replace(/\s+/g, '_').slice(0, 20),
+                username: normalizedUsername,
                 usernameLastChanged: new Date().toISOString(),
                 title: onboardingData.level.split(' — ')[0],
                 bio: `Mission: ${onboardingData.goal}. Weakness dies here.`,
@@ -613,6 +623,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             router.replace('/(tabs)');
         } catch (e: any) {
             let msg = getFriendlyAuthError(e.code || '');
+            if (e.code === 'auth/username-already-in-use') {
+                msg = 'Username already in use.';
+            }
             if (e.code === 'auth/firebase-app-check-token-is-invalid' || e.message?.includes('app-check')) {
                 msg = "SECURITY ALERT: App Check is blocking this login. Go to Firebase Console -> App Check and set Authentication to 'Unenforced'.";
             }

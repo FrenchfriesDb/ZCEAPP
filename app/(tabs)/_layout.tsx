@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
+import { Redirect } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Fonts, Radius } from '@/constants/theme';
@@ -8,6 +9,7 @@ import { TextColorsProvider } from '@/context/TextColorsContext';
 import { useTextColors } from '@/context/TextColorsContext';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import FluentEmoji, { type FluentEmojiName } from '@/components/FluentEmoji';
+import { useUser } from '@/context/UserContext';
 
 const TAB_CONFIG = [
   { name: 'index', label: 'Dojo', icon: 'crossedSwords' as FluentEmojiName },
@@ -96,6 +98,14 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 }
 
 export default function TabLayout() {
+  const { user, isLoading, hasCompletedOnboarding } = useUser();
+
+  if (isLoading) return null;
+
+  if (!user) {
+    return <Redirect href={hasCompletedOnboarding ? '/auth/login' : '/auth/onboarding'} />;
+  }
+
   return (
     <TextColorsProvider>
       <Tabs
