@@ -35,6 +35,7 @@ const Storage = {
 
 const USERNAME_EMAIL_MAP_KEY = 'zce_username_email_map';
 const LAST_SUCCESS_EMAIL_KEY = 'zce_last_success_email';
+const LAST_SUCCESS_USERNAME_KEY = 'zce_last_success_username';
 
 const getRecentLoginError = () => "CRITICAL: Re-authentication Required. For security, you must log out and immediately log back in to change your agent credentials.";
 const STREAK_RECOVERY_GRACE_MS = 10 * 60 * 1000;
@@ -202,6 +203,17 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         if (!normalizedUsername) return null;
 
         try {
+            const lastUsername = (await Storage.getItem(LAST_SUCCESS_USERNAME_KEY) || '').trim().toLowerCase();
+            const lastEmail = (await Storage.getItem(LAST_SUCCESS_EMAIL_KEY) || '').trim().toLowerCase();
+            if (lastUsername && lastEmail && lastUsername === normalizedUsername) {
+                await cacheUsernameEmail(lastUsername, lastEmail);
+                return lastEmail;
+            }
+        } catch (err) {
+            console.warn('[UserContext] Failed reading last success username/email:', err);
+        }
+
+        try {
             const raw = await Storage.getItem(USERNAME_EMAIL_MAP_KEY);
             if (raw) {
                 const map = JSON.parse(raw) as Record<string, string>;
@@ -292,6 +304,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                         userRef.current = data;
                         await Storage.setItem('zce_user', JSON.stringify(data));
                         await cacheUsernameEmail(data.username, data.email);
+                        if (data.username) await Storage.setItem(LAST_SUCCESS_USERNAME_KEY, data.username.toLowerCase());
+                        if (data.email) await Storage.setItem(LAST_SUCCESS_EMAIL_KEY, data.email.toLowerCase());
                         console.log('[UserContext] User loaded from Firestore:', data.email);
                     } else {
                         // ❌ No Firestore doc found for this Firebase user.
@@ -332,6 +346,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                         userRef.current = defaultData;
                         await Storage.setItem('zce_user', JSON.stringify(defaultData));
                         await cacheUsernameEmail(defaultData.username, defaultData.email);
+                        if (defaultData.username) await Storage.setItem(LAST_SUCCESS_USERNAME_KEY, defaultData.username.toLowerCase());
+                        if (defaultData.email) await Storage.setItem(LAST_SUCCESS_EMAIL_KEY, defaultData.email.toLowerCase());
                     }
                 } catch (err: any) {
                     console.warn('[UserContext] Firestore read failed:', err.code ?? err.message);
@@ -343,6 +359,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                             setUser(data);
                             userRef.current = data;
                             await cacheUsernameEmail(data.username, data.email);
+                            if (data.username) await Storage.setItem(LAST_SUCCESS_USERNAME_KEY, data.username.toLowerCase());
+                            if (data.email) await Storage.setItem(LAST_SUCCESS_EMAIL_KEY, data.email.toLowerCase());
                             console.log('[UserContext] Loaded from local cache (offline fallback)');
                         } catch {
                             // Cache corrupted — sign out
@@ -557,6 +575,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             usernameLastChanged: new Date().toISOString(),
         });
         await cacheUsernameEmail(newUsername.toLowerCase(), userRef.current.email);
+        await Storage.setItem(LAST_SUCCESS_USERNAME_KEY, newUsername.toLowerCase());
     };
 
     const forgotPassword = async (email: string) => {
@@ -620,6 +639,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             await Storage.setItem('zce_user', JSON.stringify(initialData));
             await cacheUsernameEmail(initialData.username, initialData.email);
             await Storage.setItem(LAST_SUCCESS_EMAIL_KEY, initialData.email);
+            await Storage.setItem(LAST_SUCCESS_USERNAME_KEY, initialData.username.toLowerCase());
             // Complete onboarding after successful signup
             await completeOnboarding();
             router.replace('/(tabs)');
