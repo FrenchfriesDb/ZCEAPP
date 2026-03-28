@@ -1,15 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import { Colors, Fonts, FontSizes, Spacing, Radius, XPConfig } from '@/constants/theme';
-import GlassCard from '@/components/GlassCard';
-import { db, auth } from '@/services/firebase';
-import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
-import { useUser } from '@/context/UserContext';
-import { formatDisplayName } from '@/utils/formatters';
+import { Colors, Fonts, FontSizes, Radius, Spacing, XPConfig } from '@/constants/theme';
 import { useTextColors } from '@/context/TextColorsContext';
+import { useUser } from '@/context/UserContext';
 import { useTimeColors } from '@/hooks/useTimeColors';
+import { auth, db } from '@/services/firebase';
+import { formatDisplayName } from '@/utils/formatters';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import { collection, getDocs, limit, orderBy, query } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 const getRankColor = (rank: number) => {
     if (rank === 1) return '#FFD700'; // Gold
@@ -137,7 +136,13 @@ export default function LeaderboardScreen() {
 
     return (
         <View style={styles.container}>
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
+            <LinearGradient
+                colors={['#000000', '#000000']}
+                start={{ x: 0.15, y: 0 }}
+                end={{ x: 0.85, y: 1 }}
+                style={StyleSheet.absoluteFill}
+            />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.34)' }]} />
 
             <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Header */}

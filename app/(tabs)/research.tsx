@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Platform } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Fonts, FontSizes, Spacing, Radius } from '@/constants/theme';
-import { router } from 'expo-router';
+import FluentEmoji from '@/components/FluentEmoji';
 import GlassCard from '@/components/GlassCard';
+import { Colors, Fonts, FontSizes, Radius, Spacing } from '@/constants/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 const CHAPTERS = [
     {
@@ -62,7 +63,13 @@ export default function ResearchScreen() {
 
     return (
         <View style={styles.container}>
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
+            <LinearGradient
+                colors={['#000000', '#000000']}
+                start={{ x: 0.15, y: 0 }}
+                end={{ x: 0.85, y: 1 }}
+                style={StyleSheet.absoluteFill}
+            />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.34)' }]} />
 
             <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 <View style={styles.header}>
@@ -82,13 +89,18 @@ export default function ResearchScreen() {
                 <GlassCard glowColor={Colors.accentPrimary}>
                     <View style={styles.heroContent}>
                         <View style={[styles.bookIcon, { backgroundColor: 'rgba(255, 255, 255, 0.08)', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.15)' }]}>
-                            <Text style={styles.bookEmoji}>📖</Text>
+                            <FluentEmoji name="blueBook" size={30} />
                         </View>
                         <Text style={styles.heroTitle}>Charisma Patterns in Teen Communication</Text>
                         <Text style={styles.heroAuthor}>BY ZANE — CHARISMA ARCHITECT</Text>
                         <Text style={styles.heroDesc}>
                             A research-backed exploration of what makes certain people magnetic — and how to reverse-engineer that energy through deliberate practice.
                         </Text>
+                        <View style={styles.heroEmojiStrip}>
+                            <View style={styles.heroEmojiChip}>
+                                <FluentEmoji name="star" size={18} />
+                            </View>
+                        </View>
                         <View style={styles.heroStats}>
                             <View style={styles.heroStat}>
                                 <Text style={styles.heroStatValue}>7</Text>
@@ -119,7 +131,10 @@ export default function ResearchScreen() {
                                 </View>
                                 <View style={styles.chapterContent}>
                                     <Text style={styles.chapterTitle}>{ch.title}</Text>
-                                    <Text style={styles.chapterReadTime}>⏱ {ch.readTime}</Text>
+                                    <View style={styles.chapterReadTimeRow}>
+                                        <FluentEmoji name="stopwatch" size={14} />
+                                        <Text style={styles.chapterReadTime}>{ch.readTime}</Text>
+                                    </View>
                                 </View>
                             </View>
                             {expandedChapter === i && (
@@ -179,9 +194,21 @@ const styles = StyleSheet.create({
 
     heroContent: { alignItems: 'center', gap: 10, paddingVertical: 8 },
     bookIcon: { width: 60, height: 60, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
-    bookEmoji: {
-        fontSize: 28,
-
+    heroEmojiStrip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginTop: 2,
+    },
+    heroEmojiChip: {
+        width: 28,
+        height: 28,
+        borderRadius: 9,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(255,255,255,0.06)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.12)',
     },
     heroTitle: { fontFamily: Fonts.heading, fontSize: FontSizes.xl, color: Colors.textPrimary, textAlign: 'center', letterSpacing: 1 },
     heroAuthor: { fontFamily: Fonts.mono, fontSize: 9, color: Colors.accentPrimary, letterSpacing: 3 },
@@ -202,6 +229,7 @@ const styles = StyleSheet.create({
     chapterNumText: { fontFamily: Fonts.monoBold, fontSize: FontSizes.md, color: Colors.accentPrimary },
     chapterContent: { flex: 1, gap: 2 },
     chapterTitle: { fontFamily: Fonts.headingSemi, fontSize: FontSizes.md, color: Colors.textPrimary },
+    chapterReadTimeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
     chapterReadTime: { fontFamily: Fonts.mono, fontSize: FontSizes.xs, color: Colors.textTertiary },
 
     chapterExpanded: { marginTop: 14, paddingTop: 14, borderTopWidth: 0.5, borderTopColor: 'rgba(255,255,255,0.06)', gap: 12 },

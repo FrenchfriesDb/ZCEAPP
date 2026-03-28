@@ -1,15 +1,15 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Platform } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Fonts, FontSizes, Spacing, Radius } from '@/constants/theme';
-import QuestCard from '@/components/QuestCard';
-import GlassCard from '@/components/GlassCard';
-import GlassButton from '@/components/GlassButton';
-import ProofModal from '@/components/ProofModal';
 import FluentEmoji, { resolveFluentEmojiName } from '@/components/FluentEmoji';
-import { useUser } from '@/context/UserContext';
+import GlassButton from '@/components/GlassButton';
+import GlassCard from '@/components/GlassCard';
+import ProofModal from '@/components/ProofModal';
+import QuestCard from '@/components/QuestCard';
+import { getQuestTierProfile, MICRO_OPS } from '@/constants/habitEngine';
+import { Colors, Fonts, Radius, Spacing } from '@/constants/theme';
 import { useTextColors } from '@/context/TextColorsContext';
-import { MICRO_OPS, getQuestTierProfile } from '@/constants/habitEngine';
+import { useUser } from '@/context/UserContext';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useMemo, useState } from 'react';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 const CATEGORIES = [
     { id: 'all', label: 'ALL', color: '#FFFFFF' },
@@ -168,7 +168,13 @@ export default function QuestsScreen() {
 
     return (
         <View style={styles.container}>
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
+            <LinearGradient
+                colors={['#000000', '#000000']}
+                start={{ x: 0.15, y: 0 }}
+                end={{ x: 0.85, y: 1 }}
+                style={StyleSheet.absoluteFill}
+            />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.34)' }]} />
 
             <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 <View style={styles.heroSection}>
@@ -370,7 +376,7 @@ const styles = StyleSheet.create({
     xpEarnedText: {
         fontFamily: Fonts.monoBold,
         fontSize: 10,
-        color: Colors.accentCyan,
+        color: Colors.textSecondary,
         letterSpacing: 2
     },
     icon: {
@@ -437,6 +443,14 @@ const styles = StyleSheet.create({
         fontSize: 18,
         width: 24,
         textAlign: 'center',
+        color: '#FFFFFF',
+        fontFamily: Platform.select({
+            ios: 'Apple Color Emoji',
+            web: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji',
+            default: undefined,
+        }),
+        fontWeight: 'normal',
+        letterSpacing: 0,
     },
     microOpIconImage: {
         width: 24,
@@ -459,7 +473,7 @@ const styles = StyleSheet.create({
     microOpXp: {
         fontFamily: Fonts.monoBold,
         fontSize: 9,
-        color: Colors.accentCyan,
+        color: Colors.textSecondary,
         letterSpacing: 1,
         marginTop: 2,
     },

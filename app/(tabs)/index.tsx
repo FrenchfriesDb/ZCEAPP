@@ -1,35 +1,36 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import {
-  View, Text, ScrollView, Pressable, Animated, Dimensions,
-  KeyboardAvoidingView, Platform, TextInput, Modal, Alert, StyleSheet, FlatList, Image, Share,
-} from 'react-native';
-import { router, useFocusEffect } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
-// Don't import expo-av at module load time — load it at runtime where available.
-import * as Haptics from 'expo-haptics';
-import { requireOptionalNativeModule } from 'expo-modules-core';
-import { useUser } from '@/context/UserContext';
-import { useTextColors } from '@/context/TextColorsContext';
-import { Colors, Fonts, FontSizes, Spacing, Radius, XPConfig } from '@/constants/theme';
-import { useTimeColors } from '@/hooks/useTimeColors';
-import { useXPBarColors } from '@/hooks/useXPBarColors';
-import { db } from '@/services/firebase';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-    collection, doc, setDoc, getDoc, updateDoc, deleteDoc,
-    query, where, orderBy, limit, onSnapshot,
-    getDocs, writeBatch, Timestamp,
-} from 'firebase/firestore';
-import ProofModal from '@/components/ProofModal';
-import GlassCard from '@/components/GlassCard';
-import GlassButton from '@/components/GlassButton';
-import XPBar from '@/components/XPBar';
+    Alert,
+    FlatList, Image,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    Pressable,
+    ScrollView,
+    Share,
+    StyleSheet,
+    Text,
+    TextInput,
+    View
+} from 'react-native';
+// Don't import expo-av at module load time — load it at runtime where available.
 import FluentEmoji, { resolveFluentEmojiName } from '@/components/FluentEmoji';
-import { getFirstName, formatDisplayName } from '@/utils/formatters';
+import GlassButton from '@/components/GlassButton';
+import GlassCard from '@/components/GlassCard';
+import ProofModal from '@/components/ProofModal';
+import XPBar from '@/components/XPBar';
+import { getNightlyRiskSnapshot, pickAdaptiveDojoLoadout } from '@/constants/habitEngine';
+import { Colors, Fonts, FontSizes, Radius, Spacing, XPConfig } from '@/constants/theme';
+import { useTextColors } from '@/context/TextColorsContext';
+import { useUser } from '@/context/UserContext';
+import { useXPBarColors } from '@/hooks/useXPBarColors';
 import { AIService } from '@/services/ai';
-import { FIELD_OPS, MICRO_OPS, STANDING_ORDERS, getNightlyRiskSnapshot, pickAdaptiveDojoLoadout } from '@/constants/habitEngine';
+import { getFirstName } from '@/utils/formatters';
 import { buildZaneMemoryContext, getHarvestReport } from '@/utils/zaneMemory';
+import { requireOptionalNativeModule } from 'expo-modules-core';
 
 const ROASTS = [
   "I've seen NPCs with more dialogue than you. Wake the beast or stay background noise.",
@@ -175,17 +176,10 @@ function getNextSignalMode(kind: 'roast' | 'quote'): 'classic' | 'personalized' 
 
 export default function DojoScreen() {
   const { user, completeQuest, resetQuests, recoverStreak, deploySystemBackup } = useUser();
-  const { palette: timePalette } = useTimeColors();
-  const { textPrimary, textSecondary, textTertiary } = useTextColors();
-
-  const safeTimePalette = Array.isArray(timePalette) && timePalette.length > 0
-    ? timePalette
-    : Colors.gradientDark;
+  const { textPrimary, textTertiary } = useTextColors();
 
   // Use textPrimary as the UI accent so time themes like Battle Glory remain readable
   // (Battle Glory's last palette stop is a deep navy, which makes small UI text unreadable).
-  const systemColor = textPrimary;
-  const middleColor = safeTimePalette[Math.floor(safeTimePalette.length / 2)];
   // Convert hex to rgba for textShadowColor
   const hexToRgba = (hex: string, alpha: number) => {
     const r = parseInt(hex.slice(1, 3), 16);
@@ -205,32 +199,46 @@ export default function DojoScreen() {
   const memoryContext = buildZaneMemoryContext(user);
   const recentRoastsRef = useRef<string[]>([]);
   const recentQuotesRef = useRef<string[]>([]);
+  const signalRefreshInFlightRef = useRef<{ roast: boolean; quote: boolean }>({ roast: false, quote: false });
+  const signalRequestIdRef = useRef<{ roast: number; quote: number }>({ roast: 0, quote: 0 });
 
   // ... rest of the component state ...
-  const fadeAnim = useRef(new Animated.Value(1)).current;
-
   // Audio playback for archived recordings
   const playbackRef = useRef<any>(null);
   const [playingUri, setPlayingUri] = useState<string | null>(null);
 
-  const togglePlay = async (uri?: string) => {
+  const stopPlayback = () => {
+    const player = playbackRef.current;
+    if (!player) return;
+    try { player.pause?.(); } catch (error) { void error; }
+    try { player.seekTo?.(0); } catch (error) { void error; }
+    try { player.remove?.(); } catch (error) { void error; }
+    playbackRef.current = null;
+  };
+
+  const normalizeAudioUri = (raw?: string) => {
+    if (!raw || typeof raw !== 'string') return null;
+    const trimmed = raw.trim();
+    if (!trimmed) return null;
+    if (/^gs:\/\//i.test(trimmed)) {
+      Alert.alert('Playback Error', 'This recording uses a Firebase storage path and cannot be streamed directly. Save a download URL to play it.');
+      return null;
+    }
+    return trimmed.replace(/ /g, '%20');
+  };
+
+  const togglePlay = async (rawUri?: string) => {
+    const uri = normalizeAudioUri(rawUri);
     if (!uri) return;
     try {
       if (playingUri === uri) {
-        if (playbackRef.current) {
-          await playbackRef.current.stopAsync();
-          await playbackRef.current.unloadAsync();
-          playbackRef.current = null;
-        }
+        stopPlayback();
         setPlayingUri(null);
         return;
       }
 
       // stop any existing playback
-      if (playbackRef.current) {
-        try { await playbackRef.current.stopAsync(); await playbackRef.current.unloadAsync(); } catch (_) {}
-        playbackRef.current = null;
-      }
+      stopPlayback();
 
       const Audio = await loadAudio();
       if (!Audio) {
@@ -244,8 +252,7 @@ export default function DojoScreen() {
       playbackRef.current = player;
       player.addListener('playbackStatusUpdate', (status: any) => {
         if (status?.didJustFinish || (status?.isLoaded && !status?.playing)) {
-          try { player.remove?.(); } catch (_) {}
-          playbackRef.current = null;
+          stopPlayback();
           setPlayingUri(null);
         }
       });
@@ -253,9 +260,21 @@ export default function DojoScreen() {
     } catch (err) {
       console.error('Playback error', err);
       Alert.alert('Playback Error', 'Unable to play recording.');
+      stopPlayback();
       setPlayingUri(null);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      const player = playbackRef.current;
+      if (!player) return;
+      try { player.pause?.(); } catch (error) { void error; }
+      try { player.seekTo?.(0); } catch (error) { void error; }
+      try { player.remove?.(); } catch (error) { void error; }
+      playbackRef.current = null;
+    };
+  }, []);
 
   const initialLoadout = useMemo(() => pickAdaptiveDojoLoadout(user), [user?.email]);
   const [microOps, setMicroOps] = useState<any[]>(() => initialLoadout.microOps);
@@ -263,6 +282,7 @@ export default function DojoScreen() {
   const [fieldQuests, setFieldQuests] = useState<any[]>(() => initialLoadout.fieldOps);
   const [modalVisible, setModalVisible] = useState(false);
   const [historyVisible, setHistoryVisible] = useState(false);
+  const [historyDetailItem, setHistoryDetailItem] = useState<any>(null);
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [historyTab, setHistoryTab] = useState<'drills' | 'journal'>('drills');
   const [recoveryVisible, setRecoveryVisible] = useState(false);
@@ -314,28 +334,26 @@ export default function DojoScreen() {
     }
   }, [user?.streakAtRisk, recoveryWindowOpen]);
 
-  // Roast rotation with fade
-  useEffect(() => {
-    const interval = setInterval(() => {
-      Animated.timing(fadeAnim, { toValue: 0, duration: 300, useNativeDriver: true }).start(() => {
-        setRoastIndex(prev => (prev + 1) % ROASTS.length);
-        Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();
-      });
-    }, 6000);
-    return () => clearInterval(interval);
-  }, [fadeAnim]);
+  const refreshSignal = useCallback(async (kind: 'roast' | 'quote', modeOverride?: 'classic' | 'personalized') => {
+    if (signalRefreshInFlightRef.current[kind]) return;
+    signalRefreshInFlightRef.current[kind] = true;
+    const requestId = ++signalRequestIdRef.current[kind];
 
-  const refreshSignal = async (kind: 'roast' | 'quote', modeOverride?: 'classic' | 'personalized') => {
     const mode = modeOverride || getNextSignalMode(kind);
-    const fallback = kind === 'roast'
-      ? ROASTS[(roastIndex + 1) % ROASTS.length]
-      : ZANE_QUOTES[(quoteIndex + 1) % ZANE_QUOTES.length];
-    const fallbackAlt = kind === 'roast'
-      ? ROASTS[(roastIndex + 2) % ROASTS.length]
-      : ZANE_QUOTES[(quoteIndex + 2) % ZANE_QUOTES.length];
+    const pool = kind === 'roast' ? ROASTS : ZANE_QUOTES;
+    const currentIndex = kind === 'roast' ? roastIndex : quoteIndex;
+    let nextIndex = (currentIndex + 1) % pool.length;
     const recentSignalsRef = kind === 'roast' ? recentRoastsRef : recentQuotesRef;
     const personalizedFallback = buildPersonalizedHomeFallback(kind, user, harvestReport, riskSnapshot);
     const currentlyShown = kind === 'roast' ? dynamicRoast : dynamicQuote;
+
+    if (dedupeSignalText(pool[nextIndex] || '') === dedupeSignalText(currentlyShown || '')) {
+      nextIndex = (nextIndex + 1) % pool.length;
+    }
+
+    const fallback = pool[nextIndex] || (kind === 'roast' ? ROASTS[0] : ZANE_QUOTES[0]);
+    const fallbackAlt = pool[(nextIndex + 1) % pool.length] || fallback;
+
     if (currentlyShown) {
       recentSignalsRef.current = [currentlyShown, ...recentSignalsRef.current].slice(0, 6);
     }
@@ -347,11 +365,11 @@ export default function DojoScreen() {
     if (kind === 'roast') {
       setDynamicRoast(optimisticSignal);
       setRoastMode(mode);
-      setRoastIndex((prev) => (prev + 1) % ROASTS.length);
+      setRoastIndex(nextIndex);
     } else {
       setDynamicQuote(optimisticSignal);
       setQuoteMode(mode);
-      setQuoteIndex((prev) => (prev + 1) % ZANE_QUOTES.length);
+      setQuoteIndex(nextIndex);
     }
 
     try {
@@ -372,6 +390,8 @@ export default function DojoScreen() {
         : nextSignal;
       recentSignalsRef.current = [finalSignal, ...recentSignalsRef.current].slice(0, 6);
 
+      if (requestId !== signalRequestIdRef.current[kind]) return;
+
       if (kind === 'roast') {
         setDynamicRoast(finalSignal.replace(/^"|"$/g, '').trim());
         setRoastMode(mode);
@@ -381,6 +401,7 @@ export default function DojoScreen() {
       }
     } catch (error) {
       const safeFallback = mode === 'personalized' ? personalizedFallback : fallback;
+      if (requestId !== signalRequestIdRef.current[kind]) return;
       if (kind === 'roast') {
         setDynamicRoast(safeFallback);
         recentRoastsRef.current = [safeFallback, ...recentRoastsRef.current].slice(0, 6);
@@ -390,13 +411,60 @@ export default function DojoScreen() {
         recentQuotesRef.current = [safeFallback, ...recentQuotesRef.current].slice(0, 6);
         setQuoteMode(mode);
       }
+    } finally {
+      if (requestId === signalRequestIdRef.current[kind]) {
+        signalRefreshInFlightRef.current[kind] = false;
+      }
     }
-  };
+  }, [dynamicQuote, dynamicRoast, harvestReport, memoryContext, quoteIndex, riskSnapshot, roastIndex, user]);
+
+  const rotateSignalLocally = useCallback((kind: 'roast' | 'quote') => {
+    const pool = kind === 'roast' ? ROASTS : ZANE_QUOTES;
+    const currentIndex = kind === 'roast' ? roastIndex : quoteIndex;
+    const currentText = (kind === 'roast' ? dynamicRoast : dynamicQuote) || pool[currentIndex] || '';
+
+    let nextIndex = (currentIndex + 1) % pool.length;
+    for (let i = 0; i < pool.length; i++) {
+      const candidate = pool[nextIndex] || '';
+      if (dedupeSignalText(candidate) !== dedupeSignalText(currentText)) break;
+      nextIndex = (nextIndex + 1) % pool.length;
+    }
+
+    const nextSignal = pool[nextIndex] || pool[0];
+    if (!nextSignal) return;
+
+    if (kind === 'roast') {
+      setDynamicRoast(nextSignal);
+      setRoastIndex(nextIndex);
+      setRoastMode('classic');
+      recentRoastsRef.current = [nextSignal, ...recentRoastsRef.current].slice(0, 6);
+    } else {
+      setDynamicQuote(nextSignal);
+      setQuoteIndex(nextIndex);
+      setQuoteMode('classic');
+      recentQuotesRef.current = [nextSignal, ...recentQuotesRef.current].slice(0, 6);
+    }
+  }, [dynamicQuote, dynamicRoast, quoteIndex, roastIndex]);
 
   useEffect(() => {
     void refreshSignal('roast', getNextSignalMode('roast'));
     void refreshSignal('quote', 'classic');
-  }, [user?.email]);
+  }, [user?.email, refreshSignal]);
+
+  useEffect(() => {
+    const roastTimer = setInterval(() => {
+      void refreshSignal('roast', getNextSignalMode('roast'));
+    }, 7000);
+    const quoteTimer = setInterval(() => {
+      rotateSignalLocally('quote');
+      void refreshSignal('quote', 'classic');
+    }, 8000);
+
+    return () => {
+      clearInterval(roastTimer);
+      clearInterval(quoteTimer);
+    };
+  }, [user?.email, refreshSignal, rotateSignalLocally]);
 
 
 
@@ -485,7 +553,7 @@ export default function DojoScreen() {
     const accentGradient = isDone
       ? ['rgba(255,255,255,0.2)', 'rgba(255,255,255,0.05)'] as const
       : xpBarColors as any;
-    const themeColor = systemColor;
+    const xpLabelColor = '#9B9B9B';
     return (
       <GlassCard
         darkGlass
@@ -546,7 +614,7 @@ export default function DojoScreen() {
           </View>
 
           <View style={[styles.xpPill, { borderWidth: 1, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3, borderColor: 'rgba(255,255,255,0.2)' }, isDone && { backgroundColor: 'rgba(255, 255, 255, 0.05)', borderColor: 'rgba(255,255,255,0.1)' }]}>
-            <Text style={[styles.xpPillText, { fontFamily: Fonts.monoBold, fontSize: 9, color: themeColor }, isDone && { color: 'rgba(255,255,255,0.3)' }]}>
+            <Text style={[styles.xpPillText, { fontFamily: Fonts.monoBold, fontSize: 9, color: xpLabelColor }, isDone && { color: 'rgba(255,255,255,0.3)' }]}>
               {isDone ? 'DONE' : `+${item.xp}`}
             </Text>
           </View>
@@ -605,11 +673,13 @@ export default function DojoScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={['#00000033', '#33333333']} // ~20% opacity black/gray gradient
+        colors={['#000000', '#000000']}
+        start={{ x: 0.15, y: 0 }}
+        end={{ x: 0.85, y: 1 }}
         pointerEvents="none"
         style={StyleSheet.absoluteFill}
       />
-      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.85)' }]} />
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.34)' }]} />
 
       <ScrollView
         style={styles.scroll}
@@ -617,8 +687,8 @@ export default function DojoScreen() {
         showsVerticalScrollIndicator={false}
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
-        canCancelContentTouches
-        directionalLockEnabled
+        scrollEnabled
+        nestedScrollEnabled
         alwaysBounceVertical
         bounces
       >
@@ -760,8 +830,13 @@ export default function DojoScreen() {
         </View>
 
         {/* ═══ ZANE ROAST OF THE DAY ═══ */}
+        <Pressable
+          onPress={() => {
+            rotateSignalLocally('roast');
+            void refreshSignal('roast');
+          }}
+        >
         <GlassCard
-          onPress={() => { void refreshSignal('roast'); }}
           style={styles.roastCard}
         >
           <View style={styles.roastHeader}>
@@ -773,10 +848,16 @@ export default function DojoScreen() {
           </View>
           <Text style={styles.roastCardText}>“{dynamicRoast || ROASTS[roastIndex]}”</Text>
         </GlassCard>
+        </Pressable>
 
         {/* ═══ DAILY QUOTE ═══ */}
+        <Pressable
+          onPress={() => {
+            rotateSignalLocally('quote');
+            void refreshSignal('quote');
+          }}
+        >
         <GlassCard
-          onPress={() => { void refreshSignal('quote'); }}
           style={styles.quoteCard}
         >
           <View style={styles.quoteHeader}>
@@ -789,6 +870,7 @@ export default function DojoScreen() {
           <Text style={[styles.quoteTextMain, { color: '#FFFFFF' }]}>“{dynamicQuote || ZANE_QUOTES[quoteIndex]}”</Text>
           <Text style={[styles.quoteAttr, { color: 'rgba(255,255,255,0.7)' }]}>— Zane × Goggins Engine</Text>
         </GlassCard>
+        </Pressable>
 
         <GlassCard style={styles.harvestCard}>
           <View style={styles.harvestHeader}>
@@ -956,7 +1038,7 @@ export default function DojoScreen() {
         <View style={styles.modalOverlay}>
           <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
           <View style={styles.historyHeader}>
-            <Pressable onPress={() => setHistoryVisible(false)} style={styles.backBtn}>
+            <Pressable onPress={() => { setHistoryVisible(false); setHistoryDetailItem(null); }} style={styles.backBtn}>
               <Text style={styles.backText}>← CLOSE</Text>
             </Pressable>
             <Text style={styles.historyTitle}>ARCHIVES</Text>
@@ -989,48 +1071,78 @@ export default function DojoScreen() {
             keyExtractor={item => item.id}
             contentContainerStyle={styles.historyList}
                 renderItem={({ item }) => (
-                  <GlassCard style={styles.logCard}>
-                    <View style={styles.logTop}>
+                  <GlassCard style={styles.logCard} onPress={() => setHistoryDetailItem(item)}>
+                    <View style={styles.logTopCompact}>
                       <Text style={styles.logType}>
                         {historyTab === 'drills' ? item.type?.toUpperCase() : (item._source === 'mission' ? 'MISSION LOG' : 'JOURNAL ENTRY')}
                       </Text>
                       <Text style={styles.logDate}>{new Date(item.date).toLocaleDateString()}</Text>
                     </View>
-                    {(() => {
-                      const content = (historyTab === 'drills' ? item.feedback : item.entry) || '';
-                      let cleaned = content.replace(/\[ID:[^\]]+\]/g, '').trim();
-                      // Replace any id-like tokens (qs_, dm_, q_, id_) anywhere in the text
-                      cleaned = cleaned.replace(/\b(?:qs_|dm_|q_|id_)[A-Za-z0-9_-]+\b/gi, (match) => {
-                        const pretty = match.replace(/^(?:qs_|dm_|q_|id_)/i, '').replace(/[_-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-                        return pretty;
-                      });
-                      const img = item.photoUri || item.imageUrl || item.image || item.photo || (item.media && item.media[0]);
-                      const audio = item.recording || item.recordingUri || item.voiceUri || item.audio;
-
-                      if (img) {
-                        return <Image source={{ uri: img }} style={{ width: '100%', height: 160, borderRadius: 12, marginTop: 8 }} resizeMode="cover" />;
-                      }
-
-                      if (audio) {
-                        return (
-                          <Pressable onPress={() => togglePlay(audio)} style={{ marginTop: 8, padding: 12, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.03)' }}>
-                            <Text style={{ color: textPrimary }}>{playingUri === audio ? 'Playing...' : 'Play recording'}</Text>
-                          </Pressable>
-                        );
-                      }
-
-                      return <Text style={styles.logBody}>{cleaned || '(no description provided)'}</Text>;
-                    })()}
-                    {historyTab === 'journal' && item.analysis && (
-                      <View style={styles.analysisBox}>
-                        <Text style={styles.analysisLabel}>ZANE ANALYSIS:</Text>
-                        <Text style={styles.analysisContent}>{item.analysis}</Text>
-                      </View>
-                    )}
+                    <Text style={styles.logTapHint}>Tap to view details</Text>
                   </GlassCard>
                 )}
             ListEmptyComponent={<Text style={styles.emptyText}>No data in neural buffers.</Text>}
           />
+        </View>
+      </Modal>
+
+      <Modal
+        animationType="fade"
+        transparent
+        visible={!!historyDetailItem}
+        onRequestClose={() => setHistoryDetailItem(null)}
+      >
+        <View style={styles.historyDetailOverlay}>
+          <GlassCard style={styles.historyDetailCard}>
+            {(() => {
+              const item = historyDetailItem;
+              if (!item) return null;
+
+              const typeLabel = historyTab === 'drills'
+                ? item.type?.toUpperCase()
+                : (item._source === 'mission' ? 'MISSION LOG' : 'JOURNAL ENTRY');
+
+              const content = (historyTab === 'drills' ? item.feedback : item.entry) || '';
+              let cleaned = content.replace(/\[ID:[^\]]+\]/g, '').trim();
+              cleaned = cleaned.replace(/\b(?:qs_|dm_|q_|id_)[A-Za-z0-9_-]+\b/gi, (match) => {
+                const pretty = match.replace(/^(?:qs_|dm_|q_|id_)/i, '').replace(/[_-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                return pretty;
+              });
+
+              const img = item.photoUri || item.imageUrl || item.image || item.photo || (item.media && item.media[0]);
+              const audio = item.recording || item.recordingUri || item.voiceUri || item.audio;
+
+              return (
+                <>
+                  <View style={styles.logTop}>
+                    <Text style={styles.logType}>{typeLabel}</Text>
+                    <Text style={styles.logDate}>{new Date(item.date).toLocaleDateString()}</Text>
+                  </View>
+
+                  {img ? (
+                    <Image source={{ uri: img }} style={{ width: '100%', height: 180, borderRadius: 12, marginTop: 8 }} resizeMode="cover" />
+                  ) : audio ? (
+                    <Pressable onPress={() => togglePlay(audio)} style={{ marginTop: 8, padding: 12, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.03)' }}>
+                      <Text style={{ color: textPrimary }}>{playingUri === audio ? 'Playing...' : 'Play recording'}</Text>
+                    </Pressable>
+                  ) : (
+                    <Text style={styles.logBody}>{cleaned || '(no description provided)'}</Text>
+                  )}
+
+                  {historyTab === 'journal' && item.analysis && (
+                    <View style={styles.analysisBox}>
+                      <Text style={styles.analysisLabel}>ZANE ANALYSIS:</Text>
+                      <Text style={styles.analysisContent}>{item.analysis}</Text>
+                    </View>
+                  )}
+                </>
+              );
+            })()}
+
+            <Pressable onPress={() => setHistoryDetailItem(null)} style={styles.historyDetailCloseBtn}>
+              <Text style={styles.historyDetailCloseText}>CLOSE</Text>
+            </Pressable>
+          </GlassCard>
         </View>
       </Modal>
 
@@ -1562,8 +1674,9 @@ const styles = StyleSheet.create({
   backBtn: { padding: 8 },
   backText: {
     color: Colors.textSecondary,
-    fontFamily: Fonts.monoBold,
-    fontSize: 11, letterSpacing: 1,
+    fontFamily: Fonts.bodySemi,
+    fontSize: 11,
+    letterSpacing: 0.6,
   },
   historyTabs: {
     flexDirection: 'row',
@@ -1581,33 +1694,54 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   historyTabText: {
-    fontFamily: Fonts.monoBold,
-    fontSize: 11, color: Colors.textSecondary, letterSpacing: 2,
+    fontFamily: Fonts.bodySemi,
+    fontSize: 11,
+    color: Colors.textSecondary,
+    letterSpacing: 0.8,
   },
   historyTabTextActive: { color: '#FFFFFF' },
   historyList: { padding: Spacing.xl, gap: 14, paddingBottom: 120 },
-  logCard: { borderRadius: Radius.lg },
-  logTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  logType: {
-    fontFamily: Fonts.monoBold,
-    fontSize: 11, color: 'rgba(255,255,255,0.6)', letterSpacing: 2,
+  logCard: {
+    borderRadius: Radius.lg,
+    backgroundColor: 'rgba(0,0,0,0.22)',
+    borderColor: 'rgba(255,255,255,0.14)',
   },
-  footerLink: { fontFamily: Fonts.mono, color: 'rgba(255,255,255,0.4)', fontSize: 9, textDecorationLine: 'underline' },
-  footerVersion: { fontFamily: Fonts.mono, color: 'rgba(255,255,255,0.3)', fontSize: 8 },
+  logTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  logTopCompact: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  logTapHint: {
+    marginTop: 8,
+    fontFamily: Fonts.nunito,
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.45)',
+    letterSpacing: 0.2,
+  },
+  logType: {
+    fontFamily: Fonts.nunito,
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.74)',
+    letterSpacing: 0.7,
+  },
   logDate: {
-    fontFamily: Fonts.mono, fontSize: 11, color: Colors.textTertiary,
+    fontFamily: Fonts.nunito,
+    fontSize: 11,
+    color: Colors.textTertiary,
   },
   logBody: {
-    fontFamily: Fonts.body, fontSize: 15,
+    fontFamily: Fonts.nunito,
+    fontSize: 15,
     color: Colors.textPrimary, lineHeight: 22,
   },
+  footerLink: { fontFamily: Fonts.mono, color: 'rgba(255,255,255,0.4)', fontSize: 9, textDecorationLine: 'underline' },
   analysisBox: {
     marginTop: 16, paddingTop: 16,
     borderTopWidth: 1, borderTopColor: Colors.borderGlass,
   },
   analysisLabel: {
-    fontFamily: Fonts.monoBold, fontSize: 10,
-    color: Colors.accentSecondary, marginBottom: 8, letterSpacing: 1.5,
+    fontFamily: Fonts.bodySemi,
+    fontSize: 11,
+    color: Colors.accentSecondary,
+    marginBottom: 8,
+    letterSpacing: 0.6,
   },
   analysisContent: {
     fontFamily: Fonts.body, fontSize: 14,
@@ -1616,6 +1750,35 @@ const styles = StyleSheet.create({
   emptyText: {
     textAlign: 'center', color: Colors.textTertiary,
     fontFamily: Fonts.mono, marginTop: 40, fontSize: 13,
+  },
+  historyDetailOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.78)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  historyDetailCard: {
+    width: '100%',
+    maxHeight: '82%',
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    borderColor: 'rgba(255,255,255,0.16)',
+  },
+  historyDetailCloseBtn: {
+    marginTop: 16,
+    alignSelf: 'flex-end',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+  },
+  historyDetailCloseText: {
+    fontFamily: Fonts.bodySemi,
+    fontSize: 11,
+    letterSpacing: 0.6,
+    color: 'rgba(255,255,255,0.72)',
   },
   nudgeOverlay: {
     flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', padding: 24,

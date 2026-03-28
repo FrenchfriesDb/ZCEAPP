@@ -1,11 +1,11 @@
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import { Colors, Fonts, FontSizes, Spacing, Radius } from '@/constants/theme';
 import GlassButton from '@/components/GlassButton';
+import { Colors, Fonts, FontSizes, Radius, Spacing } from '@/constants/theme';
+import { useTextColors } from '@/context/TextColorsContext';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { useTextColors } from '@/context/TextColorsContext';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 const DRILL_CATEGORIES = [
     {
@@ -39,7 +39,6 @@ const DRILL_CATEGORIES = [
         desc: 'Voice projection & cognitive strength',
         drills: [
             { id: 'decibel-breaker', label: 'DB', title: 'Decibel Breaker', desc: 'Project from diaphragm.', route: '/drills/decibel-breaker', accent: '#FFD700' },
-            { id: 'cognitive-load', label: 'CL', title: 'Cognitive Load', desc: 'Trivia while maintaining posture.', route: '/drills/cognitive-load', accent: '#00F5FF' },
         ],
     },
     {
@@ -75,7 +74,13 @@ export default function DrillsScreen() {
 
     return (
         <View style={styles.container}>
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
+            <LinearGradient
+                colors={['#000000', '#000000']}
+                start={{ x: 0.15, y: 0 }}
+                end={{ x: 0.85, y: 1 }}
+                style={StyleSheet.absoluteFill}
+            />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.34)' }]} />
             <LinearGradient
                 colors={['rgba(255,255,255,0.035)', 'rgba(255,255,255,0.012)', 'rgba(0,0,0,0)']}
                 start={{ x: 0.5, y: 0 }}
@@ -90,7 +95,7 @@ export default function DrillsScreen() {
                 {/* Header */}
                 <View style={styles.header}>
                     <Text style={[styles.headerEyebrow, { color: textPrimary }]}>Z.A.N.E. PROTOCOL</Text>
-                    <Text style={styles.headerTitle}>Training Modules</Text>
+                    <Text style={[styles.headerTitle, { color: textPrimary }]}>Training Modules</Text>
                     <Text style={styles.headerSub}>Select a protocol to begin your session.</Text>
                 </View>
 
@@ -145,7 +150,10 @@ export default function DrillsScreen() {
                                 <Pressable
                                     key={drill.id}
                                     onPress={() => router.push(drill.route as any)}
-                                    style={({ pressed }) => [styles.cardWrapper, pressed && { opacity: 0.85 }]}
+                                    style={({ pressed }) => [
+                                        styles.cardWrapper,
+                                        pressed && { transform: [{ scale: 0.985 }] }
+                                    ]}
                                 >
                                     <View style={[styles.card, { shadowColor: 'rgba(255,255,255,0.08)' }]}>
                                         <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
@@ -227,8 +235,9 @@ const styles = StyleSheet.create({
     headerSub: {
         fontFamily: Fonts.body,
         fontSize: FontSizes.sm,
-        color: Colors.textSecondary,
+        color: '#FFFFFF',
         lineHeight: 18,
+        opacity: 0.9,
     },
 
     grid: { gap: 10 },
@@ -277,16 +286,17 @@ const styles = StyleSheet.create({
     cardTitle: {
         fontFamily: Fonts.headingSemi,
         fontSize: FontSizes.lg,
-        color: Colors.textPrimary,
+        color: '#FFFFFF',
         fontWeight: '700',
         letterSpacing: 0.3,
     },
     cardDesc: {
         fontFamily: Fonts.mono,
         fontSize: 10,
-        color: Colors.textSecondary,
+        color: '#FFFFFF',
         letterSpacing: 0.3,
         lineHeight: 14,
+        opacity: 0.85,
     },
     cardArrow: {
         fontSize: FontSizes.lg,
@@ -327,8 +337,9 @@ const styles = StyleSheet.create({
     filterTabText: {
         fontFamily: Fonts.monoBold,
         fontSize: 11,
-        color: Colors.textSecondary,
+        color: '#FFFFFF',
         letterSpacing: 1,
+        opacity: 0.9,
     },
     categoryTitle: {
         fontFamily: Fonts.monoBold,
@@ -339,7 +350,8 @@ const styles = StyleSheet.create({
     categoryDesc: {
         fontFamily: Fonts.body,
         fontSize: 12,
-        color: Colors.textSecondary,
+        color: '#FFFFFF',
         lineHeight: 16,
+        opacity: 0.86,
     },
 });

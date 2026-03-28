@@ -1,15 +1,14 @@
 
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, Pressable, KeyboardAvoidingView, Platform, Animated, Keyboard } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Fonts, FontSizes, Spacing, Radius } from '@/constants/theme';
-import GlassCard from '@/components/GlassCard';
-import { AIService, type ZaneChatStyle } from '@/services/ai';
+import { Colors, Fonts, FontSizes, Radius, Spacing } from '@/constants/theme';
 import { useUser } from '@/context/UserContext';
-import { useNavigation, router } from 'expo-router';
 import { useTimeColors } from '@/hooks/useTimeColors';
+import { AIService, type ZaneChatStyle } from '@/services/ai';
 import { getFirstName } from '@/utils/formatters';
 import { buildZaneMemoryContext } from '@/utils/zaneMemory';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router, useNavigation } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 interface Message {
     id: number;
@@ -32,8 +31,8 @@ export default function ChatScreen() {
     const [chatStyle, setChatStyle] = useState<ZaneChatStyle>((user?.zaneChatStyle as ZaneChatStyle) || 'classic');
     const scrollRef = useRef<ScrollView>(null);
     const [isKeyboardActive, setIsKeyboardActive] = useState(false);
-    const timePalette = useTimeColors();
-    const systemColor = timePalette[0];
+    const { palette: timePalette } = useTimeColors();
+    const systemColor = Array.isArray(timePalette) && timePalette.length > 0 ? timePalette[0] : Colors.accentPrimary;
     const dotAnim = useRef(new Animated.Value(0)).current;
     const pulseAnim = useRef(new Animated.Value(1)).current;
     const memoryContext = buildZaneMemoryContext(user);
@@ -198,7 +197,13 @@ export default function ChatScreen() {
 
     return (
         <View style={styles.container}>
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
+            <LinearGradient
+                colors={['#000000', '#000000']}
+                start={{ x: 0.15, y: 0 }}
+                end={{ x: 0.85, y: 1 }}
+                style={StyleSheet.absoluteFill}
+            />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.34)' }]} />
 
             {/* Header */}
             <View style={styles.header}>

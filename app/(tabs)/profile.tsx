@@ -1,20 +1,19 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Modal, FlatList, Platform, TextInput, ActivityIndicator, Image } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Fonts, Spacing, Radius, XPConfig } from '@/constants/theme';
+import FluentEmoji from '@/components/FluentEmoji';
 import GlassCard from '@/components/GlassCard';
-import { useUser } from '@/context/UserContext';
+import ProgressGraph from '@/components/ProgressGraph';
+import StaticMap from '@/components/StaticMap';
+import { Fonts, Radius, Spacing, XPConfig } from '@/constants/theme';
 import { useTextColors } from '@/context/TextColorsContext';
-import { router } from 'expo-router';
+import { useUser } from '@/context/UserContext';
 import { useTimeColors } from '@/hooks/useTimeColors';
 import { formatDisplayName } from '@/utils/formatters';
-import StaticMap from '@/components/StaticMap';
-import ProgressGraph from '@/components/ProgressGraph';
-import FluentEmoji from '@/components/FluentEmoji';
+import { router } from 'expo-router';
+import { useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export default function ProfileScreen() {
     const { user, isLoading, signOut, changeUsername, purchaseSystemBackup } = useUser();
-    const { palette: timePalette, textColors } = useTimeColors();
+    const { textColors } = useTimeColors();
     const { textPrimary, textSecondary, textTertiary } = useTextColors();
 
     // UI State
@@ -32,6 +31,7 @@ export default function ProfileScreen() {
     if (isLoading) return (
         <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', padding: 32 }]}> 
             <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.34)' }]} />
             <ActivityIndicator color={textPrimary} />
         </View>
     );
@@ -39,6 +39,7 @@ export default function ProfileScreen() {
     if (!user) return (
         <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', gap: 24, padding: 32 }]}>
             <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.34)' }]} />
             <Text style={{ color: 'rgba(255,255,255,0.4)', fontFamily: Fonts.mono, fontSize: 10, letterSpacing: 3 }}>IDENTITY NOT FOUND</Text>
             <Pressable
                 onPress={() => signOut()}
@@ -52,14 +53,28 @@ export default function ProfileScreen() {
     // Stats derivation
     const totalDrills = (user.drillLogs || []).filter((l: any) => l.type === 'Drill' || l.type === 'Session').length;
     const totalMissions = (user.drillLogs || []).filter((l: any) => l.type === 'Mission').length;
+    const missionLogs = (user.drillLogs || []).filter((l: any) => l.type === 'Mission');
+    const openersMade = missionLogs.filter((l: any) => {
+        const text = `${l?.feedback || ''}`.toLowerCase();
+        return /cold open|stranger|dm_stranger|say hey first|first word/.test(text);
+    }).length;
+    const laughsGotten = missionLogs.filter((l: any) => {
+        const text = `${l?.feedback || ''}`.toLowerCase();
+        return /laugh|joke|wit|humor|dm_joke|extract 3 laughs/.test(text);
+    }).length;
+    const rejectionsHunted = missionLogs.filter((l: any) => {
+        const text = `${l?.feedback || ''}`.toLowerCase();
+        return /rejection|reject|hunt rejection|\bno\b|dm_reject/.test(text);
+    }).length;
+    const complimentsDropped = missionLogs.filter((l: any) => {
+        const text = `${l?.feedback || ''}`.toLowerCase();
+        return /compliment|dm_compliment|drop bold compliment/.test(text);
+    }).length;
 
     return (
         <View style={styles.container}>
-            <LinearGradient
-                colors={['#00000033', '#33333333']} // ~20% opacity black/gray gradient
-                style={StyleSheet.absoluteFill}
-            />
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.85)' }]} />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.34)' }]} />
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Header Identity Card */}
@@ -129,9 +144,27 @@ export default function ProfileScreen() {
                 {/* Stats Grid */}
                 <View style={styles.statsGrid}>
                     <GlassCard themed style={styles.statCard} intensity={12}>
-                        <Text style={styles.statLabel}>AGENT STREAK</Text>
-                        <Text style={[styles.statValue, { color: textPrimary, textShadowColor: textPrimary + '40' }]}>{user.streak}</Text>
-                        <Text style={[styles.statSub, { color: '#FFFFFF' }]}>DAYS ACTIVE</Text>
+                        <Text style={styles.statLabel}>OPENERS MADE</Text>
+                        <Text style={[styles.statValue, { color: textPrimary, textShadowColor: textPrimary + '40' }]}>{openersMade}</Text>
+                        <Text style={[styles.statSub, { color: '#FFFFFF' }]}>FIRST MOVES</Text>
+                    </GlassCard>
+                    <GlassCard themed style={styles.statCard} intensity={12}>
+                        <Text style={styles.statLabel}>REJECTIONS HUNTED</Text>
+                        <Text style={[styles.statValue, { color: textPrimary, textShadowColor: textPrimary + '40' }]}>{rejectionsHunted}</Text>
+                        <Text style={[styles.statSub, { color: '#FFFFFF' }]}>EXPOSURE REPS</Text>
+                    </GlassCard>
+                </View>
+
+                <View style={styles.statsGrid}>
+                    <GlassCard themed style={styles.statCard} intensity={12}>
+                        <Text style={styles.statLabel}>COMPLIMENTS DROPPED</Text>
+                        <Text style={[styles.statValue, { color: textPrimary, textShadowColor: textPrimary + '40' }]}>{complimentsDropped}</Text>
+                        <Text style={[styles.statSub, { color: '#FFFFFF' }]}>SOCIAL WINS</Text>
+                    </GlassCard>
+                    <GlassCard themed style={styles.statCard} intensity={12}>
+                        <Text style={styles.statLabel}>LAUGHS GOTTEN</Text>
+                        <Text style={[styles.statValue, { color: textPrimary, textShadowColor: textPrimary + '40' }]}>{laughsGotten}</Text>
+                        <Text style={[styles.statSub, { color: '#FFFFFF' }]}>HUMOR REPS</Text>
                     </GlassCard>
                 </View>
 
@@ -404,7 +437,7 @@ const styles = StyleSheet.create({
     statSub: { fontFamily: Fonts.monoBold, fontSize: 9, letterSpacing: 1, marginTop: 4 },
     bioCard: { padding: 24, marginBottom: 20, borderRadius: Radius.xl, backgroundColor: 'rgba(0,0,0,0.5)' },
     sectionTitle: { fontFamily: Fonts.mono, fontSize: 10, color: 'rgba(255,255,255,0.7)', marginBottom: 14, letterSpacing: 3, fontWeight: '800' },
-    bioText: { fontFamily: Fonts.body, fontSize: 14, color: '#FFFFFF', fontStyle: 'italic', lineHeight: 22, opacity: 0.9 },
+    bioText: { fontFamily: Fonts.mono, fontSize: 13, color: '#FFFFFF', lineHeight: 22, opacity: 0.9 },
     archivesBtn: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -434,9 +467,9 @@ const styles = StyleSheet.create({
     archiveTabTextActive: { color: '#fff' },
     archiveItem: { padding: 16, marginBottom: 12, borderRadius: Radius.lg },
     archiveItemHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-    archiveItemType: { fontFamily: Fonts.monoBold, fontSize: 9, color: '#fff', opacity: 0.5 },
-    archiveItemDate: { fontFamily: Fonts.mono, fontSize: 9, color: 'rgba(255,255,255,0.3)' },
-    archiveItemText: { fontFamily: Fonts.body, fontSize: 14, color: '#fff', lineHeight: 22 },
+    archiveItemType: { fontFamily: Fonts.nunito, fontSize: 9, color: '#fff', opacity: 0.5 },
+    archiveItemDate: { fontFamily: Fonts.nunito, fontSize: 9, color: 'rgba(255,255,255,0.3)' },
+    archiveItemText: { fontFamily: Fonts.nunito, fontSize: 14, color: '#fff', lineHeight: 22 },
     analysisContainer: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)' },
     analysisLabel: { fontFamily: Fonts.monoBold, fontSize: 9, color: '#fff', opacity: 0.4, marginBottom: 4 },
     analysisText: { fontFamily: Fonts.body, fontSize: 13, color: 'rgba(255,255,255,0.6)', lineHeight: 20 },
@@ -444,7 +477,7 @@ const styles = StyleSheet.create({
     usernameModalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', padding: 20 },
     usernameModalCard: { backgroundColor: '#111', borderRadius: 24, padding: 28, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
     usernameModalTitle: { fontFamily: Fonts.heading, fontSize: 18, color: '#fff', letterSpacing: 2, marginBottom: 20, textAlign: 'center' },
-    usernameModalInput: { height: 56, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 16, paddingHorizontal: 20, color: '#fff', fontFamily: Fonts.body, fontSize: 18, marginBottom: 20, textAlign: 'center' },
+    usernameModalInput: { height: 56, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 16, paddingHorizontal: 20, color: '#fff', fontFamily: Fonts.mono, fontSize: 18, marginBottom: 20, textAlign: 'center' },
     modalActions: { flexDirection: 'row', gap: 12 },
     modalCancel: { flex: 1, height: 52, borderRadius: 16, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)' },
     modalCancelText: { fontFamily: Fonts.mono, color: 'rgba(255,255,255,0.5)', fontSize: 12 },
