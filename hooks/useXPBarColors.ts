@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import { TimeColors, getTimePalette, getTimeThemeInfo } from '@/constants/theme';
+import { useEffect, useState } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
-import { TimeColors, getTimePalette } from '@/constants/theme';
+
+let lastXPBarMinuteStamp: string | null = null;
 
 /**
  * Full cinematic palette for the XP bar ONLY.
@@ -18,7 +20,24 @@ export const useXPBarColors = (): string[] => {
             const now = new Date();
             const h = now.getHours();
             const m = now.getMinutes();
-            setPalette(getTimePalette(h, m));
+            const nextPalette = getTimePalette(h, m);
+            setPalette(nextPalette);
+
+            if (__DEV__) {
+                const info = getTimeThemeInfo(h, m);
+                const timeLabel = now.toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                });
+                const minuteStamp = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}-${h}:${m}`;
+
+                if (lastXPBarMinuteStamp !== minuteStamp) {
+                    console.log(
+                        `[XP BAR THEME] time=${timeLabel} key=${info.key} name="${info.label}" range="${info.range}" bg="${nextPalette.join(' -> ')}"`
+                    );
+                    lastXPBarMinuteStamp = minuteStamp;
+                }
+            }
         };
 
         let interval: ReturnType<typeof setInterval> | null = null;
