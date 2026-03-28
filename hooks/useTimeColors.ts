@@ -1,5 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
+import { AppState, type AppStateStatus } from 'react-native';
 import { TimeColors, getDynamicColors, getTimePalette, getTimeThemeInfo, type TimeThemeInfo } from '@/constants/theme';
+
+let lastLoggedMinuteStamp: string | null = null;
 
 /**
  * Returns a time-of-day gradient palette (string[]) that cycles through
@@ -32,8 +35,6 @@ export const useTimeColors = () => {
         const now = new Date();
         return getTimeThemeInfo(now.getHours(), now.getMinutes());
     });
-    const lastThemeKeyRef = useRef<TimeThemeInfo['key'] | null>(null);
-    const isFirstLogRef = useRef(true);
 
     useEffect(() => {
         const updateColors = () => {
@@ -54,27 +55,49 @@ export const useTimeColors = () => {
             });
 
             if (__DEV__) {
-                const timeLabel = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                const changed = lastThemeKeyRef.current !== nextThemeInfo.key;
+                const timeLabel = now.toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                });
+                const minuteStamp = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}-${h}:${m}`;
 
-                if (changed || isFirstLogRef.current) {
+                if (lastLoggedMinuteStamp !== minuteStamp) {
                     console.log(
-                        `[THEME CHANGE] ${timeLabel} -> ${nextThemeInfo.label} (${nextThemeInfo.range}) | ${nextThemeInfo.palette.join(' -> ')}`
+                        `[THEME NOW] time=${timeLabel} key=${nextThemeInfo.key} name="${nextThemeInfo.label}" range="${nextThemeInfo.range}" bg="${nextThemeInfo.palette.join(' -> ')}" primary=${dyn.textPrimary} secondary=${dyn.textSecondary} tertiary=${dyn.textTertiary}`
                     );
+                    lastLoggedMinuteStamp = minuteStamp;
                 }
+            }
+        };
 
-                console.log(
-                    `[THEME NOW] ${timeLabel} | ${nextThemeInfo.label} (${nextThemeInfo.range}) | ${nextThemeInfo.palette.join(' -> ')}`
-                );
+        let interval: ReturnType<typeof setInterval> | null = null;
+        let timeout: ReturnType<typeof setTimeout> | null = null;
 
-                isFirstLogRef.current = false;
-                lastThemeKeyRef.current = nextThemeInfo.key;
+        const startMinuteAlignedUpdates = () => {
+            const now = new Date();
+            const msUntilNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
+
+            timeout = setTimeout(() => {
+                updateColors();
+                interval = setInterval(updateColors, 60_000);
+            }, Math.max(1, msUntilNextMinute));
+        };
+
+        const onAppStateChange = (state: AppStateStatus) => {
+            if (state === 'active') {
+                updateColors();
             }
         };
 
         updateColors();
-        const interval = setInterval(updateColors, 60_000);
-        return () => clearInterval(interval);
+        startMinuteAlignedUpdates();
+        const appStateSub = AppState.addEventListener('change', onAppStateChange);
+
+        return () => {
+            appStateSub.remove();
+            if (timeout) clearTimeout(timeout);
+            if (interval) clearInterval(interval);
+        };
     }, []);
 
     return { palette, textColors, themeInfo };
