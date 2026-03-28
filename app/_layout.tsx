@@ -1,7 +1,7 @@
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Animated, Platform, Image } from 'react-native';
+import { View, Text, StyleSheet, Animated, Image } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Font from 'expo-font';
@@ -46,6 +46,7 @@ export default function RootLayout() {
           Inter_600SemiBold,
           JetBrainsMono_500Medium,
           JetBrainsMono_700Bold,
+          NunitoSans_Variable: require('@/assets/fonts/NunitoSans-VariableFont.ttf'),
         });
       } catch (e) {
         console.warn('Font loading error:', e);
@@ -95,7 +96,14 @@ function RootLayoutNav() {
     const isForgotPassword = inAuthGroup && s1 === 'forgot-password';
 
     // --- NAVIGATION LOGIC ---
-    console.log('[NAV] User:', user, 'HasCompletedOnboarding:', hasCompletedOnboarding, 'IsOnboarding:', isOnboarding, 'IsLoginOrSignup:', isLoginOrSignup);
+    if (__DEV__) {
+      console.log('[NAV]', {
+        hasUser: Boolean(user),
+        hasCompletedOnboarding,
+        isOnboarding,
+        isLoginOrSignup,
+      });
+    }
 
     if (!user) {
       // 1. If we are on Login/Signup/ForgotPassword, allow access
@@ -139,15 +147,17 @@ function RootLayoutNav() {
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="auth/onboarding" options={{ headerShown: false, gestureEnabled: false }} />
-      <Stack.Screen name="auth/signup" options={{ headerShown: false, gestureEnabled: false }} />
-      <Stack.Screen name="auth/login" options={{ headerShown: false, gestureEnabled: false }} />
-      <Stack.Screen name="auth/forgot-password" options={{ headerShown: false, gestureEnabled: false }} />
-      <Stack.Screen name="settings/edit-profile" options={{ presentation: 'modal', headerShown: false }} />
-      <Stack.Screen name="settings/notification-settings" options={{ presentation: 'modal', headerShown: false }} />
-    </Stack>
+    <View style={{ flex: 1 }}>
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="auth/onboarding" options={{ headerShown: false, gestureEnabled: false }} />
+        <Stack.Screen name="auth/signup" options={{ headerShown: false, gestureEnabled: false }} />
+        <Stack.Screen name="auth/login" options={{ headerShown: false, gestureEnabled: false }} />
+        <Stack.Screen name="auth/forgot-password" options={{ headerShown: false, gestureEnabled: false }} />
+        <Stack.Screen name="settings/edit-profile" options={{ presentation: 'modal', headerShown: false }} />
+        <Stack.Screen name="settings/notification-settings" options={{ presentation: 'modal', headerShown: false }} />
+      </Stack>
+    </View>
   );
 }
 

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { TimeColors, getDynamicColors, getTimePalette } from '@/constants/theme';
+import { useState, useEffect, useRef } from 'react';
+import { TimeColors, getDynamicColors, getTimePalette, getTimeThemeInfo, type TimeThemeInfo } from '@/constants/theme';
 
 /**
  * Returns a time-of-day gradient palette (string[]) that cycles through
@@ -28,23 +28,48 @@ export const useTimeColors = () => {
         secondary: 'rgba(255, 255, 255, 0.45)',
         tertiary: 'rgba(255, 255, 255, 0.22)',
     });
+    const [themeInfo, setThemeInfo] = useState<TimeThemeInfo>(() => {
+        const now = new Date();
+        return getTimeThemeInfo(now.getHours(), now.getMinutes());
+    });
+    const lastThemeKeyRef = useRef<TimeThemeInfo['key'] | null>(null);
+    const isFirstLogRef = useRef(true);
 
     useEffect(() => {
         const updateColors = () => {
             const now = new Date();
             const h = now.getHours();
             const m = now.getMinutes();
-            const time = h + m / 60;
+            const nextThemeInfo = getTimeThemeInfo(h, m);
 
             const next = getTimePalette(h, m);
 
             const dyn = getDynamicColors(h, m);
             setPalette(next);
+            setThemeInfo(nextThemeInfo);
             setTextColors({
                 primary: dyn.textPrimary,
                 secondary: dyn.textSecondary,
                 tertiary: dyn.textTertiary,
             });
+
+            if (__DEV__) {
+                const timeLabel = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const changed = lastThemeKeyRef.current !== nextThemeInfo.key;
+
+                if (changed || isFirstLogRef.current) {
+                    console.log(
+                        `[THEME CHANGE] ${timeLabel} -> ${nextThemeInfo.label} (${nextThemeInfo.range}) | ${nextThemeInfo.palette.join(' -> ')}`
+                    );
+                }
+
+                console.log(
+                    `[THEME NOW] ${timeLabel} | ${nextThemeInfo.label} (${nextThemeInfo.range}) | ${nextThemeInfo.palette.join(' -> ')}`
+                );
+
+                isFirstLogRef.current = false;
+                lastThemeKeyRef.current = nextThemeInfo.key;
+            }
         };
 
         updateColors();
@@ -52,5 +77,5 @@ export const useTimeColors = () => {
         return () => clearInterval(interval);
     }, []);
 
-    return { palette, textColors };
+    return { palette, textColors, themeInfo };
 };

@@ -74,16 +74,16 @@ export const TimeColors = {
   preDawn: ['#000328', '#00458E'],
   // 5 AM — steel blue dawn
   earlierDawn: ['#243748', '#4B749F'],
-  // 6–7:09 AM, 7:31–8:29 AM — Sunrise pastel cloud
-  morning: ['#F6CFBE', '#B9DCF2'],
+  // 6:00–7:09 AM — cool morning fade
+  morning: ['#E4E7E4', '#0A1647'],
   // 8:30 AM – 4 PM — Cloud Drift (Vibrant Sky)
   day: ['#2C6CBC', '#71C3F7', '#F6F6F6'],
   // 5 PM — warm golden hour
   goldenHour: ['#FFA585', '#FFEDA0'],
   // 5:30–6:00 PM — Sunberry Twist
-  dusk: ['#DD83AD', '#C3E1FC'],
+  sunberryTwist: ['#DD83AD', '#C3E1FC'],
   // 6:00–6:30 PM — Sunset Pop
-  sunsetPop: ['#F86CA7', '#F4D444'],
+  sunsetPop: ['#FC506E', '#FFC83D'],
   // 6–7 PM — fiery sunset
   sunset: ['#FF0F7B', '#F89B29'],
   // 7–8 PM — neon pink-cyan
@@ -91,7 +91,7 @@ export const TimeColors = {
   // 7:30–8 PM — Battle glory (gold → red → deep blue)
   battleGlory: ['#FC9F32', '#AE1B1E', '#1A2766'],
   // 8 PM — Mars Echo
-  marsEcho: ['#EF745C', '#34073D'],
+  marsEcho: ['#EF745C', '#B95E82'],
   // 8:30 PM — Plum Glow
   plumGlow: ['#3E196E', '#D46C76', '#FFC07C'],
   // 9 PM — Moon Dust
@@ -105,42 +105,180 @@ export const TimeColors = {
   // 7:10 AM – 7:30 AM — Citrus Sunrise
   // Sunset Flame (warm cream → hot pink)
   sunriseCitrus: ['#F5E6AD', '#F13C77'],
+  // 7:30 AM – 7:40 AM — Sunrise Pastel Cloud
+  sunrisePastel: ['#F6CFBE', '#B9DCF2'],
   // 7:40 AM – 8:00 AM — Blush Sky
   blushSky: ['#DD83AD', '#C3E1FC'],
   // Cloud Drift Alias for clarity
   cloudDrift: ['#2C6CBC', '#71C3F7', '#F6F6F6'],
+  // 4:00 PM – 5:00 PM — Vibrant Sky
+  vibrantSky: ['#9FCCFA', '#0974F1'],
+  // 6:00 PM – 6:30 PM — Sunset Candy
+  sunsetCandy: ['#F86CA7', '#F4D444'],
+};
+
+export type TimeThemeInfo = {
+  key: keyof typeof TimeColors;
+  label: string;
+  range: string;
+  palette: string[];
+};
+
+export const getTimeThemeInfo = (hour: number, minute: number): TimeThemeInfo => {
+  const time = hour + minute / 60;
+  if (time < 4) return { key: 'deepAbyss', label: 'Deep Abyss', range: '12:00 AM–3:59 AM', palette: TimeColors.deepAbyss };
+  if (time < 5) return { key: 'preDawn', label: 'Pre Dawn', range: '4:00 AM–4:59 AM', palette: TimeColors.preDawn };
+  if (time < 6) return { key: 'earlierDawn', label: 'Earlier Dawn', range: '5:00 AM–5:59 AM', palette: TimeColors.earlierDawn };
+  if (time < 7.166) return { key: 'morning', label: 'Morning Ice Night', range: '6:00 AM–7:09 AM', palette: TimeColors.morning };
+  if (time < 7.5) return { key: 'sunriseCitrus', label: 'Sunset Flame', range: '7:10 AM–7:29 AM', palette: TimeColors.sunriseCitrus };
+  if (time < 7.6667) return { key: 'sunrisePastel', label: 'Sunrise Pastel', range: '7:30 AM–7:39 AM', palette: TimeColors.sunrisePastel };
+  if (time < 8) return { key: 'blushSky', label: 'Blush Sky', range: '7:40 AM–7:59 AM', palette: TimeColors.blushSky };
+  if (time < 16) return { key: 'cloudDrift', label: 'Cloud Drift', range: '8:00 AM–3:59 PM', palette: TimeColors.cloudDrift };
+  if (time < 17) return { key: 'vibrantSky', label: 'Vibrant Sky', range: '4:00 PM–4:59 PM', palette: TimeColors.vibrantSky };
+  if (time < 17.5) return { key: 'goldenHour', label: 'Golden Hour', range: '5:00 PM–5:29 PM', palette: TimeColors.goldenHour };
+  if (time < 18) return { key: 'sunberryTwist', label: 'Sunberry Twist', range: '5:30 PM–5:59 PM', palette: TimeColors.sunberryTwist };
+  if (time < 18.5) return { key: 'sunsetCandy', label: 'Sunset Candy', range: '6:00 PM–6:29 PM', palette: TimeColors.sunsetCandy };
+  if (time < 19) return { key: 'sunset', label: 'Sunset', range: '6:30 PM–6:59 PM', palette: TimeColors.sunset };
+  if (time < 19.5) return { key: 'twilight', label: 'Twilight', range: '7:00 PM–7:29 PM', palette: TimeColors.twilight };
+  if (time < 20) return { key: 'battleGlory', label: 'Battle Glory', range: '7:30 PM–7:59 PM', palette: TimeColors.battleGlory };
+  if (time < 20.5) return { key: 'marsEcho', label: 'Mars Echo', range: '8:00 PM–8:29 PM', palette: TimeColors.marsEcho };
+  if (time < 21) return { key: 'plumGlow', label: 'Plum Glow', range: '8:30 PM–8:59 PM', palette: TimeColors.plumGlow };
+  if (time < 22) return { key: 'nightDive', label: 'Night Dive', range: '9:00 PM–9:59 PM', palette: TimeColors.nightDive };
+  if (time < 23) return { key: 'voidSpark', label: 'Void Spark', range: '10:00 PM–10:59 PM', palette: TimeColors.voidSpark };
+  return { key: 'midnightMist', label: 'Midnight Mist', range: '11:00 PM–11:59 PM', palette: TimeColors.midnightMist };
 };
 
 // Helper: derive the dominant accent color (first stop) for any single-color usage
 export const getTimeAccent = (palette: string[]) => palette[0];
 
 export const getTimePalette = (hour: number, minute: number): string[] => {
-  const time = hour + minute / 60;
-  if (time < 5) return TimeColors.deepAbyss;
-  if (time < 6) return TimeColors.earlierDawn;
-  if (time < 7.166) return TimeColors.morning;
-  if (time < 7.5) return TimeColors.sunriseCitrus;
-  if (time < 7.6667) return TimeColors.morning;
-  if (time < 8) return TimeColors.blushSky;
-  if (time < 17) return TimeColors.cloudDrift;
-  if (time < 17.5) return TimeColors.goldenHour;
-  if (time < 18) return TimeColors.dusk;
-  if (time < 18.5) return TimeColors.sunsetPop;
-  if (time < 19) return TimeColors.sunset;
-  if (time < 19.5) return TimeColors.twilight;
-  if (time < 20) return TimeColors.battleGlory;
-  if (time < 20.5) return TimeColors.marsEcho;
-  if (time < 21) return TimeColors.plumGlow;
-  if (time < 22) return TimeColors.nightDive;
-  if (time < 23) return TimeColors.voidSpark;
-  return TimeColors.midnightMist;
+  return getTimeThemeInfo(hour, minute).palette;
 };
 
 // Dynamic text colors that match each theme's gradient colors
 export const getDynamicColors = (hour: number, minute: number) => {
+  const time = hour + minute / 60;
   const palette = getTimePalette(hour, minute);
   const textPrimaryColor = palette[0] || '#E8E8E8';
   const textSecondaryColor = palette[palette.length - 1] || textPrimaryColor;
+
+  // 6:00–7:09 AM — Morning: both primary and secondary should be #E4E7E4
+  if (time >= 6 && time < 7.166) {
+    return {
+      textPrimary: '#E4E7E4',
+      textSecondary: '#E4E7E4',
+      textTertiary: '#E4E7E4AA',
+    };
+  }
+
+  if (time >= 19.5 && time < 20) {
+    return {
+      textPrimary: '#FF3B30',
+      textSecondary: '#FF8C00',
+      textTertiary: '#45CAFF',
+    };
+  }
+
+  if (time >= 4.8 && time < 5) {
+    return {
+      textPrimary: '#A8D5FF',
+      textSecondary: '#D4E8FF',
+      textTertiary: '#B8E0FF',
+    };
+  }
+
+  // 7:10–7:30 AM — Sunset Flame
+  if (time >= 7.166 && time < 7.5) {
+    return {
+      textPrimary: '#F13C77',
+      textSecondary: '#F5E6AD',
+      textTertiary: '#F7B6CA',
+    };
+  }
+
+  // 7:30–7:40 AM — Sunrise Pastel Cloud
+  if (time >= 7.5 && time < 7.6667) {
+    return {
+      textPrimary: '#B9DCF2',
+      textSecondary: '#F6CFBE',
+      textTertiary: '#E7D8CC',
+    };
+  }
+
+  // 7:40–8:00 AM — Blush Sky
+  if (time >= 7.6667 && time < 8) {
+    return {
+      textPrimary: '#DD83AD',
+      textSecondary: '#C3E1FC',
+      textTertiary: '#E0A9BB',
+    };
+  }
+
+  // 4:00–5:00 PM — Vibrant Sky
+  if (time >= 16 && time < 17) {
+    return {
+      textPrimary: '#9FCCFA',
+      textSecondary: '#0974F1',
+      textTertiary: '#CFE5FF',
+    };
+  }
+
+  // 5:30–6:00 PM — Sunberry Twist
+  if (time >= 17.5 && time < 18) {
+    return {
+      textPrimary: '#DD83AD',
+      textSecondary: '#C3E1FC',
+      textTertiary: '#E0A9BB',
+    };
+  }
+
+  if (time >= 18 && time < 18.5) {
+    return {
+      textPrimary: '#F86CA7',
+      textSecondary: '#F4D444',
+      textTertiary: '#F5A2C8',
+    };
+  }
+
+  if (time >= 19 && time < 19.5) {
+    return {
+      textPrimary: textPrimaryColor,
+      textSecondary: textSecondaryColor,
+      textTertiary: '#D397FA',
+    };
+  }
+
+  if (time >= 20.5 && time < 21) {
+    return {
+      textPrimary: '#FFC07C',
+      textSecondary: '#B95E82',
+      textTertiary: `${textSecondaryColor}88`,
+    };
+  }
+
+  if (time >= 21 && time < 22) {
+    return {
+      textPrimary: '#CCB3D1',
+      textSecondary: '#FFFFFF',
+      textTertiary: '#E5D5EE',
+    };
+  }
+
+  if (time >= 22 && time < 23) {
+    return {
+      textPrimary: '#71C3F7',
+      textSecondary: '#FFFFFF',
+      textTertiary: '#CFEFFF',
+    };
+  }
+
+  if (time >= 8 && time < 17) {
+    return {
+      textPrimary: '#71C3F7',
+      textSecondary: '#F6F6F6',
+      textTertiary: '#DFF3FF',
+    };
+  }
 
   return {
     textPrimary: textPrimaryColor,
@@ -170,6 +308,7 @@ export const Fonts = {
   body: 'Inter_400Regular',
   bodySemi: 'Inter_600SemiBold',
   bodyMedium: 'Inter_500Medium',
+  nunito: 'NunitoSans_Variable',
   mono: 'JetBrainsMono_500Medium',
   monoBold: 'JetBrainsMono_700Bold',
 };
