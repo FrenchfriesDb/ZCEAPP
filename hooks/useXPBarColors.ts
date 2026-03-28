@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { TimeColors } from '@/constants/theme';
+import { AppState, type AppStateStatus } from 'react-native';
+import { TimeColors, getTimePalette } from '@/constants/theme';
 
 /**
  * Full cinematic palette for the XP bar ONLY.
@@ -17,31 +18,37 @@ export const useXPBarColors = (): string[] => {
             const now = new Date();
             const h = now.getHours();
             const m = now.getMinutes();
-            const time = h + m / 60;
+            setPalette(getTimePalette(h, m));
+        };
 
-            let next: string[];
-            if (time < 5) next = TimeColors.deepAbyss;
-            else if (time < 6) next = TimeColors.earlierDawn;
-            else if (time >= 7.166 && time <= 7.5) next = TimeColors.sunriseCitrus; // 7:10 AM - 7:30 AM
-            else if (time < 8.5) next = TimeColors.morning; // 7:31 AM - 8:29 AM
-            else if (time < 17) next = TimeColors.day;
-            else if (time < 17.5) next = TimeColors.goldenHour;
-            else if (time < 18) next = TimeColors.dusk;
-            else if (time < 19) next = TimeColors.sunset;
-            else if (time < 19.5) next = TimeColors.twilight;
-            else if (time < 20) next = TimeColors.battleGlory;     // 7:30-8 PM
-            else if (time < 20.5) next = TimeColors.marsEcho;        // 8-8:30 PM
-            else if (time < 21) next = TimeColors.plumGlow;         // 8:30-9 PM
-            else if (time < 22) next = TimeColors.nightDive;        // 9-10 PM Moon Dust
-            else if (time < 23) next = TimeColors.voidSpark;       // 10-11 PM VOID SPARK
-            else next = TimeColors.midnightMist;                     // 11 PM-12 AM
+        let interval: ReturnType<typeof setInterval> | null = null;
+        let timeout: ReturnType<typeof setTimeout> | null = null;
 
-            setPalette(next);
+        const startMinuteAlignedUpdates = () => {
+            const now = new Date();
+            const msUntilNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
+
+            timeout = setTimeout(() => {
+                update();
+                interval = setInterval(update, 60_000);
+            }, Math.max(1, msUntilNextMinute));
+        };
+
+        const onAppStateChange = (state: AppStateStatus) => {
+            if (state === 'active') {
+                update();
+            }
         };
 
         update();
-        const interval = setInterval(update, 10_000);
-        return () => clearInterval(interval);
+        startMinuteAlignedUpdates();
+        const appStateSub = AppState.addEventListener('change', onAppStateChange);
+
+        return () => {
+            appStateSub.remove();
+            if (timeout) clearTimeout(timeout);
+            if (interval) clearInterval(interval);
+        };
     }, []);
 
     return palette;
