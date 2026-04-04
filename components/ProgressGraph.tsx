@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, useWindowDimensions, Pressable } from 'react-na
 import Svg, { Polyline, Circle, Defs, LinearGradient, Stop, G, Line } from 'react-native-svg';
 import { Colors, Fonts, Radius, Spacing } from '@/constants/theme';
 import { useTextColors } from '@/context/TextColorsContext';
+import { useTimeColors } from '@/hooks/useTimeColors';
 
 type TimeRange = '1W' | '1M' | 'ALL';
 
@@ -40,8 +41,18 @@ export default function ProgressGraph({ dailyXp, color, totalXp, currentStreak }
     );
     const earlyStage = accumulatedXp < 1200 || completedDays < 10 || (currentStreak ?? 0) < 5;
     const [range, setRange] = useState<TimeRange>(earlyStage ? '1W' : '1M');
-    const { textPrimary } = useTextColors();
+    const { textPrimary, textSecondary } = useTextColors();
+    const { palette } = useTimeColors();
     const graphColor = color || textPrimary;
+    const paletteStart = palette?.[0] || textPrimary;
+    const paletteEnd = palette?.[palette.length - 1] || textSecondary;
+    const lineGradientStart = paletteStart;
+    const lineGradientEnd = paletteStart.toLowerCase() === paletteEnd.toLowerCase()
+        ? (textSecondary.toLowerCase() === paletteStart.toLowerCase() ? textPrimary : textSecondary)
+        : paletteEnd;
+    const gradientSuffix = useMemo(() => Math.random().toString(36).slice(2, 9), []);
+    const lineGradientId = `lineGrad-${gradientSuffix}`;
+    const fillGradientId = `fillGrad-${gradientSuffix}`;
     const days = getDaysForRange(range, dailyXp, earlyStage);
     const { width: screenWidth } = useWindowDimensions();
     const CHART_WIDTH = Math.max(200, screenWidth - (Spacing.lg * 2) - 64);
@@ -75,10 +86,10 @@ export default function ProgressGraph({ dailyXp, color, totalXp, currentStreak }
         <View style={styles.container}>
             <View style={styles.header}>
                 <View>
-                    <Text style={[styles.title, { color: textPrimary }]}>VELOCITY MONITOR</Text>
-                    <Text style={[styles.subtitle, { color: textPrimary }]}>{days} DAY PERFORMANCE</Text>
+                    <Text style={[styles.title, { color: graphColor }]}>VELOCITY MONITOR</Text>
+                    <Text style={[styles.subtitle, { color: graphColor }]}>{days} DAY PERFORMANCE</Text>
                 </View>
-                <Text style={[styles.peakText, { color: textPrimary }]}>PEAK: {Math.max(...data.map(d => d.xp), 0)} XP</Text>
+                <Text style={[styles.peakText, { color: graphColor }]}>PEAK: {Math.max(...data.map(d => d.xp), 0)} XP</Text>
             </View>
 
             <View style={styles.toggleRow}>
@@ -88,7 +99,7 @@ export default function ProgressGraph({ dailyXp, color, totalXp, currentStreak }
                         onPress={() => setRange(r)}
                         style={[styles.toggleBtn, range === r && [styles.toggleBtnActive, { borderColor: graphColor + '66', backgroundColor: graphColor + '22' }]]}
                     >
-                        <Text style={[styles.toggleText, { color: textPrimary }, range === r && [styles.toggleTextActive, { color: textPrimary }]]}>{r}</Text>
+                        <Text style={[styles.toggleText, { color: graphColor }, range === r && [styles.toggleTextActive, { color: graphColor }]]}>{r}</Text>
                     </Pressable>
                 ))}
             </View>
@@ -96,9 +107,13 @@ export default function ProgressGraph({ dailyXp, color, totalXp, currentStreak }
             <View style={styles.chartWrapper}>
                 <Svg width={CHART_WIDTH} height={CHART_HEIGHT + 30}>
                     <Defs>
-                        <LinearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+                        <LinearGradient id={fillGradientId} x1="0" y1="0" x2="0" y2="1">
                             <Stop offset="0" stopColor={graphColor} stopOpacity="0.3" />
                             <Stop offset="1" stopColor={graphColor} stopOpacity="0" />
+                        </LinearGradient>
+                        <LinearGradient id={lineGradientId} x1="0%" y1="0%" x2="100%" y2="0%">
+                            <Stop offset="0" stopColor={lineGradientStart} stopOpacity="1" />
+                            <Stop offset="1" stopColor={lineGradientEnd} stopOpacity="1" />
                         </LinearGradient>
                     </Defs>
 
@@ -109,8 +124,8 @@ export default function ProgressGraph({ dailyXp, color, totalXp, currentStreak }
                     <Polyline
                         points={points}
                         fill="none"
-                        stroke={graphColor}
-                        strokeWidth="2"
+                        stroke={`url(#${lineGradientId})`}
+                        strokeWidth="2.5"
                         strokeLinecap="round"
                         strokeLinejoin="round"
                     />
@@ -151,11 +166,11 @@ export default function ProgressGraph({ dailyXp, color, totalXp, currentStreak }
             <View style={styles.footer}>
                 <View style={styles.legendItem}>
                     <View style={[styles.dot, { backgroundColor: '#34C759' }]} />
-                    <Text style={[styles.legendText, { color: textPrimary }]}>CHAINED</Text>
+                    <Text style={[styles.legendText, { color: graphColor }]}>CHAINED</Text>
                 </View>
                 <View style={styles.legendItem}>
                     <View style={[styles.dot, { backgroundColor: '#FF3B30' }]} />
-                    <Text style={[styles.legendText, { color: textPrimary }]}>MISSED</Text>
+                    <Text style={[styles.legendText, { color: graphColor }]}>MISSED</Text>
                 </View>
             </View>
         </View>

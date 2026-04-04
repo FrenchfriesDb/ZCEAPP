@@ -81,17 +81,17 @@ export const TimeColors = {
   // 5 PM — warm golden hour
   goldenHour: ['#FFA585', '#FFEDA0'],
   // 5:30–6:00 PM — Sunberry Twist
-  sunberryTwist: ['#DD83AD', '#C3E1FC'],
-  // 6:00–6:30 PM — Sunset Pop
-  sunsetPop: ['#FC506E', '#FFC83D'],
-  // 6–7 PM — fiery sunset
+  sunberryTwist: ['#F86CA7', '#F4D444'],
+  // 6:00–6:30 PM — Coral Spark
+  sunsetPop: ['#F9C823', '#FC506E'],
+  // 6:30–7:00 PM — fiery sunset
   sunset: ['#FF0F7B', '#F89B29'],
-  // 7–8 PM — neon pink-cyan
+  // 7:00–7:30 PM — neon pink-cyan
   twilight: ['#FF1B6B', '#45CAFF'],
   // 7:30–8 PM — Battle glory (gold → red → deep blue)
   battleGlory: ['#FC9F32', '#AE1B1E', '#1A2766'],
   // 8 PM — Mars Echo
-  marsEcho: ['#EF745C', '#B95E82'],
+  marsEcho: ['#EF745C', '#34073D'],
   // 8:30 PM — Plum Glow
   plumGlow: ['#3E196E', '#D46C76', '#FFC07C'],
   // 9 PM — Moon Dust
@@ -114,7 +114,7 @@ export const TimeColors = {
   // 4:00 PM – 5:00 PM — Vibrant Sky
   vibrantSky: ['#9FCCFA', '#0974F1'],
   // 6:00 PM – 6:30 PM — Sunset Candy
-  sunsetCandy: ['#F86CA7', '#F4D444'],
+  sunsetCandy: ['#FF0F7B', '#F89B29'],
 };
 
 export type TimeThemeInfo = {
@@ -137,8 +137,8 @@ export const getTimeThemeInfo = (hour: number, minute: number): TimeThemeInfo =>
   if (totalMinutes < 1020) return { key: 'vibrantSky', label: 'Vibrant Sky', range: '4:00 PM–4:59 PM', palette: TimeColors.vibrantSky };
   if (totalMinutes < 1050) return { key: 'goldenHour', label: 'Golden Hour', range: '5:00 PM–5:29 PM', palette: TimeColors.goldenHour };
   if (totalMinutes < 1080) return { key: 'sunberryTwist', label: 'Sunberry Twist', range: '5:30 PM–5:59 PM', palette: TimeColors.sunberryTwist };
-  if (totalMinutes < 1110) return { key: 'sunsetCandy', label: 'Sunset Candy', range: '6:00 PM–6:29 PM', palette: TimeColors.sunsetCandy };
-  if (totalMinutes < 1140) return { key: 'sunset', label: 'Sunset', range: '6:30 PM–6:59 PM', palette: TimeColors.sunset };
+  if (totalMinutes < 1110) return { key: 'sunsetPop', label: 'Coral Spark', range: '6:00 PM–6:29 PM', palette: TimeColors.sunsetPop };
+  if (totalMinutes < 1140) return { key: 'sunsetCandy', label: 'Sunset Candy', range: '6:30 PM–6:59 PM', palette: TimeColors.sunsetCandy };
   if (totalMinutes < 1170) return { key: 'twilight', label: 'Twilight', range: '7:00 PM–7:29 PM', palette: TimeColors.twilight };
   if (totalMinutes < 1200) return { key: 'battleGlory', label: 'Battle Glory', range: '7:30 PM–7:59 PM', palette: TimeColors.battleGlory };
   if (totalMinutes < 1230) return { key: 'marsEcho', label: 'Mars Echo', range: '8:00 PM–8:29 PM', palette: TimeColors.marsEcho };
@@ -187,6 +187,15 @@ export const getDynamicColors = (hour: number, minute: number) => {
     };
   }
 
+  // 5:00–5:59 AM — Earlier Dawn readability boost
+  if (totalMinutes >= 300 && totalMinutes < 360) {
+    return {
+      textPrimary: '#FFFFFF',
+      textSecondary: '#DCE9FF',
+      textTertiary: '#BFD6FF',
+    };
+  }
+
   // 7:10–7:30 AM — Sunset Flame
   if (totalMinutes >= 430 && totalMinutes < 450) {
     return {
@@ -223,16 +232,8 @@ export const getDynamicColors = (hour: number, minute: number) => {
     };
   }
 
-  // 5:30–6:00 PM — Sunberry Twist
+  // 5:30–5:59 PM — Sunberry Twist
   if (totalMinutes >= 1050 && totalMinutes < 1080) {
-    return {
-      textPrimary: '#DD83AD',
-      textSecondary: '#C3E1FC',
-      textTertiary: '#E0A9BB',
-    };
-  }
-
-  if (totalMinutes >= 1080 && totalMinutes < 1110) {
     return {
       textPrimary: '#F86CA7',
       textSecondary: '#F4D444',
@@ -240,11 +241,39 @@ export const getDynamicColors = (hour: number, minute: number) => {
     };
   }
 
+  // 6:00–6:29 PM — Coral Spark
+  if (totalMinutes >= 1080 && totalMinutes < 1110) {
+    return {
+      textPrimary: '#FC506E',
+      textSecondary: '#F9C823',
+      textTertiary: '#FCAF95',
+    };
+  }
+
+  // 6:30–6:59 PM — Sunset Candy
+  if (totalMinutes >= 1110 && totalMinutes < 1140) {
+    return {
+      textPrimary: '#FC506E',
+      textSecondary: '#F89B29',
+      textTertiary: '#FF919C',
+    };
+  }
+
+  // 7:00–7:29 PM — Twilight
   if (totalMinutes >= 1140 && totalMinutes < 1170) {
     return {
-      textPrimary: textPrimaryColor,
-      textSecondary: textSecondaryColor,
+      textPrimary: '#FF1B6B',
+      textSecondary: '#45CAFF',
       textTertiary: '#D397FA',
+    };
+  }
+
+  // 8:00–8:29 PM — Mars Echo
+  if (totalMinutes >= 1200 && totalMinutes < 1230) {
+    return {
+      textPrimary: '#EF745C',
+      textSecondary: '#B0485B',
+      textTertiary: '#B0485B88',
     };
   }
 

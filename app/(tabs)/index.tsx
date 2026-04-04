@@ -106,6 +106,8 @@ const RECOVERY_QUESTIONS = [
   "What is the most 'Magnetic' way to introduce yourself to a group of strangers?",
 ];
 
+const SIGNAL_INTERVAL_MS = 7_000;
+
 const pick8 = (pool: any[]) => [...pool].sort(() => 0.5 - Math.random()).slice(0, 8);
 
 // Use expo-audio only for playback. Avoid importing expo-av in builds that don't ship ExponentAV.
@@ -196,6 +198,8 @@ export default function DojoScreen() {
   const [dynamicQuote, setDynamicQuote] = useState<string | null>(null);
   const [roastMode, setRoastMode] = useState<'classic' | 'personalized'>('classic');
   const [quoteMode, setQuoteMode] = useState<'classic' | 'personalized'>('classic');
+  const [roastTimerResetKey, setRoastTimerResetKey] = useState(0);
+  const [quoteTimerResetKey, setQuoteTimerResetKey] = useState(0);
   const memoryContext = buildZaneMemoryContext(user);
   const recentRoastsRef = useRef<string[]>([]);
   const recentQuotesRef = useRef<string[]>([]);
@@ -313,22 +317,23 @@ export default function DojoScreen() {
 
   // Trigger Nudge: "Yesterday you chose average. Today choose power."
   useEffect(() => {
-    if (user?.streakAtRisk && !hasShownNudge.current) {
-      setNudgeVisible(true);
-      hasShownNudge.current = true;
-    }
+    // Keep startup interactive: do not auto-open blocking nudge modal on boot.
     if (!user?.streakAtRisk) {
       hasShownNudge.current = false;
+      setNudgeVisible(false);
+      return;
     }
+
+    hasShownNudge.current = true;
+    setNudgeVisible(false);
   }, [user?.streakAtRisk]);
 
   useEffect(() => {
+    // Keep startup interactive: recovery modal should open only from explicit user action.
     if (user?.streakAtRisk && recoveryWindowOpen && !hasShownRecoveryPrompt.current) {
       setRecoveryQuestion(RECOVERY_QUESTIONS[Math.floor(Math.random() * RECOVERY_QUESTIONS.length)]);
-      setRecoveryVisible(true);
       hasShownRecoveryPrompt.current = true;
-    }
-    if (!user?.streakAtRisk || !recoveryWindowOpen) {
+    } else if (!user?.streakAtRisk || !recoveryWindowOpen) {
       hasShownRecoveryPrompt.current = false;
       setRecoveryVisible(false);
     }
@@ -453,18 +458,23 @@ export default function DojoScreen() {
 
   useEffect(() => {
     const roastTimer = setInterval(() => {
-      void refreshSignal('roast', getNextSignalMode('roast'));
-    }, 7000);
-    const quoteTimer = setInterval(() => {
-      rotateSignalLocally('quote');
-      void refreshSignal('quote', 'classic');
-    }, 8000);
+      rotateSignalLocally('roast');
+    }, SIGNAL_INTERVAL_MS);
 
     return () => {
       clearInterval(roastTimer);
+    };
+  }, [user?.email, rotateSignalLocally, roastTimerResetKey]);
+
+  useEffect(() => {
+    const quoteTimer = setInterval(() => {
+      rotateSignalLocally('quote');
+    }, SIGNAL_INTERVAL_MS);
+
+    return () => {
       clearInterval(quoteTimer);
     };
-  }, [user?.email, refreshSignal, rotateSignalLocally]);
+  }, [user?.email, rotateSignalLocally, quoteTimerResetKey]);
 
 
 
@@ -833,7 +843,7 @@ export default function DojoScreen() {
         <Pressable
           onPress={() => {
             rotateSignalLocally('roast');
-            void refreshSignal('roast');
+            setRoastTimerResetKey(prev => prev + 1);
           }}
         >
         <GlassCard
@@ -854,7 +864,7 @@ export default function DojoScreen() {
         <Pressable
           onPress={() => {
             rotateSignalLocally('quote');
-            void refreshSignal('quote');
+            setQuoteTimerResetKey(prev => prev + 1);
           }}
         >
         <GlassCard
