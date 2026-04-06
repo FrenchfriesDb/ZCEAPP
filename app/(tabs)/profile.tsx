@@ -14,7 +14,7 @@ import { ActivityIndicator, Alert, FlatList, Modal, Platform, Pressable, ScrollV
 export default function ProfileScreen() {
     const { user, isLoading, signOut, changeUsername, purchaseSystemBackup } = useUser();
     const { textColors } = useTimeColors();
-    const { textPrimary, textSecondary, textTertiary } = useTextColors();
+    const { textPrimary, textSecondary } = useTextColors();
 
     // UI State
     const [archivesVisible, setArchivesVisible] = useState(false);
@@ -27,6 +27,13 @@ export default function ProfileScreen() {
     const levelInfo = XPConfig.getLevel(user?.xp || 0);
     const systemColor = textColors?.primary ?? textPrimary;
     const velocityColor = textSecondary;
+    const subscriptionStatus = ((user as any)?.subscriptionStatus || 'inactive').toString().toUpperCase();
+    const subscriptionTier = ((user as any)?.subscriptionTier || 'initiate').toString().toUpperCase();
+    const subscriptionExpiresAt = ((user as any)?.subscriptionExpiresAt || null) as string | null;
+    const hasActiveSubscription = subscriptionStatus === 'ACTIVE' || subscriptionStatus === 'GRACE';
+    const expirationLabel = hasActiveSubscription && subscriptionExpiresAt
+        ? new Date(subscriptionExpiresAt).toLocaleDateString()
+        : 'Not subscribed';
 
     if (isLoading) return (
         <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', padding: 32 }]}> 
@@ -76,7 +83,7 @@ export default function ProfileScreen() {
             <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
             <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.34)' }]} />
 
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} nestedScrollEnabled>
                 {/* Header Identity Card */}
                 <GlassCard themed style={styles.header} intensity={35}>
                     <View style={styles.headerContent}>
@@ -124,6 +131,23 @@ export default function ProfileScreen() {
                             </Pressable>
                         </View>
                     </View>
+                </GlassCard>
+
+                <GlassCard themed style={styles.subscriptionBanner} intensity={22}>
+                    <Pressable onPress={() => router.push('/settings/subscription')} style={styles.subscriptionBannerPressable}>
+                        <View style={styles.subscriptionBannerLeft}>
+                            <Text style={styles.subscriptionBannerTitle}>ZCE PRO STATUS</Text>
+                            <Text style={[styles.subscriptionBannerPlan, hasActiveSubscription && styles.subscriptionBannerPlanActive]}>
+                                {hasActiveSubscription ? `${subscriptionTier} • ${subscriptionStatus}` : 'INITIATE (FREE)'}
+                            </Text>
+                            <Text style={styles.subscriptionBannerSub}>
+                                {hasActiveSubscription
+                                    ? `Expiration: ${expirationLabel}`
+                                    : 'Upgrade to ZCE Pro for premium drills, deeper analytics, and full protocol unlocks.'}
+                            </Text>
+                        </View>
+                        <Text style={styles.subscriptionBannerArrow}>→</Text>
+                    </Pressable>
                 </GlassCard>
 
                 {/* Velocity Monitor */}
@@ -200,7 +224,7 @@ export default function ProfileScreen() {
 
                 <GlassCard themed style={styles.bioCard} intensity={10}>
                     <Text style={styles.sectionTitle}>MISSION STATEMENT</Text>
-                    <Text style={styles.bioText}>"{user.bio}"</Text>
+                    <Text style={styles.bioText}>&quot;{user.bio}&quot;</Text>
                 </GlassCard>
 
                 {/* Archives Access */}
@@ -266,8 +290,8 @@ export default function ProfileScreen() {
                                 {(() => {
                                     const content = archiveTab === 'drills' ? (item.feedback || '') : (item.entry || '');
                                     let cleaned = content.replace(/\[ID:[^\]]+\]/g, '').trim();
-                                    cleaned = cleaned.replace(/\b(?:qs_|dm_|q_|id_)[A-Za-z0-9_-]+\b/gi, (match) => {
-                                        const pretty = match.replace(/^(?:qs_|dm_|q_|id_)/i, '').replace(/[_-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                                    cleaned = cleaned.replace(/\b(?:qs_|dm_|q_|id_)[A-Za-z0-9_-]+\b/gi, (match: string) => {
+                                        const pretty = match.replace(/^(?:qs_|dm_|q_|id_)/i, '').replace(/[_-]/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
                                         return pretty;
                                     });
                                     return <Text style={styles.archiveItemText}>{cleaned || '(no description provided)'}</Text>;
@@ -402,6 +426,47 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255,255,255,0.05)',
         justifyContent: 'center', alignItems: 'center',
         borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
+    },
+    subscriptionBanner: {
+        marginBottom: 16,
+        borderColor: 'rgba(255,255,255,0.14)',
+    },
+    subscriptionBannerPressable: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+    },
+    subscriptionBannerLeft: {
+        flex: 1,
+        minWidth: 0,
+    },
+    subscriptionBannerTitle: {
+        fontFamily: Fonts.monoBold,
+        fontSize: 10,
+        color: 'rgba(255,255,255,0.78)',
+        letterSpacing: 2,
+        marginBottom: 8,
+    },
+    subscriptionBannerPlan: {
+        fontFamily: Fonts.heading,
+        fontSize: 18,
+        color: '#FFFFFF',
+        letterSpacing: 0.6,
+        marginBottom: 6,
+    },
+    subscriptionBannerPlanActive: {
+        color: '#9BE7FF',
+    },
+    subscriptionBannerSub: {
+        fontFamily: Fonts.body,
+        fontSize: 12,
+        color: 'rgba(255,255,255,0.66)',
+        lineHeight: 18,
+    },
+    subscriptionBannerArrow: {
+        fontSize: 22,
+        color: 'rgba(255,255,255,0.62)',
     },
     emojiFix: {
         fontFamily: Platform.select({
