@@ -6,24 +6,24 @@ import { useUser } from '@/context/UserContext';
 import { useTimeColors } from '@/hooks/useTimeColors';
 import { formatDisplayName } from '@/utils/formatters';
 import { Ionicons } from '@expo/vector-icons';
-import FluentEmoji, { resolveFluentEmojiName } from '@/components/FluentEmoji';
+import FluentEmoji, { type FluentEmojiName, resolveFluentEmojiName } from '@/components/FluentEmoji';
 
-// Icons as emojis for now - can be replaced with icon library
+// Use explicit Fluent icon names to avoid unicode fallback glitches on web/native.
 const ICONS = {
-    designation: '🎯',
-    bio: '📝',
-    codename: '🆔',
-    username: '@',
-    email: '✉️',
-    password: '🔒',
-    subscription: '👑',
-    restore: '🔄',
-    privacy: '🛡️',
-    terms: '📋',
+    designation: 'bullseye' as FluentEmojiName,
+    bio: 'memo' as FluentEmojiName,
+    codename: 'idButton' as FluentEmojiName,
+    username: 'label' as FluentEmojiName,
+    email: 'email' as FluentEmojiName,
+    password: 'locked' as FluentEmojiName,
+    subscription: 'crown' as FluentEmojiName,
+    restore: 'repeatButton' as FluentEmojiName,
+    privacy: 'shield' as FluentEmojiName,
+    terms: 'clipboard' as FluentEmojiName,
     // Avoid emoji tofu boxes by using a real icon glyph instead of an emoji.
     signout: <Ionicons name="log-out-outline" size={18} color="#fff" />,
-    reset: '⚠️',
-    delete: '☠️',
+    reset: 'warning' as FluentEmojiName,
+    delete: 'skullAndCrossbones' as FluentEmojiName,
 };
 
 export default function EditProfileScreen() {
@@ -53,6 +53,12 @@ export default function EditProfileScreen() {
     const [tempTitle, setTempTitle] = useState(title);
     const [tempBio, setTempBio] = useState(bio);
     const [tempName, setTempName] = useState(name);
+    const subscriptionStatus = ((user as any)?.subscriptionStatus || 'inactive').toString().toUpperCase();
+    const subscriptionTier = ((user as any)?.subscriptionTier || 'initiate').toString().toUpperCase();
+    const hasActiveSubscription = subscriptionStatus === 'ACTIVE' || subscriptionStatus === 'GRACE';
+    const subscriptionRowValue = hasActiveSubscription
+        ? `${subscriptionTier} • ${subscriptionStatus}`
+        : 'INACTIVE — TAP TO UPGRADE';
 
     const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/;
 
@@ -266,15 +272,17 @@ export default function EditProfileScreen() {
         isLast?: boolean;
         valueColor?: string;
         danger?: boolean;
-    }) => (
+    }) => {
+        const iconName = typeof icon === 'string' ? (resolveFluentEmojiName(icon) || (icon as FluentEmojiName)) : null;
+        return (
         <Pressable
             onPress={onPress}
             style={[styles.row, !isLast && styles.rowWithDivider]}
         >
             {typeof icon === 'string' ? (
-                resolveFluentEmojiName(icon) ? (
+                iconName ? (
                     <View style={styles.rowIconWrap}>
-                        <FluentEmoji name={resolveFluentEmojiName(icon)!} size={22} />
+                        <FluentEmoji name={iconName} size={22} />
                     </View>
                 ) : (
                     <Text style={styles.rowIcon}>{icon}</Text>
@@ -296,6 +304,7 @@ export default function EditProfileScreen() {
             </View>
         </Pressable>
     );
+    };
 
     // Section card component
     const SectionCard = ({ children, title }: { children: React.ReactNode; title: string }) => (
@@ -390,8 +399,9 @@ export default function EditProfileScreen() {
                     <SettingRow
                         icon={ICONS.subscription}
                         label="SUBSCRIPTION STATUS"
-                        value="FREE TRIAL"
-                        valueColor="#FFD700"
+                        value={subscriptionRowValue}
+                        valueColor={hasActiveSubscription ? '#9BE7FF' : 'rgba(255,255,255,0.72)'}
+                        onPress={() => router.push('/settings/subscription')}
                     />
                     <SettingRow
                         icon={ICONS.restore}

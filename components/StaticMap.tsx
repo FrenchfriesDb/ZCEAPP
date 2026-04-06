@@ -11,11 +11,12 @@ interface StaticMapProps {
 
 const SQUARE_SIZE = 28;
 const GAPPING = 8;
+const OUTLINE_WIDTH = 2;
+const SVG_EDGE_PADDING = OUTLINE_WIDTH;
 const GRID_SIZE = 7; // Standard 7-day week
 const WEEKS_PER_PAGE = 7;
 const DAYS_PER_PAGE = GRID_SIZE * WEEKS_PER_PAGE;
-const PAGES_IN_FUTURE = 1;
-const PAGES_IN_PAST = 3;
+const FUTURE_BUFFER_BLOCKS = 1;
 
 const ROASTS = {
     npc: [
@@ -57,7 +58,7 @@ const ROASTS = {
 
 const StaticMap: React.FC<StaticMapProps> = ({ dailyXp, drillLogs = [] }) => {
     const pageWidth = Dimensions.get('window').width - 64;
-    const gridDim = GRID_SIZE * (SQUARE_SIZE + GAPPING) - GAPPING;
+    const gridDim = GRID_SIZE * (SQUARE_SIZE + GAPPING) - GAPPING + SVG_EDGE_PADDING * 2;
 
     const todayStr = useMemo(() => {
         const d = new Date();
@@ -65,25 +66,19 @@ const StaticMap: React.FC<StaticMapProps> = ({ dailyXp, drillLogs = [] }) => {
     }, [dailyXp]);
 
     const [selectedDate, setSelectedDate] = useState<string | null>(todayStr);
-    const [activePage, setActivePage] = useState(PAGES_IN_PAST);
     const scrollRef = useRef<FlatList>(null);
 
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            scrollRef.current?.scrollToIndex({ index: PAGES_IN_PAST, animated: false });
-        }, 150);
-        return () => clearTimeout(timer);
-    }, []);
-
-    const pagesData = useMemo(() => {
+    const { pagesData, currentPageIndex } = useMemo(() => {
         const pages: any[] = [];
         const epoch = new Date(2025, 11, 22);
         const today = new Date();
         const diffDays = Math.round((new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime() - epoch.getTime()) / (1000 * 3600 * 24));
         const currentBlockIndex = Math.floor(diffDays / DAYS_PER_PAGE);
 
-        for (let p = -PAGES_IN_PAST; p <= PAGES_IN_FUTURE; p++) {
-            const blockIndex = currentBlockIndex + p;
+        const firstBlockIndex = 0;
+        const lastBlockIndex = currentBlockIndex + FUTURE_BUFFER_BLOCKS;
+
+        for (let blockIndex = firstBlockIndex; blockIndex <= lastBlockIndex; blockIndex++) {
             const pageGrid: { date: string, xp: number, x: number, y: number }[] = [];
 
             const blockStartDate = new Date(epoch);
@@ -96,8 +91,8 @@ const StaticMap: React.FC<StaticMapProps> = ({ dailyXp, drillLogs = [] }) => {
                     pageGrid.push({
                         date: dateKey,
                         xp: dailyXp[dateKey] || 0,
-                        x: c * (SQUARE_SIZE + GAPPING),
-                        y: r * (SQUARE_SIZE + GAPPING),
+                        x: SVG_EDGE_PADDING + c * (SQUARE_SIZE + GAPPING),
+                        y: SVG_EDGE_PADDING + r * (SQUARE_SIZE + GAPPING),
                     });
                     tempDate.setDate(tempDate.getDate() + 1);
                 }
@@ -105,11 +100,36 @@ const StaticMap: React.FC<StaticMapProps> = ({ dailyXp, drillLogs = [] }) => {
             pages.push({
                 id: `page-${blockIndex}`,
                 grid: pageGrid,
-                type: p < 0 ? 'past' : (p === 0 ? 'current' : 'future')
+                type: blockIndex < currentBlockIndex ? 'past' : (blockIndex === currentBlockIndex ? 'current' : 'future')
             });
         }
-        return pages;
+
+        return {
+            pagesData: pages,
+            currentPageIndex: Math.max(0, currentBlockIndex - firstBlockIndex),
+        };
     }, [dailyXp]);
+
+    const [activePage, setActivePage] = useState(currentPageIndex);
+
+    const goToPage = (index: number) => {
+        const clamped = Math.max(0, Math.min(index, pagesData.length - 1));
+        setActivePage(clamped);
+        scrollRef.current?.scrollToIndex({ index: clamped, animated: true });
+    };
+
+    useEffect(() => {
+        setActivePage(currentPageIndex);
+    }, [currentPageIndex]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (currentPageIndex >= 0 && currentPageIndex < pagesData.length) {
+                scrollRef.current?.scrollToIndex({ index: currentPageIndex, animated: false });
+            }
+        }, 150);
+        return () => clearTimeout(timer);
+    }, [currentPageIndex, pagesData.length]);
 
     const getSquareColor = (xp: number, date: string) => {
         const isSelected = selectedDate === date;
@@ -170,7 +190,7 @@ const StaticMap: React.FC<StaticMapProps> = ({ dailyXp, drillLogs = [] }) => {
                         ry={6}
                         fill={getSquareColor(day.xp, day.date)}
                         stroke={selectedDate === day.date ? '#fff' : 'transparent'}
-                        strokeWidth={2}
+                        strokeWidth={OUTLINE_WIDTH}
                         onPress={() => setSelectedDate(day.date)}
                     />
                 ))}
@@ -192,18 +212,38 @@ const StaticMap: React.FC<StaticMapProps> = ({ dailyXp, drillLogs = [] }) => {
             </View>
 
             <View style={styles.pagerWrapper}>
+                <View style={styles.pageControls}>
+                    <Text
+                        style={[styles.pageControl, activePage <= 0 && styles.pageControlDisabled]}
+                        onPress={() => goToPage(activePage - 1)}
+                    >
+                        ‹
+                    </Text>
+                    <Text style={styles.pageControlLabel}>WEEK BLOCK {activePage + 1}/{pagesData.length}</Text>
+                    <Text
+                        style={[styles.pageControl, activePage >= pagesData.length - 1 && styles.pageControlDisabled]}
+                        onPress={() => goToPage(activePage + 1)}
+                    >
+                        ›
+                    </Text>
+                </View>
+
                 <FlatList
                     ref={scrollRef}
                     data={pagesData}
                     keyExtractor={item => item.id}
                     renderItem={renderPage}
                     horizontal
+                    scrollEnabled={pagesData.length > 1}
+                    pagingEnabled
+                    directionalLockEnabled
+                    nestedScrollEnabled
                     getItemLayout={(_, index) => ({
                         length: pageWidth,
                         offset: pageWidth * index,
                         index,
                     })}
-                    initialScrollIndex={PAGES_IN_PAST}
+                    initialScrollIndex={Math.min(currentPageIndex, Math.max(0, pagesData.length - 1))}
                     snapToInterval={pageWidth}
                     decelerationRate="fast"
                     showsHorizontalScrollIndicator={false}
@@ -290,6 +330,30 @@ const styles = StyleSheet.create({
     pagerWrapper: {
         marginBottom: 24,
         alignItems: 'center',
+    },
+    pageControls: {
+        width: '100%',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 10,
+        paddingHorizontal: 4,
+    },
+    pageControl: {
+        fontFamily: Fonts.monoBold,
+        fontSize: 22,
+        color: '#FFFFFF',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+    },
+    pageControlDisabled: {
+        color: 'rgba(255,255,255,0.25)',
+    },
+    pageControlLabel: {
+        fontFamily: Fonts.mono,
+        fontSize: 10,
+        color: 'rgba(255,255,255,0.5)',
+        letterSpacing: 1,
     },
     pageContainer: {
         alignItems: 'center',
