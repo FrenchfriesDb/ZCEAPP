@@ -1,14 +1,16 @@
 
 import { Colors, Fonts, FontSizes, Radius, Spacing } from '@/constants/theme';
+import { useSubscription } from '@/context/SubscriptionContext';
 import { useUser } from '@/context/UserContext';
 import { useTimeColors } from '@/hooks/useTimeColors';
 import { AIService, type ZaneChatStyle } from '@/services/ai';
 import { getFirstName } from '@/utils/formatters';
 import { buildZaneMemoryContext } from '@/utils/zaneMemory';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router, useNavigation } from 'expo-router';
+import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Animated, Easing, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface Message {
     id: number;
@@ -23,19 +25,22 @@ const getTimeString = () => {
 };
 
 export default function ChatScreen() {
-    const navigation = useNavigation();
     const { user, addChatMessage, clearChat, updateProfile } = useUser();
+    const { canUseAIChat, dailyChatUsed, dailyChatLimit, freeWindowRemainingMs, recordAIInteraction } = useSubscription();
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const [chatStyle, setChatStyle] = useState<ZaneChatStyle>((user?.zaneChatStyle as ZaneChatStyle) || 'classic');
     const scrollRef = useRef<ScrollView>(null);
     const [isKeyboardActive, setIsKeyboardActive] = useState(false);
+    const insets = useSafeAreaInsets();
     const { palette: timePalette } = useTimeColors();
     const systemColor = Array.isArray(timePalette) && timePalette.length > 0 ? timePalette[0] : Colors.accentPrimary;
     const dotAnim = useRef(new Animated.Value(0)).current;
     const pulseAnim = useRef(new Animated.Value(1)).current;
+    const inputFocusAnim = useRef(new Animated.Value(0)).current;
     const memoryContext = buildZaneMemoryContext(user);
+    const runtimeName = getFirstName(user?.name) || 'AGENT';
 
     useEffect(() => {
         setChatStyle((user?.zaneChatStyle as ZaneChatStyle) || 'classic');
@@ -48,18 +53,16 @@ export default function ChatScreen() {
                 Animated.timing(pulseAnim, { toValue: 1, duration: 1500, useNativeDriver: true }),
             ])
         ).start();
-    }, []);
+    }, [pulseAnim]);
 
     useEffect(() => {
-        const showSubscription = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => {
-            setIsKeyboardActive(true);
-        });
-        const hideSubscription = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => {
-            setIsKeyboardActive(false);
-        });
+        const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+        const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+        const showSub = Keyboard.addListener(showEvent, () => setIsKeyboardActive(true));
+        const hideSub = Keyboard.addListener(hideEvent, () => setIsKeyboardActive(false));
         return () => {
-            showSubscription.remove();
-            hideSubscription.remove();
+            showSub.remove();
+            hideSub.remove();
         };
     }, []);
 
@@ -80,7 +83,7 @@ export default function ChatScreen() {
                     const welcomeText = await AIService.generateResponse(
                         [{ role: 'user', content: 'REQUEST: AUDIT OPENING. Start the session.' }],
                         'groq',
-                        user?.name?.split(' ')[0] || 'AGENT',
+                        runtimeName,
                         user?.level || 1,
                         'main',
                         { chatStyle, memoryContext }
@@ -92,7 +95,7 @@ export default function ChatScreen() {
                         timestamp: getTimeString()
                     }]);
                     addChatMessage({ role: 'assistant', content: welcomeText });
-                } catch (e) {
+                } catch {
                     const firstName = getFirstName(user?.name);
                     const fallback = `${firstName}-la. Connection unstable. Go find a rep while I reboot.`;
                     setMessages([{ id: 0, text: fallback, sender: 'ai', timestamp: getTimeString() }]);
@@ -102,7 +105,7 @@ export default function ChatScreen() {
             };
             fetchWelcome();
         }
-    }, [user?.email, chatStyle]);
+    }, [addChatMessage, chatStyle, memoryContext, runtimeName, user?.chatLogs, user?.email, user?.level, user?.name]);
 
     useEffect(() => {
         if (isTyping) {
@@ -113,7 +116,7 @@ export default function ChatScreen() {
                 ])
             ).start();
         }
-    }, [isTyping]);
+    }, [dotAnim, isTyping]);
 
     const addAiMessage = (text: string) => {
         setMessages(prev => [
@@ -130,6 +133,13 @@ export default function ChatScreen() {
     const sendMessage = async () => {
         const text = input.trim();
         if (!text) return;
+        if (!canUseAIChat) {
+            const mins = Math.max(1, Math.ceil(freeWindowRemainingMs / 60000));
+            const limitNote = `${runtimeName}-la. Free plan cap reached: ${dailyChatUsed}/${dailyChatLimit} messages in 1 hour. Next slot unlocks in ~${mins} min.`;
+            addAiMessage(limitNote);
+            await addChatMessage({ role: 'assistant', content: limitNote });
+            return;
+        }
 
         // Add user message to local state
         const userMsg: Message = {
@@ -143,6 +153,7 @@ export default function ChatScreen() {
         setMessages(newMessages);
         setInput('');
         setIsTyping(true);
+        recordAIInteraction();
 
         // Save to persistence
         await addChatMessage({ role: 'user', content: text });
@@ -157,7 +168,7 @@ export default function ChatScreen() {
             let responseText = await AIService.generateResponse(
                 history,
                 'groq',
-                user?.name || 'AGENT',
+                runtimeName,
                 user?.level || 1,
                 'main',
                 { chatStyle, memoryContext }
@@ -176,18 +187,14 @@ export default function ChatScreen() {
                 }
             }
 
-            // Stripping bold labels (BRUTAL TRUTH:, DRILL:, CLOSER:, ZANE LINE:) just in case the AI hallucinates them
-            const boldsToStrip = [/BRUTAL TRUTH:/gi, /DRILL:/gi, /CLOSER:/gi, /ZANE LINE:/gi, /ONE SURGICAL REALIZATION:/gi, /ONE NON-NEGOTIABLE DRILL:/gi, /ONE ZANE QUOTABLE:/gi, /ONE CLOSER:/gi];
-            boldsToStrip.forEach(reg => {
-                responseText = responseText.replace(reg, '');
-            });
+            // Keep section headers intact so the response structure from ai.ts is visible to the user.
             responseText = responseText.trim();
 
             setIsTyping(false);
             addAiMessage(responseText);
             await addChatMessage({ role: 'assistant', content: responseText });
 
-        } catch (e) {
+        } catch {
             setIsTyping(false);
             const fallback = "Neural link saturated. I'm busy auditing your last failure. Go approach someone.";
             addAiMessage(fallback);
@@ -206,17 +213,17 @@ export default function ChatScreen() {
             <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.34)' }]} />
 
             {/* Header */}
-            <View style={styles.header}>
+            <View style={[styles.header, { paddingTop: Math.max(insets.top + 10, 22) }]}>
                 <View style={styles.headerLeft}>
                     <Pressable onPress={() => router.back()} style={styles.backBtnHeader}>
                         <Text style={styles.backIconHeader}>←</Text>
                     </Pressable>
-                    <Animated.View style={[styles.aiAvatar, { transform: [{ scale: pulseAnim }], backgroundColor: systemColor, shadowColor: systemColor }]}>
+                    <Animated.View style={[styles.aiAvatar, { transform: [{ scale: pulseAnim }], backgroundColor: systemColor, shadowColor: systemColor }]}> 
                         <Text style={styles.monogram}>Z</Text>
                     </Animated.View>
-                    <View>
-                        <Text style={styles.headerTitle}>Z.A.N.E. AI</Text>
-                        <Text style={styles.headerSub}>ARCHITECT MODE: {isTyping ? 'ANALYZING...' : 'ONLINE'}</Text>
+                    <View style={styles.headerMeta}>
+                        <Text style={styles.headerTitle} numberOfLines={1}>Z.A.N.E. AI</Text>
+                        <Text style={styles.headerSub} numberOfLines={1}>ARCHITECT MODE: {isTyping ? 'ANALYZING...' : 'ONLINE'}</Text>
                     </View>
                 </View>
                 <Pressable onPress={() => clearChat()} style={styles.purgeBtn}>
@@ -241,7 +248,11 @@ export default function ChatScreen() {
                             setChatStyle(option.id);
                             await updateProfile({ zaneChatStyle: option.id });
                         }}
-                        style={[styles.stylePill, chatStyle === option.id && styles.stylePillActive]}
+                        style={({ pressed }) => [
+                            styles.stylePill,
+                            chatStyle === option.id && styles.stylePillActive,
+                            pressed && styles.stylePillPressed,
+                        ]}
                     >
                         <Text style={[styles.stylePillText, chatStyle === option.id && styles.stylePillTextActive]}>
                             {option.label}
@@ -253,13 +264,16 @@ export default function ChatScreen() {
             <KeyboardAvoidingView
                 style={styles.chatArea}
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+                keyboardVerticalOffset={0}
             >
                 <ScrollView
                     ref={scrollRef}
                     style={styles.messages}
                     contentContainerStyle={styles.messagesContent}
                     onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
+                    onLayout={() => scrollRef.current?.scrollToEnd({ animated: false })}
+                    keyboardShouldPersistTaps="handled"
+                    keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
                     showsVerticalScrollIndicator={false}
                 >
                     {messages.map((msg, index) => (
@@ -270,7 +284,7 @@ export default function ChatScreen() {
                                 </View>
                             )}
                             <View style={[styles.bubble, msg.sender === 'user' ? styles.bubbleUser : styles.bubbleAI]}>
-                                <Text style={[styles.bubbleText, msg.sender === 'user' && styles.bubbleTextUser]}>
+                                <Text selectable style={[styles.bubbleText, msg.sender === 'user' && styles.bubbleTextUser]}>
                                     {msg.text}
                                 </Text>
                                 <Text style={styles.timestamp}>{msg.timestamp}</Text>
@@ -295,14 +309,62 @@ export default function ChatScreen() {
                 </ScrollView>
 
                 {/* Input */}
-                <View style={[styles.inputContainer, isKeyboardActive && { paddingBottom: 0 }]}>
-                    <View style={styles.inputBox}>
+                <View
+                    style={[
+                        styles.inputContainer,
+                        {
+                            paddingBottom: isKeyboardActive
+                                ? 6
+                                : Math.max(insets.bottom, Platform.OS === 'ios' ? 8 : 6),
+                        },
+                    ]}
+                >
+                    <Animated.View
+                        style={[
+                            styles.inputBox,
+                            {
+                                transform: [{
+                                    scale: inputFocusAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.01] })
+                                }, {
+                                    translateY: inputFocusAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -1] })
+                                }],
+                                shadowOpacity: inputFocusAnim.interpolate({ inputRange: [0, 1], outputRange: [0.08, 0.18] }),
+                                shadowRadius: inputFocusAnim.interpolate({ inputRange: [0, 1], outputRange: [11, 16] }),
+                                borderColor: inputFocusAnim.interpolate({ inputRange: [0, 1], outputRange: ['rgba(255,255,255,0.10)', 'rgba(255,255,255,0.30)'] }),
+                            },
+                        ]}
+                    >
                         <TextInput
                             style={styles.input}
                             placeholder="Deep dive protocol..."
                             placeholderTextColor={Colors.textTertiary}
                             value={input}
                             onChangeText={setInput}
+                            onFocus={() => {
+                                Animated.timing(inputFocusAnim, {
+                                    toValue: 1,
+                                    duration: 220,
+                                    easing: Easing.out(Easing.cubic),
+                                    useNativeDriver: false,
+                                }).start();
+                                setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 60);
+                            }}
+                            onTouchStart={() => {
+                                Animated.timing(inputFocusAnim, {
+                                    toValue: 1,
+                                    duration: 160,
+                                    easing: Easing.out(Easing.cubic),
+                                    useNativeDriver: false,
+                                }).start();
+                            }}
+                            onBlur={() => {
+                                Animated.timing(inputFocusAnim, {
+                                    toValue: 0,
+                                    duration: 200,
+                                    easing: Easing.inOut(Easing.cubic),
+                                    useNativeDriver: false,
+                                }).start();
+                            }}
                             onSubmitEditing={sendMessage}
                             returnKeyType="send"
                             multiline={false}
@@ -315,7 +377,7 @@ export default function ChatScreen() {
                                 <Text style={styles.sendIcon}>↑</Text>
                             </LinearGradient>
                         </Pressable>
-                    </View>
+                    </Animated.View>
                 </View>
             </KeyboardAvoidingView>
         </View>
@@ -326,10 +388,11 @@ const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#000000' },
     header: {
         flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-        paddingHorizontal: Spacing.lg, paddingTop: 60, paddingBottom: 16,
+        paddingHorizontal: Spacing.lg, paddingBottom: 12,
         borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)',
     },
-    headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+    headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 },
+    headerMeta: { flex: 1, minWidth: 0 },
     aiAvatar: {
         width: 36, height: 36, borderRadius: 10,
         overflow: 'hidden',
@@ -339,7 +402,7 @@ const styles = StyleSheet.create({
     monogram: { fontFamily: Fonts.heading, fontSize: 18, color: '#000000', fontWeight: '900' },
     aiDot: { width: 10, height: 10, borderRadius: 3, backgroundColor: Colors.accentPrimary, shadowColor: Colors.accentPrimary, shadowRadius: 10, shadowOpacity: 0.8 },
     headerTitle: { fontFamily: Fonts.heading, fontSize: FontSizes.lg, color: Colors.textPrimary, letterSpacing: 2, fontWeight: '800' },
-    headerSub: { fontFamily: Fonts.monoBold, fontSize: 8, color: Colors.accentPrimary, letterSpacing: 2, textTransform: 'uppercase' },
+    headerSub: { fontFamily: Fonts.headingSemi, fontSize: 9, color: Colors.accentPrimary, letterSpacing: 1.5, textTransform: 'uppercase' },
     backBtnHeader: {
         width: 32,
         height: 32,
@@ -352,27 +415,39 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(255,255,255,0.1)',
     },
     backIconHeader: { color: '#fff', fontSize: 18, fontWeight: '800' },
-    purgeBtn: { padding: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', borderRadius: 4 },
-    purgeText: { color: Colors.textTertiary, fontSize: 8, fontFamily: Fonts.monoBold },
-    styleSelectorScroll: { maxHeight: 46 },
-    styleSelectorRow: { paddingHorizontal: Spacing.lg, paddingBottom: 8, gap: 8 },
-    stylePill: {
-        paddingHorizontal: 12,
+    purgeBtn: {
         paddingVertical: 8,
+        paddingHorizontal: 10,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+        borderRadius: 8,
+        marginLeft: 10,
+        flexShrink: 0,
+    },
+    purgeText: { color: Colors.textTertiary, fontSize: 8, fontFamily: Fonts.headingSemi, letterSpacing: 1 },
+    styleSelectorScroll: { maxHeight: 52 },
+    styleSelectorRow: { paddingHorizontal: Spacing.lg, paddingBottom: 10, gap: 10 },
+    stylePill: {
+        paddingHorizontal: 15,
+        paddingVertical: 10,
         borderRadius: Radius.pill,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.08)',
-        backgroundColor: 'rgba(255,255,255,0.03)',
+        borderColor: 'rgba(255,255,255,0.12)',
+        backgroundColor: 'rgba(255,255,255,0.035)',
     },
     stylePillActive: {
-        borderColor: 'rgba(255,255,255,0.18)',
-        backgroundColor: 'rgba(255,255,255,0.08)',
+        borderColor: 'rgba(255,255,255,0.34)',
+        backgroundColor: 'rgba(255,255,255,0.14)',
+    },
+    stylePillPressed: {
+        transform: [{ scale: 0.97 }],
     },
     stylePillText: {
-        color: 'rgba(255,255,255,0.55)',
-        fontSize: 9,
-        fontFamily: Fonts.monoBold,
-        letterSpacing: 1,
+        color: 'rgba(255,255,255,0.62)',
+        fontSize: 12,
+        fontFamily: Fonts.nunito,
+        fontWeight: '800',
+        letterSpacing: 0.35,
     },
     stylePillTextActive: {
         color: '#FFFFFF',
@@ -380,7 +455,7 @@ const styles = StyleSheet.create({
 
     chatArea: { flex: 1 },
     messages: { flex: 1 },
-    messagesContent: { padding: Spacing.lg, gap: 14, paddingBottom: 30 },
+    messagesContent: { padding: Spacing.lg, gap: 14, paddingBottom: 14 },
 
     msgRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, marginBottom: 4 },
     msgRowUser: { justifyContent: 'flex-end' },
@@ -405,16 +480,20 @@ const styles = StyleSheet.create({
 
     inputContainer: {
         paddingHorizontal: Spacing.lg,
-        paddingTop: Spacing.md,
-        paddingBottom: Platform.OS === 'ios' ? 34 : 20, // Clean flush padding for home indicator
+        paddingTop: 6,
+        paddingBottom: Platform.OS === 'ios' ? 10 : 8,
         borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.04)',
         backgroundColor: Colors.bgPrimary,
     },
     inputBox: {
         flexDirection: 'row', alignItems: 'center', gap: 10,
-        backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: Radius.pill,
-        borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+        backgroundColor: 'rgba(255, 255, 255, 0.04)', borderRadius: Radius.pill,
+        borderWidth: 1, borderColor: 'rgba(255,255,255,0.10)',
         paddingHorizontal: 16, paddingVertical: 2,
+        shadowColor: '#FFFFFF',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.09,
+        shadowRadius: 12,
     },
     input: { flex: 1, fontFamily: Fonts.body, fontSize: 16, color: Colors.textPrimary, paddingVertical: 12 },
     sendBtn: { borderRadius: 22, overflow: 'hidden' },

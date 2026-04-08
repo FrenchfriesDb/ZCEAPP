@@ -40,10 +40,14 @@ export default function BanterBuilderDrill() {
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [analysis, setAnalysis] = useState('');
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const safeStatements = Array.isArray(STATEMENTS) && STATEMENTS.length > 0 ? STATEMENTS : ['Bro really said that out loud.'];
+  const safeStatement = safeStatements[statementIdx] || safeStatements[0];
+  const timerRatio = Math.max(0, Math.min(1, timeLeft / 5));
+  const timerColor = timerRatio > 0.66 ? '#00FF64' : timerRatio > 0.33 ? '#F89B29' : '#FF3B30';
 
   useEffect(() => {
     // Pick random statement on load
-    setStatementIdx(Math.floor(Math.random() * STATEMENTS.length));
+    setStatementIdx(Math.floor(Math.random() * safeStatements.length));
   }, []);
 
   useEffect(() => {
@@ -78,7 +82,7 @@ export default function BanterBuilderDrill() {
   };
 
   const nextStatement = () => {
-    setStatementIdx((Math.random() * STATEMENTS.length) | 0);
+    setStatementIdx((Math.random() * safeStatements.length) | 0);
     setTimeLeft(5);
     setUserResponse('');
     setShowAnalysis(false);
@@ -174,17 +178,6 @@ The Brutal Truth: Next round, don't think. Respond. Your first instinct is usual
         <View style={{ width: 60 }} />
       </View>
 
-      {!showAnalysis && isTimerActive && (
-        <View style={{ paddingHorizontal: Spacing.md, paddingTop: 6 }}>
-          <GlassCard style={[styles.statementCard, { borderColor: themeColor + '44' }]}>
-            <Text style={styles.statementLabel}>STATEMENT:</Text>
-            <Text style={[styles.statementText, { color: themeColor }]}>
-              "{STATEMENTS[statementIdx]}"
-            </Text>
-          </GlassCard>
-        </View>
-      )}
-
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -201,19 +194,17 @@ The Brutal Truth: Next round, don't think. Respond. Your first instinct is usual
               </Text>
             </GlassCard>
 
-            {/* Statement Display (pinned during typing) */}
-            {!isTimerActive && (
-              <GlassCard style={[styles.statementCard, { borderColor: themeColor + '44' }]}>
-                <Text style={styles.statementLabel}>STATEMENT:</Text>
-                <Text style={[styles.statementText, { color: themeColor }]}>
-                  "{STATEMENTS[statementIdx]}"
-                </Text>
-              </GlassCard>
-            )}
+            {/* Statement Display */}
+            <View style={styles.statementInline}>
+              <Text style={styles.statementLabel}>STATEMENT:</Text>
+              <Text style={styles.statementText}>
+                "{safeStatement}"
+              </Text>
+            </View>
 
             {/* Timer */}
             <View style={styles.timerContainer}>
-              <Text style={[styles.timerText, { color: timeLeft <= 2 ? '#FF4444' : themeColor }]}>
+              <Text style={[styles.timerText, { color: timerColor }]}>
                 {isTimerActive ? timeLeft : '5'}
               </Text>
               <Text style={styles.timerLabel}>{isTimerActive ? 'SECONDS LEFT' : 'TAP TO START'}</Text>
@@ -319,32 +310,32 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   backBtn: { padding: 8, minWidth: 60 },
-  backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12, letterSpacing: 1 },
+  backText: { color: '#FFFFFF', fontFamily: Fonts.mono, fontSize: 12, letterSpacing: 1 },
   title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: Colors.textPrimary, letterSpacing: 3, textAlign: 'center' },
 
   scrollContent: { padding: Spacing.md, alignItems: 'center', gap: 12, paddingBottom: 10 },
 
   infoCard: { width: '100%', padding: 12, backgroundColor: 'rgba(255,255,255,0.03)' },
   infoLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, marginBottom: 6 },
-  infoText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 20 },
+  infoText: { fontFamily: Fonts.headingMedium, fontSize: 13, color: '#FFFFFF', lineHeight: 22, opacity: 0.9 },
 
-  statementCard: { width: '100%', padding: 16, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.02)', borderWidth: 1 },
+  statementInline: { width: '100%', paddingHorizontal: 10, paddingTop: 4, paddingBottom: 2, alignItems: 'center' },
   statementLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 10 },
-  statementText: { fontFamily: Fonts.heading, fontSize: 16, textAlign: 'center', lineHeight: 24 },
+  statementText: { fontFamily: Fonts.heading, fontSize: 17, color: '#FFFFFF', textAlign: 'center', lineHeight: 25 },
 
-  timerContainer: { alignItems: 'center', marginVertical: 20, gap: 4 },
-  timerText: { fontFamily: Fonts.heading, fontSize: 64, fontWeight: '900', lineHeight: 64 },
+  timerContainer: { alignItems: 'center', marginVertical: 20, gap: 4, paddingVertical: 6, width: '100%' },
+  timerText: { fontFamily: Fonts.heading, fontSize: 64, fontWeight: '900', lineHeight: 78, textAlign: 'center', width: '100%' },
   timerLabel: { fontFamily: Fonts.mono, fontSize: 10, color: 'rgba(255,255,255,0.3)', letterSpacing: 2 },
 
   responseInput: {
     width: '100%',
     backgroundColor: 'rgba(255,255,255,0.06)',
     borderWidth: 1,
-    borderColor: 'rgba(0, 245, 255, 0.3)',
+    borderColor: 'rgba(255,255,255,0.25)',
     borderRadius: Radius.md,
     padding: 14,
     color: Colors.textPrimary,
-    fontFamily: Fonts.body,
+    fontFamily: Fonts.nunito,
     fontSize: 14,
     minHeight: 60,
     textAlignVertical: 'top',
@@ -352,10 +343,10 @@ const styles = StyleSheet.create({
 
   responseCard: { width: '100%', padding: 14, backgroundColor: 'rgba(0, 245, 255, 0.05)', borderColor: 'rgba(0, 245, 255, 0.2)', borderWidth: 1 },
   responseLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(0, 245, 255, 0.5)', letterSpacing: 1, marginBottom: 8 },
-  responseText: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textPrimary, lineHeight: 20 },
+  responseText: { fontFamily: Fonts.nunito, fontSize: 14, color: Colors.textPrimary, lineHeight: 20 },
 
   analysisCard: { width: '100%', padding: 16, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: Radius.lg },
-  analysisText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, lineHeight: 20 },
+  analysisText: { fontFamily: Fonts.nunito, fontSize: 12, color: '#FFFFFF', lineHeight: 20 },
 
   buttonGroup: { width: '100%', gap: 10, marginTop: 16 },
 });

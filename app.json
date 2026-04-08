@@ -38,34 +38,39 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
+          "image": "./assets/images/zcelogoloading.png",
+          "imageWidth": 240,
           "resizeMode": "contain",
-          "backgroundColor": "#000000",
+          "backgroundColor": "#070A12",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#070A12"
           }
         }
       ],
-      "expo-font",
-      "expo-secure-store",
-      "expo-web-browser",
-      "expo-audio",
-      "expo-av"
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": false,
-      "reactCompiler": true
+      "reactCompiler": false
     },
     "extra": {
-      "router": {},
+      "router": {
+        "root": "app"
+      },
+      "aiProxyUrl": "",
+      "allowInsecureClientProviders": false,
+      "revenuecat": {
+        "entitlementId": "ZCE Pro",
+        "monthlyProductId": "zce_director_monthly_sub",
+        "yearlyProductId": "zce_director_yearly_sub",
+        "iosApiKey": "",
+        "androidApiKey": ""
+      },
       "eas": {
         "projectId": "d97e9439-eb4a-498b-ab9a-862ee3f3a6a5"
       }
     },
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
+    "runtimeVersion": "1.0.2",
     "updates": {
       "url": "https://u.expo.dev/d97e9439-eb4a-498b-ab9a-862ee3f3a6a5"
     }

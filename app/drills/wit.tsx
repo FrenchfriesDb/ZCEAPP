@@ -1,13 +1,13 @@
-import { View, Text, StyleSheet, Pressable, TextInput, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import DrillFeedbackPanel from '@/components/DrillFeedbackPanel';
+import GlassButton from '@/components/GlassButton';
+import GlassCard from '@/components/GlassCard';
+import { Colors, Fonts, Spacing } from '@/constants/theme';
+import { useUser } from '@/context/UserContext';
+import { AIService } from '@/services/ai';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import GlassCard from '@/components/GlassCard';
-import GlassButton from '@/components/GlassButton';
-import DrillFeedbackPanel from '@/components/DrillFeedbackPanel';
-import { AIService } from '@/services/ai';
-import { useUser } from '@/context/UserContext';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export default function WitDrill() {
     const { user, completeDrill, addDrillLog } = useUser();
@@ -50,6 +50,15 @@ export default function WitDrill() {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleNextRep = () => {
+        setLine1('');
+        setRewrite1('');
+        setLine2('');
+        setRewrite2('');
+        setFeedback('');
+        setSubmitted(false);
     };
 
     return (
@@ -108,6 +117,14 @@ export default function WitDrill() {
                     <View style={styles.resultContainer}>
                         <DrillFeedbackPanel feedback={feedback} maxHeight={420} />
                         <GlassButton
+                            label="NEXT REP"
+                            onPress={handleNextRep}
+                            size="md"
+                            tint="dark"
+                            glow
+                            style={{ width: '100%' }}
+                        />
+                        <GlassButton
                             label="ACKNOWLEDGED"
                             onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}
                             size="md"
@@ -131,17 +148,17 @@ const styles = StyleSheet.create({
     header: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
     backBtn: { width: 60 },
     headerSpacer: { width: 60 },
-    backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12 },
+    backText: { color: '#FFFFFF', fontFamily: Fonts.mono, fontSize: 12 },
     title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: Colors.textPrimary, letterSpacing: 3, textAlign: 'center' },
 
     content: { paddingBottom: 40, gap: 14 },
-    instruction: { color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 14, textAlign: 'center', marginBottom: 6 },
+    instruction: { color: '#FFFFFF', fontFamily: Fonts.nunito, fontSize: 14, textAlign: 'center', marginBottom: 6 },
 
     card: { padding: 16 },
     label: { color: Colors.accentPrimary, fontFamily: Fonts.mono, fontSize: 10, letterSpacing: 1, marginBottom: 6 },
     input: {
         backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 8, padding: 12,
-        color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
+        color: Colors.textPrimary, fontFamily: Fonts.nunito, fontSize: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
     },
 
     // Buttons use <GlassButton/> now (global liquid glass look)

@@ -2,17 +2,33 @@ import { initializeApp } from 'firebase/app';
 // @ts-ignore
 import { initializeAuth, getAuth, getReactNativePersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+type FirebaseExtraConfig = {
+    firebase?: {
+        apiKey?: string;
+        authDomain?: string;
+        projectId?: string;
+        storageBucket?: string;
+        messagingSenderId?: string;
+        appId?: string;
+        measurementId?: string;
+    };
+};
+
+const extra = ((Constants.expoConfig?.extra || {}) as FirebaseExtraConfig);
+const firebaseExtra = extra.firebase || {};
+
 const firebaseConfig = {
-    apiKey: "AIzaSyBhZvABCnxMKf85EUj8NjBzwJO9tb9_ZPc",
-    authDomain: "zce-ai-18385.firebaseapp.com",
-    projectId: "zce-ai-18385",
-    storageBucket: "zce-ai-18385.firebasestorage.app",
-    messagingSenderId: "865041448347",
-    appId: "1:865041448347:web:96cd085ea158b3e5f6353e",
-    measurementId: "G-BBRFS86YH9"
+    apiKey: firebaseExtra.apiKey || '',
+    authDomain: firebaseExtra.authDomain || '',
+    projectId: firebaseExtra.projectId || '',
+    storageBucket: firebaseExtra.storageBucket || '',
+    messagingSenderId: firebaseExtra.messagingSenderId || '',
+    appId: firebaseExtra.appId || '',
+    measurementId: firebaseExtra.measurementId || '',
 };
 
 const app = initializeApp(firebaseConfig);

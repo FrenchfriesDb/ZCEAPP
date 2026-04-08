@@ -1,32 +1,68 @@
-import { View, Text, StyleSheet, Pressable, Animated, TextInput, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
-import { router } from 'expo-router';
-import { useState, useEffect, useRef } from 'react';
-import GlassCard from '@/components/GlassCard';
-import GlassButton from '@/components/GlassButton';
 import DrillFeedbackPanel from '@/components/DrillFeedbackPanel';
-import { AIService } from '@/services/ai';
+import GlassButton from '@/components/GlassButton';
+import { Colors, Fonts, Spacing } from '@/constants/theme';
 import { useUser } from '@/context/UserContext';
+import { AIService } from '@/services/ai';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 const PROMPTS = [
+    // Boring / everyday (forces detail + specificity)
+    "Tell a story about waiting in a long checkout line, but make it gripping.",
+    "Tell a story about doing laundry that somehow reveals your personality.",
+    "Tell a story about forgetting your charger and turning it into drama.",
+    "Tell a story about a normal grocery run that got weird for one tiny reason.",
+    "Tell a story about a boring school/work meeting, but make the tension feel real.",
+    "Tell a story about missing a bus by ten seconds and what happened next.",
+    "Tell a story about standing in an elevator with strangers and one awkward moment.",
+    "Tell a story about losing your keys in your own house and escalating the panic.",
+
+    // Creative / social / specific
     "Tell a story that starts with you losing a valuable possession.",
     "Tell a story about the last time you felt truly embarrassed, but end it with a laugh.",
     "Tell a story where you won because of something you were told was a weakness.",
     "Tell a story about the first time you stayed up past 4 AM for something that wasn't school.",
     "Tell a story about a character who thinks they're the Main Character and what happens to them.",
-    "Describe a time you took charge of a situation (even just choosing where to eat). How did it feel to have the 'control' of the conversation in your hands?"
+    "Describe a time you took charge of a situation (even just choosing where to eat). How did it feel to have the 'control' of the conversation in your hands?",
+    "Tell a story where one tiny lie forced you to improvise five times in a row.",
+    "Tell a story about reading a room wrong, then recovering your status in one sentence.",
+    "Tell a story where your first impression failed, but your second line saved everything.",
+
+    // Insane / absurd escalation
+    "Tell a story where your alarm clock starts giving life advice at 4:59 AM.",
+    "Tell a story about finding a hidden rulebook for your city under your bed.",
+    "Tell a story where pigeons begin tracking your daily routine like spies.",
+    "Tell a story where your mirror predicts social disasters 10 minutes early.",
+    "Tell a story where your phone autocorrect starts exposing your inner villain arc.",
+    "Tell a story where your class/work group chat becomes a secret kingdom overnight.",
+    "Tell a story where a vending machine starts negotiating with you like a CEO.",
+    "Tell a story where you accidentally become the leader of a very unqualified cult.",
+    "Tell a story where every lie you hear appears as subtitles above people's heads.",
+    "Tell a story where a turtle gives you one challenge that changes your confidence."
 ];
 
 export default function StoryDrill() {
     const { user, completeDrill, addDrillLog } = useUser();
     const [active, setActive] = useState(false);
-    const [prompt, setPrompt] = useState("");
+    const pickPrompt = (current?: string) => {
+        const safePool = Array.isArray(PROMPTS) && PROMPTS.length > 0
+            ? PROMPTS
+            : ["Tell a story about missing a bus by ten seconds and what happened next."];
+        const pool = current ? safePool.filter((p) => p !== current) : safePool;
+        const source = pool.length > 0 ? pool : safePool;
+        return source[Math.floor(Math.random() * source.length)] || safePool[0];
+    };
+    const [prompt, setPrompt] = useState(() => pickPrompt());
     const [timeLeft, setTimeLeft] = useState(35);
     const [response, setResponse] = useState("");
     const [feedback, setFeedback] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [isFinished, setIsFinished] = useState(false);
+    const safePrompt = (prompt && prompt.trim()) || "Tell a story about missing a bus by ten seconds and what happened next.";
+    const timerRatio = Math.max(0, Math.min(1, timeLeft / 35));
+    const timerColor = timerRatio > 0.66 ? '#00FF64' : timerRatio > 0.33 ? '#F89B29' : '#FF3B30';
 
     const timerAnim = useRef(new Animated.Value(1)).current;
 
@@ -47,7 +83,7 @@ export default function StoryDrill() {
     }, [active, timeLeft]);
 
     const start = () => {
-        setPrompt(PROMPTS[Math.floor(Math.random() * PROMPTS.length)]);
+        setPrompt((prev) => pickPrompt(prev));
         setTimeLeft(35);
         setResponse("");
         setFeedback("");
@@ -68,7 +104,7 @@ export default function StoryDrill() {
         try {
             const promptText = `
                 DRILL: Storytelling Improv
-                PROMPT: ${prompt}
+                PROMPT: ${safePrompt}
                 USER'S STORY SUMMARY: ${response}
 
                 Give drill feedback only.
@@ -109,18 +145,10 @@ export default function StoryDrill() {
                 <View style={styles.headerSpacer} />
             </View>
 
-            {!active && isFinished && !feedback && (
-                <View style={{ paddingHorizontal: Spacing.lg, paddingTop: 6 }}>
-                    <GlassCard style={styles.promptCardSmall}>
-                        <Text style={styles.promptSmall}>PROMPT: {prompt}</Text>
-                    </GlassCard>
-                </View>
-            )}
-
             <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                 {!active && !isFinished && !feedback ? (
                     <View style={styles.centerBox}>
-                        <Text style={styles.intro}>35 seconds to weave a web. Go.</Text>
+                        <Text style={styles.intro}>35 seconds to weave a web. Press start when ready.</Text>
                         <GlassButton
                             label="START IMPROV"
                             onPress={start}
@@ -132,10 +160,10 @@ export default function StoryDrill() {
                     </View>
                 ) : active ? (
                     <View style={styles.activeContainer}>
-                        <Text style={styles.timer}>{timeLeft}s</Text>
-                        <Text style={styles.prompt}>{prompt}</Text>
+                        <Text style={[styles.timer, { color: timerColor }]}>{timeLeft}s</Text>
+                        <Text style={styles.prompt}>{safePrompt}</Text>
                         <View style={styles.barBg}>
-                            <Animated.View style={[styles.barFill, { width: timerAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }]} />
+                            <Animated.View style={[styles.barFill, { backgroundColor: timerColor, width: timerAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }]} />
                         </View>
                         <GlassButton
                             label="DONE"
@@ -148,14 +176,10 @@ export default function StoryDrill() {
                     </View>
                 ) : (
                     <View style={styles.feedbackSection}>
-                        {!(isFinished && !feedback) && (
-                            <GlassCard style={styles.promptCardSmall}>
-                                <Text style={styles.promptSmall}>PROMPT: {prompt}</Text>
-                            </GlassCard>
-                        )}
-
                         {!feedback ? (
                             <View style={styles.logSection}>
+                                <Text style={styles.label}>PROMPT</Text>
+                                <Text style={styles.logPrompt}>{safePrompt}</Text>
                                 <Text style={styles.label}>WHAT DID YOU DESCRIBE?</Text>
                                 <TextInput
                                     style={styles.input}
@@ -202,30 +226,35 @@ const styles = StyleSheet.create({
     header: { flexDirection: 'row', alignItems: 'center', marginBottom: 30 },
     backBtn: { width: 60 },
     headerSpacer: { width: 60 },
-    backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12 },
+    backText: { color: '#FFFFFF', fontFamily: Fonts.mono, fontSize: 12 },
     title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: Colors.textPrimary, letterSpacing: 3, textAlign: 'center' },
 
     scrollContent: { flexGrow: 1, padding: Spacing.lg, paddingBottom: 40 },
-    centerBox: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
-    intro: { color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 16, marginBottom: 16, textAlign: 'center' },
+    centerBox: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14, width: '100%', paddingHorizontal: 10 },
+    prePrompt: { color: '#FFFFFF', fontFamily: Fonts.headingSemi, fontSize: 19, lineHeight: 28, textAlign: 'center', marginBottom: 4 },
+    intro: { color: '#FFFFFF', fontFamily: Fonts.headingMedium, fontSize: 16, marginBottom: 14, textAlign: 'center' },
 
     // Buttons use <GlassButton/> now (global liquid glass look)
 
     activeContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14, width: '100%' },
     timer: { fontFamily: Fonts.heading, fontSize: 48, color: Colors.textPrimary },
-    prompt: { fontFamily: Fonts.heading, fontSize: 20, color: Colors.textPrimary, textAlign: 'center', lineHeight: 28 },
+    prompt: { fontFamily: Fonts.heading, fontSize: 20, color: '#FFFFFF', textAlign: 'center', lineHeight: 28 },
     barBg: { width: '100%', height: 8, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 4 },
     barFill: { height: '100%', backgroundColor: Colors.accentPrimary, borderRadius: 4 },
 
     feedbackSection: { flex: 1, gap: 14 },
-    promptCardSmall: { padding: 12 },
-    promptSmall: { color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 14, fontStyle: 'italic' },
 
     logSection: { gap: 10 },
-    label: { fontFamily: Fonts.mono, fontSize: 10, color: Colors.accentPrimary, letterSpacing: 2 },
+    logPrompt: {
+        color: '#FFFFFF',
+        fontFamily: Fonts.headingSemi,
+        fontSize: 16,
+        lineHeight: 23,
+    },
+    label: { fontFamily: Fonts.headingMedium, fontSize: 12, color: Colors.accentPrimary, letterSpacing: 1.2 },
     input: {
         backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: 14,
-        color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 16, minHeight: 80, textAlignVertical: 'top',
+        color: Colors.textPrimary, fontFamily: Fonts.headingMedium, fontSize: 16, minHeight: 80, textAlignVertical: 'top',
         borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
     },
     // Buttons use <GlassButton/> now (global liquid glass look)

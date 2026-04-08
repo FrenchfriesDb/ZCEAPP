@@ -11,9 +11,9 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import { usePathname } from 'expo-router';
 import { Colors, Fonts, FontSizes, Radius } from '@/constants/theme';
 import { useTimeColors } from '@/hooks/useTimeColors';
-import { useTextColors } from '@/context/TextColorsContext';
 
 /**
  * Ultra-realistic "water-glass" button.
@@ -54,9 +54,9 @@ const TINT = {
             'rgba(0,0,0,0.90)',
         ] as const,
         bodyColors: [
-            'rgba(255,255,255,0.04)',
-            'rgba(255,255,255,0.015)',
-            'rgba(0,0,0,0.42)',
+            'rgba(255,255,255,0.02)',
+            'rgba(0,0,0,0.18)',
+            'rgba(0,0,0,0.58)',
         ] as const,
         specularColors: [
             'rgba(255,255,255,0.18)',
@@ -73,9 +73,9 @@ const TINT = {
             'rgba(0,0,0,0.70)',
         ] as const,
         bodyColors: [
-            'rgba(0,0,0,0.03)',
-            'rgba(0,0,0,0.01)',
-            'rgba(0,0,0,0.08)',
+            'rgba(255,255,255,0.01)',
+            'rgba(0,0,0,0.20)',
+            'rgba(0,0,0,0.58)',
         ] as const,
         specularColors: [
             'rgba(255,255,255,0.25)',
@@ -166,12 +166,16 @@ export default function GlassButton({
     labelStyle,
     disabled = false,
 }: GlassButtonProps) {
+    const pathname = usePathname();
     const scaleAnim = useRef(new Animated.Value(1)).current;
     const glowAnim = useRef(new Animated.Value(0.4)).current;
     const timeColors = useTimeColors();
-    const { textPrimary } = useTextColors();
     const safeTimePalette = Array.isArray(timeColors?.palette) ? timeColors.palette : [];
     const themeAccent = safeTimePalette[0] ?? Colors.accentCyan;
+    const isVerify = look === 'verify';
+    const isDrillRoute = (pathname || '').startsWith('/drills/');
+    const isDrillDarkMode = isDrillRoute && !isVerify;
+    const effectiveTint = tint;
 
     const withAlpha = (color: string, alpha: number) => {
         if (color.startsWith('rgba(')) {
@@ -209,43 +213,64 @@ export default function GlassButton({
         Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, speed: 30, bounciness: 5 }).start();
 
     const { ph, pv, fs, circle } = SIZE[size];
-    const t = look === 'plain' ? TINT.dark : (TINT[tint as keyof typeof TINT] || TINT.dark);
+    const t = look === 'plain'
+        ? (isDrillRoute ? TINT.monochrome : TINT.dark)
+        : (TINT[effectiveTint as keyof typeof TINT] || TINT.dark);
     const isCircle = variant === 'circle';
     const br = variant === 'pill' ? Radius.pill : Radius.lg;
 
     const isGlass = look === 'glass';
-    const isVerify = look === 'verify';
     const wantsAccent = isVerify || isGlass;
-    const accentColor = wantsAccent
+    const accentColor = (isDrillDarkMode && effectiveTint !== 'red')
+        ? themeAccent
+        : wantsAccent
         ? (
-            tint === 'red'
+            effectiveTint === 'red'
                 ? Colors.accentDanger
-                    : tint === 'monochrome'
-                    ? '#FFFFFF'
-                    : tint === 'dark'
-                        ? textPrimary
-                    : tint === 'blue'
-                        ? textPrimary
+                    : effectiveTint === 'monochrome'
+                    ? '#B8B8B8'
+                    : effectiveTint === 'dark'
+                        ? null
+                    : effectiveTint === 'blue'
+                        ? themeAccent
                         : themeAccent
         )
         : null;
 
-    const rimColors = (isVerify || isGlass) && accentColor
+    const rimColors = isDrillDarkMode
+        ? ([
+            withAlpha(accentColor || themeAccent, 0.18),
+            'rgba(255,255,255,0.03)',
+            'rgba(0,0,0,0.94)',
+        ] as const)
+        : (isVerify || isGlass) && accentColor
         ? ([withAlpha(accentColor, 0.26), 'rgba(255,255,255,0.08)', 'rgba(0,0,0,0.86)'] as const)
         : t.rimColors;
     const labelColor = '#FFFFFF';
-    const blurIntensity = (isVerify || isGlass) ? 70 : 100;
-    const bodyColors = (isVerify || isGlass)
+    const blurIntensity = isDrillDarkMode ? 58 : (isVerify || isGlass) ? 70 : 100;
+    const bodyColors = isDrillDarkMode
         ? ([
-            'rgba(255,255,255,0.03)',
-            'rgba(0,0,0,0.16)',
-            'rgba(0,0,0,0.42)',
+            'rgba(255,255,255,0.005)',
+            'rgba(0,0,0,0.40)',
+            'rgba(0,0,0,0.74)',
+        ] as const)
+        : (isVerify || isGlass)
+        ? ([
+            'rgba(255,255,255,0.015)',
+            'rgba(0,0,0,0.26)',
+            'rgba(0,0,0,0.60)',
         ] as const)
         : t.bodyColors;
-    const specularColors = (isVerify || isGlass)
+    const specularColors = isDrillDarkMode
         ? ([
-            'rgba(255,255,255,0.14)',
-            'rgba(255,255,255,0.06)',
+            'rgba(255,255,255,0.03)',
+            'rgba(255,255,255,0.01)',
+            'rgba(255,255,255,0.00)',
+        ] as const)
+        : (isVerify || isGlass)
+        ? ([
+            'rgba(255,255,255,0.08)',
+            'rgba(255,255,255,0.03)',
             'rgba(255,255,255,0.00)',
         ] as const)
         : t.specularColors;
@@ -258,7 +283,11 @@ export default function GlassButton({
     const phEff = Math.max(14, Math.round(ph * phScale));
     const pvEff = Math.max(10, Math.round(pv * pvScale));
 
-    const haloColor = accentColor ? withAlpha(accentColor, 0.14) : (tint === 'red' ? Colors.accentDanger : t.glowColor);
+    const haloColor = isDrillDarkMode
+        ? withAlpha(accentColor || themeAccent, 0.08)
+        : accentColor
+            ? withAlpha(accentColor, 0.14)
+            : (effectiveTint === 'red' ? Colors.accentDanger : t.glowColor);
 
     return (
         <Animated.View style={[{ transform: [{ scale: scaleAnim }] }, style]}>

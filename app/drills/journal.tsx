@@ -1,13 +1,13 @@
-import { View, Text, StyleSheet, Pressable, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import DrillFeedbackPanel from '@/components/DrillFeedbackPanel';
+import GlassButton from '@/components/GlassButton';
+import GlassCard from '@/components/GlassCard';
+import { Colors, Fonts } from '@/constants/theme';
+import { useUser } from '@/context/UserContext';
+import { AIService } from '@/services/ai';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { useUser } from '@/context/UserContext';
-import GlassCard from '@/components/GlassCard';
-import GlassButton from '@/components/GlassButton';
-import DrillFeedbackPanel from '@/components/DrillFeedbackPanel';
-import { AIService } from '@/services/ai';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export default function JournalDrill() {
     const { user, completeDrill, addJournalEntry } = useUser();
@@ -37,6 +37,12 @@ export default function JournalDrill() {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleNextRep = () => {
+        setEntry('');
+        setAnalysis('');
+        setSaved(false);
     };
 
     return (
@@ -80,8 +86,16 @@ export default function JournalDrill() {
                         style={{ width: '100%', marginTop: 20 }}
                     />
                 ) : (
-                    <GlassCard style={styles.analysisCard} glowColor={Colors.accentPrimary}>
+                    <GlassCard style={styles.analysisCard} darkGlass intensity={26}>
                         <DrillFeedbackPanel feedback={analysis} maxHeight={460} />
+                        <GlassButton
+                            label="NEXT REP"
+                            onPress={handleNextRep}
+                            size="md"
+                            tint="dark"
+                            glow
+                            style={{ width: '100%' }}
+                        />
                         <GlassButton
                             label="ACKNOWLEDGED"
                             onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}
@@ -106,21 +120,27 @@ const styles = StyleSheet.create({
 
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingTop: 60, paddingBottom: 20, position: 'relative' },
     backBtn: { position: 'absolute', left: 20, top: 60 },
-    backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12 },
+    backText: { color: '#FFFFFF', fontFamily: Fonts.mono, fontSize: 12 },
     title: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.textPrimary, letterSpacing: 4 },
 
     content: { padding: 24, paddingBottom: 100 },
-    prompt: { fontFamily: Fonts.body, fontSize: 15, color: Colors.textSecondary, marginBottom: 20, lineHeight: 22 },
+    prompt: { fontFamily: Fonts.nunito, fontSize: 15, color: '#FFFFFF', marginBottom: 20, lineHeight: 22 },
 
     input: {
         backgroundColor: 'rgba(255,255,255,0.05)',
-        borderRadius: 16, padding: 20, fontSize: 16, fontFamily: Fonts.body, color: Colors.textPrimary,
+        borderRadius: 16, padding: 20, fontSize: 16, fontFamily: Fonts.nunito, color: Colors.textPrimary,
         minHeight: 200, textAlignVertical: 'top', lineHeight: 24,
         borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
     },
 
     // Buttons use <GlassButton/> now (global liquid glass look)
 
-    analysisCard: { padding: 24, marginTop: 20 },
+    analysisCard: {
+        padding: 24,
+        marginTop: 20,
+        backgroundColor: 'rgba(0,0,0,0.72)',
+        borderColor: 'rgba(255,255,255,0.06)',
+        borderWidth: 1,
+    },
     // Buttons use <GlassButton/> now (global liquid glass look)
 });

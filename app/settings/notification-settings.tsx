@@ -1,15 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import FluentEmoji, { resolveFluentEmojiName } from '@/components/FluentEmoji';
+import { Fonts, Radius, Spacing } from '@/constants/theme';
+import { useTimeColors } from '@/hooks/useTimeColors';
 import {
-    View, Text, StyleSheet, ScrollView, Pressable, Switch, Alert
-} from 'react-native';
+    DEFAULT_SETTINGS,
+    loadNotifSettings,
+    NotifSettings,
+    saveNotifSettings
+} from '@/services/notifications';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
+import { useEffect, useState } from 'react';
 import {
-    loadNotifSettings, saveNotifSettings, DEFAULT_SETTINGS, NotifSettings
-} from '@/services/notifications';
-import { useTimeColors } from '@/hooks/useTimeColors';
-import FluentEmoji, { resolveFluentEmojiName } from '@/components/FluentEmoji';
+    Alert,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    View
+} from 'react-native';
 
 const NOTIFICATION_ITEMS: {
     key: keyof NotifSettings;
@@ -70,9 +79,9 @@ const NOTIFICATION_ITEMS: {
     ];
 
 export default function NotificationSettingsScreen() {
-    const timePalette = useTimeColors();
+    const { palette } = useTimeColors();
     // Use the lightest color for text visibility on dark themes
-    const systemColor = timePalette[timePalette.length - 1];
+    const systemColor = palette[palette.length - 1] || '#FFFFFF';
     const [settings, setSettings] = useState<NotifSettings>(DEFAULT_SETTINGS);
     const [saved, setSaved] = useState(false);
 
@@ -127,7 +136,7 @@ export default function NotificationSettingsScreen() {
 
     return (
         <View style={styles.container}>
-            <LinearGradient colors={['#050508', '#080816', '#000000']} style={StyleSheet.absoluteFill} />
+            <LinearGradient colors={['#000000', '#000000', '#000000']} style={StyleSheet.absoluteFill} />
 
             {/* Header */}
             <View style={styles.header}>
@@ -231,13 +240,14 @@ const styles = StyleSheet.create({
         paddingBottom: 12,
     },
     backBtn: { padding: 8, minWidth: 60 },
-    backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12, letterSpacing: 1 },
+    backText: { color: '#DADADA', fontFamily: Fonts.heading, fontSize: 13, letterSpacing: 0.6, fontWeight: '800' },
     title: {
         flex: 1,
         fontFamily: Fonts.heading,
-        fontSize: 15,
-        color: Colors.textPrimary,
-        letterSpacing: 3,
+        fontSize: 18,
+        color: '#FFFFFF',
+        letterSpacing: 1.2,
+        fontWeight: '900',
         textAlign: 'center',
     },
 
@@ -256,19 +266,20 @@ const styles = StyleSheet.create({
     content: { paddingHorizontal: Spacing.md, paddingTop: 8 },
 
     rulesCard: {
-        backgroundColor: 'rgba(255,255,255,0.03)',
+        backgroundColor: 'rgba(255,255,255,0.02)',
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.08)',
+        borderColor: 'rgba(255,255,255,0.1)',
         borderRadius: Radius.lg,
         padding: 16,
         marginBottom: 20,
         gap: 6,
     },
     rulesTitle: {
-        fontFamily: Fonts.monoBold,
-        fontSize: 9,
-        color: 'rgba(255,255,255,0.35)',
-        letterSpacing: 2,
+        fontFamily: Fonts.heading,
+        fontSize: 12,
+        color: 'rgba(255,255,255,0.86)',
+        letterSpacing: 0.8,
+        fontWeight: '800',
         marginBottom: 4,
     },
     rulesLineRow: {
@@ -288,9 +299,10 @@ const styles = StyleSheet.create({
     },
     rulesLine: {
         flex: 1,
-        fontFamily: Fonts.body,
-        fontSize: 13,
-        color: 'rgba(255,255,255,0.5)',
+        fontFamily: Fonts.heading,
+        fontSize: 14,
+        color: 'rgba(255,255,255,0.8)',
+        fontWeight: '600',
         lineHeight: 20,
     },
 
@@ -300,9 +312,9 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingVertical: 14,
         paddingHorizontal: 16,
-        backgroundColor: 'rgba(255,255,255,0.03)',
+        backgroundColor: 'rgba(255,255,255,0.025)',
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.07)',
+        borderColor: 'rgba(255,255,255,0.12)',
         borderRadius: Radius.lg,
         marginBottom: 10,
         gap: 12,
@@ -312,22 +324,25 @@ const styles = StyleSheet.create({
     rowEmojiImage: { marginTop: 2 },
     rowText: { flex: 1, gap: 2 },
     rowTitle: {
-        fontFamily: Fonts.monoBold,
-        fontSize: 11,
-        color: Colors.textPrimary,
-        letterSpacing: 1,
+        fontFamily: Fonts.heading,
+        fontSize: 14,
+        color: '#FFFFFF',
+        letterSpacing: 0.5,
+        fontWeight: '900',
     },
     rowTitleOff: { color: 'rgba(255,255,255,0.3)' },
     rowSubtitle: {
-        fontFamily: Fonts.body,
-        fontSize: 12,
-        color: 'rgba(255,255,255,0.4)',
-        lineHeight: 16,
+        fontFamily: Fonts.heading,
+        fontSize: 13,
+        color: 'rgba(255,255,255,0.72)',
+        fontWeight: '600',
+        lineHeight: 18,
     },
     rowTime: {
-        fontFamily: Fonts.mono,
-        fontSize: 10,
-        letterSpacing: 0.5,
+        fontFamily: Fonts.heading,
+        fontSize: 11,
+        letterSpacing: 0.3,
+        fontWeight: '700',
         marginTop: 2,
     },
 
@@ -350,8 +365,9 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255,80,80,0.04)',
     },
     bulkBtnText: {
-        fontFamily: Fonts.monoBold,
-        fontSize: 10,
-        letterSpacing: 1.5,
+        fontFamily: Fonts.heading,
+        fontSize: 12,
+        letterSpacing: 0.5,
+        fontWeight: '900',
     },
 });

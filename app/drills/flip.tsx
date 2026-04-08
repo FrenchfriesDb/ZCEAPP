@@ -1,14 +1,15 @@
-import { View, Text, StyleSheet, Pressable, TextInput, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import DrillFeedbackPanel from '@/components/DrillFeedbackPanel';
+import FluentEmoji from '@/components/FluentEmoji';
+import GlassButton from '@/components/GlassButton';
+import GlassCard from '@/components/GlassCard';
+import { Colors, Fonts, Spacing } from '@/constants/theme';
+import { FLIP_PROMPTS } from '@/constants/zane';
+import { useUser } from '@/context/UserContext';
+import { AIService } from '@/services/ai';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import GlassCard from '@/components/GlassCard';
-import GlassButton from '@/components/GlassButton';
-import DrillFeedbackPanel from '@/components/DrillFeedbackPanel';
-import { AIService } from '@/services/ai';
-import { useUser } from '@/context/UserContext';
-import { FLIP_PROMPTS } from '@/constants/zane';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export default function FlipDrill() {
     const { user, completeDrill, addDrillLog } = useUser();
@@ -16,7 +17,6 @@ export default function FlipDrill() {
     const [response, setResponse] = useState('');
     const [analysis, setAnalysis] = useState('');
     const [loading, setLoading] = useState(false);
-    const [isResponseFocused, setIsResponseFocused] = useState(false);
 
     const generateSituation = () => {
         const random = FLIP_PROMPTS[Math.floor(Math.random() * FLIP_PROMPTS.length)];
@@ -59,6 +59,13 @@ export default function FlipDrill() {
         }
     };
 
+    const handleNextRep = () => {
+        setResponse('');
+        setAnalysis('');
+        const random = FLIP_PROMPTS[Math.floor(Math.random() * FLIP_PROMPTS.length)];
+        setSituation(random);
+    };
+
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -74,18 +81,6 @@ export default function FlipDrill() {
                 <Text style={styles.title}>FLIP FORMULA</Text>
                 <View style={styles.headerSpacer} />
             </View>
-
-            {/* Keep the prompt visible while typing your flip (ScrollView can jump to focused input). */}
-            {(isResponseFocused || !!response) && (
-                <View style={{ paddingHorizontal: Spacing.lg, paddingTop: 6 }}>
-                    <GlassCard style={styles.pinnedPromptCard}>
-                        <Text style={styles.pinnedPromptLabel}>SITUATION:</Text>
-                        <Text style={styles.pinnedPromptText} numberOfLines={3}>
-                            {situation || 'Tap 🎲 to generate a situation, or type your own.'}
-                        </Text>
-                    </GlassCard>
-                </View>
-            )}
 
             <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
 
@@ -105,7 +100,7 @@ export default function FlipDrill() {
                             multiline
                         />
                         <Pressable onPress={generateSituation} style={styles.genBtn}>
-                            <Text style={styles.genBtnText}>🎲</Text>
+                            <FluentEmoji name="gameDie" size={24} />
                         </Pressable>
                     </View>
                 </View>
@@ -119,8 +114,6 @@ export default function FlipDrill() {
                         value={response}
                         onChangeText={setResponse}
                         multiline
-                        onFocus={() => setIsResponseFocused(true)}
-                        onBlur={() => setIsResponseFocused(false)}
                     />
                 </View>
 
@@ -135,9 +128,17 @@ export default function FlipDrill() {
                 />
 
                 {analysis ? (
-                    <GlassCard style={styles.resultCard} glowColor={Colors.accentPrimary}>
+                    <GlassCard style={styles.resultCard} darkGlass intensity={26}>
                         <Text style={styles.resultTitle}>Z.A.N.E. ANALYSIS</Text>
                         <DrillFeedbackPanel feedback={analysis} maxHeight={440} />
+                        <GlassButton
+                            label="NEXT REP"
+                            onPress={handleNextRep}
+                            size="md"
+                            tint="dark"
+                            glow
+                            style={{ width: '100%', marginTop: 12 }}
+                        />
                     </GlassCard>
                 ) : null}
 
@@ -153,21 +154,17 @@ const styles = StyleSheet.create({
     header: { flexDirection: 'row', alignItems: 'center', paddingTop: 56, paddingBottom: 16, paddingHorizontal: 20 },
     backBtn: { width: 60 },
     headerSpacer: { width: 60 },
-    backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12 },
+    backText: { color: '#FFFFFF', fontFamily: Fonts.mono, fontSize: 12 },
     title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: Colors.textPrimary, letterSpacing: 3, textAlign: 'center' },
 
     scrollContent: { padding: Spacing.lg, paddingBottom: 60, gap: 20 },
-    instruction: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textSecondary, textAlign: 'center', marginBottom: 10 },
-    pinnedPromptCard: { paddingVertical: 10, paddingHorizontal: 12 },
-    pinnedPromptLabel: { fontFamily: Fonts.mono, fontSize: 9, color: 'rgba(255,255,255,0.35)', letterSpacing: 1.5, marginBottom: 6 },
-    pinnedPromptText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textPrimary, lineHeight: 18 },
-
+    instruction: { fontFamily: Fonts.nunito, fontSize: 14, color: '#FFFFFF', textAlign: 'center', marginBottom: 10 },
     inputGroup: { gap: 10 },
     label: { fontFamily: Fonts.mono, fontSize: 10, color: Colors.accentPrimary, letterSpacing: 1 },
     row: { flexDirection: 'row', gap: 10 },
     input: {
         backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: 14,
-        color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 16, textAlignVertical: 'top',
+        color: Colors.textPrimary, fontFamily: Fonts.nunito, fontSize: 16, textAlignVertical: 'top',
         borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
     },
     genBtn: { width: 50, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
@@ -179,6 +176,12 @@ const styles = StyleSheet.create({
     },
     // Buttons use <GlassButton/> now (global liquid glass look)
 
-    resultCard: { padding: 20, marginTop: 10 },
-    resultTitle: { fontFamily: Fonts.heading, fontSize: 16, color: Colors.accentPrimary, marginBottom: 12 },
+    resultCard: {
+        padding: 20,
+        marginTop: 10,
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        borderColor: 'rgba(255,255,255,0.06)',
+        borderWidth: 1,
+    },
+    resultTitle: { fontFamily: Fonts.heading, fontSize: 16, color: 'rgba(236,242,255,0.9)', marginBottom: 12 },
 });

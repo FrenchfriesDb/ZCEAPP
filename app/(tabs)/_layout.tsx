@@ -1,15 +1,17 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Pressable, StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Redirect } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Fonts, Radius } from '@/constants/theme';
-import { TextColorsProvider } from '@/context/TextColorsContext';
-import { useTextColors } from '@/context/TextColorsContext';
+import { Radius } from '@/constants/theme';
+import { TextColorsProvider, useTextColors } from '../../context/TextColorsContext';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import FluentEmoji, { type FluentEmojiName } from '@/components/FluentEmoji';
 import { useUser } from '@/context/UserContext';
+
+const TAB_ICON_SIZE = 24;
+const TAB_ICON_FRAME = 30;
 
 const TAB_CONFIG = [
   { name: 'index', label: 'Dojo', icon: 'crossedSwords' as FluentEmojiName },
@@ -19,7 +21,11 @@ const TAB_CONFIG = [
   { name: 'profile', label: 'Profile', icon: 'dna' as FluentEmojiName },
 ];
 
-function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+const TAB_ICON_Y_OFFSET: Partial<Record<FluentEmojiName, number>> = {
+  crown: -3,
+};
+
+function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
   const routes = Array.isArray(state?.routes) ? state.routes : [];
   const { textSecondary } = useTextColors();
   if (routes.length === 0) return null;
@@ -28,9 +34,9 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   if (currentRoute === 'chat' || currentRoute === 'research') return null;
 
   return (
-    <View style={styles.tabBarOuter}>
+    <View style={styles.tabBarOuter} pointerEvents="box-none">
       <View style={styles.tabBarContainer}>
-        <BlurView intensity={92} tint="dark" style={StyleSheet.absoluteFill} />
+        <BlurView intensity={92} tint="dark" style={StyleSheet.absoluteFill} pointerEvents="none" />
         <LinearGradient
           colors={[
             'rgba(255,255,255,0.12)',
@@ -41,6 +47,7 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
           start={{ x: 0.15, y: 0 }}
           end={{ x: 0.85, y: 1 }}
           style={StyleSheet.absoluteFill}
+          pointerEvents="none"
         />
         <View style={styles.glassSheen} pointerEvents="none">
           <LinearGradient
@@ -54,7 +61,7 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
         <View style={styles.tabRow}>
           {routes.map((route, index) => {
             const focused = state.index === index;
-            const tab = TAB_CONFIG.find(t => t.name === route.name);
+            const tab = TAB_CONFIG.find((t) => t.name === route.name);
             if (!tab) return null;
 
             return (
@@ -81,10 +88,11 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
                 )}
                 <FluentEmoji
                   name={tab.icon}
-                  size={focused ? 27 : 24}
+                  size={TAB_ICON_SIZE}
                   opacity={focused ? 1 : 0.56}
                   style={[
                     styles.tabIconImage,
+                    { transform: [{ translateY: TAB_ICON_Y_OFFSET[tab.icon] ?? 0 }] },
                     focused && styles.tabIconImageActive,
                   ]}
                 />
@@ -93,7 +101,7 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
           })}
         </View>
       </View>
-    </View >
+    </View>
   );
 }
 
@@ -200,31 +208,12 @@ const styles = StyleSheet.create({
   tabItemSheenGradient: {
     flex: 1,
   },
-  tabIcon: {
-    fontSize: 24,
-    opacity: 0.9,
-  },
-  tabIconActive: {
-    opacity: 1,
-    fontSize: 24,
-    textShadowRadius: 15,
-  },
   tabIconImage: {
-    marginVertical: 1,
+    width: TAB_ICON_FRAME,
+    height: TAB_ICON_FRAME,
+    alignSelf: 'center',
   },
   tabIconImageActive: {
-    transform: [{ scale: 1.04 }],
-  },
-  tabLabel: {
-    fontFamily: Fonts.mono,
-    fontSize: 7.5,
-    color: 'rgba(255,255,255,0.35)',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
-  tabLabelActive: {
-    color: Colors.accentPrimary,
-    fontFamily: Fonts.monoBold,
-    letterSpacing: 1,
+    opacity: 1,
   },
 });

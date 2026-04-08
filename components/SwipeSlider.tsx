@@ -11,7 +11,6 @@ interface SwipeSliderProps {
 
 export default function SwipeSlider({ onSwipeComplete, label, width = 320, height = 60 }: SwipeSliderProps) {
   const [dragX] = useState(new Animated.Value(0));
-  const [isComplete, setIsComplete] = useState(false);
   const knobWidth = height - 10; // Make knob circular based on height
   
   const onGestureEvent = Animated.event(
@@ -26,7 +25,6 @@ export default function SwipeSlider({ onSwipeComplete, label, width = 320, heigh
       
       if (translationX >= maxDrag * 0.8) {
         // Swipe completed
-        setIsComplete(true);
         onSwipeComplete();
       } else {
         // Snap back with spring animation
@@ -63,7 +61,17 @@ export default function SwipeSlider({ onSwipeComplete, label, width = 320, heigh
       {/* Track */}
       <View style={styles.track}>
         {/* Label */}
-        <Animated.Text style={[styles.label, { opacity: labelOpacity }]}>
+        <Animated.Text
+          numberOfLines={1}
+          style={[
+            styles.label,
+            {
+              opacity: labelOpacity,
+              paddingLeft: knobWidth + 10,
+              paddingRight: 16,
+            },
+          ]}
+        >
           {label}
         </Animated.Text>
         
@@ -87,6 +95,7 @@ const styles = StyleSheet.create({
   container: {
     justifyContent: 'center',
     alignItems: 'center',
+    alignSelf: 'center',
   },
   track: {
     flex: 1,
@@ -100,20 +109,23 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   label: {
+    width: '100%',
     fontFamily: 'monospace',
     fontSize: 14,
     fontWeight: '700',
     color: 'rgba(255, 255, 255, 0.8)',
     letterSpacing: 2,
     textTransform: 'uppercase',
+    textAlign: 'center',
   },
   knob: {
     position: 'absolute',
     left: 5,
+    top: 5,
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderWidth: 1.5,
     borderColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: 25,
+    borderRadius: 999,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: 'rgba(255, 255, 255, 0.3)',
@@ -127,7 +139,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 20,
+    borderRadius: 999,
     margin: 3,
   },
   knobText: {

@@ -1,15 +1,17 @@
 import FluentEmoji, { resolveFluentEmojiName } from '@/components/FluentEmoji';
 import GlassButton from '@/components/GlassButton';
-import GlassCard from '@/components/GlassCard';
 import ProofModal from '@/components/ProofModal';
 import QuestCard from '@/components/QuestCard';
 import { getQuestTierProfile, MICRO_OPS } from '@/constants/habitEngine';
 import { Colors, Fonts, Radius, Spacing } from '@/constants/theme';
+import { useSubscription } from '@/context/SubscriptionContext';
 import { useTextColors } from '@/context/TextColorsContext';
 import { useUser } from '@/context/UserContext';
+import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 const CATEGORIES = [
     { id: 'all', label: 'ALL', color: '#FFFFFF' },
@@ -69,11 +71,25 @@ const QUESTS = [
     { id: 'qs_make_laugh', icon: '🎭', title: 'Make Them Laugh Once', description: 'Get a genuine laugh from someone today. Not a pity laugh. Not a smile. A real laugh. You have 24 hours.', xpReward: 25, category: 'charisma' },
 ];
 
+const FREE_DAILY_QUEST_LIMIT = 3;
+const getTodayDateKey = () => {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+};
 
 export default function QuestsScreen() {
     const { user, completeQuest, resetQuests } = useUser();
-    const { textPrimary, textSecondary, textTertiary } = useTextColors();
-    const completedIds = user?.completedQuests || [];
+    const { isPremium } = useSubscription();
+    const { textSecondary, textTertiary } = useTextColors();
+    const completedTodayIds = useMemo(() => {
+        const completedIds = user?.completedQuests || [];
+        const today = getTodayDateKey();
+        return user?.lastActivityDate === today ? completedIds : [];
+    }, [user?.completedQuests, user?.lastActivityDate]);
+    const freeQuestsRemaining = Math.max(0, FREE_DAILY_QUEST_LIMIT - completedTodayIds.length);
 
     const [selectedQuest, setSelectedQuest] = useState<typeof QUESTS[0] | null>(null);
     const [isProofVisible, setIsProofVisible] = useState(false);
@@ -81,7 +97,10 @@ export default function QuestsScreen() {
     const [questBatch, setQuestBatch] = useState(0);
     const [shuffledQuests, setShuffledQuests] = useState(() => shuffleArray(QUESTS));
     const tierProfile = getQuestTierProfile(user);
-    const featuredMicroOps = useMemo(() => shuffleArray(MICRO_OPS).slice(0, Math.max(3, tierProfile.microCount + 1)), [user?.streak, user?.xp]);
+    const featuredMicroOps = useMemo(
+        () => shuffleArray(MICRO_OPS).slice(0, Math.max(3, tierProfile.microCount + 1)),
+        [tierProfile.microCount]
+    );
 
     const withAlpha = (color: string, alpha: number) => {
         if (color.startsWith('rgba(')) {
@@ -118,6 +137,9 @@ export default function QuestsScreen() {
 
     // Show 8 quests at a time, rotating through the pool
     const visibleQuests = useMemo(() => {
+        if (!isPremium) {
+            return filteredQuests.slice(0, FREE_DAILY_QUEST_LIMIT);
+        }
         if (selectedCategory !== 'all') return filteredQuests;
 
         // For 'all' category, show 8 quests at a time with rotation
@@ -131,18 +153,33 @@ export default function QuestsScreen() {
         }
 
         return batch;
-    }, [filteredQuests, questBatch, selectedCategory]);
+    }, [filteredQuests, isPremium, questBatch, selectedCategory]);
 
-    const completedCount = visibleQuests.filter(q => completedIds.includes(q.id)).length;
-    const totalXP = visibleQuests.reduce((sum, q) => completedIds.includes(q.id) ? sum + q.xpReward : sum, 0);
-    const allDone = completedCount === visibleQuests.length;
+    const completedCount = visibleQuests.filter(q => completedTodayIds.includes(q.id)).length;
+    const totalXP = visibleQuests.reduce((sum, q) => completedTodayIds.includes(q.id) ? sum + q.xpReward : sum, 0);
+    const allDone = visibleQuests.length > 0 && completedCount === visibleQuests.length;
 
     const handleRotate = () => {
+        if (!isPremium) {
+            router.push('/settings/subscription');
+            return;
+        }
         setQuestBatch(prev => prev + 1);
     };
 
     const handleToggle = (quest: typeof QUESTS[0]) => {
-        if (completedIds.includes(quest.id)) return;
+        if (completedTodayIds.includes(quest.id)) return;
+        if (!isPremium && completedTodayIds.length >= FREE_DAILY_QUEST_LIMIT) {
+            Alert.alert(
+                'Free Quest Limit Reached',
+                'You completed 3 quests today. Upgrade to ZCE Pro for unlimited quest access.',
+                [
+                    { text: 'Not now', style: 'cancel' },
+                    { text: 'View Pro', onPress: () => router.push('/settings/subscription') },
+                ]
+            );
+            return;
+        }
         setSelectedQuest(quest);
         setIsProofVisible(true);
     };
@@ -201,47 +238,147 @@ export default function QuestsScreen() {
                     </View>
                 </View>
 
-                <GlassCard style={styles.microOpsCard}>
-                    <Text style={styles.microOpsLabel}>MICRO OPS</Text>
-                    <Text style={styles.microOpsBody}>
-                        These are your low-friction streak savers. They do not replace Standing Orders or Field Quests. They make sure you always have a first rep.
-                    </Text>
-                    <View style={styles.microOpsList}>
-                        {featuredMicroOps.map((op) => {
-                            const completed = completedIds.includes(op.id);
-                            const fluentName = resolveFluentEmojiName(op.icon);
-                            return (
-                                <Pressable
-                                    key={op.id}
-                                    onPress={() => !completed && handleToggle({
-                                        id: op.id,
-                                        icon: op.icon,
-                                        title: op.title,
-                                        description: op.desc,
-                                        xpReward: op.xp,
-                                        category: op.category || 'social',
-                                    })}
-                                    style={[styles.microOpRow, completed && styles.microOpRowDone]}
-                                >
-                                    {completed ? (
-                                        <Text style={styles.microOpIcon}>✓</Text>
-                                    ) : fluentName ? (
-                                        <FluentEmoji name={fluentName} size={22} style={styles.microOpIconImage} />
-                                    ) : (
-                                        <Text style={styles.microOpIcon}>{op.icon}</Text>
-                                    )}
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={styles.microOpTitle}>{op.title}</Text>
-                                        <Text style={styles.microOpDesc}>{op.desc}</Text>
-                                    </View>
-                                    <Text style={styles.microOpXp}>{completed ? 'DONE' : `+${op.xp}`}</Text>
-                                </Pressable>
-                            );
-                        })}
-                    </View>
-                </GlassCard>
+                <View style={styles.microOpsShell}>
+                    <BlurView intensity={96} tint="dark" style={styles.microOpsBlur} pointerEvents="none" />
+                    <LinearGradient
+                        colors={['rgba(128,128,128,0.007)', 'rgba(120,120,120,0.00)', 'rgba(0,0,0,0.99)']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.microOpsRim}
+                        pointerEvents="none"
+                    />
+                    <LinearGradient
+                        colors={['rgba(145,145,145,0.02)', 'rgba(120,120,120,0.003)', 'rgba(120,120,120,0.00)']}
+                        start={{ x: 0.5, y: 0 }}
+                        end={{ x: 0.5, y: 1 }}
+                        style={styles.microOpsSheen}
+                        pointerEvents="none"
+                    />
+                    <LinearGradient
+                        colors={['rgba(128,128,128,0.005)', 'rgba(120,120,120,0.00)', 'rgba(0,0,0,0.88)']}
+                        start={{ x: 0, y: 0.5 }}
+                        end={{ x: 1, y: 0.5 }}
+                        style={styles.microOpsContour}
+                        pointerEvents="none"
+                    />
+                    <LinearGradient
+                        colors={['rgba(150,150,150,0.03)', 'rgba(130,130,130,0.01)', 'rgba(120,120,120,0.00)']}
+                        start={{ x: 0.5, y: 0 }}
+                        end={{ x: 0.5, y: 1 }}
+                        style={styles.microOpsTopEdge}
+                        pointerEvents="none"
+                    />
+                    <LinearGradient
+                        colors={['rgba(140,140,140,0.02)', 'rgba(128,128,128,0.006)', 'rgba(120,120,120,0.00)']}
+                        start={{ x: 0.05, y: 0 }}
+                        end={{ x: 0.95, y: 1 }}
+                        style={styles.microOpsSpecularArc}
+                        pointerEvents="none"
+                    />
+                    <LinearGradient
+                        colors={['rgba(132,132,132,0.046)', 'rgba(120,120,120,0.00)', 'rgba(132,132,132,0.046)']}
+                        start={{ x: 0, y: 0.5 }}
+                        end={{ x: 1, y: 0.5 }}
+                        style={styles.microOpsSideRefraction}
+                        pointerEvents="none"
+                    />
+                    <LinearGradient
+                        colors={['rgba(132,132,132,0.024)', 'rgba(120,120,120,0.00)', 'rgba(132,132,132,0.022)']}
+                        start={{ x: 0, y: 0.15 }}
+                        end={{ x: 1, y: 0.85 }}
+                        style={styles.microOpsLiquidRefraction}
+                        pointerEvents="none"
+                    />
+                    <LinearGradient
+                        colors={['rgba(138,138,138,0.018)', 'rgba(120,120,120,0.00)', 'rgba(138,138,138,0.016)']}
+                        start={{ x: 0.12, y: 0.05 }}
+                        end={{ x: 0.88, y: 0.95 }}
+                        style={styles.microOpsLiquidFlow}
+                        pointerEvents="none"
+                    />
+                    <LinearGradient
+                        colors={['rgba(150,150,150,0.028)', 'rgba(120,120,120,0.00)', 'rgba(150,150,150,0.028)']}
+                        start={{ x: 0, y: 0.5 }}
+                        end={{ x: 1, y: 0.5 }}
+                        style={styles.microOpsCurvatureBand}
+                        pointerEvents="none"
+                    />
+                    <LinearGradient
+                        colors={['rgba(0,0,0,0.42)', 'rgba(0,0,0,0.00)', 'rgba(0,0,0,0.42)']}
+                        start={{ x: 0, y: 0.5 }}
+                        end={{ x: 1, y: 0.5 }}
+                        style={styles.microOpsSideVignette}
+                        pointerEvents="none"
+                    />
+                    <LinearGradient
+                        colors={['rgba(0,0,0,0.00)', 'rgba(0,0,0,0.86)']}
+                        start={{ x: 0.5, y: 0 }}
+                        end={{ x: 0.5, y: 1 }}
+                        style={styles.microOpsBottomDepth}
+                        pointerEvents="none"
+                    />
+                    <View style={styles.microOpsInnerFrame} pointerEvents="none" />
 
-                {allDone && selectedCategory === 'all' && (
+                    <View style={styles.microOpsCard}>
+                        <Text style={styles.microOpsLabel}>MICRO OPS</Text>
+                        <Text style={styles.microOpsBody}>
+                            These are your low-friction streak savers. They do not replace Standing Orders or Field Quests. They make sure you always have a first rep.
+                        </Text>
+                        <View style={styles.microOpsList}>
+                            {featuredMicroOps.map((op) => {
+                                const completed = completedTodayIds.includes(op.id);
+                                const fluentName = resolveFluentEmojiName(op.icon);
+                                return (
+                                    <Pressable
+                                        key={op.id}
+                                        onPress={() => !completed && handleToggle({
+                                            id: op.id,
+                                            icon: op.icon,
+                                            title: op.title,
+                                            description: op.desc,
+                                            xpReward: op.xp,
+                                            category: op.category || 'social',
+                                        })}
+                                        style={[styles.microOpRow, completed && styles.microOpRowDone]}
+                                    >
+                                        {completed ? (
+                                            <Text style={styles.microOpIcon}>✓</Text>
+                                        ) : fluentName ? (
+                                            <FluentEmoji name={fluentName} size={22} style={styles.microOpIconImage} />
+                                        ) : (
+                                            <Text style={styles.microOpIcon}>{op.icon}</Text>
+                                        )}
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={styles.microOpTitle}>{op.title}</Text>
+                                            <Text style={styles.microOpDesc}>{op.desc}</Text>
+                                        </View>
+                                        <Text style={styles.microOpXp}>{completed ? 'DONE' : `+${op.xp}`}</Text>
+                                    </Pressable>
+                                );
+                            })}
+                        </View>
+                    </View>
+                </View>
+
+                {!isPremium && (
+                    <View style={styles.freeLimitCard}>
+                        <Text style={styles.freeLimitTitle}>FREE PLAN</Text>
+                        <Text style={styles.freeLimitBody}>
+                            {freeQuestsRemaining > 0
+                                ? `${freeQuestsRemaining} of ${FREE_DAILY_QUEST_LIMIT} free quests remaining today.`
+                                : `You hit ${FREE_DAILY_QUEST_LIMIT}/${FREE_DAILY_QUEST_LIMIT} free quests today.`}
+                        </Text>
+                        <GlassButton
+                            label="UNLOCK UNLIMITED QUESTS"
+                            onPress={() => router.push('/settings/subscription')}
+                            size="sm"
+                            tint="blue"
+                            glow
+                        />
+                    </View>
+                )}
+
+                {isPremium && allDone && selectedCategory === 'all' && (
                     <View style={styles.rotateContainer}>
                         <Text style={styles.rotateText}>BATCH COMPLETE. ROTATE FOR NEW QUESTS.</Text>
                         <GlassButton
@@ -284,7 +421,7 @@ export default function QuestsScreen() {
                     ))}
                 </ScrollView>
 
-                {selectedCategory === 'all' && allDone && (
+                {isPremium && selectedCategory === 'all' && allDone && (
                     <GlassButton
                         label="REBOOT NEURAL BUFFER"
                         onPress={handleReboot}
@@ -302,7 +439,7 @@ export default function QuestsScreen() {
                         title={quest.title}
                         description={quest.description}
                         xpReward={quest.xpReward}
-                        completed={completedIds.includes(quest.id)}
+                        completed={completedTodayIds.includes(quest.id)}
                         onToggle={() => handleToggle(quest)}
                         category={quest.category}
                     />
@@ -402,12 +539,140 @@ const styles = StyleSheet.create({
         color: 'rgba(255,255,255,0.5)',
         letterSpacing: 2,
     },
+    freeLimitCard: {
+        borderRadius: Radius.lg,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.12)',
+        backgroundColor: 'rgba(255,255,255,0.03)',
+        padding: 14,
+        gap: 10,
+        marginBottom: 8,
+    },
+    freeLimitTitle: {
+        fontFamily: Fonts.monoBold,
+        fontSize: 10,
+        color: '#FFFFFF',
+        letterSpacing: 2,
+    },
+    freeLimitBody: {
+        fontFamily: Fonts.body,
+        fontSize: 13,
+        color: 'rgba(255,255,255,0.88)',
+        lineHeight: 18,
+    },
+    microOpsShell: {
+        width: '100%',
+        borderRadius: 36,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(110,110,110,0.02)',
+        backgroundColor: 'rgba(0,0,0,0.86)',
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.88,
+        shadowRadius: 40,
+        elevation: 12,
+        marginBottom: 6,
+    },
+    microOpsBlur: {
+        ...StyleSheet.absoluteFillObject,
+    },
+    microOpsRim: {
+        ...StyleSheet.absoluteFillObject,
+    },
+    microOpsSheen: {
+        position: 'absolute',
+        top: 0,
+        left: 14,
+        right: 14,
+        height: 26,
+        borderTopLeftRadius: 36,
+        borderTopRightRadius: 36,
+    },
+    microOpsContour: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+    },
+    microOpsTopEdge: {
+        position: 'absolute',
+        top: 0,
+        left: 10,
+        right: 10,
+        height: 2,
+        borderTopLeftRadius: 36,
+        borderTopRightRadius: 36,
+    },
+    microOpsSpecularArc: {
+        position: 'absolute',
+        top: 4,
+        left: '6%',
+        right: '6%',
+        height: 26,
+        borderRadius: 999,
+        opacity: 0.28,
+    },
+    microOpsSideRefraction: {
+        position: 'absolute',
+        top: 2,
+        left: 0,
+        right: 0,
+        bottom: 2,
+    },
+    microOpsLiquidRefraction: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        opacity: 0.46,
+    },
+    microOpsLiquidFlow: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        opacity: 0.62,
+    },
+    microOpsCurvatureBand: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        opacity: 0.58,
+    },
+    microOpsSideVignette: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+    },
+    microOpsBottomDepth: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        height: 108,
+    },
+    microOpsInnerFrame: {
+        position: 'absolute',
+        top: 2,
+        left: 2,
+        right: 2,
+        bottom: 2,
+        borderRadius: 34,
+        borderWidth: 1,
+        borderColor: 'rgba(112,112,112,0.045)',
+    },
     microOpsCard: {
         width: '100%',
         padding: 16,
-        backgroundColor: 'rgba(255,255,255,0.035)',
-        borderColor: 'rgba(255,255,255,0.08)',
-        marginBottom: 6,
+        backgroundColor: 'transparent',
     },
     microOpsLabel: {
         fontFamily: Fonts.monoBold,
@@ -419,7 +684,7 @@ const styles = StyleSheet.create({
     microOpsBody: {
         fontFamily: Fonts.body,
         fontSize: 13,
-        color: 'rgba(255,255,255,0.62)',
+        color: 'rgba(188,188,188,0.58)',
         lineHeight: 19,
     },
     microOpsList: {
@@ -433,8 +698,8 @@ const styles = StyleSheet.create({
         padding: 12,
         borderRadius: Radius.md,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.08)',
-        backgroundColor: 'rgba(255,255,255,0.025)',
+        borderColor: 'rgba(145,145,145,0.08)',
+        backgroundColor: 'rgba(130,130,130,0.022)',
     },
     microOpRowDone: {
         opacity: 0.5,
@@ -443,7 +708,7 @@ const styles = StyleSheet.create({
         fontSize: 18,
         width: 24,
         textAlign: 'center',
-        color: '#FFFFFF',
+        color: '#B6B6B6',
         fontFamily: Platform.select({
             ios: 'Apple Color Emoji',
             web: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji',
@@ -460,14 +725,14 @@ const styles = StyleSheet.create({
     microOpTitle: {
         fontFamily: Fonts.heading,
         fontSize: 12,
-        color: '#FFFFFF',
+        color: '#BDBDBD',
         marginBottom: 4,
         letterSpacing: 0.4,
     },
     microOpDesc: {
         fontFamily: Fonts.body,
         fontSize: 12,
-        color: 'rgba(255,255,255,0.55)',
+        color: 'rgba(180,180,180,0.5)',
         lineHeight: 17,
     },
     microOpXp: {

@@ -11,7 +11,6 @@ import { useTimeColors } from '@/hooks/useTimeColors';
 import { useTextColors } from '@/context/TextColorsContext';
 import GlassButton from './GlassButton';
 import FluentEmoji from './FluentEmoji';
-import * as ExpoAudio from 'expo-audio';
 
 // Web platform check
 const isWeb = Platform.OS === 'web';
@@ -44,7 +43,11 @@ let _cachedAudio: any | null | undefined;
 const loadAudio = async () => {
     if (Platform.OS === 'web') return null;
     if (_cachedAudio !== undefined) return _cachedAudio;
-    _cachedAudio = ExpoAudio;
+    try {
+        _cachedAudio = await import('expo-audio');
+    } catch {
+        _cachedAudio = null;
+    }
     return _cachedAudio;
 };
 
@@ -135,16 +138,26 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
         }
 
         const requestCamera = async () => {
-            const { status } = await ImagePicker.requestCameraPermissionsAsync();
-            if (status !== 'granted') {
-                Alert.alert('Permission Needed', 'Please enable camera access in Settings.');
+            try {
+                const { status } = await ImagePicker.requestCameraPermissionsAsync();
+                if (status !== 'granted') {
+                    Alert.alert('Permission Needed', 'Please enable camera access in Settings.');
+                    return null;
+                }
+                return await ImagePicker.launchCameraAsync({
+                    mediaTypes: ['images'],
+                    allowsEditing: true,
+                    quality: 0.8,
+                });
+            } catch (err: any) {
+                const message = String(err?.message || '');
+                if (/camera not available on simulator/i.test(message)) {
+                    Alert.alert('Camera Not Available', 'Camera is not available on simulator. Choose from library instead.');
+                    return null;
+                }
+                Alert.alert('Camera Error', err?.message ?? 'Unable to access camera.');
                 return null;
             }
-            return ImagePicker.launchCameraAsync({
-                mediaTypes: ['images'],
-                allowsEditing: true,
-                quality: 0.8,
-            });
         };
 
         if (Platform.OS === 'ios') {

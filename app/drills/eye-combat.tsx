@@ -19,6 +19,8 @@ export default function EyeCombatDrill() {
   const [timeRemaining, setTimeRemaining] = useState(CHALLENGE_SECONDS);
   const [isActive, setIsActive] = useState(false);
   const [breaks, setBreaks] = useState(0);
+  const timerRatio = Math.max(0, Math.min(1, timeRemaining / CHALLENGE_SECONDS));
+  const timerColor = timerRatio > 0.66 ? '#00FF64' : timerRatio > 0.33 ? '#F89B29' : '#FF3B30';
   const [permission, requestPermission] = useCameraPermissions();
 
   useEffect(() => {
@@ -39,7 +41,7 @@ export default function EyeCombatDrill() {
   }, [isActive, timeRemaining]);
 
   const ensureCameraPermission = async () => {
-    // Expo Camera permissions vary per platform; gate on native where it matters.
+    // Expo Camera permissions vary per platform; gate on native where it mattyers.
     if (Platform.OS === 'web') return true;
     if (permission?.granted) return true;
     const res = await requestPermission();
@@ -140,7 +142,7 @@ export default function EyeCombatDrill() {
             </View>
 
             <GlassCard style={[styles.timerCard, { borderColor: systemColor + '66' }]}>
-              <Text style={[styles.timerText, { color: systemColor }]}>
+              <Text style={[styles.timerText, { color: timerColor }]}>
                 {timeRemaining}s
               </Text>
             </GlassCard>
@@ -210,18 +212,18 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   backBtn: { padding: 8, minWidth: 60 },
-  backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12, letterSpacing: 1 },
+  backText: { color: '#FFFFFF', fontFamily: Fonts.mono, fontSize: 12, letterSpacing: 1 },
   title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, letterSpacing: 3, textAlign: 'center' },
 
   scrollContent: { padding: Spacing.md, alignItems: 'center', gap: 12, paddingBottom: 10 },
 
   infoCard: { width: '100%', padding: 12, backgroundColor: 'rgba(255,255,255,0.03)' },
   infoLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, marginBottom: 6 },
-  infoText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 20 },
+  infoText: { fontFamily: Fonts.nunito, fontSize: 13, color: '#FFFFFF', lineHeight: 20 },
 
   rulesCard: { width: '100%', padding: 12, backgroundColor: 'rgba(255,255,255,0.02)' },
   rulesLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 8 },
-  rulesText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, lineHeight: 18 },
+  rulesText: { fontFamily: Fonts.nunito, fontSize: 12, color: '#FFFFFF', lineHeight: 18 },
 
   cameraSection: { width: '100%', alignItems: 'center' },
   cameraContainer: {
@@ -256,7 +258,7 @@ const styles = StyleSheet.create({
   timerText: { fontFamily: Fonts.heading, fontSize: 56, fontWeight: '700' },
 
   instructionCard: { width: '100%', padding: 14, backgroundColor: 'rgba(255,255,255,0.02)' },
-  instructionText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, textAlign: 'center' },
+  instructionText: { fontFamily: Fonts.nunito, fontSize: 12, color: '#FFFFFF', textAlign: 'center' },
 
   breakCard: { width: '100%', paddingVertical: 16, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.01)' },
   breakLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 8 },
@@ -264,6 +266,6 @@ const styles = StyleSheet.create({
 
   completeCard: { width: '100%', padding: 20, backgroundColor: 'rgba(0, 245, 255, 0.05)', borderColor: 'rgba(0, 245, 255, 0.2)', borderWidth: 1 },
   completeTitle: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.accentCyan, marginBottom: 12 },
-  completeText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 20, marginBottom: 12 },
-  breaksSummary: { fontFamily: Fonts.body, fontSize: 11, color: 'rgba(255,255,255,0.4)', fontStyle: 'italic', marginTop: 8 },
+  completeText: { fontFamily: Fonts.nunito, fontSize: 13, color: '#FFFFFF', lineHeight: 20, marginBottom: 12 },
+  breaksSummary: { fontFamily: Fonts.nunito, fontSize: 11, color: 'rgba(255,255,255,0.4)', fontStyle: 'italic', marginTop: 8 },
 });

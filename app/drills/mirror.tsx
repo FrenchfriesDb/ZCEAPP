@@ -1,7 +1,6 @@
 import { View, Text, StyleSheet, Pressable, Animated, ScrollView, TextInput, Alert, Platform, KeyboardAvoidingView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import * as ExpoAudio from 'expo-audio';
 // Web platform check
 const isWeb = Platform.OS === 'web';
 
@@ -17,7 +16,12 @@ let _cachedAudioBackend: AudioBackend | null | undefined;
 const loadAudioBackend = async (): Promise<AudioBackend | null> => {
     if (isWeb) return null;
     if (_cachedAudioBackend !== undefined) return _cachedAudioBackend;
-    _cachedAudioBackend = { kind: 'expo-audio', mod: ExpoAudio };
+    try {
+        const mod = await import('expo-audio');
+        _cachedAudioBackend = { kind: 'expo-audio', mod };
+    } catch {
+        _cachedAudioBackend = null;
+    }
     return _cachedAudioBackend;
 };
 import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
@@ -558,7 +562,7 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
     backBtn: { padding: 8, minWidth: 60 },
-    backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12, letterSpacing: 1 },
+    backText: { color: '#FFFFFF', fontFamily: Fonts.mono, fontSize: 12, letterSpacing: 1 },
     title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: Colors.textPrimary, letterSpacing: 3, textAlign: 'center' },
 
     scrollContent: { padding: Spacing.md, alignItems: 'center', gap: 6, paddingBottom: 10 },
@@ -597,7 +601,7 @@ const styles = StyleSheet.create({
 
     promptCard: { width: '100%', padding: 10, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)' },
     label: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, marginBottom: 6 },
-    lineText: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.textPrimary, textAlign: 'center', lineHeight: 24 },
+    lineText: { fontFamily: Fonts.heading, fontSize: 18, color: '#FFFFFF', textAlign: 'center', lineHeight: 24 },
     divider: { width: 40, height: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginVertical: 10 },
     flavorTitle: { fontFamily: Fonts.heading, fontSize: 18, marginBottom: 0 },
     emojiText: {
@@ -613,7 +617,7 @@ const styles = StyleSheet.create({
         width: 18,
         height: 18,
     },
-    flavorDesc: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, textAlign: 'center' },
+    flavorDesc: { fontFamily: Fonts.nunito, fontSize: 13, color: '#FFFFFF', textAlign: 'center' },
 
     proofSection: { width: '100%', gap: 6, marginTop: 2 },
     proofLabel: { fontFamily: Fonts.monoBold, fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 4 },
@@ -625,7 +629,7 @@ const styles = StyleSheet.create({
         borderRadius: Radius.md,
         padding: 10,
         color: Colors.textPrimary,
-        fontFamily: Fonts.body,
+        fontFamily: Fonts.nunito,
         fontSize: 13,
         minHeight: 50,
         textAlignVertical: 'top',
@@ -673,7 +677,7 @@ const styles = StyleSheet.create({
     },
     voiceStatusText: {
         color: 'rgba(255,255,255,0.72)',
-        fontFamily: Fonts.body,
+        fontFamily: Fonts.nunito,
         fontSize: 12,
         lineHeight: 18,
         textAlign: 'center',

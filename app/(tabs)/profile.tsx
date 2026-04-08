@@ -4,6 +4,7 @@ import ProgressGraph from '@/components/ProgressGraph';
 import StaticMap from '@/components/StaticMap';
 import { Fonts, Radius, Spacing, XPConfig } from '@/constants/theme';
 import { useTextColors } from '@/context/TextColorsContext';
+import { useSubscription } from '@/context/SubscriptionContext';
 import { useUser } from '@/context/UserContext';
 import { useTimeColors } from '@/hooks/useTimeColors';
 import { formatDisplayName } from '@/utils/formatters';
@@ -13,6 +14,7 @@ import { ActivityIndicator, Alert, FlatList, Modal, Platform, Pressable, ScrollV
 
 export default function ProfileScreen() {
     const { user, isLoading, signOut, changeUsername, purchaseSystemBackup } = useUser();
+    const { isPremium } = useSubscription();
     const { textColors } = useTimeColors();
     const { textPrimary, textSecondary } = useTextColors();
 
@@ -27,13 +29,13 @@ export default function ProfileScreen() {
     const levelInfo = XPConfig.getLevel(user?.xp || 0);
     const systemColor = textColors?.primary ?? textPrimary;
     const velocityColor = textSecondary;
-    const subscriptionStatus = ((user as any)?.subscriptionStatus || 'inactive').toString().toUpperCase();
-    const subscriptionTier = ((user as any)?.subscriptionTier || 'initiate').toString().toUpperCase();
+    const subscriptionStatus = isPremium ? 'ACTIVE' : ((user as any)?.subscriptionStatus || 'inactive').toString().toUpperCase();
+    const subscriptionTier = isPremium ? 'DIRECTOR' : ((user as any)?.subscriptionTier || 'initiate').toString().toUpperCase();
     const subscriptionExpiresAt = ((user as any)?.subscriptionExpiresAt || null) as string | null;
-    const hasActiveSubscription = subscriptionStatus === 'ACTIVE' || subscriptionStatus === 'GRACE';
-    const expirationLabel = hasActiveSubscription && subscriptionExpiresAt
+    const hasActiveSubscription = isPremium || subscriptionStatus === 'ACTIVE' || subscriptionStatus === 'GRACE';
+    const expirationLabel = subscriptionExpiresAt
         ? new Date(subscriptionExpiresAt).toLocaleDateString()
-        : 'Not subscribed';
+        : null;
 
     if (isLoading) return (
         <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', padding: 32 }]}> 
@@ -133,22 +135,22 @@ export default function ProfileScreen() {
                     </View>
                 </GlassCard>
 
-                <GlassCard themed style={styles.subscriptionBanner} intensity={22}>
-                    <Pressable onPress={() => router.push('/settings/subscription')} style={styles.subscriptionBannerPressable}>
-                        <View style={styles.subscriptionBannerLeft}>
-                            <Text style={styles.subscriptionBannerTitle}>ZCE PRO STATUS</Text>
-                            <Text style={[styles.subscriptionBannerPlan, hasActiveSubscription && styles.subscriptionBannerPlanActive]}>
-                                {hasActiveSubscription ? `${subscriptionTier} • ${subscriptionStatus}` : 'INITIATE (FREE)'}
-                            </Text>
-                            <Text style={styles.subscriptionBannerSub}>
-                                {hasActiveSubscription
-                                    ? `Expiration: ${expirationLabel}`
-                                    : 'Upgrade to ZCE Pro for premium drills, deeper analytics, and full protocol unlocks.'}
-                            </Text>
-                        </View>
-                        <Text style={styles.subscriptionBannerArrow}>→</Text>
-                    </Pressable>
-                </GlassCard>
+                {!hasActiveSubscription && (
+                    <GlassCard themed style={styles.subscriptionBanner} intensity={22}>
+                        <Pressable onPress={() => router.push('/settings/subscription')} style={styles.subscriptionBannerPressable}>
+                            <View style={styles.subscriptionBannerLeft}>
+                                <Text style={styles.subscriptionBannerTitle}>ZCE PRO STATUS</Text>
+                                <Text style={styles.subscriptionBannerPlan}>
+                                    INITIATE (FREE)
+                                </Text>
+                                <Text style={styles.subscriptionBannerSub}>
+                                    Upgrade to ZCE Pro for premium drills, deeper analytics, and full protocol unlocks.
+                                </Text>
+                            </View>
+                            <Text style={styles.subscriptionBannerArrow}>→</Text>
+                        </Pressable>
+                    </GlassCard>
+                )}
 
                 {/* Velocity Monitor */}
                 <GlassCard themed style={styles.graphCard} intensity={20}>

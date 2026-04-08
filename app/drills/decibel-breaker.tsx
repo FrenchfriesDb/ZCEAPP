@@ -1,13 +1,12 @@
-import { View, Text, StyleSheet, Pressable, Alert, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
-import { useState, useEffect, useMemo, useRef } from 'react';
-import * as ExpoAudio from 'expo-audio';
+import GlassButton from '@/components/GlassButton';
+import GlassCard from '@/components/GlassCard';
+import { Colors, Fonts, Spacing } from '@/constants/theme';
 import { useUser } from '@/context/UserContext';
 import { useTimeColors } from '@/hooks/useTimeColors';
-import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
-import GlassCard from '@/components/GlassCard';
-import GlassButton from '@/components/GlassButton';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 const TEXT_PASSAGES = [
   "I've never met someone who could command a room just by standing in it. But that's exactly what you do.",
@@ -20,32 +19,72 @@ const TEXT_PASSAGES = [
 const DRILL_SECONDS = 5;
 const METER_FLOOR = 40;
 const METER_CEILING = 95;
+const MIN_DBFS = -80;
+const SPEECH_GATE_DB = 52;
 
 type DrillStage = 'ready' | 'recording' | 'complete';
 
 const getExpoAudioRecorderClass = (audioMod: any) =>
   audioMod?.AudioRecorder ?? audioMod?.AudioModule?.AudioRecorder ?? null;
 
+let _cachedAudioModule: any | null | undefined;
+const loadAudioModule = async () => {
+  if (Platform.OS === 'web') return null;
+  if (_cachedAudioModule !== undefined) return _cachedAudioModule;
+  try {
+    _cachedAudioModule = await import('expo-audio');
+  } catch {
+    _cachedAudioModule = null;
+  }
+  return _cachedAudioModule;
+};
+
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
-// expo-audio metering on native is typically dBFS (-160..0). We convert that real input level
-// into a device-estimated dB display range for the UI. It's no longer random, but still not
-// lab-calibrated SPL because phone mics are not precision sound meters.
+// Convert raw mic dBFS (-80..0) to an estimated speaking loudness scale.
+// This remains an estimate (not true SPL), but is much more faithful than linear amplitude mapping.
+const dbfsToEstimatedDb = (dbfs: number) => {
+  const clampedDbfs = clamp(dbfs, MIN_DBFS, 0);
+  const normalized = (clampedDbfs - MIN_DBFS) / Math.abs(MIN_DBFS);
+  const weighted = Math.pow(normalized, 0.62);
+  return METER_FLOOR + weighted * (METER_CEILING - METER_FLOOR);
+};
+
 const meteringToEstimatedDb = (metering?: number) => {
   if (typeof metering !== 'number' || !Number.isFinite(metering)) return METER_FLOOR;
-  const normalized = clamp((metering + 60) / 60, 0, 1);
-  return METER_FLOOR + normalized * (METER_CEILING - METER_FLOOR);
+  return dbfsToEstimatedDb(metering);
 };
 
 const webAmplitudeToEstimatedDb = (amplitude: number) => {
-  const clamped = clamp(amplitude, 0, 1);
-  return METER_FLOOR + clamped * (METER_CEILING - METER_FLOOR);
+  const clamped = clamp(amplitude, 0.00001, 1);
+  const dbfs = 20 * Math.log10(clamped);
+  return dbfsToEstimatedDb(dbfs);
+};
+
+const robustAverage = (samples: number[]) => {
+  if (samples.length === 0) return METER_FLOOR;
+  const sorted = [...samples].sort((a, b) => a - b);
+  const trim = Math.floor(sorted.length * 0.1);
+  const start = trim;
+  const end = sorted.length - trim;
+  const core = end > start ? sorted.slice(start, end) : sorted;
+  return core.reduce((sum, value) => sum + value, 0) / core.length;
 };
 
 const getDbQuality = (db: number) => {
   if (db >= 72) return { label: 'excellent', xp: 18 };
   if (db >= 64) return { label: 'good', xp: 15 };
   return { label: 'needs improvement', xp: 12 };
+};
+
+const getPerformanceSummary = (db: number) => {
+  if (db >= 72) {
+    return 'Elite projection. Strong, clear, and room-commanding delivery.';
+  }
+  if (db >= 64) {
+    return 'Solid projection. Keep pushing from the diaphragm for more presence.';
+  }
+  return 'Your volume is still holding back. Drive more air and finish louder.';
 };
 
 export default function DecibelBreakerDrill() {
@@ -56,6 +95,7 @@ export default function DecibelBreakerDrill() {
   const [passageIdx, setPassageIdx] = useState(0);
   const [stage, setStage] = useState<DrillStage>('ready');
   const [recordingTime, setRecordingTime] = useState(0);
+  const currentPassage = TEXT_PASSAGES[passageIdx] || TEXT_PASSAGES[0] || 'Project your voice with confidence.';
   const [currentDb, setCurrentDb] = useState(METER_FLOOR);
   const [peakDb, setPeakDb] = useState(METER_FLOOR);
   const [averageDb, setAverageDb] = useState(METER_FLOOR);
@@ -65,6 +105,7 @@ export default function DecibelBreakerDrill() {
   const meterIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const stopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dbSamplesRef = useRef<number[]>([]);
+  const voicedSamplesRef = useRef<number[]>([]);
 
   const webStreamRef = useRef<MediaStream | null>(null);
   const webAudioContextRef = useRef<AudioContext | null>(null);
@@ -86,6 +127,7 @@ export default function DecibelBreakerDrill() {
   }, []);
 
   const displayDb = stage === 'complete' ? averageDb : currentDb;
+  const performanceSummary = useMemo(() => getPerformanceSummary(averageDb), [averageDb]);
   const meterPercent = useMemo(
     () => ((displayDb - METER_FLOOR) / (METER_CEILING - METER_FLOOR)) * 100,
     [displayDb]
@@ -120,8 +162,10 @@ export default function DecibelBreakerDrill() {
       try { await recorderRef.current.stop?.(); } catch {}
       recorderRef.current = null;
     }
+    const Audio = await loadAudioModule();
+    if (!Audio) return;
     try {
-      await ExpoAudio.setAudioModeAsync({
+      await Audio.setAudioModeAsync({
         allowsRecording: false,
         playsInSilentMode: true,
       });
@@ -131,6 +175,7 @@ export default function DecibelBreakerDrill() {
   const resetRunState = () => {
     stopAllTimers();
     dbSamplesRef.current = [];
+    voicedSamplesRef.current = [];
     setRecordingTime(0);
     setCurrentDb(METER_FLOOR);
     setPeakDb(METER_FLOOR);
@@ -140,8 +185,10 @@ export default function DecibelBreakerDrill() {
 
   const pushDbSample = (nextDb: number) => {
     dbSamplesRef.current.push(nextDb);
+    if (nextDb >= SPEECH_GATE_DB) voicedSamplesRef.current.push(nextDb);
     const peak = Math.max(...dbSamplesRef.current);
-    const avg = dbSamplesRef.current.reduce((sum, value) => sum + value, 0) / dbSamplesRef.current.length;
+    const sourceForAverage = voicedSamplesRef.current.length >= 5 ? voicedSamplesRef.current : dbSamplesRef.current;
+    const avg = robustAverage(sourceForAverage);
     setCurrentDb(nextDb);
     setPeakDb(peak);
     setAverageDb(avg);
@@ -254,24 +301,29 @@ export default function DecibelBreakerDrill() {
     }
 
     try {
-      const { granted } = await ExpoAudio.requestRecordingPermissionsAsync();
+      const Audio = await loadAudioModule();
+      if (!Audio) {
+        throw new Error('expo-audio is unavailable in this runtime.');
+      }
+
+      const { granted } = await Audio.requestRecordingPermissionsAsync();
       if (!granted) {
         Alert.alert('Mic Permission Needed', 'Allow microphone access in Settings.');
         return;
       }
 
-      await ExpoAudio.setAudioModeAsync({
+      await Audio.setAudioModeAsync({
         allowsRecording: true,
         playsInSilentMode: true,
       });
 
-      const RecorderClass = getExpoAudioRecorderClass(ExpoAudio);
+      const RecorderClass = getExpoAudioRecorderClass(Audio);
       if (typeof RecorderClass !== 'function') {
         throw new Error('expo-audio recorder API is missing from this runtime.');
       }
 
       const options = {
-        ...ExpoAudio.RecordingPresets.HIGH_QUALITY,
+        ...Audio.RecordingPresets.HIGH_QUALITY,
         isMeteringEnabled: true,
       };
       const recorder = new RecorderClass(options);
@@ -315,6 +367,12 @@ export default function DecibelBreakerDrill() {
     }
   };
 
+  const handleNextRep = () => {
+    resetRunState();
+    setStage('ready');
+    setPassageIdx(Math.floor(Math.random() * TEXT_PASSAGES.length));
+  };
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -342,8 +400,8 @@ export default function DecibelBreakerDrill() {
           <>
             <GlassCard style={[styles.passageCard, { borderColor: systemColor + '44' }]}>
               <Text style={styles.passageLabel}>READ THIS ALOUD (LOUD):</Text>
-              <Text style={[styles.passageText, { color: systemColor }]}>
-                {TEXT_PASSAGES[passageIdx]}
+              <Text style={[styles.passageText, { color: '#FFFFFF' }]}>
+                {currentPassage}
               </Text>
             </GlassCard>
 
@@ -372,8 +430,8 @@ export default function DecibelBreakerDrill() {
           <>
             <GlassCard style={[styles.passageCard, { borderColor: systemColor + '44', backgroundColor: 'rgba(113, 195, 247, 0.03)' }]}>
               <Text style={styles.passageLabel}>READ ALOUD:</Text>
-              <Text style={[styles.passageText, { color: systemColor }]}>
-                {TEXT_PASSAGES[passageIdx]}
+              <Text style={[styles.passageText, { color: '#FFFFFF' }]}>
+                {currentPassage}
               </Text>
             </GlassCard>
 
@@ -413,7 +471,7 @@ export default function DecibelBreakerDrill() {
               <Text style={styles.dbDisplay}>{Math.round(averageDb)} dB</Text>
               <Text style={styles.completeSub}>PEAK {Math.round(peakDb)} dB</Text>
               <Text style={styles.completeText}>
-                Real mic metering captured your run. This score now reflects your actual input level instead of simulated numbers.
+                {performanceSummary}
               </Text>
             </GlassCard>
 
@@ -422,6 +480,15 @@ export default function DecibelBreakerDrill() {
               onPress={handleComplete}
               tint="blue"
               size="lg"
+              glow
+              style={{ width: '100%' }}
+            />
+
+            <GlassButton
+              label="NEXT REP"
+              onPress={handleNextRep}
+              tint="dark"
+              size="md"
               glow
               style={{ width: '100%' }}
             />
@@ -445,26 +512,26 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   backBtn: { padding: 8, minWidth: 60 },
-  backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12, letterSpacing: 1 },
+  backText: { color: '#FFFFFF', fontFamily: Fonts.mono, fontSize: 12, letterSpacing: 1 },
   title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, letterSpacing: 3, textAlign: 'center' },
 
   scrollContent: { padding: Spacing.md, alignItems: 'center', gap: 12, paddingBottom: 10 },
 
   infoCard: { width: '100%', padding: 12, backgroundColor: 'rgba(255,255,255,0.03)' },
   infoLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, marginBottom: 6 },
-  infoText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 20 },
+  infoText: { fontFamily: Fonts.nunito, fontSize: 13, color: '#FFFFFF', lineHeight: 20 },
 
   passageCard: { width: '100%', padding: 14, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.02)', borderWidth: 1 },
   passageLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 10 },
-  passageText: { fontFamily: Fonts.body, fontSize: 14, textAlign: 'center', lineHeight: 22 },
+  passageText: { fontFamily: Fonts.nunito, fontSize: 14, textAlign: 'center', lineHeight: 22 },
 
   rulesCard: { width: '100%', padding: 12, backgroundColor: 'rgba(255,255,255,0.02)' },
   rulesLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 8 },
-  rulesText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, lineHeight: 18 },
+  rulesText: { fontFamily: Fonts.nunito, fontSize: 12, color: '#FFFFFF', lineHeight: 18 },
 
   recordingCard: { width: '100%', padding: 20, alignItems: 'center', backgroundColor: 'rgba(255, 68, 68, 0.05)', borderColor: 'rgba(255, 68, 68, 0.2)', borderWidth: 1 },
   recordingText: { fontFamily: Fonts.heading, fontSize: 24, marginBottom: 8 },
-  recordingDesc: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, textAlign: 'center' },
+  recordingDesc: { fontFamily: Fonts.nunito, fontSize: 13, color: '#FFFFFF', textAlign: 'center' },
 
   meterCard: { width: '100%', padding: 16, backgroundColor: 'rgba(255,255,255,0.02)' },
   meterLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 8 },
@@ -475,11 +542,11 @@ const styles = StyleSheet.create({
   meterMin: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)' },
   meterMid: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)' },
   meterMax: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)' },
-  liveStats: { fontFamily: Fonts.bodySemi, fontSize: 12, color: Colors.textSecondary, textAlign: 'center', marginTop: 12 },
+  liveStats: { fontFamily: Fonts.nunitoSemi, fontSize: 12, color: '#FFFFFF', textAlign: 'center', marginTop: 12 },
 
   completeCard: { width: '100%', padding: 20, backgroundColor: 'rgba(0, 245, 255, 0.05)', borderColor: 'rgba(0, 245, 255, 0.2)', borderWidth: 1 },
   completeTitle: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.accentCyan, marginBottom: 12, textAlign: 'center' },
   dbDisplay: { fontFamily: Fonts.heading, fontSize: 24, color: Colors.accentCyan, marginBottom: 6, textAlign: 'center' },
   completeSub: { fontFamily: Fonts.monoBold, fontSize: 10, color: 'rgba(255,255,255,0.55)', letterSpacing: 2, marginBottom: 12, textAlign: 'center' },
-  completeText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 20, textAlign: 'center' },
+  completeText: { fontFamily: Fonts.nunito, fontSize: 13, color: '#FFFFFF', lineHeight: 20, textAlign: 'center' },
 });

@@ -1,5 +1,7 @@
 import React from 'react';
-import { Image, ImageStyle, StyleProp } from 'react-native';
+import type { ImageStyle, StyleProp } from 'react-native';
+import { Asset } from 'expo-asset';
+import { Image } from 'expo-image';
 
 const FLUENT_EMOJI_MAP = {
   crossedSwords: require('@/assets/fluent-emoji/crossed_swords.png'),
@@ -14,6 +16,9 @@ const FLUENT_EMOJI_MAP = {
   bell: require('@/assets/fluent-emoji/bell.png'),
   microphone: require('@/assets/fluent-emoji/microphone.png'),
   studioMicrophone: require('@/assets/fluent-emoji/studio_microphone.png'),
+  faceWithRaisedEyebrow: require('@/assets/fluent-emoji/face_with_raised_eyebrow.png'),
+  smirkingFace: require('@/assets/fluent-emoji/smirking_face.png'),
+  turtle: require('@/assets/fluent-emoji/turtle.png'),
   fire: require('@/assets/fluent-emoji/fire.png'),
   eyes: require('@/assets/fluent-emoji/eyes.png'),
   brain: require('@/assets/fluent-emoji/brain.png'),
@@ -36,6 +41,7 @@ const FLUENT_EMOJI_MAP = {
   lyingFace: require('@/assets/fluent-emoji/lying_face.png'),
   megaphone: require('@/assets/fluent-emoji/megaphone.png'),
   mirror: require('@/assets/fluent-emoji/mirror.png'),
+  gameDie: require('@/assets/fluent-emoji/game_die.png'),
   noMobilePhones: require('@/assets/fluent-emoji/no_mobile_phones.png'),
   notebook: require('@/assets/fluent-emoji/notebook.png'),
   personStanding: require('@/assets/fluent-emoji/person_standing.png'),
@@ -62,9 +68,49 @@ const FLUENT_EMOJI_MAP = {
   speakingHead: require('@/assets/fluent-emoji/speaking_head.png'),
   repeatButton: require('@/assets/fluent-emoji/repeat_button.png'),
   wavingHand: require('@/assets/fluent-emoji/waving_hand.png'),
+  foldedHands: require('@/assets/fluent-emoji/folded_hands.png'),
+  chair: require('@/assets/fluent-emoji/chair.png'),
+  slightlySmilingFace: require('@/assets/fluent-emoji/slightly_smiling_face.png'),
+  redQuestionMark: require('@/assets/fluent-emoji/red_question_mark.png'),
+  bomb: require('@/assets/fluent-emoji/bomb.png'),
+  rightFacingFist: require('@/assets/fluent-emoji/right_facing_fist.png'),
+  shoppingCart: require('@/assets/fluent-emoji/shopping_cart.png'),
+  hourglassNotDone: require('@/assets/fluent-emoji/hourglass_not_done.png'),
+  upArrow: require('@/assets/fluent-emoji/up_arrow.png'),
+  windFace: require('@/assets/fluent-emoji/wind_face.png'),
+  newMoonFace: require('@/assets/fluent-emoji/new_moon_face.png'),
+  movieCamera: require('@/assets/fluent-emoji/movie_camera.png'),
+  barChart: require('@/assets/fluent-emoji/bar_chart.png'),
+  calendar: require('@/assets/fluent-emoji/calendar.png'),
+  loudspeaker: require('@/assets/fluent-emoji/loudspeaker.png'),
+  snail: require('@/assets/fluent-emoji/snail.png'),
+  neutralFace: require('@/assets/fluent-emoji/neutral_face.png'),
+  prohibited: require('@/assets/fluent-emoji/prohibited.png'),
+  coldFace: require('@/assets/fluent-emoji/cold_face.png'),
+  personInLotusPosition: require('@/assets/fluent-emoji/person_in_lotus_position.png'),
+  wing: require('@/assets/fluent-emoji/wing.png'),
+  infinity: require('@/assets/fluent-emoji/infinity.png'),
+  alarmClock: require('@/assets/fluent-emoji/alarm_clock.png'),
+  stopwatch: require('@/assets/fluent-emoji/stopwatch.png'),
+  bustInSilhouette: require('@/assets/fluent-emoji/bust_in_silhouette.png'),
+  ogre: require('@/assets/fluent-emoji/ogre.png'),
+  artistPalette: require('@/assets/fluent-emoji/artist_palette.png'),
+  faceBlowingAKiss: require('@/assets/fluent-emoji/face_blowing_a_kiss.png'),
+  wastebasket: require('@/assets/fluent-emoji/wastebasket.png'),
+  videoGame: require('@/assets/fluent-emoji/video_game.png'),
+  bellhopBell: require('@/assets/fluent-emoji/bellhop_bell.png'),
+  orangutan: require('@/assets/fluent-emoji/orangutan.png'),
+  babyChick: require('@/assets/fluent-emoji/baby_chick.png'),
+  catFace: require('@/assets/fluent-emoji/cat_face.png'),
+  dizzy: require('@/assets/fluent-emoji/dizzy.png'),
 } as const;
 
 export type FluentEmojiName = keyof typeof FLUENT_EMOJI_MAP;
+
+const FLUENT_EMOJI_SOURCES = Object.values(FLUENT_EMOJI_MAP);
+const EMOJI_Y_OFFSET: Partial<Record<FluentEmojiName, number>> = {
+  crown: -1,
+};
 
 const EMOJI_ALIAS_MAP: Record<string, FluentEmojiName> = {
   '⚔️': 'crossedSwords',
@@ -102,8 +148,10 @@ const EMOJI_ALIAS_MAP: Record<string, FluentEmojiName> = {
   '🤥': 'lyingFace',
   '📣': 'megaphone',
   '🪞': 'mirror',
+  '🎲': 'gameDie',
   '📵': 'noMobilePhones',
   '📒': 'notebook',
+  '📓': 'notebook',
   '🧍': 'personStanding',
   '⭐': 'star',
   '❤️': 'redHeart',
@@ -128,12 +176,81 @@ const EMOJI_ALIAS_MAP: Record<string, FluentEmojiName> = {
   '🗣️': 'speakingHead',
   '🔄': 'repeatButton',
   '👋': 'wavingHand',
+  '🙏': 'foldedHands',
+  '🪑': 'chair',
+  '🙂': 'slightlySmilingFace',
+  '😏': 'smirkingFace',
+  '🤨': 'faceWithRaisedEyebrow',
+  '❓': 'redQuestionMark',
+  '💣': 'bomb',
+  '🤜': 'rightFacingFist',
+  '🛒': 'shoppingCart',
+  '⏳': 'hourglassNotDone',
+  '⬆️': 'upArrow',
+  '🌬️': 'windFace',
+  '🌑': 'newMoonFace',
+  '🎥': 'movieCamera',
+  '📊': 'barChart',
+  '📅': 'calendar',
+  '📢': 'loudspeaker',
+  '🐌': 'snail',
+  '🐢': 'turtle',
+  '😐': 'neutralFace',
+  '🚫': 'prohibited',
+  '🥶': 'coldFace',
+  '🧘': 'personInLotusPosition',
+  '🪽': 'wing',
+  '∞': 'infinity',
+  '⏰': 'alarmClock',
+  '⏱️': 'stopwatch',
+  '👤': 'bustInSilhouette',
+  '👹': 'ogre',
+  '🎨': 'artistPalette',
+  '🗑️': 'wastebasket',
+  '🎮': 'videoGame',
+  '🛎️': 'bellhopBell',
+  '🦧': 'orangutan',
+  '🐣': 'babyChick',
+  '🐱': 'catFace',
+  '💫': 'dizzy',
+  '😘': 'faceBlowingAKiss',
 };
 
 export function resolveFluentEmojiName(value?: string | null): FluentEmojiName | null {
   if (!value) return null;
-  if (value in FLUENT_EMOJI_MAP) return value as FluentEmojiName;
-  return EMOJI_ALIAS_MAP[value] ?? null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  if (trimmed in FLUENT_EMOJI_MAP) return trimmed as FluentEmojiName;
+  if (EMOJI_ALIAS_MAP[trimmed]) return EMOJI_ALIAS_MAP[trimmed];
+
+  // Normalize common unicode modifiers that can break exact emoji alias matching.
+  const normalized = trimmed
+    .replace(/[\uFE0E\uFE0F]/g, '')
+    .replace(/[\u{1F3FB}-\u{1F3FF}]/gu, '')
+    .replace(/\u200D/gu, '')
+    .trim();
+
+  if (EMOJI_ALIAS_MAP[normalized]) return EMOJI_ALIAS_MAP[normalized];
+
+  for (const [emoji, name] of Object.entries(EMOJI_ALIAS_MAP)) {
+    const aliasNormalized = emoji
+      .replace(/[\uFE0E\uFE0F]/g, '')
+      .replace(/[\u{1F3FB}-\u{1F3FF}]/gu, '')
+      .replace(/\u200D/gu, '');
+
+    if (aliasNormalized === normalized) {
+      return name;
+    }
+  }
+
+  return null;
+}
+
+export async function preloadFluentEmojiAssets(): Promise<void> {
+  await Promise.allSettled(
+    FLUENT_EMOJI_SOURCES.map((source) => Asset.fromModule(source).downloadAsync())
+  );
 }
 
 interface FluentEmojiProps {
@@ -143,12 +260,18 @@ interface FluentEmojiProps {
   opacity?: number;
 }
 
-export default function FluentEmoji({ name, size = 24, style, opacity = 1 }: FluentEmojiProps) {
+function FluentEmojiBase({ name, size = 24, style, opacity = 1 }: FluentEmojiProps) {
+  const y = EMOJI_Y_OFFSET[name] || 0;
   return (
     <Image
       source={FLUENT_EMOJI_MAP[name]}
-      style={[{ width: size, height: size, opacity, resizeMode: 'contain' }, style]}
-      fadeDuration={0}
+      style={[{ width: size, height: size, opacity, transform: [{ translateY: y }] }, style]}
+      contentFit="contain"
+      transition={0}
+      cachePolicy="memory-disk"
     />
   );
 }
+
+const FluentEmoji = React.memo(FluentEmojiBase);
+export default FluentEmoji;

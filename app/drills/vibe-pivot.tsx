@@ -1,14 +1,14 @@
-import { View, Text, StyleSheet, Pressable, Alert, ScrollView, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
-import { useState, useEffect } from 'react';
+import DrillFeedbackPanel from '@/components/DrillFeedbackPanel';
+import GlassButton from '@/components/GlassButton';
+import GlassCard from '@/components/GlassCard';
+import { Colors, Fonts, Radius, Spacing } from '@/constants/theme';
 import { useUser } from '@/context/UserContext';
 import { useTimeColors } from '@/hooks/useTimeColors';
-import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
-import GlassCard from '@/components/GlassCard';
-import GlassButton from '@/components/GlassButton';
-import DrillFeedbackPanel from '@/components/DrillFeedbackPanel';
 import { AIService } from '@/services/ai';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 const COMPLAINTS = [
   "Coach is making us run 800s today, I'm going to die.",
@@ -37,9 +37,12 @@ export default function VibePivotDrill() {
   const [timeLeft, setTimeLeft] = useState(VIBE_PIVOT_SECONDS);
   const [isTimerActive, setIsTimerActive] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const timerRatio = Math.max(0, Math.min(1, timeLeft / VIBE_PIVOT_SECONDS));
+  const timerColor = timerRatio > 0.66 ? '#00FF64' : timerRatio > 0.33 ? '#F89B29' : '#FF3B30';
 
   useEffect(() => {
-    setComplaintIdx(Math.floor(Math.random() * COMPLAINTS.length));
+    const safePool = Array.isArray(COMPLAINTS) && COMPLAINTS.length > 0 ? COMPLAINTS : ['My phone battery died.'];
+    setComplaintIdx(Math.floor(Math.random() * safePool.length));
   }, []);
 
   useEffect(() => {
@@ -162,6 +165,15 @@ Review this rep like a drill analyst. Focus on whether they successfully turned 
     setResponse(value);
   };
 
+  const handleNextRep = () => {
+    setResponse('');
+    setShowGrade(false);
+    setGrade('');
+    setTimeLeft(VIBE_PIVOT_SECONDS);
+    setIsTimerActive(false);
+    setComplaintIdx(Math.floor(Math.random() * COMPLAINTS.length));
+  };
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -177,17 +189,6 @@ Review this rep like a drill analyst. Focus on whether they successfully turned 
         <View style={{ width: 60 }} />
       </View>
 
-      {!showGrade && (
-        <View style={{ paddingHorizontal: Spacing.md, paddingTop: 6 }}>
-          <GlassCard style={[styles.complaintCard, { borderColor: systemColor + '44' }]}>
-            <Text style={styles.complaintLabel}>THE COMPLAINT:</Text>
-            <Text style={[styles.complaintText, { color: systemColor }]}>
-              "{COMPLAINTS[complaintIdx]}"
-            </Text>
-          </GlassCard>
-        </View>
-      )}
-
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -195,6 +196,13 @@ Review this rep like a drill analyst. Focus on whether they successfully turned 
       >
         {!showGrade ? (
           <>
+            <GlassCard style={[styles.complaintCard, { borderColor: systemColor + '44' }]}>
+              <Text style={styles.complaintLabel}>THE COMPLAINT:</Text>
+              <Text style={[styles.complaintText, { color: '#FFFFFF' }]}>
+                "{COMPLAINTS[complaintIdx]}"
+              </Text>
+            </GlassCard>
+
             <GlassCard style={styles.infoCard}>
               <Text style={styles.infoLabel}>HOW IT WORKS:</Text>
               <Text style={styles.infoText}>
@@ -202,8 +210,8 @@ Review this rep like a drill analyst. Focus on whether they successfully turned 
               </Text>
             </GlassCard>
 
-            <GlassCard style={[styles.timerCard, { borderColor: (timeLeft <= 3 ? '#FF4444' : systemColor) + '55' }]}>
-              <Text style={[styles.timerText, { color: timeLeft <= 3 ? '#FF4444' : systemColor }]}>
+            <GlassCard style={[styles.timerCard, { borderColor: timerColor + '55' }]}>
+              <Text style={[styles.timerText, { color: timerColor }]}>
                 {timeLeft}s
               </Text>
               <Text style={styles.timerLabel}>
@@ -215,7 +223,7 @@ Review this rep like a drill analyst. Focus on whether they successfully turned 
                     styles.timerBarFill,
                     {
                       width: `${(timeLeft / VIBE_PIVOT_SECONDS) * 100}%`,
-                      backgroundColor: timeLeft <= 3 ? '#FF4444' : systemColor,
+                      backgroundColor: timerColor,
                     },
                   ]}
                 />
@@ -262,6 +270,15 @@ Review this rep like a drill analyst. Focus on whether they successfully turned 
               glow
               style={{ width: '100%' }}
             />
+
+            <GlassButton
+              label="NEXT REP"
+              onPress={handleNextRep}
+              tint="dark"
+              size="md"
+              glow
+              style={{ width: '100%' }}
+            />
           </>
         )}
 
@@ -282,14 +299,14 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   backBtn: { padding: 8, minWidth: 60 },
-  backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12, letterSpacing: 1 },
+  backText: { color: '#FFFFFF', fontFamily: Fonts.mono, fontSize: 12, letterSpacing: 1 },
   title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, letterSpacing: 3, textAlign: 'center' },
 
   scrollContent: { padding: Spacing.md, alignItems: 'center', gap: 12, paddingBottom: 10 },
 
   infoCard: { width: '100%', padding: 12, backgroundColor: 'rgba(255,255,255,0.03)' },
   infoLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, marginBottom: 6 },
-  infoText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 20 },
+  infoText: { fontFamily: Fonts.nunito, fontSize: 13, color: '#FFFFFF', lineHeight: 20 },
 
   complaintCard: { width: '100%', padding: 14, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.02)', borderWidth: 1 },
   complaintLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 10 },
@@ -310,7 +327,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     padding: 12,
     color: Colors.textPrimary,
-    fontFamily: Fonts.body,
+    fontFamily: Fonts.nunito,
     fontSize: 14,
     minHeight: 60,
     textAlignVertical: 'top',
@@ -318,7 +335,7 @@ const styles = StyleSheet.create({
 
   responseCard: { width: '100%', padding: 12, backgroundColor: 'rgba(0, 245, 255, 0.05)', borderColor: 'rgba(0, 245, 255, 0.2)', borderWidth: 1 },
   responseLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(0, 245, 255, 0.5)', letterSpacing: 1, marginBottom: 8 },
-  responseText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textPrimary },
+  responseText: { fontFamily: Fonts.nunito, fontSize: 13, color: Colors.textPrimary },
 
   gradeCard: { width: '100%', padding: 14, backgroundColor: 'rgba(255,255,255,0.03)' },
 });

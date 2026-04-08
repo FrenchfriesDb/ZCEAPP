@@ -1,5 +1,6 @@
 import GlassButton from '@/components/GlassButton';
 import { Colors, Fonts, FontSizes, Radius, Spacing } from '@/constants/theme';
+import { useSubscription } from '@/context/SubscriptionContext';
 import { useTextColors } from '@/context/TextColorsContext';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -50,7 +51,10 @@ const DRILL_CATEGORIES = [
     },
 ];
 
+const FREE_DRILL_IDS = new Set(['mirror', 'eye-combat', 'speed']);
+
 export default function DrillsScreen() {
+    const { isPremium } = useSubscription();
     const { textPrimary } = useTextColors();
     const [selectedFilter, setSelectedFilter] = useState<string>('all');
 
@@ -71,6 +75,13 @@ export default function DrillsScreen() {
             if (selectedFilter === 'operations') return cat.category === 'OPERATIONS';
             return true;
         });
+    const categoriesWithAccess = filteredCategories.map((cat) => ({
+        ...cat,
+        drills: cat.drills.map((drill) => ({
+            ...drill,
+            isLocked: !isPremium && !FREE_DRILL_IDS.has(drill.id),
+        })),
+    }));
 
     return (
         <View style={styles.container}>
@@ -97,6 +108,14 @@ export default function DrillsScreen() {
                     <Text style={[styles.headerEyebrow, { color: textPrimary }]}>Z.A.N.E. PROTOCOL</Text>
                     <Text style={[styles.headerTitle, { color: textPrimary }]}>Training Modules</Text>
                     <Text style={styles.headerSub}>Select a protocol to begin your session.</Text>
+                    {!isPremium && (
+                        <View style={styles.freeBanner}>
+                            <Text style={styles.freeBannerTitle}>FREE ACCESS</Text>
+                            <Text style={styles.freeBannerBody}>
+                                Mirror Drill, Eye Lock, and Response Speed are unlocked. Upgrade for the full 14+ drill arsenal.
+                            </Text>
+                        </View>
+                    )}
                 </View>
 
                 {/* Filter Tabs */}
@@ -139,19 +158,26 @@ export default function DrillsScreen() {
                 </ScrollView>
 
                 {/* Drill Cards Grouped by Category */}
-                {filteredCategories.map((category, catIdx) => (
+                {categoriesWithAccess.map((category, catIdx) => (
                     <View key={catIdx} style={styles.categorySection}>
                         <View style={styles.categoryHeader}>
                             <Text style={[styles.categoryTitle, { color: textPrimary }]}>{category.category}</Text>
                             <Text style={styles.categoryDesc}>{category.desc}</Text>
                         </View>
                         <View style={styles.grid}>
-                            {category.drills.map((drill, i) => (
+                            {category.drills.map((drill) => (
                                 <Pressable
                                     key={drill.id}
-                                    onPress={() => router.push(drill.route as any)}
+                                    onPress={() => {
+                                        if (drill.isLocked) {
+                                            router.push('/settings/subscription');
+                                            return;
+                                        }
+                                        router.push(drill.route as any);
+                                    }}
                                     style={({ pressed }) => [
                                         styles.cardWrapper,
+                                        drill.isLocked && styles.cardLocked,
                                         pressed && { transform: [{ scale: 0.985 }] }
                                     ]}
                                 >
@@ -183,9 +209,20 @@ export default function DrillsScreen() {
                                         </View>
 
                                         {/* Arrow */}
+                                        {drill.isLocked && (
+                                            <View style={styles.lockPill}>
+                                                <Text style={styles.lockPillText}>PRO</Text>
+                                            </View>
+                                        )}
                                         <GlassButton
-                                            label="START"
-                                            onPress={() => router.push(drill.route as any)}
+                                            label={drill.isLocked ? 'UNLOCK' : 'START'}
+                                            onPress={() => {
+                                                if (drill.isLocked) {
+                                                    router.push('/settings/subscription');
+                                                    return;
+                                                }
+                                                router.push(drill.route as any);
+                                            }}
                                             look="glass"
                                             tint="dark"
                                             size="sm"
@@ -239,9 +276,33 @@ const styles = StyleSheet.create({
         lineHeight: 18,
         opacity: 0.9,
     },
+    freeBanner: {
+        marginTop: 12,
+        borderRadius: Radius.md,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.12)',
+        backgroundColor: 'rgba(255,255,255,0.03)',
+        padding: 10,
+        gap: 5,
+    },
+    freeBannerTitle: {
+        fontFamily: Fonts.monoBold,
+        fontSize: 10,
+        color: '#FFFFFF',
+        letterSpacing: 1.8,
+    },
+    freeBannerBody: {
+        fontFamily: Fonts.body,
+        fontSize: 12,
+        color: 'rgba(255,255,255,0.85)',
+        lineHeight: 17,
+    },
 
     grid: { gap: 10 },
     cardWrapper: { width: '100%' },
+    cardLocked: {
+        opacity: 0.92,
+    },
     card: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -297,6 +358,21 @@ const styles = StyleSheet.create({
         letterSpacing: 0.3,
         lineHeight: 14,
         opacity: 0.85,
+    },
+    lockPill: {
+        borderRadius: Radius.pill,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.16)',
+        backgroundColor: 'rgba(255,255,255,0.06)',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        marginRight: 4,
+    },
+    lockPillText: {
+        fontFamily: Fonts.monoBold,
+        fontSize: 9,
+        color: '#FFFFFF',
+        letterSpacing: 1,
     },
     cardArrow: {
         fontSize: FontSizes.lg,

@@ -1,4 +1,5 @@
 import { Colors, Fonts, FontSizes, Radius, Spacing, XPConfig } from '@/constants/theme';
+import { useSubscription } from '@/context/SubscriptionContext';
 import { useTextColors } from '@/context/TextColorsContext';
 import { useUser } from '@/context/UserContext';
 import { useTimeColors } from '@/hooks/useTimeColors';
@@ -14,7 +15,7 @@ const getRankColor = (rank: number) => {
     if (rank === 1) return '#FFD700'; // Gold
     if (rank === 2) return '#C0C0C0'; // Silver
     if (rank === 3) return '#CD7F32'; // Bronze
-    return Colors.textTertiary;
+    return '#A7B4C6';
 };
 
 const getRankLabel = (rank: number) => {
@@ -54,6 +55,25 @@ const getThemeTint = (color: string, alpha: number) => {
     return color;
 };
 
+const getColorLuminance = (color: string) => {
+    const rgbMatch = color.match(/rgb\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)/i);
+    if (rgbMatch) {
+        return 0.2126 * Number(rgbMatch[1]) + 0.7152 * Number(rgbMatch[2]) + 0.0722 * Number(rgbMatch[3]);
+    }
+    const hex = color.replace('#', '');
+    if (hex.length === 6) {
+        const r = parseInt(hex.slice(0, 2), 16);
+        const g = parseInt(hex.slice(2, 4), 16);
+        const b = parseInt(hex.slice(4, 6), 16);
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    }
+    return 0;
+};
+
+const ensureReadableOnBlack = (color: string, fallback = '#9BE7FF') => {
+    return getColorLuminance(color) < 90 ? fallback : color;
+};
+
 const pickBrightAccentFromPalette = (palette: string[]) => {
     const getLuminance = (color: string) => {
         const hex = color.replace('#', '');
@@ -67,12 +87,15 @@ const pickBrightAccentFromPalette = (palette: string[]) => {
     return [...palette].sort((a, b) => getLuminance(b) - getLuminance(a))[0] ?? '#FFFFFF';
 };
 
+const FREE_LEADERBOARD_LEVEL_CAP = 3;
+
 export default function LeaderboardScreen() {
     const { user } = useUser();
+    const { isPremium, entitlementId } = useSubscription();
     const { textSecondary } = useTextColors();
     const { palette } = useTimeColors();
-    const selfHighlight = getSolidThemeAccent(textSecondary);
-    const leaderboardGlassAccent = pickBrightAccentFromPalette(palette);
+    const selfHighlight = ensureReadableOnBlack(getSolidThemeAccent(textSecondary));
+    const leaderboardGlassAccent = ensureReadableOnBlack(pickBrightAccentFromPalette(palette));
     const glassBorder = getThemeTint(leaderboardGlassAccent, 0.24);
     const glassFill = getThemeTint(leaderboardGlassAccent, 0.12);
     const glassFillSoft = getThemeTint(leaderboardGlassAccent, 0.1);
@@ -92,7 +115,6 @@ export default function LeaderboardScreen() {
             const q = query(collection(db, 'users'), orderBy('xp', 'desc'), limit(50));
             const snapshot = await getDocs(q);
             const rankings: any[] = [];
-            let r = 1;
             let identifiedRank = null;
 
             snapshot.forEach((doc) => {
@@ -102,21 +124,37 @@ export default function LeaderboardScreen() {
                 const displayName = `@${rawUsername.replace(/\s+/g, '_').toLowerCase()}`;
 
                 const isMe = doc.id === auth.currentUser?.uid;
-
-                if (isMe) identifiedRank = r;
+                const tier = String(data.subscriptionTier || 'initiate').toLowerCase();
+                const status = String(data.subscriptionStatus || 'inactive').toLowerCase();
+                const entitlements = Array.isArray(data.entitlements) ? data.entitlements : [];
+                const isEntryPremium = tier === 'director' || status === 'active' || status === 'grace' || entitlements.includes(entitlementId);
+                const rawLevel = Number(data.level || 0);
+                const rawXp = Number(data.xp || 0);
+                const competitiveLevel = isEntryPremium ? rawLevel : Math.min(rawLevel, FREE_LEADERBOARD_LEVEL_CAP);
+                const competitiveXp = isEntryPremium ? rawXp : (rawLevel > FREE_LEADERBOARD_LEVEL_CAP ? 0 : rawXp);
+                const competitiveAura = (competitiveLevel * 1000) + competitiveXp;
 
                 rankings.push({
-                    rank: r++,
+                    rank: 0,
                     name: displayName,
-                    level: data.level || 0,
+                    level: competitiveLevel,
                     title: data.title || 'Initiate',
-                    xp: data.xp || 0,
-                    aura: ((data.level || 0) * 1000) + (data.xp || 0),
+                    xp: competitiveXp,
+                    aura: competitiveAura,
                     streak: data.streak || 0,
                     isMe,
+                    isEntryPremium,
+                    isCappedFree: !isEntryPremium && rawLevel > FREE_LEADERBOARD_LEVEL_CAP,
                 });
             });
-            setGlobalData(rankings);
+            rankings.sort((a, b) => b.aura - a.aura);
+            const withRanks = rankings.map((entry, index) => {
+                const rank = index + 1;
+                if (entry.isMe) identifiedRank = rank;
+                return { ...entry, rank };
+            });
+
+            setGlobalData(withRanks);
             setMyRank(identifiedRank);
         } catch (e: any) {
             console.error('GLOBAL RANKINGS ERROR:', e.message);
@@ -128,9 +166,12 @@ export default function LeaderboardScreen() {
     const currentData = globalData;
 
     // My Display Info for Sticky (LIVE TAB ONLY)
+    const myLevelRaw = XPConfig.getLevel(user?.xp || 0).level || 0;
+    const myCompetitiveLevel = isPremium ? myLevelRaw : Math.min(myLevelRaw, FREE_LEADERBOARD_LEVEL_CAP);
+    const myCompetitiveXp = isPremium ? (user?.xp || 0) : (myLevelRaw > FREE_LEADERBOARD_LEVEL_CAP ? 0 : (user?.xp || 0));
     const myDisplayInfo = {
         rank: myRank || '>50',
-        aura: ((XPConfig.getLevel(user?.xp || 0).level || 0) * 1000) + (user?.xp || 0),
+        aura: (myCompetitiveLevel * 1000) + myCompetitiveXp,
         username: `@${(user?.username || formatDisplayName(user?.name) || 'INITIATE').replace(/\s+/g, '_').toLowerCase()}`
     };
 
@@ -162,6 +203,11 @@ export default function LeaderboardScreen() {
                             <Text style={[styles.livePillText, { color: glassText }]}>LIVE LEADERBOARD</Text>
                         </View>
                     </View>
+                    {!isPremium && (
+                        <Text style={styles.capNotice}>
+                            Free mode is capped at Level 3 competition. Upgrade to ZCE Pro to rank above L3.
+                        </Text>
+                    )}
                 </View>
 
                 {/* Top-3 podium */}
@@ -174,7 +220,10 @@ export default function LeaderboardScreen() {
                             const metal = getMetalPalette(entry.rank);
                             return (
                                 <View key={entry.rank} style={styles.podiumSlot}>
-                                    <Text style={styles.podiumName} numberOfLines={1}>{displayName.split('_')[0]}</Text>
+                                    <Text style={styles.podiumName} numberOfLines={1}>
+                                        {displayName.split('_')[0]}
+                                        {entry.isEntryPremium ? ' 👑' : ''}
+                                    </Text>
                                     <View style={[styles.podiumBlock, {
                                         height: heights[i],
                                         borderTopColor: metal.edge,
@@ -244,9 +293,10 @@ export default function LeaderboardScreen() {
                                         <Text style={[styles.rowName, isMe && { color: selfHighlight }]}>
                                             {entry.name}
                                             {isMe ? ' ◈ YOU' : ''}
+                                            {(entry.isEntryPremium || (isMe && isPremium)) ? ' 👑' : ''}
                                         </Text>
                                         <View style={styles.rowMeta}>
-                                            <Text style={styles.rowTitle}>{entry.title}</Text>
+                                            <Text style={styles.rowTitle}>{entry.isCappedFree ? 'LEVEL CAP ACTIVE' : entry.title}</Text>
                                             <View style={[styles.levelPill, { backgroundColor: `${rankColor}15`, borderColor: `${rankColor}30` }]}>
                                                 <Text style={[styles.levelPillText, { color: rankColor }]}>L{entry.level}</Text>
                                             </View>
@@ -322,15 +372,22 @@ const styles = StyleSheet.create({
     header: { marginBottom: 24 },
     headerEyebrow: {
         fontFamily: Fonts.monoBold,
-        fontSize: 9, color: Colors.accentPrimary,
+        fontSize: 9, color: '#9BE7FF',
         letterSpacing: 3, marginBottom: 6, opacity: 0.7,
     },
     titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     headerTitle: {
         fontFamily: Fonts.heading,
         fontSize: FontSizes.h1,
-        color: Colors.textPrimary,
+        color: '#FFFFFF',
         fontWeight: '800', letterSpacing: 0.5,
+    },
+    capNotice: {
+        marginTop: 10,
+        fontFamily: Fonts.body,
+        fontSize: 12,
+        lineHeight: 17,
+        color: 'rgba(255,255,255,0.82)',
     },
     livePillShell: {
         minWidth: 142,
@@ -374,7 +431,7 @@ const styles = StyleSheet.create({
     podiumSlot: { flex: 1, alignItems: 'center', gap: 6 },
     podiumName: {
         fontFamily: Fonts.monoBold, fontSize: 9,
-        color: Colors.textSecondary, letterSpacing: 0.5,
+        color: 'rgba(255,255,255,0.86)', letterSpacing: 0.5,
     },
     podiumBlock: {
         width: '100%',
@@ -397,7 +454,7 @@ const styles = StyleSheet.create({
         height: '62%',
     },
     podiumRank: { fontFamily: Fonts.monoBold, fontSize: FontSizes.xl, fontWeight: '800' },
-    podiumAura: { fontFamily: Fonts.mono, fontSize: 9, color: Colors.textTertiary, letterSpacing: 1 },
+    podiumAura: { fontFamily: Fonts.mono, fontSize: 9, color: 'rgba(255,255,255,0.62)', letterSpacing: 1 },
 
     listContainer: { gap: 8 },
     row: {
@@ -433,10 +490,10 @@ const styles = StyleSheet.create({
     rowContent: { flex: 1, gap: 3 },
     rowName: {
         fontFamily: Fonts.headingSemi,
-        fontSize: FontSizes.md, color: Colors.textPrimary, fontWeight: '700', letterSpacing: 0.3,
+        fontSize: FontSizes.md, color: '#FFFFFF', fontWeight: '700', letterSpacing: 0.3,
     },
     rowMeta: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-    rowTitle: { fontFamily: Fonts.mono, fontSize: 9, color: Colors.textSecondary, letterSpacing: 0.5 },
+    rowTitle: { fontFamily: Fonts.mono, fontSize: 9, color: 'rgba(255,255,255,0.78)', letterSpacing: 0.5 },
     levelPill: {
         paddingHorizontal: 7, paddingVertical: 1,
         borderRadius: Radius.pill, borderWidth: 1,
@@ -445,11 +502,11 @@ const styles = StyleSheet.create({
 
     rowRight: { alignItems: 'flex-end' },
     auraScore: { fontFamily: Fonts.monoBold, fontSize: FontSizes.xl, fontWeight: '800' },
-    auraLabel: { fontFamily: Fonts.mono, fontSize: 7, color: Colors.textTertiary, letterSpacing: 2 },
+    auraLabel: { fontFamily: Fonts.mono, fontSize: 7, color: 'rgba(255,255,255,0.6)', letterSpacing: 2 },
 
     loader: { padding: 40, alignItems: 'center', gap: 15 },
-    loaderText: { fontFamily: Fonts.mono, fontSize: 10, color: Colors.textTertiary, letterSpacing: 2 },
-    emptyText: { textAlign: 'center', color: Colors.textTertiary, fontFamily: Fonts.mono, fontSize: 10, marginTop: 40 },
+    loaderText: { fontFamily: Fonts.mono, fontSize: 10, color: 'rgba(255,255,255,0.66)', letterSpacing: 2 },
+    emptyText: { textAlign: 'center', color: 'rgba(255,255,255,0.66)', fontFamily: Fonts.mono, fontSize: 10, marginTop: 40 },
 
     floatingContainer: {
         position: 'absolute',

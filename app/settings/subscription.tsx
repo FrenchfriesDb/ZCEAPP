@@ -1,44 +1,102 @@
-import { Fonts, Radius, Spacing } from '@/constants/theme';
 import GlassButton from '@/components/GlassButton';
+import { Fonts, Spacing } from '@/constants/theme';
+import { useTextColors } from '@/context/TextColorsContext';
+import { useTimeColors } from '@/hooks/useTimeColors';
 import { useSubscription } from '@/context/SubscriptionContext';
-import { useUser } from '@/context/UserContext';
-import { PaymentService } from '@/services/payments';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Linking, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import RevenueCatUI from 'react-native-purchases-ui';
+import { Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+
+const FEATURES = [
+    'Streak system is fully free for everyone',
+    'Basic plan includes 3 daily quests + 10 AI messages per hour',
+    'Pro unlocks unlimited quests + unlimited Z.A.N.E. chat',
+    'Sky-Sync dynamic themes are Pro-exclusive',
+];
+
+const PLAN_COMPARE = [
+    { feature: 'Streak system', basic: 'Fully unlocked', pro: 'Fully unlocked' },
+    { feature: 'Daily quests', basic: '3 per day', pro: 'Unlimited' },
+    { feature: 'ZANE AI chat', basic: '10 messages / hour', pro: 'Unlimited' },
+    { feature: 'Drill access', basic: 'Mirror, Eye Lock, Response Speed', pro: 'All 14+ drills' },
+    { feature: 'Themes', basic: 'Static pure black only', pro: 'Sky-Sync dynamic themes' },
+    { feature: 'Proof verification', basic: 'Standard', pro: 'Advanced + voice analysis' },
+    { feature: 'Streak freeze', basic: 'No monthly freeze', pro: '1 freeze per month' },
+    { feature: 'Leaderboard', basic: 'View + capped at L3 competition', pro: 'Premium ranking tier' },
+];
+
+const PRO_WELCOME_SLIDES = [
+    {
+        title: 'WELCOME TO ZCE PRO',
+        body: 'Director tier is now active. Your protocol just upgraded.',
+        bullets: ['Unlimited Z.A.N.E. reps unlocked', 'Unlimited daily quest access is live'],
+    },
+    {
+        title: 'AI + COACHING BOOST',
+        body: 'You now get deeper feedback loops and faster response routing.',
+        bullets: ['Unlimited chat with ZANE', 'No free-tier hourly cap'],
+    },
+    {
+        title: 'TRAINING UNLOCKS',
+        body: 'You can push harder with the full training stack.',
+        bullets: ['All 14+ drills unlocked', 'Advanced proof verification + voice analysis'],
+    },
+    {
+        title: 'DIRECTOR CONTROL',
+        body: 'Your account now carries Pro status across app flows.',
+        bullets: ['Sky-Sync dynamic theme engine', 'Premium leaderboard placement + 1 streak freeze / month'],
+    },
+];
 
 export default function SubscriptionScreen() {
     const {
-        isRevenueCatAvailable,
         isPremium,
         currentProductId,
-        refreshEntitlements,
-        purchaseSubscription,
-        restorePurchases,
         isLoading,
         lastError,
+        purchaseSubscription,
+        restorePurchases,
+        refreshEntitlements,
     } = useSubscription();
-    const { user, updateProfile } = useUser();
-    const config = PaymentService.getConfig();
-    const [dismissed, setDismissed] = useState(false);
-    const [promoCode, setPromoCode] = useState('');
-    const hasNativeRevenueCatUi = PaymentService.isRevenueCatUiSupported();
-    const subscriptionStatus = ((user as any)?.subscriptionStatus || 'inactive') as string;
-    const subscriptionExpiresAt = ((user as any)?.subscriptionExpiresAt || null) as string | null;
-    const expirationLabel = isPremium && subscriptionExpiresAt
-        ? new Date(subscriptionExpiresAt).toLocaleDateString()
-        : 'Not subscribed';
-    const planLabel = currentProductId || (isPremium ? 'DIRECTOR' : 'FREE');
-    const statusLabel = isPremium ? 'ACTIVE' : subscriptionStatus.toUpperCase();
+    const [showWelcome, setShowWelcome] = useState(false);
+    const [welcomeSlideIndex, setWelcomeSlideIndex] = useState(0);
+    const { textPrimary } = useTextColors();
+    const { textColors } = useTimeColors();
+    const proAccent = textColors?.primary ?? textPrimary;
 
-    const handleCancel = () => {
+    const handleClose = () => {
         const canGoBack = (router as any).canGoBack?.();
         if (canGoBack) {
             router.back();
             return;
         }
         router.replace('/(tabs)/profile');
+    };
+
+    const openWelcome = () => {
+        setWelcomeSlideIndex(0);
+        setShowWelcome(true);
+    };
+
+    const handlePurchase = async (sku: 'monthly' | 'yearly') => {
+        const upgraded = await purchaseSubscription(sku);
+        await refreshEntitlements();
+        if (upgraded) {
+            openWelcome();
+        }
+    };
+
+    const handleRestore = async () => {
+        const restored = await restorePurchases();
+        await refreshEntitlements();
+        if (restored) {
+            openWelcome();
+            return;
+        }
+        Alert.alert(
+            'Restore Complete',
+            'No active Pro entitlement found. Restore is tied to Apple ID purchase history, not your app email login.'
+        );
     };
 
     const openManageSubscriptions = async () => {
@@ -54,204 +112,199 @@ export default function SubscriptionScreen() {
                 await Linking.openURL(url);
                 return;
             } catch {
-                // Try next candidate URL.
+                // Try next fallback URL.
             }
         }
 
         Alert.alert(
             'Open Subscriptions Manually',
-            'On iPhone: Settings > [your name] > Subscriptions.\nOn Simulator: this link may fail; test cancellation on a real device with an Apple ID.'
+            'On iPhone: Settings > [your name] > Subscriptions.'
         );
     };
 
-    const showNativePaywall = isRevenueCatAvailable && hasNativeRevenueCatUi && !dismissed;
-    const showRuntimeNativeModuleError = Boolean(lastError && /native module|rnpurchases/i.test(lastError));
-    const showBillingInitError = Boolean(lastError && /Billing initialization failed/i.test(lastError));
-
-    const handlePurchase = async (sku: 'monthly' | 'yearly') => {
-        if (!isRevenueCatAvailable) {
-            Alert.alert('Development Build Required', 'Expo Go cannot run native RevenueCat checkout. Open the app in a development build or TestFlight to test real payment.');
-            return;
-        }
-        const success = await purchaseSubscription(sku);
-
-        if (success) {
-            Alert.alert('Purchase Complete', 'ZCE PRO is now active on this account.');
-            void refreshEntitlements();
-        }
-    };
-
-    const handleRestore = async () => {
-        if (!isRevenueCatAvailable) {
-            Alert.alert('Development Build Required', 'Expo Go cannot restore native purchases. Use a development build or TestFlight.');
-            return;
-        }
-        const restored = await restorePurchases();
-        if (restored) {
-            Alert.alert('Restored', 'Your previous purchase was restored.');
-            void refreshEntitlements();
-        }
-    };
-
-    const handlePromoTrial = async () => {
-        const trimmed = promoCode.trim().toLowerCase();
-        if (trimmed !== 'zaneprotocol') {
-            Alert.alert('Invalid Code', 'Promo code is not valid.');
-            return;
-        }
-
-        const expires = new Date();
-        expires.setDate(expires.getDate() + 30);
-        await updateProfile({
-            subscriptionTier: 'director',
-            subscriptionStatus: 'active',
-            subscriptionExpiresAt: expires.toISOString(),
-            entitlements: [config.entitlementId],
-        } as any);
-        setPromoCode('');
-        Alert.alert('Promo Applied', 'Monthly ZCE PRO trial unlocked for testing.');
-    };
+    const slide = PRO_WELCOME_SLIDES[welcomeSlideIndex];
+    const isLastSlide = welcomeSlideIndex === PRO_WELCOME_SLIDES.length - 1;
+    const activePlanLabel = currentProductId?.toLowerCase().includes('yearly')
+        ? 'YEARLY'
+        : currentProductId?.toLowerCase().includes('monthly')
+            ? 'MONTHLY'
+            : 'PRO';
 
     return (
         <View style={styles.container}>
             <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
-            <View style={[StyleSheet.absoluteFill, styles.backdrop]} />
-            <View style={styles.topActions}>
-                <GlassButton
-                    label="CANCEL"
-                    onPress={handleCancel}
-                    look="glass"
-                    tint="dark"
-                    size="sm"
-                    compact
-                    style={styles.cancelGlassBtn}
-                />
-            </View>
 
-            {showNativePaywall ? (
-                <View style={styles.nativePaywallWrap}>
-                    <RevenueCatUI.Paywall
-                        onDismiss={() => {
-                            setDismissed(true);
-                            void refreshEntitlements();
-                        }}
-                    />
+            <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+                <Text style={styles.eyebrow}>ZCE MEMBERSHIP</Text>
+                <Text style={styles.title}>BASIC VS PRO</Text>
+                <Text style={styles.subtitle}>
+                    Choose your tier. Compare everything clearly before checkout.
+                </Text>
+
+                <View style={styles.featureList}>
+                    {FEATURES.map((feature) => (
+                        <View key={feature} style={styles.featureRow}>
+                            <Text style={styles.featureDot}>◆</Text>
+                            <Text style={styles.featureText}>{feature}</Text>
+                        </View>
+                    ))}
                 </View>
-            ) : (
-                <ScrollView style={styles.scrollFlex} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                    <View style={styles.fallbackWrap}>
-                        <View style={styles.statusCard}>
-                            <Text style={styles.statusTitle}>SUBSCRIPTION STATUS</Text>
-                            <Text style={styles.statusLine}>Status: {statusLabel}</Text>
-                            <Text style={styles.statusLine}>Plan: {planLabel}</Text>
-                            <Text style={styles.statusLine}>Expiration: {expirationLabel}</Text>
-                        </View>
 
-                        <Text style={styles.fallbackTitle}>ZCE PRO</Text>
-                        <Text style={styles.fallbackBody}>
-                            Native paywall UI is unavailable in this runtime. For real checkout testing, use a development build instead of Expo Go.
-                        </Text>
-                        <Text style={styles.methodHint}>Methods: Card, Apple Pay, Google Pay (availability depends on platform/store).</Text>
-                        <View style={styles.purchaseActions}>
-                            <GlassButton
-                                label="START MONTHLY"
-                                onPress={() => { void handlePurchase('monthly'); }}
-                                look="glass"
-                                tint="dark"
-                                size="sm"
-                                compact
-                                disabled={isLoading}
-                                style={[styles.paywallGlassButton, isLoading && styles.actionBtnDisabled]}
-                            />
-                            <GlassButton
-                                label="START YEARLY"
-                                onPress={() => { void handlePurchase('yearly'); }}
-                                look="glass"
-                                tint="dark"
-                                size="sm"
-                                compact
-                                disabled={isLoading}
-                                style={[styles.paywallGlassButton, isLoading && styles.actionBtnDisabled]}
-                            />
-                            <GlassButton
-                                label="RESTORE PURCHASES"
-                                onPress={() => { void handleRestore(); }}
-                                look="glass"
-                                tint="dark"
-                                size="sm"
-                                compact
-                                disabled={isLoading}
-                                style={[styles.paywallGlassButton, isLoading && styles.actionBtnDisabled]}
-                            />
+                <View style={styles.compareCard}>
+                    <View style={styles.compareHeaderRow}>
+                        <Text style={[styles.compareHeadCell, styles.compareHeadFeature]}>FEATURE</Text>
+                        <Text style={styles.compareHeadCell}>BASIC</Text>
+                        <Text style={styles.compareHeadCell}>PRO</Text>
+                    </View>
+                    {PLAN_COMPARE.map((row) => (
+                        <View key={row.feature} style={styles.compareRow}>
+                            <Text style={[styles.compareCell, styles.compareFeature]}>{row.feature}</Text>
+                            <Text style={styles.compareCell}>{row.basic}</Text>
+                            <Text style={[styles.compareCell, styles.comparePro]}>{row.pro}</Text>
                         </View>
-                        <Text style={styles.fallbackHint}>Entitlement: {config.entitlementId}</Text>
-                        {showBillingInitError && !showRuntimeNativeModuleError && (
-                            <Text style={styles.errorText}>
-                                Billing is not available in this runtime. Use a development build/TestFlight with valid RevenueCat keys.
-                            </Text>
-                        )}
-                        {!!lastError && !showRuntimeNativeModuleError && !showBillingInitError && <Text style={styles.errorText}>{lastError}</Text>}
+                    ))}
+                </View>
 
-                        <View style={styles.promoWrap}>
-                            <Text style={styles.promoTitle}>TEST PROMO CODE</Text>
-                            <TextInput
-                                value={promoCode}
-                                onChangeText={setPromoCode}
-                                autoCapitalize="none"
-                                autoCorrect={false}
-                                placeholder="Enter promo code"
-                                placeholderTextColor="rgba(255,255,255,0.35)"
-                                style={styles.promoInput}
-                            />
-                            <GlassButton
-                                label="APPLY PROMO"
-                                onPress={() => { void handlePromoTrial(); }}
-                                look="glass"
-                                tint="dark"
-                                size="sm"
-                                compact
-                                style={styles.paywallGlassButton}
-                            />
-                        </View>
-
+                <View style={styles.planRow}>
+                    <View style={styles.planCard}>
+                        <Text style={styles.planName}>MONTHLY</Text>
+                        <Text style={styles.planPrice}>$9.99</Text>
+                        <Text style={styles.planMeta}>Cancel anytime</Text>
                         <GlassButton
-                            label="BACK"
-                            onPress={() => router.back()}
+                            label={isLoading ? 'PROCESSING...' : 'START MONTHLY'}
+                            onPress={() => { void handlePurchase('monthly'); }}
                             look="glass"
                             tint="dark"
                             size="sm"
                             compact
-                            style={styles.paywallGlassButton}
+                            disabled={isLoading}
+                            style={styles.planButton}
                         />
                     </View>
 
-                    <View style={styles.footerInFlow}>
+                    <View style={[styles.planCard, styles.planCardFeatured]}>
+                        <Text style={styles.planName}>YEARLY</Text>
+                        <Text style={styles.planPrice}>$59.99</Text>
+                        <Text style={styles.planMeta}>Best value</Text>
                         <GlassButton
-                            label="MANAGE OR CANCEL IN APP STORE"
-                            onPress={() => { void openManageSubscriptions(); }}
+                            label={isLoading ? 'PROCESSING...' : 'START YEARLY'}
+                            onPress={() => { void handlePurchase('yearly'); }}
                             look="glass"
                             tint="dark"
                             size="sm"
                             compact
-                            style={styles.paywallGlassButton}
+                            disabled={isLoading}
+                            style={styles.planButton}
                         />
                     </View>
-                </ScrollView>
-            )}
+                </View>
 
-            {showNativePaywall && (
-                <View style={styles.footer}>
+                {isPremium && (
+                    <Text style={[styles.statusGood, { color: proAccent }]}>
+                        ACTIVE: ZCE PRO • {activePlanLabel}
+                    </Text>
+                )}
+
+                {!!lastError && <Text style={styles.errorText}>{lastError}</Text>}
+
+                <View style={styles.actionRow}>
                     <GlassButton
-                        label="MANAGE OR CANCEL IN APP STORE"
+                        label="RESTORE"
+                        onPress={() => { void handleRestore(); }}
+                        look="glass"
+                        tint="dark"
+                        size="sm"
+                        compact
+                        disabled={isLoading}
+                        style={styles.actionButton}
+                    />
+                    <GlassButton
+                        label="MANAGE"
                         onPress={() => { void openManageSubscriptions(); }}
                         look="glass"
                         tint="dark"
                         size="sm"
                         compact
-                        style={styles.paywallGlassButton}
+                        style={styles.actionButton}
+                    />
+                    {isPremium ? (
+                        <GlassButton
+                            label="VIEW PRO TOUR"
+                            onPress={openWelcome}
+                            look="glass"
+                            tint="dark"
+                            size="sm"
+                            compact
+                            style={styles.actionButton}
+                        />
+                    ) : null}
+                    <GlassButton
+                        label="CLOSE"
+                        onPress={handleClose}
+                        look="glass"
+                        tint="dark"
+                        size="sm"
+                        compact
+                        style={styles.actionButton}
                     />
                 </View>
-            )}
+            </ScrollView>
+
+            <Modal
+                visible={showWelcome}
+                transparent={false}
+                animationType="fade"
+                onRequestClose={() => setShowWelcome(false)}
+            >
+                <View style={styles.welcomeOverlay}>
+                    <View style={styles.welcomeMain}>
+                        <Text style={styles.welcomeEyebrow}>ZCE PRO ACTIVATED</Text>
+                        <Text style={styles.welcomeTitle}>{slide.title}</Text>
+                        <Text style={styles.welcomeBody}>{slide.body}</Text>
+                        <View style={styles.welcomeBullets}>
+                            {slide.bullets.map((item) => (
+                                <View key={item} style={styles.welcomeBulletRow}>
+                                    <Text style={styles.welcomeBulletDot}>◆</Text>
+                                    <Text style={styles.welcomeBulletText}>{item}</Text>
+                                </View>
+                            ))}
+                        </View>
+                    </View>
+                    <View style={styles.welcomeFooter}>
+                        <View style={styles.welcomeProgressRow}>
+                            {PRO_WELCOME_SLIDES.map((_, i) => (
+                                <View key={`slide-${i}`} style={[styles.progressDot, i === welcomeSlideIndex && styles.progressDotActive]} />
+                            ))}
+                        </View>
+                        <View style={styles.welcomeActions}>
+                            <Pressable
+                                onPress={() => {
+                                    if (welcomeSlideIndex === 0) {
+                                        setShowWelcome(false);
+                                        return;
+                                    }
+                                    setWelcomeSlideIndex((prev) => Math.max(0, prev - 1));
+                                }}
+                                style={styles.welcomeActionBtn}
+                            >
+                                <Text style={styles.welcomeActionText}>{welcomeSlideIndex === 0 ? 'CANCEL' : 'BACK'}</Text>
+                            </Pressable>
+                            <Pressable
+                                onPress={() => {
+                                    if (isLastSlide) {
+                                        setShowWelcome(false);
+                                        return;
+                                    }
+                                    setWelcomeSlideIndex((prev) => Math.min(PRO_WELCOME_SLIDES.length - 1, prev + 1));
+                                }}
+                                style={styles.welcomeActionBtn}
+                            >
+                                <Text style={styles.welcomeActionText}>{isLastSlide ? 'START' : 'NEXT'}</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -261,132 +314,284 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#000000',
     },
-    backdrop: {
-        backgroundColor: 'rgba(0,0,0,0.22)',
-    },
-    scrollFlex: {
+    scroll: {
         flex: 1,
     },
-    nativePaywallWrap: {
-        flex: 1,
-        paddingTop: 6,
-    },
-    scrollContent: {
-        paddingTop: 10,
-        paddingBottom: 34,
-    },
-    topActions: {
-        paddingTop: 58,
+    content: {
         paddingHorizontal: Spacing.lg,
-        alignItems: 'flex-end',
-        marginBottom: 8,
+        paddingTop: 32,
+        paddingBottom: 32,
+        gap: 12,
     },
-    cancelGlassBtn: {
-        minWidth: 110,
-    },
-    fallbackWrap: {
-        marginHorizontal: Spacing.lg,
-        backgroundColor: 'rgba(255,255,255,0.08)',
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.2)',
-        borderRadius: Radius.xl,
-        padding: Spacing.lg,
-    },
-    statusCard: {
-        marginBottom: 16,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.16)',
-        backgroundColor: 'rgba(255,255,255,0.04)',
-        borderRadius: Radius.lg,
-        padding: 12,
-        gap: 6,
-    },
-    statusTitle: {
-        fontFamily: Fonts.heading,
-        fontSize: 13,
-        letterSpacing: 1.1,
-        color: '#FFFFFF',
-        marginBottom: 2,
-    },
-    statusLine: {
+    eyebrow: {
         fontFamily: Fonts.headingSemi,
-        fontSize: 14,
-        color: 'rgba(255,255,255,0.82)',
-        lineHeight: 20,
+        fontSize: 11,
+        letterSpacing: 2,
+        color: 'rgba(255,255,255,0.65)',
     },
-    fallbackTitle: {
+    title: {
         fontFamily: Fonts.heading,
         fontSize: 30,
+        letterSpacing: 1,
         color: '#FFFFFF',
-        marginBottom: 10,
-        letterSpacing: 0.8,
     },
-    fallbackBody: {
-        fontFamily: Fonts.headingMedium,
-        fontSize: 15,
-        color: 'rgba(255,255,255,0.78)',
-        lineHeight: 23,
-        marginBottom: 8,
+    subtitle: {
+        fontFamily: Fonts.body,
+        fontSize: 14,
+        lineHeight: 20,
+        color: 'rgba(255,255,255,0.7)',
     },
-    methodHint: {
-        fontFamily: Fonts.headingSemi,
-        fontSize: 11,
-        color: 'rgba(255,255,255,0.62)',
-        marginBottom: 12,
-        letterSpacing: 0.6,
-    },
-    purchaseActions: {
-        gap: 8,
-        marginBottom: 10,
-    },
-    actionBtnDisabled: {
-        opacity: 0.5,
-    },
-    paywallGlassButton: {
-        width: '100%',
-    },
-    fallbackHint: {
-        fontFamily: Fonts.headingSemi,
-        fontSize: 11,
-        color: 'rgba(255,255,255,0.62)',
-        marginBottom: 8,
-    },
-    errorText: {
-        fontFamily: Fonts.headingSemi,
-        fontSize: 13,
-        color: '#B91C1C',
-        marginBottom: 10,
-    },
-    promoWrap: {
+    featureList: {
         marginTop: 8,
-        marginBottom: 12,
+        gap: 8,
+        padding: 14,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.12)',
+        backgroundColor: 'rgba(255,255,255,0.04)',
+    },
+    featureRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 8,
+    },
+    featureDot: {
+        color: '#FFFFFF',
+        fontSize: 10,
+        paddingTop: 4,
+    },
+    featureText: {
+        flex: 1,
+        fontFamily: Fonts.bodyMedium,
+        fontSize: 13,
+        lineHeight: 18,
+        color: 'rgba(255,255,255,0.86)',
+    },
+    compareCard: {
+        marginTop: 4,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.14)',
+        backgroundColor: 'rgba(255,255,255,0.03)',
+        overflow: 'hidden',
+    },
+    compareHeaderRow: {
+        flexDirection: 'row',
+        paddingHorizontal: 10,
+        paddingVertical: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(255,255,255,0.12)',
+        backgroundColor: 'rgba(255,255,255,0.06)',
+    },
+    compareHeadCell: {
+        flex: 0.9,
+        textAlign: 'center',
+        fontFamily: Fonts.headingSemi,
+        fontSize: 10,
+        color: 'rgba(255,255,255,0.8)',
+        letterSpacing: 1,
+    },
+    compareHeadFeature: {
+        flex: 1.8,
+        textAlign: 'left',
+    },
+    compareRow: {
+        flexDirection: 'row',
+        paddingHorizontal: 10,
+        paddingVertical: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(255,255,255,0.06)',
+    },
+    compareCell: {
+        flex: 0.9,
+        textAlign: 'center',
+        fontFamily: Fonts.body,
+        fontSize: 11,
+        color: 'rgba(255,255,255,0.72)',
+        lineHeight: 16,
+    },
+    compareFeature: {
+        flex: 1.8,
+        textAlign: 'left',
+    },
+    comparePro: {
+        color: '#FFFFFF',
+        fontFamily: Fonts.bodyMedium,
+    },
+    planRow: {
+        flexDirection: 'row',
+        gap: 10,
+        marginTop: 8,
+    },
+    planCard: {
+        flex: 1,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.14)',
+        backgroundColor: 'rgba(255,255,255,0.035)',
+        padding: 12,
+        gap: 5,
+    },
+    planCardFeatured: {
+        borderColor: 'rgba(255,255,255,0.36)',
+        backgroundColor: 'rgba(255,255,255,0.08)',
+    },
+    planName: {
+        fontFamily: Fonts.headingSemi,
+        fontSize: 12,
+        letterSpacing: 1,
+        color: 'rgba(255,255,255,0.7)',
+    },
+    planPrice: {
+        fontFamily: Fonts.heading,
+        fontSize: 24,
+        color: '#FFFFFF',
+    },
+    planMeta: {
+        fontFamily: Fonts.body,
+        fontSize: 12,
+        color: 'rgba(255,255,255,0.63)',
+        marginBottom: 2,
+    },
+    planButton: {
+        width: '100%',
+        marginTop: 4,
+    },
+    promoCard: {
+        marginTop: 10,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.14)',
+        backgroundColor: 'rgba(255,255,255,0.035)',
+        padding: 12,
         gap: 8,
     },
     promoTitle: {
-        fontFamily: Fonts.heading,
+        fontFamily: Fonts.headingSemi,
         fontSize: 12,
         letterSpacing: 1,
-        color: 'rgba(255,255,255,0.72)',
+        color: '#FFFFFF',
+    },
+    promoSubtitle: {
+        fontFamily: Fonts.body,
+        fontSize: 12,
+        lineHeight: 18,
+        color: 'rgba(255,255,255,0.68)',
     },
     promoInput: {
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.2)',
-        backgroundColor: 'rgba(255,255,255,0.05)',
-        borderRadius: Radius.md,
-        color: '#FFFFFF',
-        fontFamily: Fonts.headingSemi,
-        fontSize: 15,
+        backgroundColor: 'rgba(255,255,255,0.06)',
+        borderRadius: 10,
         paddingHorizontal: 12,
         paddingVertical: 10,
+        color: '#FFFFFF',
+        fontFamily: Fonts.bodyMedium,
+        fontSize: 13,
     },
-    footer: {
-        position: 'absolute',
-        left: Spacing.lg,
-        right: Spacing.lg,
-        bottom: 34,
+    statusGood: {
+        marginTop: 8,
+        fontFamily: Fonts.headingSemi,
+        fontSize: 12,
+        color: '#34D399',
+        letterSpacing: 0.6,
     },
-    footerInFlow: {
-        marginHorizontal: Spacing.lg,
-        marginTop: 16,
+    errorText: {
+        marginTop: 4,
+        fontFamily: Fonts.bodyMedium,
+        fontSize: 12,
+        lineHeight: 18,
+        color: '#F87171',
+    },
+    actionRow: {
+        marginTop: 10,
+        gap: 8,
+    },
+    actionButton: {
+        width: '100%',
+    },
+    welcomeOverlay: {
+        flex: 1,
+        backgroundColor: '#000000',
+        paddingHorizontal: 22,
+        paddingTop: 56,
+        paddingBottom: 26,
+    },
+    welcomeMain: {
+        flex: 1,
+        justifyContent: 'center',
+    },
+    welcomeEyebrow: {
+        fontFamily: Fonts.headingSemi,
+        fontSize: 10,
+        letterSpacing: 2,
+        color: 'rgba(255,255,255,0.66)',
+        marginBottom: 8,
+    },
+    welcomeTitle: {
+        fontFamily: Fonts.heading,
+        fontSize: 22,
+        color: '#FFFFFF',
+        marginBottom: 8,
+    },
+    welcomeBody: {
+        fontFamily: Fonts.body,
+        fontSize: 14,
+        lineHeight: 20,
+        color: 'rgba(255,255,255,0.82)',
+        marginBottom: 10,
+    },
+    welcomeBullets: {
+        gap: 7,
+    },
+    welcomeBulletRow: {
+        flexDirection: 'row',
+        gap: 8,
+    },
+    welcomeBulletDot: {
+        color: '#FFFFFF',
+        fontSize: 10,
+        paddingTop: 3,
+    },
+    welcomeBulletText: {
+        flex: 1,
+        fontFamily: Fonts.bodyMedium,
+        fontSize: 13,
+        lineHeight: 18,
+        color: 'rgba(255,255,255,0.88)',
+    },
+    welcomeProgressRow: {
+        flexDirection: 'row',
+        gap: 7,
+        marginBottom: 14,
+        justifyContent: 'center',
+    },
+    progressDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: 'rgba(255,255,255,0.24)',
+    },
+    progressDotActive: {
+        backgroundColor: '#FFFFFF',
+    },
+    welcomeFooter: {
+        paddingBottom: 10,
+    },
+    welcomeActions: { flexDirection: 'row', gap: 10 },
+    welcomeActionBtn: {
+        flex: 1,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
+        backgroundColor: 'rgba(255,255,255,0.06)',
+        paddingVertical: 12,
+        alignItems: 'center',
+    },
+    welcomeActionText: {
+        fontFamily: Fonts.headingSemi,
+        fontSize: 12,
+        letterSpacing: 1,
+        color: '#FFFFFF',
     },
 });

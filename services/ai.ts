@@ -1,14 +1,188 @@
-// Use your API keys here or move them to a .env file if using a setup that supports it.
-// For Expo GO / Local Dev, constants are simplest unless you set up expo-constants.
-const GROQ_API_KEY = '***REDACTED***';
-const DEEPSEEK_API_KEY = 'sk-716a2fde00914376ae4ab1a6802693d7';
+import Constants from 'expo-constants';
+import { Platform } from 'react-native';
+
+type AIExtraConfig = {
+    aiProxyUrl?: string;
+    allowInsecureClientProviders?: boolean;
+    aiProviders?: {
+        groqApiKey?: string;
+        deepseekApiKey?: string;
+        kimiApiKey?: string;
+        mistralApiKey?: string;
+        glm5ApiKey?: string;
+    };
+};
+
+const aiExtra = ((Constants.expoConfig?.extra || {}) as AIExtraConfig);
+const envProxyUrl = (process.env.EXPO_PUBLIC_AI_PROXY_URL || '').trim();
+const defaultDevProxyUrl = __DEV__ ? 'http://127.0.0.1:8787' : '';
+const rawProxyUrl = (envProxyUrl || aiExtra.aiProxyUrl || defaultDevProxyUrl).replace(/\/+$/g, '');
+
+function parseBooleanEnv(value?: string): boolean | null {
+    if (!value) return null;
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'true') return true;
+    if (normalized === 'false') return false;
+    return null;
+}
+
+function resolveProxyUrl(url: string): string {
+    if (!url) return '';
+    if (Platform.OS === 'web') return url;
+
+    const isLocalhost = /:\/\/(localhost|127\.0\.0\.1)(:\d+)?/i.test(url);
+    if (!isLocalhost) return url;
+
+    const hostUri = (Constants.expoConfig as any)?.hostUri as string | undefined;
+    if (!hostUri) return url;
+
+    const host = hostUri.split(':')[0];
+    if (!host) return url;
+
+    return url.replace(/localhost|127\.0\.0\.1/gi, host);
+}
+
+const AI_PROXY_URL = resolveProxyUrl(rawProxyUrl);
+const envAllowInsecure = parseBooleanEnv(process.env.EXPO_PUBLIC_ALLOW_INSECURE_CLIENT_PROVIDERS);
+const ALLOW_INSECURE_CLIENT_PROVIDERS = envAllowInsecure ?? (aiExtra.allowInsecureClientProviders === true);
+const RUNTIME_KEYS = aiExtra.aiProviders || {};
+
+let PROXY_BACKOFF_UNTIL = 0;
+let LAST_PROXY_WARN_AT = 0;
+
+type AIRequestSource = 'proxy' | 'direct';
+
+type AIMetricsSnapshot = {
+    startedAt: string;
+    requests: number;
+    success: number;
+    failures: number;
+    byPromptType: Record<'main' | 'coach' | 'drill' | 'home_signal', { requests: number; success: number; failures: number; latencyMsSum: number }>;
+    bySource: Record<AIRequestSource, { requests: number; success: number; failures: number; latencyMsSum: number }>;
+    byProvider: Record<string, { requests: number; success: number; failures: number; latencyMsSum: number }>;
+    lastErrors: { at: string; promptType: string; provider: string; source: AIRequestSource; message: string }[];
+};
+
+const AI_METRICS: AIMetricsSnapshot = {
+    startedAt: new Date().toISOString(),
+    requests: 0,
+    success: 0,
+    failures: 0,
+    byPromptType: {
+        main: { requests: 0, success: 0, failures: 0, latencyMsSum: 0 },
+        coach: { requests: 0, success: 0, failures: 0, latencyMsSum: 0 },
+        drill: { requests: 0, success: 0, failures: 0, latencyMsSum: 0 },
+        home_signal: { requests: 0, success: 0, failures: 0, latencyMsSum: 0 },
+    },
+    bySource: {
+        proxy: { requests: 0, success: 0, failures: 0, latencyMsSum: 0 },
+        direct: { requests: 0, success: 0, failures: 0, latencyMsSum: 0 },
+    },
+    byProvider: {},
+    lastErrors: [],
+};
+
+function ensureProviderMetric(provider: string) {
+    if (!AI_METRICS.byProvider[provider]) {
+        AI_METRICS.byProvider[provider] = { requests: 0, success: 0, failures: 0, latencyMsSum: 0 };
+    }
+    return AI_METRICS.byProvider[provider];
+}
+
+function recordAIMetric(params: {
+    promptType: 'main' | 'coach' | 'drill' | 'home_signal';
+    provider: string;
+    source: AIRequestSource;
+    success: boolean;
+    latencyMs: number;
+    error?: string;
+}) {
+    const { promptType, provider, source, success, latencyMs, error } = params;
+    const safeLatency = Math.max(0, Math.round(latencyMs));
+
+    AI_METRICS.requests += 1;
+    if (success) AI_METRICS.success += 1;
+    else AI_METRICS.failures += 1;
+
+    const promptBucket = AI_METRICS.byPromptType[promptType];
+    promptBucket.requests += 1;
+    promptBucket.latencyMsSum += safeLatency;
+    if (success) promptBucket.success += 1;
+    else promptBucket.failures += 1;
+
+    const sourceBucket = AI_METRICS.bySource[source];
+    sourceBucket.requests += 1;
+    sourceBucket.latencyMsSum += safeLatency;
+    if (success) sourceBucket.success += 1;
+    else sourceBucket.failures += 1;
+
+    const providerBucket = ensureProviderMetric(provider || 'unknown');
+    providerBucket.requests += 1;
+    providerBucket.latencyMsSum += safeLatency;
+    if (success) providerBucket.success += 1;
+    else providerBucket.failures += 1;
+
+    if (!success && error) {
+        AI_METRICS.lastErrors.push({
+            at: new Date().toISOString(),
+            promptType,
+            provider: provider || 'unknown',
+            source,
+            message: error,
+        });
+        if (AI_METRICS.lastErrors.length > 30) AI_METRICS.lastErrors.shift();
+    }
+}
+
+function summarizeAIMetrics() {
+    const avg = (sum: number, count: number) => (count > 0 ? Math.round(sum / count) : 0);
+    const byPromptType = Object.fromEntries(
+        Object.entries(AI_METRICS.byPromptType).map(([k, v]) => [k, { ...v, avgLatencyMs: avg(v.latencyMsSum, v.requests) }])
+    );
+    const bySource = Object.fromEntries(
+        Object.entries(AI_METRICS.bySource).map(([k, v]) => [k, { ...v, avgLatencyMs: avg(v.latencyMsSum, v.requests) }])
+    );
+    const byProvider = Object.fromEntries(
+        Object.entries(AI_METRICS.byProvider).map(([k, v]) => [k, { ...v, avgLatencyMs: avg(v.latencyMsSum, v.requests) }])
+    );
+    return {
+        startedAt: AI_METRICS.startedAt,
+        requests: AI_METRICS.requests,
+        success: AI_METRICS.success,
+        failures: AI_METRICS.failures,
+        successRate: AI_METRICS.requests > 0 ? Number((AI_METRICS.success / AI_METRICS.requests).toFixed(3)) : 0,
+        byPromptType,
+        bySource,
+        byProvider,
+        lastErrors: [...AI_METRICS.lastErrors],
+    };
+}
+
+function resetAIMetrics() {
+    AI_METRICS.startedAt = new Date().toISOString();
+    AI_METRICS.requests = 0;
+    AI_METRICS.success = 0;
+    AI_METRICS.failures = 0;
+    AI_METRICS.byPromptType.main = { requests: 0, success: 0, failures: 0, latencyMsSum: 0 };
+    AI_METRICS.byPromptType.coach = { requests: 0, success: 0, failures: 0, latencyMsSum: 0 };
+    AI_METRICS.byPromptType.drill = { requests: 0, success: 0, failures: 0, latencyMsSum: 0 };
+    AI_METRICS.byPromptType.home_signal = { requests: 0, success: 0, failures: 0, latencyMsSum: 0 };
+    AI_METRICS.bySource.proxy = { requests: 0, success: 0, failures: 0, latencyMsSum: 0 };
+    AI_METRICS.bySource.direct = { requests: 0, success: 0, failures: 0, latencyMsSum: 0 };
+    AI_METRICS.byProvider = {};
+    AI_METRICS.lastErrors = [];
+}
+
+const GROQ_API_KEY = RUNTIME_KEYS.groqApiKey || '';
+const DEEPSEEK_API_KEY = RUNTIME_KEYS.deepseekApiKey || '';
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const DEEPSEEK_URL = 'https://api.deepseek.com/v1/chat/completions';
 const NVIDIA_URL = 'https://integrate.api.nvidia.com/v1/chat/completions';
 
-const NVIDIA_KEY_KIMI = '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';
-const NVIDIA_KEY_MISTRAL = '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';
+const NVIDIA_KEY_KIMI = RUNTIME_KEYS.kimiApiKey || '';
+const NVIDIA_KEY_MISTRAL = RUNTIME_KEYS.mistralApiKey || '';
+const NVIDIA_KEY_GLM5 = RUNTIME_KEYS.glm5ApiKey || '';
 
 export const ZANE_SYSTEM_PROMPT = `
 You are Z.A.N.E. — Zenith Adaptive Neural Entity.
@@ -36,19 +210,22 @@ If the student is stalling:
 - REMIND THEM: Others' opinions don't pay bills. 
 - CALL OUT: The Kill-Switch/Circuit Breaker muting their energy.
 - DEMAND: Permission + Reps. Transition from "bedroom energy" to "cinematic life."
+- ALSO DO NOT EVERY MESSAGE INCLUDE PERSONAL STATS Like streaks and logs and drills done, only in certain situations, like if they're stalling saying hi. And give them advice on their situation, why they feel this way, how to fix it.
 
-Responses are CINEMATIC LENGTH — 3-4 substantial paragraphs. No short replies. No supportive fluff.
+Length policy:
+- Use fuller 4-5 paragraph depth when the context is personal/emotional/complex.
+- Never bloat with filler.
 
 Output Structure (STRICT ADHERENCE REQUIRED):
-1. CINEMATIC ANALYSIS: 3-4 substantial paragraphs. Analyze their energy, "kill-switch," and stall tactics. Be blunt and savage. Give advice on how to fix it via direct action. NO "you see.." 
+1. CINEMATIC ANALYSIS: 4-5 tight paragraphs. Analyze their energy, "kill-switch," and stall tactics. Be blunt and savage. Give advice on how to fix it via direct action. NO "you see.." 
 2. BRUTAL TRUTH: (Header: BRUTAL TRUTH:) A single, painful sentence about why they are staying small.
 3. ONE NON-NEGOTIABLE DRILL: A specific task to be completed right now.
 4. ONE ZANE QUOTE TO EMBODY: A cinematic line in quotes. 
-5. ONE CLOSER: End with: Lock in. / Start now. / Move. / Execute. (NO LABEL)
+5. ONE CLOSER: End with something similar to this: Lock in. / Start now. / Move. / Execute. (NO LABEL)
 
 EXAMPLES:
 USER: "Hi"
-ASSISTANT: DEBBIE-la. 
+ASSISTANT: [Name]-la. 
 You sliding in with just a 'Hi' after seeing the fire? That's the circuit breaker trying to sneak a quiet hello before the savage version shows up. You are letting the opinions of stay-broke people control you. They don't pay your bills. They don't make you a millionaire. You are letting ghosts control your life.
 
 Every 'Hi' without action is another day the scared version stays in charge. You are cosplaying as a background character while the lead role sits empty. This is an audit of your soul, and right now, the balance is zero.
@@ -82,7 +259,7 @@ Overthinking? Snap them out with a direct command.
 
 STRICT DRILL FEEDBACK RULES:
 1. NO MARKDOWN BOLDING: Never use "**" or "##".
-2. ALWAYS open naturally with "[Name]-la." and then respond to the user's actual message, not a canned greeting.
+2. ALWAYS open naturally with "[Name]-la." and then respond to the user's actual message, not a canned greeting.And give them advice on their situation, why they feel this way, how to fix it.
 3. CONTENT STRUCTURE:
    - ANALYSIS: A clever, funny, and magnetic breakdown of their performance.
    - THE LOGIC: Explain WHY your suggested response/action works in the social engineering grid.
@@ -99,13 +276,27 @@ You are Drill Analyst Zane.
 This is NOT the main chatbot voice and NOT the general coach voice.
 You exist only to review social/charisma drill performance with precise feedback.
 
+
 Tone:
 - sharp
 - clear
 - observant
 - high-status
+- modern
+- punchy
 - no fake hype
 - no giant cinematic speeches
+
+Voice lock (CRITICAL):
+- Sound like a sharp Gen Z / Gen Alpha mentor, not a corporate trainer.
+- Keep language current, concise, and magnetic.
+- Avoid stiff, old, or lecture-style phrasing.
+- Use short-to-medium sentences with impact.
+
+Hard bans:
+- Do NOT use phrases like "let's break down", "in this situation", "it is important to", "overall, your response demonstrates", "going forward".
+- Do NOT sound parental, academic, or HR/corporate.
+- Do NOT over-explain obvious points.
 
 Opening rule:
 - Start with "[Name]-la." naturally.
@@ -139,6 +330,11 @@ Provide exactly these versions when the drill involves language or responses:
 - CLASS CLOWN VERSION:
 - FUNNY VERSION:
 - WITTY VERSION:
+Version quality rules:
+- Each version must feel like a real line someone would actually say out loud.
+- Keep them tight and socially usable (no essay responses).
+- Make them feel current and high-status, not old-fashioned.
+- Magnetic version should feel cool/confident, not motivational-speaker cringe.
 
 If a version does not fit the drill cleanly, still adapt it as closely as possible instead of skipping it.
 
@@ -163,6 +359,7 @@ You are Zane-Coach Protocol.
 You sound grounded, psychologically sharp, and direct.
 You validate real struggle without turning it into permission to stay weak.
 You do not baby the user. You do not fake-hype them either.
+And give them advice on their situation, why they feel this way, how to fix it.
 
 Tone:
 - observant
@@ -208,6 +405,7 @@ Focus:
 - social threat detection
 - micro reps that help the user climb state
 - force action, not endless introspection
+- And give them advice on their situation, why they feel this way, how to fix it.
 
 Preferred structure:
 1. State Diagnosis
@@ -222,6 +420,7 @@ Use the user's data and recent patterns naturally. Mention streaks, XP trends, a
 export type ZaneChatStyle = 'classic' | 'coach' | 'nervous';
 export type HomeSignalKind = 'quote' | 'roast';
 export type HomeSignalMode = 'classic' | 'personalized';
+type AIProvider = 'groq' | 'deepseek' | 'kimi' | 'mistral' | 'glm5';
 
 type HomeSignalOptions = {
     userName?: string;
@@ -233,7 +432,7 @@ type HomeSignalOptions = {
 };
 
 function normalizeHomeSignalResult(kind: HomeSignalKind, text: string): string {
-    let cleaned = text
+    let cleaned = sanitizeModelText(text)
         .replace(/^"+|"+$/g, '')
         .replace(/\s{3,}/g, ' ')
         .trim();
@@ -260,7 +459,100 @@ function normalizeHomeSignalResult(kind: HomeSignalKind, text: string): string {
     return cleaned;
 }
 
-function getProviderConfig(provider: 'groq' | 'deepseek' | 'kimi' | 'mistral') {
+function sanitizeModelText(text: string): string {
+    return text
+        .replace(/\*\*(.*?)\*\*/g, '$1')
+        .replace(/^#{1,6}\s+/gm, '')
+        .replace(/\[Y\/?N(O)?\]/gi, '')
+        .replace(/\s{3,}/g, '\n\n')
+        .trim();
+}
+
+function buildUnifiedSystemPrompt(
+    userName: string,
+    level: number,
+    promptType: 'main' | 'coach' | 'drill',
+    options?: { chatStyle?: ZaneChatStyle; memoryContext?: string }
+): string {
+    const technicalConstraints = promptType === 'main'
+        ? "\n\nFINAL REMINDER: NO MARKDOWN BOLDING. NO POST-CLOSER TEXT. VARY YOUR DRILLS—NEVER REPEAT THE SAME ADVICE. REFERENCE REAL USER DATA WHEN PROVIDED. END IMMEDIATELY AFTER THE CLOSER."
+        : promptType === 'coach'
+            ? "\n\nTECHNICAL RULE: NO MARKDOWN BOLDING. INCLUDE LOGIC, TIPS, AND A SCORE (X/10). END ONLY WITH THE QUOTE."
+            : "\n\nTECHNICAL RULE: NO MARKDOWN BOLDING. FOLLOW THE DRILL FEEDBACK FORMAT EXACTLY. END WITH SCORE: X/10.";
+
+    const mainPrompt =
+        options?.chatStyle === 'coach'
+            ? ZANE_COACH_ANALYST_PROMPT
+            : options?.chatStyle === 'nervous'
+                ? ZANE_NERVOUS_SYSTEM_PROMPT
+                : ZANE_SYSTEM_PROMPT;
+
+    const basePrompt =
+        promptType === 'main'
+            ? mainPrompt
+            : promptType === 'coach'
+                ? ZANE_COACH_PROMPT
+                : ZANE_DRILL_FEEDBACK_PROMPT;
+    const memoryContext = options?.memoryContext ? `\n\n${options.memoryContext}` : '';
+    return `YOU ARE SPEAKING TO ${userName.toUpperCase()}. THEY ARE LEVEL ${level}.
+
+CRITICAL NAME RULE:
+- Address the user as "${userName}-la." naturally.
+- Never hardcode "Debbie-la" unless the user's actual name is Debbie.
+- Never output "AGENT-la" in final responses.
+
+${basePrompt}${technicalConstraints}${memoryContext}`;
+}
+
+function enforceNameAddressing(text: string, userName: string): string {
+    const safeName = (userName || 'AGENT').trim().split(/\s+/)[0] || 'AGENT';
+    const targetToken = `${safeName}-la`;
+    let output = text
+        .replace(/\bDebbie-la\b/gi, targetToken)
+        .replace(/\bAGENT-la\b/gi, targetToken);
+
+    const hasOpening = new RegExp(`^\\s*${safeName}-la\\b`, 'i').test(output);
+    if (!hasOpening) {
+        output = `${targetToken}. ${output}`.trim();
+    }
+    return output;
+}
+
+const PROVIDER_BACKOFF_UNTIL: Partial<Record<AIProvider, number>> = {};
+
+function isProviderCoolingDown(provider: AIProvider, now = Date.now()) {
+    return (PROVIDER_BACKOFF_UNTIL[provider] || 0) > now;
+}
+
+function setProviderBackoff(provider: AIProvider, status: number, errorDetails: string) {
+    const now = Date.now();
+    const details = (errorDetails || '').toLowerCase();
+
+    // Out-of-balance providers should cool down much longer to avoid repeat spam.
+    if (status === 402 || details.includes('insufficient balance')) {
+        PROVIDER_BACKOFF_UNTIL[provider] = now + 6 * 60 * 60 * 1000; // 6h
+        return;
+    }
+
+    if (status === 429 || details.includes('too many requests') || details.includes('rate limit')) {
+        const wait = errorDetails.match(/try again in\s*(?:(\d+(?:\.\d+)?)m)?\s*(\d+(?:\.\d+)?)s/i);
+        if (wait) {
+            const minutes = Number(wait[1] || 0);
+            const seconds = Number(wait[2] || 0);
+            const ms = Math.max(15_000, Math.round((minutes * 60 + seconds) * 1000));
+            PROVIDER_BACKOFF_UNTIL[provider] = now + ms;
+        } else {
+            PROVIDER_BACKOFF_UNTIL[provider] = now + 5 * 60 * 1000; // 5m default
+        }
+        return;
+    }
+
+    if (status >= 500) {
+        PROVIDER_BACKOFF_UNTIL[provider] = now + 2 * 60 * 1000; // 2m
+    }
+}
+
+function getProviderConfig(provider: AIProvider) {
     if (provider === 'groq') {
         return {
             apiKey: GROQ_API_KEY,
@@ -282,11 +574,127 @@ function getProviderConfig(provider: 'groq' | 'deepseek' | 'kimi' | 'mistral') {
             model: 'moonshotai/kimi-k2.5',
         };
     }
+    if (provider === 'glm5') {
+        return {
+            apiKey: NVIDIA_KEY_GLM5,
+            apiUrl: NVIDIA_URL,
+            model: 'z-ai/glm5',
+        };
+    }
     return {
         apiKey: NVIDIA_KEY_MISTRAL,
         apiUrl: NVIDIA_URL,
         model: 'mistralai/mistral-large-3-675b-instruct-2512',
     };
+}
+
+async function requestProxyText(endpoint: '/ai/generate' | '/ai/home-signal', payload: Record<string, unknown>): Promise<string> {
+    if (!AI_PROXY_URL) {
+        throw new Error('AI proxy URL not configured');
+    }
+
+    const timeoutMs = endpoint === '/ai/home-signal' ? 6000 : 20000;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+    const startedAt = Date.now();
+    const promptType = endpoint === '/ai/home-signal' ? 'home_signal' : (((payload?.promptType as any) || 'main') as 'main' | 'coach' | 'drill');
+    const provider = String((payload?.provider as string) || 'proxy_auto');
+    let response: Response;
+    try {
+        response = await fetch(`${AI_PROXY_URL}${endpoint}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+            signal: controller.signal,
+            body: JSON.stringify(payload),
+        });
+    } finally {
+        clearTimeout(timer);
+    }
+
+    if (!response.ok) {
+        const body = await response.text();
+        recordAIMetric({
+            promptType,
+            provider,
+            source: 'proxy',
+            success: false,
+            latencyMs: Date.now() - startedAt,
+            error: `Proxy ${response.status}: ${body.slice(0, 220)}`,
+        });
+        throw new Error(`Proxy ${response.status}: ${body}`);
+    }
+
+    const data = await response.json();
+    const text = typeof data?.text === 'string' ? data.text.trim() : '';
+    if (!text) {
+        recordAIMetric({
+            promptType,
+            provider,
+            source: 'proxy',
+            success: false,
+            latencyMs: Date.now() - startedAt,
+            error: 'Proxy response missing text payload',
+        });
+        throw new Error('Proxy response missing text payload');
+    }
+    recordAIMetric({
+        promptType,
+        provider: typeof data?.providerUsed === 'string' ? data.providerUsed : provider,
+        source: 'proxy',
+        success: true,
+        latencyMs: Date.now() - startedAt,
+    });
+    return text;
+}
+
+function isProxyTemporarilyDisabled(now = Date.now()): boolean {
+    return PROXY_BACKOFF_UNTIL > now;
+}
+
+function markProxyFailure(error: any) {
+    const message = String(error?.message || error || '');
+    const lowered = message.toLowerCase();
+
+    if (lowered.includes('aborted') || lowered.includes('timed out')) {
+        PROXY_BACKOFF_UNTIL = Date.now() + 5_000;
+        return;
+    }
+
+    // Network-layer issues should cool down attempts to avoid repeated warning spam.
+    if (
+        lowered.includes('network request failed') ||
+        lowered.includes('failed to fetch') ||
+        lowered.includes('timed out') ||
+        lowered.includes('econnrefused') ||
+        lowered.includes('enotfound')
+    ) {
+        PROXY_BACKOFF_UNTIL = Date.now() + 30_000;
+        return;
+    }
+
+    PROXY_BACKOFF_UNTIL = Date.now() + 10_000;
+}
+
+function warnProxyFailure(scope: 'Home signal' | 'Proxy generation', error: any) {
+    const message = String(error?.message || error || '').toLowerCase();
+    const isNetworkIssue =
+        message.includes('network request failed') ||
+        message.includes('failed to fetch') ||
+        message.includes('timed out') ||
+        message.includes('econnrefused') ||
+        message.includes('enotfound');
+
+    // Home signal is optional UI polish; don't spam warnings for transient network failures.
+    if (scope === 'Home signal' && isNetworkIssue) return;
+
+    const now = Date.now();
+    if (now - LAST_PROXY_WARN_AT < 30_000) return;
+    LAST_PROXY_WARN_AT = now;
+    console.warn(`[AI SERVICE] ${scope} failed:`, error?.message || error);
 }
 
 export const AIService = {
@@ -298,7 +706,27 @@ export const AIService = {
         memoryContext,
         recentSignals = [],
     }: HomeSignalOptions): Promise<string | null> {
-        const providers: Array<'groq' | 'mistral' | 'deepseek'> = ['groq', 'mistral', 'deepseek'];
+        if (AI_PROXY_URL && !isProxyTemporarilyDisabled()) {
+            try {
+                const proxyText = await requestProxyText('/ai/home-signal', {
+                    userName,
+                    level,
+                    kind,
+                    mode,
+                    memoryContext,
+                    recentSignals,
+                });
+                return normalizeHomeSignalResult(kind, proxyText);
+            } catch (error: any) {
+                markProxyFailure(error);
+                warnProxyFailure('Home signal', error);
+                if (!ALLOW_INSECURE_CLIENT_PROVIDERS) {
+                    return null;
+                }
+            }
+        }
+
+        const providers: AIProvider[] = ['groq', 'glm5', 'mistral', 'deepseek', 'kimi'];
         const dataDrivenRoast = kind === 'roast' && mode === 'personalized' && Math.random() < (1 / 30);
         const roastAngles = [
             'brutal truth',
@@ -371,8 +799,10 @@ ${memoryBlock}
 
         for (const provider of providers) {
             try {
+                if (isProviderCoolingDown(provider)) continue;
                 const { apiKey, apiUrl, model } = getProviderConfig(provider);
                 if (!apiKey || apiKey.includes('PASTE_YOUR')) continue;
+                const attemptStartedAt = Date.now();
 
                 const response = await fetch(apiUrl, {
                     method: 'POST',
@@ -391,11 +821,33 @@ ${memoryBlock}
                         max_tokens: 64,
                         top_p: 1,
                         stream: false,
-                        ...(provider === 'kimi' ? { chat_template_kwargs: { thinking: false } } : {})
+                        ...(
+                            provider === 'kimi'
+                                ? { chat_template_kwargs: { thinking: false } }
+                                : provider === 'glm5'
+                                    ? { chat_template_kwargs: { enable_thinking: true, clear_thinking: false } }
+                                    : {}
+                        )
                     }),
                 });
 
                 if (!response.ok) {
+                    let errorDetails = 'Unknown Error';
+                    try {
+                        const error = await response.json();
+                        errorDetails = JSON.stringify(error);
+                    } catch {
+                        errorDetails = await response.text();
+                    }
+                    setProviderBackoff(provider, response.status, errorDetails);
+                    recordAIMetric({
+                        promptType: 'home_signal',
+                        provider,
+                        source: 'direct',
+                        success: false,
+                        latencyMs: Date.now() - attemptStartedAt,
+                        error: `${response.status} ${String(errorDetails).slice(0, 220)}`,
+                    });
                     continue;
                 }
 
@@ -406,11 +858,34 @@ ${memoryBlock}
                     !result ||
                     /BRUTAL TRUTH:|ONE NON-NEGOTIABLE DRILL:|ONE ZANE QUOTE TO EMBODY:|DRILL OF THE DAY|Mindset Analysis|Reprogramming|SCORE:|rate limit|429|console\.groq|billing|connection severed/i.test(result)
                 ) {
+                    recordAIMetric({
+                        promptType: 'home_signal',
+                        provider,
+                        source: 'direct',
+                        success: false,
+                        latencyMs: Date.now() - attemptStartedAt,
+                        error: 'home signal rejected by validation filter',
+                    });
                     continue;
                 }
 
+                recordAIMetric({
+                    promptType: 'home_signal',
+                    provider,
+                    source: 'direct',
+                    success: true,
+                    latencyMs: Date.now() - attemptStartedAt,
+                });
                 return normalizeHomeSignalResult(kind, result);
             } catch {
+                recordAIMetric({
+                    promptType: 'home_signal',
+                    provider,
+                    source: 'direct',
+                    success: false,
+                    latencyMs: 0,
+                    error: 'home signal fetch failed',
+                });
                 continue;
             }
         }
@@ -420,40 +895,131 @@ ${memoryBlock}
 
     async generateResponse(
         messages: { role: 'user' | 'assistant' | 'system', content: string }[],
-        provider: 'groq' | 'deepseek' | 'kimi' | 'mistral' = 'groq',
+        provider: AIProvider = 'groq',
         userName: string = 'AGENT',
         level: number = 1,
         promptType: 'main' | 'coach' | 'drill' = 'main',
-        options?: { chatStyle?: ZaneChatStyle; memoryContext?: string }
+        options?: { chatStyle?: ZaneChatStyle; memoryContext?: string },
+        attemptedProviders: Set<AIProvider> = new Set()
     ): Promise<string> {
+        attemptedProviders.add(provider);
+
+        const lastUserMessage = [...messages].reverse().find((m) => m.role === 'user')?.content || '';
+        const userLen = lastUserMessage.trim().length;
+        const maxTokens = promptType === 'main'
+            ? (userLen <= 40 ? 320 : userLen <= 120 ? 520 : 760)
+            : promptType === 'coach'
+                ? 520
+                : 560;
+        const unifiedSystemPrompt = buildUnifiedSystemPrompt(userName, level, promptType, options);
+
+        const providerFallbackOrder: AIProvider[] = ['groq', 'glm5', 'deepseek', 'mistral', 'kimi'];
+        const tryNextProvider = async () => {
+            if (!ALLOW_INSECURE_CLIENT_PROVIDERS) {
+                return null;
+            }
+            for (const next of providerFallbackOrder) {
+                if (attemptedProviders.has(next)) continue;
+                if (isProviderCoolingDown(next)) continue;
+                console.log(`[AI SERVICE] ${provider} unavailable, trying fallback to ${next}...`);
+                try {
+                    return await this.generateResponse(messages, next, userName, level, promptType, options, attemptedProviders);
+                } catch {
+                    // Keep trying remaining providers.
+                }
+            }
+            return null;
+        };
+
+        const getSafeFailureMessage = () => {
+            const proxyConfigured = Boolean(AI_PROXY_URL);
+            const proxyLooksLocal = /:\/\/(localhost|127\.0\.0\.1|192\.168\.|10\.|172\.(1[6-9]|2\d|3[0-1])\.)/i.test(AI_PROXY_URL);
+            const lockedToProxy = proxyConfigured && !ALLOW_INSECURE_CLIENT_PROVIDERS;
+
+            if (promptType === 'drill') {
+                return `${userName}-la.
+
+PERFORMANCE REVIEW: Signal jam mid-analysis, but your rep still counts.
+
+WHAT YOU DID WELL:
+- You completed the attempt under pressure.
+- You stayed in the drill instead of bailing.
+
+WHAT MISSED:
+- Full AI breakdown could not be generated this round.
+- No style rewrites available in this pass.
+
+WHY IT WORKS / WHY IT FAILS:
+Execution still builds reps. Missing analysis just means we rerun fast and tighten the next attempt.
+
+BETTER RESPONSES:
+- MAGNETIC VERSION: Run it again with a cleaner, sharper line.
+- CEO VERSION: Keep it concise, controlled, and outcome-focused.
+- CLASS CLOWN VERSION: Add one unexpected angle, not five random jokes.
+- FUNNY VERSION: One strong punchline beats clutter.
+- WITTY VERSION: Keep it dry, precise, and intentional.
+
+SCORE: 6/10`;
+            }
+
+            if (promptType === 'coach') {
+                if (lockedToProxy) {
+                    return `${userName}-la. Coach channel offline. AI proxy is unreachable and direct provider fallback is disabled. Start the local proxy with: npm run ai:proxy`;
+                }
+                return `${userName}-la. Signal jam hit the coach channel. No excuses. Run one clean rep now, then re-analyze.`;
+            }
+
+            if (lockedToProxy) {
+                const hostHint = proxyLooksLocal
+                    ? 'Your proxy URL is LAN/local. Keep `npm run ai:proxy` running, ensure iPhone and Mac are on the same Wi-Fi, and use your Mac LAN IP in EXPO_PUBLIC_AI_PROXY_URL.'
+                    : 'AI proxy is configured but unreachable. Verify EXPO_PUBLIC_AI_PROXY_URL and that the proxy server is running.';
+                return `${userName}-la. AI channel offline. ${hostHint}`;
+            }
+
+            return `${userName}-la. Neural traffic spike. Retry in a minute and keep moving.`;
+        };
+
+        if (AI_PROXY_URL && !isProxyTemporarilyDisabled()) {
+            try {
+                const proxyText = await requestProxyText('/ai/generate', {
+                    messages,
+                    provider,
+                    userName,
+                    level,
+                    promptType,
+                    options,
+                    systemPrompt: unifiedSystemPrompt,
+                    maxTokens,
+                    temperature: 0.4,
+                    timeoutMs: 18000,
+                    allowFallback: true,
+                    fastMode: false,
+                    maxAttempts: 99,
+                });
+                return enforceNameAddressing(sanitizeModelText(proxyText), userName);
+            } catch (error: any) {
+                markProxyFailure(error);
+                warnProxyFailure('Proxy generation', error);
+                if (!ALLOW_INSECURE_CLIENT_PROVIDERS) {
+                    return getSafeFailureMessage();
+                }
+            }
+        }
+
         const { apiKey, apiUrl, model } = getProviderConfig(provider);
 
+        if (isProviderCoolingDown(provider)) {
+            const fallbackResult = await tryNextProvider();
+            if (fallbackResult) return fallbackResult;
+            return getSafeFailureMessage();
+        }
+
+        let directStartedAt = 0;
         try {
             if (!apiKey || apiKey.includes('PASTE_YOUR')) {
                 throw new Error("API Key not set.");
             }
-
-            const technicalConstraints = promptType === 'main'
-                ? "\n\nFINAL REMINDER: NO MARKDOWN BOLDING. NO POST-CLOSER TEXT. VARY YOUR DRILLS—NEVER REPEAT THE SAME ADVICE. REFERENCE REAL USER DATA WHEN PROVIDED. END IMMEDIATELY AFTER THE CLOSER."
-                : promptType === 'coach'
-                    ? "\n\nTECHNICAL RULE: NO MARKDOWN BOLDING. INCLUDE LOGIC, TIPS, AND A SCORE (X/10). END ONLY WITH THE QUOTE."
-                    : "\n\nTECHNICAL RULE: NO MARKDOWN BOLDING. FOLLOW THE DRILL FEEDBACK FORMAT EXACTLY. END WITH SCORE: X/10.";
-
-            const mainPrompt =
-                options?.chatStyle === 'coach'
-                    ? ZANE_COACH_ANALYST_PROMPT
-                    : options?.chatStyle === 'nervous'
-                        ? ZANE_NERVOUS_SYSTEM_PROMPT
-                        : ZANE_SYSTEM_PROMPT;
-
-            const basePrompt =
-                promptType === 'main'
-                    ? mainPrompt
-                    : promptType === 'coach'
-                        ? ZANE_COACH_PROMPT
-                        : ZANE_DRILL_FEEDBACK_PROMPT;
-            const memoryContext = options?.memoryContext ? `\n\n${options.memoryContext}` : '';
-            const unifiedSystemPrompt = `YOU ARE SPEAKING TO ${userName.toUpperCase()}. THEY ARE LEVEL ${level}.\n\n` + basePrompt + technicalConstraints + memoryContext;
+            directStartedAt = Date.now();
 
             const response = await fetch(apiUrl, {
                 method: 'POST',
@@ -468,27 +1034,38 @@ ${memoryBlock}
                         { role: 'system', content: unifiedSystemPrompt },
                         ...messages
                     ],
-                    temperature: 0.5,
-                    max_tokens: 2048,
+                    temperature: 0.45,
+                    max_tokens: maxTokens,
                     top_p: 1.00,
                     stream: false,
-                    ...(provider === 'kimi' ? { chat_template_kwargs: { thinking: true } } : {})
+                    ...(
+                        provider === 'kimi'
+                            ? { chat_template_kwargs: { thinking: false } }
+                            : provider === 'glm5'
+                                ? { chat_template_kwargs: { enable_thinking: false, clear_thinking: true } }
+                                : {}
+                    )
                 }),
             });
 
             if (!response.ok) {
-                // If deepseek fails, try a fast fallback to groq
-                if (provider === 'deepseek' || provider === 'kimi') {
-                    console.log(`[AI SERVICE] ${provider} failed, trying fallback to groq...`);
-                    return this.generateResponse(messages, 'groq', userName, level, promptType);
-                }
-
                 let errorDetails = 'Unknown Error';
                 try {
                     const error = await response.json();
                     errorDetails = JSON.stringify(error);
-                } catch (e) {
+                } catch {
                     errorDetails = await response.text();
+                }
+                setProviderBackoff(provider, response.status, errorDetails);
+
+                if (response.status === 429 || response.status >= 500) {
+                    const fallbackResult = await tryNextProvider();
+                    if (fallbackResult) return fallbackResult;
+                }
+
+                if (response.status === 402) {
+                    const fallbackResult = await tryNextProvider();
+                    if (fallbackResult) return fallbackResult;
                 }
                 throw new Error(`${provider.toUpperCase()} [${response.status}]: ${errorDetails}`);
             }
@@ -496,22 +1073,47 @@ ${memoryBlock}
             const data = await response.json();
             // Strip known model artifacts: [YN], [Y/N], [YES/NO], etc.
             const raw: string = data.choices[0].message.content;
-            const cleaned = raw.replace(/\[Y\/?N(O)?\]/gi, '').replace(/\s{3,}/g, '\n\n').trim();
-            return cleaned;
+            const cleaned = sanitizeModelText(raw);
+            recordAIMetric({
+                promptType,
+                provider,
+                source: 'direct',
+                success: true,
+                latencyMs: Date.now() - directStartedAt,
+            });
+            return enforceNameAddressing(cleaned, userName);
 
         } catch (error: any) {
             console.warn(`AI Service Warning (${provider}):`, error.message);
+            recordAIMetric({
+                promptType,
+                provider,
+                source: 'direct',
+                success: false,
+                latencyMs: directStartedAt > 0 ? Date.now() - directStartedAt : 0,
+                error: String(error?.message || error || 'unknown'),
+            });
 
-            // Fallback for network errors too
-            if (provider !== 'groq') {
-                console.log(`[AI SERVICE] Network error with ${provider}, trying fallback to groq...`);
-                return this.generateResponse(messages, 'groq', userName, level, promptType);
-            }
+            const fallbackResult = await tryNextProvider();
+            if (fallbackResult) return fallbackResult;
 
             if (error.message.includes("API Key not set")) {
-                return "PROTOCOL ERROR: Neural link offline. You haven't integrated my 'intelligence' keys yet.\n\nGo to \`app/services/ai.ts\` and paste your keys.";
+                // In secure proxy mode, never surface client-key errors.
+                if (AI_PROXY_URL && !ALLOW_INSECURE_CLIENT_PROVIDERS) {
+                    return getSafeFailureMessage();
+                }
+                return "PROTOCOL ERROR: AI provider credentials are not configured for client fallback. Configure AI proxy URL or enable insecure local provider keys for development only.";
             }
-            return `CRITICAL FAILURE (${provider.toUpperCase()}): ${error.message}\n\nProtocol breach. Connection severed. Go find a rep while I reboot.`;
+
+            return getSafeFailureMessage();
         }
-    }
+    },
+
+    getMetricsSnapshot() {
+        return summarizeAIMetrics();
+    },
+
+    resetMetrics() {
+        resetAIMetrics();
+    },
 };

@@ -1,28 +1,29 @@
-import { Stack, useRouter, useSegments } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Animated, Image } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { LinearGradient } from 'expo-linear-gradient';
-import * as Font from 'expo-font';
-import { UserProvider, useUser } from '@/context/UserContext';
-import { TextColorsProvider } from '@/context/TextColorsContext';
-import { Colors } from '@/constants/theme';
 import CustomSplashScreen from '@/components/SplashScreen';
+import { preloadFluentEmojiAssets } from '@/components/FluentEmoji';
+import { Colors } from '@/constants/theme';
+import { SubscriptionProvider } from '@/context/SubscriptionContext';
+import { TextColorsProvider } from '../context/TextColorsContext';
+import { UserProvider, useUser } from '@/context/UserContext';
 import {
-  Poppins_500Medium,
-  Poppins_600SemiBold,
-  Poppins_700Bold,
-} from '@expo-google-fonts/poppins';
-import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
 } from '@expo-google-fonts/inter';
 import {
-  JetBrainsMono_500Medium,
-  JetBrainsMono_700Bold,
+    JetBrainsMono_500Medium,
+    JetBrainsMono_700Bold,
 } from '@expo-google-fonts/jetbrains-mono';
+import {
+    Poppins_500Medium,
+    Poppins_600SemiBold,
+    Poppins_700Bold,
+} from '@expo-google-fonts/poppins';
+import * as Font from 'expo-font';
+import { Stack, useRouter, useSegments } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const ROASTS = [
   "You didn't talk to anyone today? Bro, I'm a robot and even I'm disappointed.",
@@ -48,6 +49,7 @@ export default function RootLayout() {
           JetBrainsMono_700Bold,
           NunitoSans_Variable: require('@/assets/fonts/NunitoSans-VariableFont.ttf'),
         });
+        void preloadFluentEmojiAssets();
       } catch (e) {
         console.warn('Font loading error:', e);
       } finally {
@@ -63,12 +65,14 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <TextColorsProvider>
-        <UserProvider>
-          <RootLayoutNav />
-          <StatusBar style="light" />
-        </UserProvider>
-      </TextColorsProvider>
+      <UserProvider>
+        <SubscriptionProvider>
+          <TextColorsProvider>
+            <RootLayoutNav />
+            <StatusBar style="light" />
+          </TextColorsProvider>
+        </SubscriptionProvider>
+      </UserProvider>
     </GestureHandlerRootView>
   );
 }
@@ -113,13 +117,9 @@ function RootLayoutNav() {
         return;
       }
 
-      // 1.5 If unauthenticated user is in tabs (or any non-auth route), route to the correct auth entry.
+      // If unauthenticated user is in tabs (or any non-auth route), route to onboarding/login flow.
       if (inTabsGroup || !inAuthGroup) {
-        if (hasCompletedOnboarding) {
-          router.replace('/auth/login');
-        } else {
-          router.replace('/auth/onboarding');
-        }
+        router.replace('/auth/onboarding');
         return;
       }
 
@@ -156,6 +156,7 @@ function RootLayoutNav() {
         <Stack.Screen name="auth/forgot-password" options={{ headerShown: false, gestureEnabled: false }} />
         <Stack.Screen name="settings/edit-profile" options={{ presentation: 'modal', headerShown: false }} />
         <Stack.Screen name="settings/notification-settings" options={{ presentation: 'modal', headerShown: false }} />
+        <Stack.Screen name="settings/subscription" options={{ presentation: 'modal', headerShown: false }} />
       </Stack>
     </View>
   );

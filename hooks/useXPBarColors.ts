@@ -1,4 +1,5 @@
-import { TimeColors, getTimePalette, getTimeThemeInfo } from '@/constants/theme';
+import { getTimePalette, getTimeThemeInfo } from '@/constants/theme';
+import { useSubscription } from '@/context/SubscriptionContext';
 import { useEffect, useState } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 
@@ -13,18 +14,28 @@ let lastXPBarMinuteStamp: string | null = null;
  * which returns a neutral silver during night hours.
  */
 export const useXPBarColors = (): string[] => {
-    const [palette, setPalette] = useState<string[]>(TimeColors.day);
+    const { isPremium } = useSubscription();
+    const [palette, setPalette] = useState<string[]>(['#FFFFFF', '#FFFFFF']);
 
     useEffect(() => {
         const update = () => {
             const now = new Date();
             const h = now.getHours();
             const m = now.getMinutes();
-            const nextPalette = getTimePalette(h, m);
+            const nextPalette = isPremium
+                ? getTimePalette(h, m)
+                : ['#FFFFFF', '#FFFFFF'];
             setPalette(nextPalette);
 
             if (__DEV__) {
-                const info = getTimeThemeInfo(h, m);
+                const info = isPremium
+                    ? getTimeThemeInfo(h, m)
+                    : {
+                        key: 'free_static_dark',
+                        label: 'Static Dark (Free)',
+                        range: 'All day',
+                        palette: nextPalette,
+                    };
                 const timeLabel = now.toLocaleTimeString([], {
                     hour: '2-digit',
                     minute: '2-digit',
@@ -68,7 +79,7 @@ export const useXPBarColors = (): string[] => {
             if (timeout) clearTimeout(timeout);
             if (interval) clearInterval(interval);
         };
-    }, []);
+    }, [isPremium]);
 
     return palette;
 };

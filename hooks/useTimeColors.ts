@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { getDynamicColors, getTimePalette, getTimeThemeInfo, type TimeThemeInfo } from '@/constants/theme';
+import { useSubscription } from '@/context/SubscriptionContext';
+import { useEffect, useState } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
-import { TimeColors, getDynamicColors, getTimePalette, getTimeThemeInfo, type TimeThemeInfo } from '@/constants/theme';
 
 let lastLoggedMinuteStamp: string | null = null;
 
@@ -16,16 +17,21 @@ let lastLoggedMinuteStamp: string | null = null;
  *   morning       7:30–7:39 — Sunrise pastel cloud
  *   blushSky      7:40–7:59 — Blush Sky
  *   cloudDrift    8:00–15:59 — electric daylight
- *   goldenHour    16:00–17:59 — warm golden
- *   sunset        18–19:59  — fiery (#FF0F7B → #F89B29)
- *   twilight      19–19:59  — pink-cyan (7–8 PM) (#FF1B6B → #45CAFF)
- *   eveningNavy   20–20:59  — 8-8:30 PM (#9BAFD9 → #103783)
- *   nightDive     21–21:59  — 8:30-9 PM Moon Dust
- *   voidSpark     22–22:59  — 9-10 PM Void Spark
- *   midnightMist  23–23:59  — 10-11 PM Midnight Mist
+ *   goldenHour    17:00–17:29 — warm golden (#FFA585 -> #FFEDA0)
+ *   sunberryTwist 17:30–17:59 — pink-sky blend (#F86CA7 -> #F4D444)
+ *   sunsetCandy   18:00–18:29 — candy sunset (#FF0F7B -> #F89B29)
+ *   sunset        18:30–18:59 — fiery sunset (#FF0F7B -> #F89B29)
+ *   twilight      19:00–19:29 — pink-cyan (#FF1B6B -> #45CAFF)
+ *   battleGlory   19:30–19:59 — gold-red-navy (#FC9F32 -> #AE1B1E -> #1A2766)
+ *   marsEcho      20:00–20:29 — mars echo (#EF745C -> #B95E82)
+ *   plumGlow      20:30–20:59 — plum glow (#3E196E -> #D46C76 -> #FFC07C)
+ *   nightDive     21:00–21:59 — moon dust
+ *   voidSpark     22:00–22:59 — void spark
+ *   midnightMist  23:00–23:59 — midnight mist
  */
 export const useTimeColors = () => {
-    const [palette, setPalette] = useState<string[]>(TimeColors.day);
+    const { isPremium } = useSubscription();
+    const [palette, setPalette] = useState<string[]>(['#000000', '#000000']);
     const [textColors, setTextColors] = useState({
         primary: '#E8E8E8',
         secondary: 'rgba(255, 255, 255, 0.45)',
@@ -41,13 +47,29 @@ export const useTimeColors = () => {
             const now = new Date();
             const h = now.getHours();
             const m = now.getMinutes();
-            const nextThemeInfo = getTimeThemeInfo(h, m);
 
-            const next = getTimePalette(h, m);
+            const nextThemeInfo = isPremium
+                ? getTimeThemeInfo(h, m)
+                : {
+                    key: 'free_static_dark',
+                    label: 'Static Dark (Free)',
+                    range: 'All day',
+                    palette: ['#000000', '#000000'],
+                };
 
-            const dyn = getDynamicColors(h, m);
+            const next = isPremium
+                ? getTimePalette(h, m)
+                : ['#000000', '#000000'];
+
+            const dyn = isPremium
+                ? getDynamicColors(h, m)
+                : {
+                    textPrimary: '#FFFFFF',
+                    textSecondary: 'rgba(255, 255, 255, 0.72)',
+                    textTertiary: 'rgba(255, 255, 255, 0.45)',
+                };
             setPalette(next);
-            setThemeInfo(nextThemeInfo);
+            setThemeInfo(nextThemeInfo as TimeThemeInfo);
             setTextColors({
                 primary: dyn.textPrimary,
                 secondary: dyn.textSecondary,
@@ -98,7 +120,7 @@ export const useTimeColors = () => {
             if (timeout) clearTimeout(timeout);
             if (interval) clearInterval(interval);
         };
-    }, []);
+    }, [isPremium]);
 
     return { palette, textColors, themeInfo };
 };

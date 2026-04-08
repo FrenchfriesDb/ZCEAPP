@@ -1,30 +1,30 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router } from 'expo-router';
-import { Platform, Alert } from 'react-native';
 import { auth, db } from '@/services/firebase';
 import { NotificationService } from '@/services/notifications';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
 import {
-    onAuthStateChanged,
-    signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
-    updateEmail,
-    updatePassword,
-    sendPasswordResetEmail,
     deleteUser,
-    signOut as fbSignOut
+    signOut as fbSignOut,
+    onAuthStateChanged,
+    sendPasswordResetEmail,
+    signInWithEmailAndPassword,
+    updateEmail,
+    updatePassword
 } from 'firebase/auth';
 import {
+    collection,
+    deleteDoc,
     doc,
     getDoc,
+    getDocs,
+    query,
     setDoc,
     updateDoc,
-    deleteDoc,
-    collection,
-    query,
     where,
-    getDocs,
 } from 'firebase/firestore';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { Alert } from 'react-native';
 
 // --- STORAGE HELPER ---
 const Storage = {
@@ -38,7 +38,7 @@ const LAST_SUCCESS_EMAIL_KEY = 'zce_last_success_email';
 const LAST_SUCCESS_USERNAME_KEY = 'zce_last_success_username';
 
 const getRecentLoginError = () => "CRITICAL: Re-authentication Required. For security, you must log out and immediately log back in to change your agent credentials.";
-const STREAK_RECOVERY_GRACE_MS = 10 * 60 * 1000;
+const STREAK_RECOVERY_GRACE_MS = 24 * 60 * 60 * 1000;
 
 
 // --- DEFAULT STATE ---
@@ -69,6 +69,10 @@ const DEFAULT_USER: Partial<UserData> = {
     socialLevel: 'NPC',
     primaryMission: 'General',
     commitment: '30 days',
+    subscriptionTier: 'initiate',
+    subscriptionStatus: 'inactive',
+    subscriptionExpiresAt: null,
+    entitlements: [],
     lastDrillDate: null,
 };
 
@@ -100,6 +104,10 @@ interface UserData {
     socialLevel: string; // NPC, Side Character, Lead
     primaryMission: string; // Social anxiety, Dating, etc.
     commitment: string; // 30 days, 90 days, Forever
+    subscriptionTier?: 'initiate' | 'director';
+    subscriptionStatus?: 'active' | 'inactive' | 'expired' | 'grace';
+    subscriptionExpiresAt?: string | null;
+    entitlements?: string[];
     // Keep backward compat
     lastDrillDate?: string | null;
 }
@@ -199,7 +207,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     };
 
     const resolveEmailFromUsername = async (usernameInput: string): Promise<string | null> => {
-        const normalizedUsername = usernameInput.replace(/^@+/, '').trim().toLowerCase();
+        const normalizeUsername = (value: string) => value.replace(/^@+/, '').trim().toLowerCase();
+        const normalizedUsername = normalizeUsername(usernameInput);
         if (!normalizedUsername) return null;
 
         try {
@@ -238,12 +247,40 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         }
 
         try {
-            let snap = await getDocs(query(collection(db, 'users'), where('username', '==', normalizedUsername)));
-            if (snap.empty) {
-                snap = await getDocs(query(collection(db, 'users'), where('username', '==', usernameInput)));
+            const usernameCandidates = [
+                normalizedUsername,
+                usernameInput.trim(),
+                usernameInput.trim().toLowerCase(),
+                `@${normalizedUsername}`,
+            ];
+
+            for (const candidate of usernameCandidates) {
+                const snap = await getDocs(query(collection(db, 'users'), where('username', '==', candidate)));
+                if (!snap.empty) {
+                    const email = String(snap.docs[0].data().email || '').trim().toLowerCase();
+                    if (email) {
+                        await cacheUsernameEmail(normalizedUsername, email);
+                        return email;
+                    }
+                }
             }
-            if (!snap.empty) {
-                const email = String(snap.docs[0].data().email || '').trim().toLowerCase();
+
+            // Final fallback for legacy records with inconsistent username casing/format.
+            // This is heavier than indexed equality lookups, so keep it as a last resort only.
+            const allUsers = await getDocs(collection(db, 'users'));
+            const match = allUsers.docs.find((userDoc) => {
+                const data = userDoc.data() as any;
+                const docUsername = normalizeUsername(String(data?.username || ''));
+                if (docUsername && docUsername === normalizedUsername) return true;
+
+                const docEmail = String(data?.email || '').trim().toLowerCase();
+                if (!docEmail || !docEmail.includes('@')) return false;
+                const localPart = docEmail.split('@')[0];
+                return normalizeUsername(localPart) === normalizedUsername;
+            });
+
+            if (match) {
+                const email = String(match.data().email || '').trim().toLowerCase();
                 if (email) {
                     await cacheUsernameEmail(normalizedUsername, email);
                     return email;
@@ -339,6 +376,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                             socialLevel: 'NPC',
                             primaryMission: 'General',
                             commitment: '30 days',
+                            subscriptionTier: 'initiate',
+                            subscriptionStatus: 'inactive',
+                            subscriptionExpiresAt: null,
+                            entitlements: [],
                             lastDrillDate: null,
                         };
                         await setDoc(docRef, defaultData);
@@ -426,6 +467,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
         if (user.streakAtRisk && recoveryExpired) {
             _syncUpdate({
+                streak: 0,
                 streakAtRisk: false,
                 previousStreak: 0,
                 streakRecoveryExpiresAt: null,
@@ -439,6 +481,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         const previousStreak = Math.max(Number(user.streak || 0), Number(user.previousStreak || 0));
 
         _syncUpdate({
+            streak: 0,
             streakAtRisk: true,
             previousStreak,
             streakRecoveryExpiresAt: new Date(Date.now() + STREAK_RECOVERY_GRACE_MS).toISOString(),
@@ -645,6 +688,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 socialLevel: onboardingData.level,
                 primaryMission: onboardingData.goal,
                 commitment: onboardingData.commitment,
+                subscriptionTier: 'initiate',
+                subscriptionStatus: 'inactive',
+                subscriptionExpiresAt: null,
+                entitlements: [],
                 lastDrillDate: null,
             };
             await setDoc(doc(db, 'users', cred.user.uid), initialData);
@@ -732,10 +779,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             streakRecoveryExpiresAt = null;
             console.log('[Streak Engine] Consecutive day! Streak incremented to', streak);
         } else {
-            console.log(`[Streak Engine] Day gap detected (Last: ${lastDate}). Resetting to 1.`);
+            console.log(`[Streak Engine] Day gap detected (Last: ${lastDate}). Entering recovery window or resetting streak.`);
             previousStreak = Math.max(streak, previousStreak);
-            streak = 1;
             streakAtRisk = (previousStreak > 1);
+            streak = streakAtRisk ? 0 : 1;
             streakRecoveryExpiresAt = streakAtRisk ? new Date(Date.now() + STREAK_RECOVERY_GRACE_MS).toISOString() : null;
             if (streakAtRisk) {
                 NotificationService.sendStreakWarning();
@@ -798,8 +845,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             streakRecoveryExpiresAt = null;
         } else {
             previousStreak = Math.max(streak, previousStreak);
-            streak = 1;
             streakAtRisk = previousStreak > 1;
+            streak = streakAtRisk ? 0 : 1;
             streakRecoveryExpiresAt = streakAtRisk ? new Date(Date.now() + STREAK_RECOVERY_GRACE_MS).toISOString() : null;
             if (streakAtRisk) {
                 NotificationService.sendStreakWarning();
@@ -845,6 +892,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         if (!current || !current.streakAtRisk) return;
         if (current.streakRecoveryExpiresAt && new Date(current.streakRecoveryExpiresAt).getTime() <= Date.now()) {
             await _syncUpdate({
+                streak: 0,
                 streakAtRisk: false,
                 previousStreak: 0,
                 streakRecoveryExpiresAt: null,

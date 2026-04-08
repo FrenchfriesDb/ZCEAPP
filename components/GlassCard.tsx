@@ -57,25 +57,21 @@ export default function GlassCard({
             ? Colors.borderAccent
             : 'rgba(255, 255, 255, 0.1)'; // Thin frosted border
 
-    return (
-        <Pressable
-            disabled={!onPress}
-            onPress={onPress}
-            unstable_pressDelay={Platform.OS === 'ios' ? 85 : 0}
-            style={({ pressed }) => [
-                styles.outer,
-                {
-                    shadowColor: resolvedGlow,
-                    shadowOpacity: danger ? 0.3 : accent ? 0.25 : themed ? 0.2 : 0.08,
-                    shadowRadius: themed ? 15 : 8,
-                    borderColor: resolvedBorder,
-                },
-                pressed && styles.pressed,
-                style,
-            ]}
-        >
+    const baseStyle = [
+        styles.outer,
+        {
+            shadowColor: resolvedGlow,
+            shadowOpacity: danger ? 0.3 : accent ? 0.25 : themed ? 0.2 : 0.08,
+            shadowRadius: themed ? 15 : 8,
+            borderColor: resolvedBorder,
+        },
+        style,
+    ] as const;
+
+    const cardContents = (
+        <>
             <BlurView pointerEvents="none" intensity={blurIntensity} tint="dark" style={[StyleSheet.absoluteFill, { borderRadius: 16 }]} />
-            <View style={[styles.content, noPadding && { padding: 0 }]}>
+            <View style={[styles.content, noPadding && { padding: 0 }]}> 
                 {/* Shine gradient across top edge */}
                 <LinearGradient
                     pointerEvents="none"
@@ -92,6 +88,23 @@ export default function GlassCard({
 
                 {children}
             </View>
+        </>
+    );
+
+    if (!onPress) {
+        return <View style={baseStyle}>{cardContents}</View>;
+    }
+
+    return (
+        <Pressable
+            onPress={onPress}
+            unstable_pressDelay={Platform.OS === 'ios' ? 85 : 0}
+            style={({ pressed }) => [
+                ...baseStyle,
+                pressed && styles.pressed,
+            ]}
+        >
+            {cardContents}
         </Pressable>
     );
 }

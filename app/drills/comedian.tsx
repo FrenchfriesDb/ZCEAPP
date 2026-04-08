@@ -3,22 +3,28 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
 import { router } from 'expo-router';
 import { useState } from 'react';
+import { useTimeColors } from '@/hooks/useTimeColors';
 import GlassCard from '@/components/GlassCard';
 import GlassButton from '@/components/GlassButton';
 import DrillFeedbackPanel from '@/components/DrillFeedbackPanel';
+import FluentEmoji from '@/components/FluentEmoji';
 import { OBJECTS } from '@/constants/zane';
 import { AIService } from '@/services/ai';
 import { useUser } from '@/context/UserContext';
 
 export default function ComedianDrill() {
     const { user, completeDrill, addDrillLog } = useUser();
+    const { textColors } = useTimeColors();
     const [object, setObject] = useState("This App");
     const [response, setResponse] = useState("");
     const [feedback, setFeedback] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
     const generate = () => {
-        setObject(OBJECTS[Math.floor(Math.random() * OBJECTS.length)]);
+        const safePool = Array.isArray(OBJECTS) && OBJECTS.length > 0 ? OBJECTS : ['This App'];
+        const nonRepeatingPool = safePool.filter((item) => item && item !== object);
+        const source = nonRepeatingPool.length > 0 ? nonRepeatingPool : safePool;
+        setObject(source[Math.floor(Math.random() * source.length)] || 'This App');
         setResponse("");
         setFeedback("");
     };
@@ -66,25 +72,25 @@ export default function ComedianDrill() {
                 <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')} style={styles.backBtn}>
                     <Text style={styles.backText}>← EXIT</Text>
                 </Pressable>
-                <Text style={styles.title}>STAND-UP DRILL</Text>
+                <Text style={[styles.title, { color: textColors.secondary }]}>TALK LIKE A COMEDIAN</Text>
                 <View style={styles.headerSpacer} />
             </View>
 
             {!feedback && (
                 <View style={{ paddingTop: 6 }}>
-                    <GlassCard style={styles.card}>
-                        <Text style={styles.label}>THE SUBJECT:</Text>
-                        <Text style={styles.object}>{object}</Text>
-                        <View style={{ width: '100%', marginTop: 12 }}>
-                            <GlassButton
-                                label="🎲 RANDOMIZE"
-                                onPress={generate}
-                                size="sm"
-                                tint="dark"
-                                style={{ width: '100%' }}
-                            />
-                        </View>
-                    </GlassCard>
+                    <Text style={styles.subjectInlineLabel}>SUBJECT</Text>
+                    <Text style={styles.subjectInlineText}>{object || 'This App'}</Text>
+                    <View style={{ width: '100%', marginTop: 10 }}>
+                        <Pressable style={styles.randomizeBtn} onPress={generate}>
+                            <LinearGradient
+                                colors={['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.04)']}
+                                style={styles.randomizeBtnGradient}
+                            >
+                                <FluentEmoji name="gameDie" size={20} />
+                                <Text style={styles.randomizeBtnText}>RANDOMIZE</Text>
+                            </LinearGradient>
+                        </Pressable>
+                    </View>
                 </View>
             )}
 
@@ -96,16 +102,7 @@ export default function ComedianDrill() {
                 {feedback ? (
                     <GlassCard style={styles.card}>
                         <Text style={styles.label}>THE SUBJECT:</Text>
-                        <Text style={styles.object}>{object}</Text>
-                        <View style={{ width: '100%', marginTop: 12 }}>
-                            <GlassButton
-                                label="🎲 RANDOMIZE"
-                                onPress={generate}
-                                size="sm"
-                                tint="dark"
-                                style={{ width: '100%' }}
-                            />
-                        </View>
+                        <Text style={styles.object}>{object || 'This App'}</Text>
                     </GlassCard>
                 ) : null}
 
@@ -157,22 +154,45 @@ const styles = StyleSheet.create({
     header: { flexDirection: 'row', alignItems: 'center', marginBottom: 30 },
     backBtn: { width: 60 },
     headerSpacer: { width: 60 },
-    backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12 },
+    backText: { color: '#FFFFFF', fontFamily: Fonts.mono, fontSize: 12 },
     title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: Colors.textPrimary, letterSpacing: 3, textAlign: 'center' },
 
     scrollContent: { paddingHorizontal: Spacing.lg, gap: 16, paddingBottom: 40 },
-    instruction: { fontFamily: Fonts.body, fontSize: 16, color: Colors.textSecondary, textAlign: 'center' },
+    instruction: { fontFamily: Fonts.nunito, fontSize: 16, color: '#FFFFFF', textAlign: 'center' },
+    subjectInlineLabel: { fontFamily: Fonts.mono, fontSize: 10, color: 'rgba(255,255,255,0.55)', letterSpacing: 2, textAlign: 'center', marginBottom: 4 },
+    subjectInlineText: { fontFamily: Fonts.headingSemi, fontSize: 26, color: '#FFFFFF', textAlign: 'center' },
 
     card: { padding: 24, alignItems: 'center', width: '100%' },
     label: { fontFamily: Fonts.mono, fontSize: 12, color: Colors.accentPrimary, marginBottom: 10 },
     object: { fontFamily: Fonts.heading, fontSize: 28, color: Colors.textPrimary, textAlign: 'center' },
+    randomizeBtn: {
+        width: '100%',
+        borderRadius: Radius.pill,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
+    },
+    randomizeBtnGradient: {
+        width: '100%',
+        height: 56,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 10,
+    },
+    randomizeBtnText: {
+        fontFamily: Fonts.monoBold,
+        color: '#FFFFFF',
+        fontSize: 13,
+        letterSpacing: 2,
+    },
     // Buttons use <GlassButton/> now (global liquid glass look)
 
     inputSection: { gap: 10 },
     inputLabel: { fontFamily: Fonts.mono, fontSize: 10, color: Colors.accentPrimary, letterSpacing: 2 },
     input: {
         backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: 14,
-        color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 16, minHeight: 80, textAlignVertical: 'top',
+        color: Colors.textPrimary, fontFamily: Fonts.nunito, fontSize: 16, minHeight: 80, textAlignVertical: 'top',
         borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
     },
     // Buttons use <GlassButton/> now (global liquid glass look)

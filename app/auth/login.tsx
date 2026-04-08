@@ -121,8 +121,8 @@ export default function LoginScreen() {
             onHandlerStateChange={(event) => {
                 if (event.nativeEvent.state === State.END) {
                     const { translationX } = event.nativeEvent;
-                    // Swipe right: return to onboarding at stage 7 (Sign in), not stage 1
-                    if (translationX > 50) {
+                    // Swipe right: return to the end of onboarding flow (auth handoff stage).
+                    if (translationX > 30) {
                         setReturnToOnboardingStage(7);
                         router.replace('/auth/onboarding');
                     }

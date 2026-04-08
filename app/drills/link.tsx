@@ -20,6 +20,8 @@ export default function LinkDrill() {
     const [feedback, setFeedback] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [isFinished, setIsFinished] = useState(false);
+    const timerRatio = Math.max(0, Math.min(1, timeLeft / 10));
+    const timerColor = timerRatio > 0.66 ? '#00FF64' : timerRatio > 0.33 ? '#F89B29' : '#FF3B30';
 
     const timerAnim = useRef(new Animated.Value(1)).current;
 
@@ -54,8 +56,13 @@ export default function LinkDrill() {
         setTimeLeft(10.0);
         timerAnim.setValue(1);
 
-        setWord1(LINK_WORDS[Math.floor(Math.random() * LINK_WORDS.length)]);
-        setWord2(LINK_WORDS[Math.floor(Math.random() * LINK_WORDS.length)]);
+        const safePool = Array.isArray(LINK_WORDS) && LINK_WORDS.length > 0 ? LINK_WORDS : ['Link', 'Game'];
+        const first = safePool[Math.floor(Math.random() * safePool.length)] || 'Link';
+        const secondPool = safePool.filter((w) => w !== first);
+        const secondSource = secondPool.length > 0 ? secondPool : safePool;
+        const second = secondSource[Math.floor(Math.random() * secondSource.length)] || 'Game';
+        setWord1(first);
+        setWord2(second);
     };
 
     const handleAnalyze = async () => {
@@ -104,29 +111,16 @@ export default function LinkDrill() {
                 <View style={styles.headerSpacer} />
             </View>
 
-            {/* Keep the words visible while typing the rep (ScrollView will auto-jump to the TextInput). */}
-            {!active && (isFinished || !!feedback) && (
-                <View style={{ paddingHorizontal: Spacing.lg, paddingTop: 6 }}>
-                    <GlassCard style={styles.pinnedWordsCard}>
-                        <View style={styles.wordsHeader}>
-                            <Text style={styles.wordSmall}>{word1}</Text>
-                            <Text style={styles.plusSmall}>+</Text>
-                            <Text style={styles.wordSmall}>{word2}</Text>
-                        </View>
-                    </GlassCard>
-                </View>
-            )}
-
             <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                 <View style={styles.content}>
                     {!active && !isFinished && !feedback ? (
                         <View style={styles.centerBox}>
                             <Text style={styles.intro}>Find the connection in 10s. Don't let the frame slip.</Text>
                             <GlassButton
-                                label="START ROUND"
+                                label="RANDOMIZE + START"
                                 onPress={shuffle}
                                 size="md"
-                                tint="dark"
+                                look="plain"
                                 glow
                                 style={{ width: '100%' }}
                             />
@@ -136,10 +130,10 @@ export default function LinkDrill() {
                             <View style={styles.timerBarBg}>
                                 <Animated.View style={[styles.timerBarFill, {
                                     width: timerAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
-                                    backgroundColor: timeLeft < 3 ? Colors.accentPrimary : Colors.textSecondary
+                                    backgroundColor: timerColor
                                 }]} />
                             </View>
-                            <Text style={styles.timerText}>{timeLeft.toFixed(1)}s</Text>
+                            <Text style={[styles.timerText, { color: timerColor }]}>{timeLeft.toFixed(1)}s</Text>
 
                             <View style={styles.wordsContainer}>
                                 <GlassCard style={styles.wordCard}>
@@ -154,7 +148,7 @@ export default function LinkDrill() {
                                 label="DONE"
                                 onPress={finish}
                                 size="md"
-                                tint="blue"
+                                look="plain"
                                 glow
                                 style={{ width: '100%', marginTop: 20 }}
                             />
@@ -176,7 +170,7 @@ export default function LinkDrill() {
                                         label={isLoading ? 'ANALYZING...' : 'ANALYZE LINK'}
                                         onPress={handleAnalyze}
                                         size="md"
-                                        tint="dark"
+                                        look="plain"
                                         glow={!isLoading && !!response}
                                         disabled={isLoading || !response}
                                         style={{ width: '100%' }}
@@ -189,7 +183,7 @@ export default function LinkDrill() {
                                         label={isLoading ? 'ANALYZING...' : 'NEXT ROUND'}
                                         onPress={shuffle}
                                         size="md"
-                                        tint="dark"
+                                        look="plain"
                                         glow={!isLoading}
                                         disabled={isLoading}
                                         style={{ width: '100%' }}
@@ -211,13 +205,13 @@ const styles = StyleSheet.create({
     header: { flexDirection: 'row', alignItems: 'center', paddingTop: 56, paddingBottom: 16, paddingHorizontal: 20 },
     backBtn: { width: 60 },
     headerSpacer: { width: 60 },
-    backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12 },
+    backText: { color: '#FFFFFF', fontFamily: Fonts.mono, fontSize: 12 },
     title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: Colors.textPrimary, letterSpacing: 3, textAlign: 'center' },
 
     scrollContent: { flexGrow: 1 },
     content: { flex: 1, paddingHorizontal: Spacing.lg, gap: 16, paddingTop: 12 },
     centerBox: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 24 },
-    intro: { color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 16, textAlign: 'center' },
+    intro: { color: '#FFFFFF', fontFamily: Fonts.nunito, fontSize: 16, textAlign: 'center' },
 
     timerBarBg: { width: '100%', height: 4, backgroundColor: 'rgba(255,255,255,0.1)' },
     timerBarFill: { height: '100%' },
@@ -230,17 +224,13 @@ const styles = StyleSheet.create({
 
     // Buttons use <GlassButton/> now (global liquid glass look)
 
-    pinnedWordsCard: { paddingVertical: 10, paddingHorizontal: 12, width: '100%' },
     feedbackSection: { width: '100%', gap: 16, flex: 1 },
-    wordsHeader: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 10 },
-    wordSmall: { fontFamily: Fonts.heading, fontSize: 16, color: Colors.textSecondary },
-    plusSmall: { fontFamily: Fonts.heading, fontSize: 16, color: Colors.accentPrimary },
 
     logSection: { gap: 10 },
     label: { fontFamily: Fonts.mono, fontSize: 10, color: Colors.accentPrimary, letterSpacing: 2 },
     input: {
         backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: 14,
-        color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 16, minHeight: 80, textAlignVertical: 'top',
+        color: Colors.textPrimary, fontFamily: Fonts.nunito, fontSize: 16, minHeight: 80, textAlignVertical: 'top',
         borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
     },
     // Buttons use <GlassButton/> now (global liquid glass look)

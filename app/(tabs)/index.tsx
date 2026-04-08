@@ -2,6 +2,7 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Constants from 'expo-constants';
 import {
     Alert,
     FlatList, Image,
@@ -21,6 +22,7 @@ import FluentEmoji, { resolveFluentEmojiName } from '@/components/FluentEmoji';
 import GlassButton from '@/components/GlassButton';
 import GlassCard from '@/components/GlassCard';
 import ProofModal from '@/components/ProofModal';
+import ViralShareCard, { type ViralShareMode } from '@/components/ViralShareCard';
 import XPBar from '@/components/XPBar';
 import { getNightlyRiskSnapshot, pickAdaptiveDojoLoadout } from '@/constants/habitEngine';
 import { Colors, Fonts, FontSizes, Radius, Spacing, XPConfig } from '@/constants/theme';
@@ -31,6 +33,7 @@ import { AIService } from '@/services/ai';
 import { getFirstName } from '@/utils/formatters';
 import { buildZaneMemoryContext, getHarvestReport } from '@/utils/zaneMemory';
 import { requireOptionalNativeModule } from 'expo-modules-core';
+import * as ExpoLinking from 'expo-linking';
 
 const ROASTS = [
   "I've seen NPCs with more dialogue than you. Wake the beast or stay background noise.",
@@ -191,6 +194,8 @@ export default function DojoScreen() {
   };
   const glowColor = hexToRgba(textPrimary, 1.0);
   const subtleGlowColor = hexToRgba(textPrimary, 0.78);
+  const streakGlowColor = user?.streakAtRisk ? 'rgba(255, 84, 84, 0.95)' : glowColor;
+  const streakSubtleGlowColor = user?.streakAtRisk ? 'rgba(255, 84, 84, 0.68)' : subtleGlowColor;
   const xpBarColors = useXPBarColors();
   const [roastIndex, setRoastIndex] = useState(() => Math.floor(Math.random() * ROASTS.length));
   const [quoteIndex, setQuoteIndex] = useState(() => Math.floor(Math.random() * ZANE_QUOTES.length));
@@ -205,6 +210,15 @@ export default function DojoScreen() {
   const recentQuotesRef = useRef<string[]>([]);
   const signalRefreshInFlightRef = useRef<{ roast: boolean; quote: boolean }>({ roast: false, quote: false });
   const signalRequestIdRef = useRef<{ roast: number; quote: number }>({ roast: 0, quote: 0 });
+  const roastIndexRef = useRef(roastIndex);
+  const quoteIndexRef = useRef(quoteIndex);
+  const dynamicRoastRef = useRef<string | null>(dynamicRoast);
+  const dynamicQuoteRef = useRef<string | null>(dynamicQuote);
+
+  useEffect(() => { roastIndexRef.current = roastIndex; }, [roastIndex]);
+  useEffect(() => { quoteIndexRef.current = quoteIndex; }, [quoteIndex]);
+  useEffect(() => { dynamicRoastRef.current = dynamicRoast; }, [dynamicRoast]);
+  useEffect(() => { dynamicQuoteRef.current = dynamicQuote; }, [dynamicQuote]);
 
   // ... rest of the component state ...
   // Audio playback for archived recordings
@@ -293,6 +307,11 @@ export default function DojoScreen() {
   const [recoveryQuestion, setRecoveryQuestion] = useState('');
   const [recoveryAnswer, setRecoveryAnswer] = useState('');
   const [nudgeVisible, setNudgeVisible] = useState(false);
+  const [shareVisible, setShareVisible] = useState(false);
+  const [shareMode, setShareMode] = useState<ViralShareMode>('harvest');
+  const [shareChallenge, setShareChallenge] = useState<any>(null);
+  const [sharePending, setSharePending] = useState(false);
+  const shareCardRef = useRef<View | null>(null);
   const hasShownNudge = useRef(false);
   const hasShownRecoveryPrompt = useRef(false);
   const recoveryWindowOpen = !!user?.streakRecoveryExpiresAt && new Date(user.streakRecoveryExpiresAt).getTime() > Date.now();
@@ -307,6 +326,14 @@ export default function DojoScreen() {
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
     return `${hours}H ${String(minutes).padStart(2, '0')}M`;
   }, [user?.lastActivityDate, user?.dailyXp, user?.streakAtRisk]);
+
+  const recoveryCountdown = useMemo(() => {
+    if (!user?.streakRecoveryExpiresAt) return '0H 00M';
+    const diff = Math.max(0, new Date(user.streakRecoveryExpiresAt).getTime() - Date.now());
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    return `${hours}H ${String(minutes).padStart(2, '0')}M`;
+  }, [user?.streakRecoveryExpiresAt, user?.streakAtRisk]);
 
   useEffect(() => {
     const loadout = pickAdaptiveDojoLoadout(user);
@@ -346,11 +373,11 @@ export default function DojoScreen() {
 
     const mode = modeOverride || getNextSignalMode(kind);
     const pool = kind === 'roast' ? ROASTS : ZANE_QUOTES;
-    const currentIndex = kind === 'roast' ? roastIndex : quoteIndex;
+    const currentIndex = kind === 'roast' ? roastIndexRef.current : quoteIndexRef.current;
     let nextIndex = (currentIndex + 1) % pool.length;
     const recentSignalsRef = kind === 'roast' ? recentRoastsRef : recentQuotesRef;
     const personalizedFallback = buildPersonalizedHomeFallback(kind, user, harvestReport, riskSnapshot);
-    const currentlyShown = kind === 'roast' ? dynamicRoast : dynamicQuote;
+    const currentlyShown = kind === 'roast' ? dynamicRoastRef.current : dynamicQuoteRef.current;
 
     if (dedupeSignalText(pool[nextIndex] || '') === dedupeSignalText(currentlyShown || '')) {
       nextIndex = (nextIndex + 1) % pool.length;
@@ -369,12 +396,16 @@ export default function DojoScreen() {
 
     if (kind === 'roast') {
       setDynamicRoast(optimisticSignal);
+      dynamicRoastRef.current = optimisticSignal;
       setRoastMode(mode);
       setRoastIndex(nextIndex);
+      roastIndexRef.current = nextIndex;
     } else {
       setDynamicQuote(optimisticSignal);
+      dynamicQuoteRef.current = optimisticSignal;
       setQuoteMode(mode);
       setQuoteIndex(nextIndex);
+      quoteIndexRef.current = nextIndex;
     }
 
     try {
@@ -398,10 +429,14 @@ export default function DojoScreen() {
       if (requestId !== signalRequestIdRef.current[kind]) return;
 
       if (kind === 'roast') {
-        setDynamicRoast(finalSignal.replace(/^"|"$/g, '').trim());
+        const cleaned = finalSignal.replace(/^"|"$/g, '').trim();
+        setDynamicRoast(cleaned);
+        dynamicRoastRef.current = cleaned;
         setRoastMode(mode);
       } else {
-        setDynamicQuote(finalSignal.replace(/^"|"$/g, '').trim());
+        const cleaned = finalSignal.replace(/^"|"$/g, '').trim();
+        setDynamicQuote(cleaned);
+        dynamicQuoteRef.current = cleaned;
         setQuoteMode(mode);
       }
     } catch (error) {
@@ -409,10 +444,12 @@ export default function DojoScreen() {
       if (requestId !== signalRequestIdRef.current[kind]) return;
       if (kind === 'roast') {
         setDynamicRoast(safeFallback);
+        dynamicRoastRef.current = safeFallback;
         recentRoastsRef.current = [safeFallback, ...recentRoastsRef.current].slice(0, 6);
         setRoastMode(mode);
       } else {
         setDynamicQuote(safeFallback);
+        dynamicQuoteRef.current = safeFallback;
         recentQuotesRef.current = [safeFallback, ...recentQuotesRef.current].slice(0, 6);
         setQuoteMode(mode);
       }
@@ -421,12 +458,12 @@ export default function DojoScreen() {
         signalRefreshInFlightRef.current[kind] = false;
       }
     }
-  }, [dynamicQuote, dynamicRoast, harvestReport, memoryContext, quoteIndex, riskSnapshot, roastIndex, user]);
+  }, [harvestReport, memoryContext, riskSnapshot, user]);
 
   const rotateSignalLocally = useCallback((kind: 'roast' | 'quote') => {
     const pool = kind === 'roast' ? ROASTS : ZANE_QUOTES;
-    const currentIndex = kind === 'roast' ? roastIndex : quoteIndex;
-    const currentText = (kind === 'roast' ? dynamicRoast : dynamicQuote) || pool[currentIndex] || '';
+    const currentIndex = kind === 'roast' ? roastIndexRef.current : quoteIndexRef.current;
+    const currentText = (kind === 'roast' ? dynamicRoastRef.current : dynamicQuoteRef.current) || pool[currentIndex] || '';
 
     let nextIndex = (currentIndex + 1) % pool.length;
     for (let i = 0; i < pool.length; i++) {
@@ -440,16 +477,20 @@ export default function DojoScreen() {
 
     if (kind === 'roast') {
       setDynamicRoast(nextSignal);
+      dynamicRoastRef.current = nextSignal;
       setRoastIndex(nextIndex);
+      roastIndexRef.current = nextIndex;
       setRoastMode('classic');
       recentRoastsRef.current = [nextSignal, ...recentRoastsRef.current].slice(0, 6);
     } else {
       setDynamicQuote(nextSignal);
+      dynamicQuoteRef.current = nextSignal;
       setQuoteIndex(nextIndex);
+      quoteIndexRef.current = nextIndex;
       setQuoteMode('classic');
       recentQuotesRef.current = [nextSignal, ...recentQuotesRef.current].slice(0, 6);
     }
-  }, [dynamicQuote, dynamicRoast, quoteIndex, roastIndex]);
+  }, []);
 
   useEffect(() => {
     void refreshSignal('roast', getNextSignalMode('roast'));
@@ -517,19 +558,91 @@ export default function DojoScreen() {
     setMicroOps(pickAdaptiveDojoLoadout(user).microOps);
   };
 
+  const publicShareBaseUrl = useMemo(() => {
+    const fromExtra = (Constants.expoConfig?.extra as any)?.publicShareUrl as string | undefined;
+    if (fromExtra && /^https?:\/\//i.test(fromExtra)) return fromExtra.replace(/\/+$/, '');
+    const fromEnv = (process.env.EXPO_PUBLIC_SHARE_URL || '').trim();
+    if (fromEnv && /^https?:\/\//i.test(fromEnv)) return fromEnv.replace(/\/+$/, '');
+    // Last resort fallback for local/testing only.
+    return ExpoLinking.createURL('/');
+  }, []);
+
   const shareFriendChallenge = async () => {
     const challenge = fieldQuests[0] || dailyMissions[0] || microOps[0];
     if (!challenge) return;
-    await Share.share({
-      message: `ZCE FRIEND CHALLENGE\n\nQuest: ${challenge.title}\n${challenge.desc}\nReward: +${challenge.xp} XP\n\nMeet me in the app and complete it today.`,
-    });
+    setShareMode('challenge');
+    setShareChallenge(challenge);
+    setShareVisible(true);
   };
 
   const shareHarvestReport = async () => {
-    await Share.share({
-      message: `ZCE HARVEST REPORT\n\n${getFirstName(user?.name)}\nStreak: ${harvestReport.streak} days\nXP Today: ${harvestReport.todayXp}\nStatus: ${harvestReport.tone.toUpperCase()}\nAvoided: ${harvestReport.avoidedText}\n\nBuilt in ZCE.`,
-    });
+    setShareMode('harvest');
+    setShareChallenge(null);
+    setShareVisible(true);
   };
+
+  const shareAppInvite = async () => {
+    const inviteLink = `${publicShareBaseUrl}?src=share_app`;
+    const message = `ZCE INVITE\n\nI’m building social confidence reps in ZCE. Join me and start your protocol.\n\n${inviteLink}`;
+    await Share.share({ message, url: inviteLink });
+  };
+
+  const shareFallbackText = useMemo(() => {
+    const challengeLink = `${publicShareBaseUrl}?src=challenge`;
+    const harvestLink = `${publicShareBaseUrl}?src=harvest`;
+    const challenge = shareChallenge || fieldQuests[0] || dailyMissions[0] || microOps[0];
+    if (shareMode === 'challenge' && challenge) {
+      return `ZCE FRIEND CHALLENGE\n\nQuest: ${challenge.title}\n${challenge.desc}\nReward: +${challenge.xp} XP\n\nAccept challenge: ${challengeLink}`;
+    }
+    return `ZCE HARVEST REPORT\n\n${getFirstName(user?.name)}\nStreak: ${harvestReport.streak} days\nXP Today: ${harvestReport.todayXp}\nStatus: ${harvestReport.tone.toUpperCase()}\n\nView protocol: ${harvestLink}`;
+  }, [dailyMissions, fieldQuests, harvestReport.streak, harvestReport.todayXp, harvestReport.tone, microOps, publicShareBaseUrl, shareChallenge, shareMode, user?.name]);
+
+  const handleShareProtocol = useCallback(async () => {
+    if (sharePending) return;
+    setSharePending(true);
+    try {
+      let uri: string | null = null;
+      try {
+        const hasViewShotNative = !!requireOptionalNativeModule('RNViewShot');
+        if (hasViewShotNative && shareCardRef.current) {
+          const ViewShot = await import('react-native-view-shot');
+          uri = await ViewShot.captureRef(shareCardRef.current, {
+            format: 'png',
+            quality: 1,
+            result: 'tmpfile',
+          });
+        }
+      } catch {
+        // RNViewShot native module may be missing in current dev client build.
+      }
+      if (uri) {
+        try {
+          const hasExpoSharingNative = !!requireOptionalNativeModule('ExpoSharing');
+          if (hasExpoSharingNative) {
+            const Sharing = await import('expo-sharing');
+            const canUseImageSharing = await Sharing.isAvailableAsync();
+            if (canUseImageSharing) {
+              await Sharing.shareAsync(uri, {
+                dialogTitle: 'Share your Protocol',
+                mimeType: 'image/png',
+                UTI: 'public.png',
+              });
+              return;
+            }
+          }
+        } catch {
+          // ExpoSharing native module may be missing in current dev client build.
+        }
+      }
+      const fallbackUrl = `${publicShareBaseUrl}?src=${shareMode === 'challenge' ? 'challenge' : 'harvest'}`;
+      await Share.share({ message: shareFallbackText, url: fallbackUrl });
+    } catch {
+      const fallbackUrl = `${publicShareBaseUrl}?src=${shareMode === 'challenge' ? 'challenge' : 'harvest'}`;
+      await Share.share({ message: shareFallbackText, url: fallbackUrl });
+    } finally {
+      setSharePending(false);
+    }
+  }, [publicShareBaseUrl, shareFallbackText, shareMode, sharePending]);
 
   const handlePress = (item: any) => {
     if (completedIds.includes(item.id)) return;
@@ -713,13 +826,12 @@ export default function DojoScreen() {
               styles.heroNumber,
               { 
                 color: '#FFFFFF',
-                textShadowColor: glowColor,
+                textShadowColor: streakGlowColor,
                 textShadowOffset: { width: 0, height: 0 },
                 textShadowRadius: 58,
                 fontSize: 184,
                 lineHeight: 225
               },
-              (user?.streakAtRisk && streakCount > 0) && { color: Colors.accentDanger }
             ]}>
               {streakCount}
             </Text>
@@ -727,11 +839,10 @@ export default function DojoScreen() {
               styles.heroUnit,
               {
                 color: '#FFFFFF',
-                textShadowColor: subtleGlowColor,
+                textShadowColor: streakSubtleGlowColor,
                 textShadowOffset: { width: 0, height: 0 },
                 textShadowRadius: 10,
               },
-              (user?.streakAtRisk && streakCount > 0) && { color: Colors.accentDanger, opacity: 1 }
             ]}>
               {(user?.streakAtRisk && streakCount > 0) ? 'REPAIR REQUIRED' : 'DAY STREAK'}
             </Text>
@@ -789,7 +900,7 @@ export default function DojoScreen() {
                 </View>
                 <View style={styles.riskMetricPill}>
                   <Text style={styles.riskMetricLabel}>WINDOW</Text>
-                  <Text style={styles.riskMetricValue}>{midnightCountdown}</Text>
+                  <Text style={styles.riskMetricValue}>{user.streakAtRisk ? recoveryCountdown : midnightCountdown}</Text>
                 </View>
                 <View style={styles.riskMetricPill}>
                   <Text style={styles.riskMetricLabel}>COST</Text>
@@ -827,7 +938,7 @@ export default function DojoScreen() {
         <View>
           <GlassButton
             label="Talk to Zane"
-            onPress={() => router.push('/chat')}
+            onPress={() => router.navigate('/chat')}
             size="sm"
             look="glass"
             tint="blue"
@@ -951,8 +1062,8 @@ export default function DojoScreen() {
               style={{ flex: 1 }}
             />
             <GlassButton
-              label="SHARE REPORT"
-              onPress={shareHarvestReport}
+              label="SHARE APP"
+              onPress={shareAppInvite}
               size="sm"
               tint="blue"
               style={{ flex: 1 }}
@@ -1168,6 +1279,49 @@ export default function DojoScreen() {
             <Text style={styles.nudgeInstruction}>Your streak handle is compromised. Initiate a session immediately to stabilize your momentum.</Text>
             <GlassButton label="RECLAIM STATUS" onPress={() => setNudgeVisible(false)} tint="blue" size="lg" glow style={{ width: '100%', marginTop: 20 }} />
           </GlassCard>
+        </View>
+      </Modal>
+
+      <Modal animationType="slide" visible={shareVisible} onRequestClose={() => setShareVisible(false)}>
+        <View style={styles.shareScreen}>
+          <View style={styles.shareTop}>
+            <Pressable onPress={() => setShareVisible(false)} style={styles.shareCloseBtn}>
+              <Text style={styles.shareCloseText}>CLOSE</Text>
+            </Pressable>
+            <Text style={styles.shareTopTitle}>SHARE PROTOCOL</Text>
+            <View style={styles.shareTopRightSpacer} />
+          </View>
+
+          <View style={styles.shareCardWrap}>
+            <View
+              ref={(ref) => { shareCardRef.current = ref; }}
+              collapsable={false}
+              style={styles.shareShotFrame}
+            >
+              <ViralShareCard
+                mode={shareMode}
+                agentName={getFirstName(user?.name)}
+                archetype={((user as any)?.subscriptionTier || 'Initiate').toString()}
+                streak={harvestReport.streak}
+                todayXp={harvestReport.todayXp}
+                tone={harvestReport.tone}
+                challengeTitle={shareChallenge?.title}
+                challengeDesc={shareChallenge?.desc}
+                challengeXp={shareChallenge?.xp}
+                shareDateLabel={new Date().toLocaleDateString()}
+              />
+            </View>
+          </View>
+
+          <GlassButton
+            label={sharePending ? 'CAPTURING...' : 'SHARE PROTOCOL'}
+            onPress={handleShareProtocol}
+            tint="blue"
+            glow
+            size="lg"
+            disabled={sharePending}
+            style={styles.shareBtn}
+          />
         </View>
       </Modal>
     </View >
@@ -1799,4 +1953,48 @@ const styles = StyleSheet.create({
   nudgeSubTitle: { fontFamily: Fonts.heading, fontSize: 20, color: Colors.accentPrimary, textAlign: 'center', marginTop: 8 },
   nudgeDivider: { width: 60, height: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginVertical: 24 },
   nudgeInstruction: { fontFamily: Fonts.body, fontSize: 13, color: 'rgba(255,255,255,0.5)', textAlign: 'center', lineHeight: 20 },
+  shareScreen: {
+    flex: 1,
+    backgroundColor: '#000000',
+    paddingTop: Platform.OS === 'ios' ? 64 : 24,
+    paddingHorizontal: 20,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
+  },
+  shareTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 18,
+  },
+  shareCloseBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    minWidth: 62,
+  },
+  shareCloseText: {
+    color: 'rgba(255,255,255,0.72)',
+    fontFamily: Fonts.monoBold,
+    fontSize: 11,
+    letterSpacing: 1.1,
+  },
+  shareTopTitle: {
+    color: '#FFFFFF',
+    fontFamily: Fonts.headingSemi,
+    fontSize: 14,
+    letterSpacing: 1.4,
+  },
+  shareTopRightSpacer: {
+    minWidth: 62,
+  },
+  shareCardWrap: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  shareShotFrame: {
+    width: '100%',
+  },
+  shareBtn: {
+    width: '100%',
+    marginTop: 18,
+  },
 });

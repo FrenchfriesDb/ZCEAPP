@@ -1,12 +1,22 @@
-import { View, Text, StyleSheet, TextInput, Pressable, Animated,
-    KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Image } from 'react-native';
-import { PanGestureHandler, State, NativeViewGestureHandler } from 'react-native-gesture-handler';
-import { router } from 'expo-router';
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { Colors, Fonts, Spacing } from '@/constants/theme';
+import { Fonts, Spacing } from '@/constants/theme';
 import { useUser } from '@/context/UserContext';
 import { db } from '@/services/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { router } from 'expo-router';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+    ActivityIndicator,
+    Animated,
+    Image,
+    KeyboardAvoidingView, Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View
+} from 'react-native';
+import { NativeViewGestureHandler, PanGestureHandler, State } from 'react-native-gesture-handler';
 
 const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/;
 type UsernameStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid';
@@ -22,7 +32,7 @@ const STEP2_FIELDS = [
 ];
 
 export default function SignupScreen() {
-    const { signUp, setHasCompletedOnboarding, setReturnToOnboardingStage } = useUser();
+    const { signUp, setReturnToOnboardingStage } = useUser();
     const [name, setName] = useState('');
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
@@ -40,6 +50,7 @@ export default function SignupScreen() {
     const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const scrollRef = useRef<ScrollView>(null);
     const fieldY = useRef<Record<string, number>>({});
+    const isWeb = Platform.OS === 'web';
 
     const scrollToField = (field: string) => {
         const y = fieldY.current[field] ?? 0;
@@ -124,25 +135,11 @@ export default function SignupScreen() {
         else if (key === 'confirmPassword') setConfirmPassword(v);
     };
 
-    return (
-        <PanGestureHandler
-            onGestureEvent={Animated.event([{ nativeEvent: { translationX: gestureX } }], { useNativeDriver: false })}
-            onHandlerStateChange={(event) => {
-                if (event.nativeEvent.state === State.END) {
-                    const { translationX } = event.nativeEvent;
-                    // Swipe right: return to onboarding at stage 6 (Create identity), not stage 1
-                    if (translationX > 30) {
-                        setHasCompletedOnboarding(false);
-                        setReturnToOnboardingStage(6);
-                        router.replace('/auth/onboarding');
-                    }
-                }
-            }}
+    const content = (
+        <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={{ flex: 1, backgroundColor: '#000000' }}
         >
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={{ flex: 1, backgroundColor: '#000000' }}
-            >
             <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
 
             <ScrollView
@@ -309,6 +306,29 @@ export default function SignupScreen() {
                 </Animated.View>
             </ScrollView>
         </KeyboardAvoidingView>
+    );
+
+    if (isWeb) {
+        return <View style={{ flex: 1 }}>{content}</View>;
+    }
+
+    return (
+        <PanGestureHandler
+            onGestureEvent={Animated.event([{ nativeEvent: { translationX: gestureX } }], { useNativeDriver: false })}
+            onHandlerStateChange={(event) => {
+                if (event.nativeEvent.state === State.END) {
+                    const { translationX } = event.nativeEvent;
+                    // Swipe right: return to the end of onboarding flow (auth handoff stage).
+                    if (translationX > 30) {
+                        setReturnToOnboardingStage(7);
+                        router.replace('/auth/onboarding');
+                    }
+                }
+            }}
+        >
+            <Animated.View style={{ flex: 1 }}>
+                {content}
+            </Animated.View>
         </PanGestureHandler>
     );
 }

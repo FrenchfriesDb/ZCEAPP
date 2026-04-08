@@ -1,5 +1,7 @@
 
-const ANTHROPIC_API_KEY = 'sk-1234abcd5678efgh1234abcd5678efgh1234abcd'; // Replaced with user provided key
+import Constants from 'expo-constants';
+
+const ANTHROPIC_API_KEY = ((Constants.expoConfig?.extra || {}) as any)?.aiProviders?.anthropicApiKey || '';
 const API_URL = 'https://api.anthropic.com/v1/messages';
 
 export const SYSTEM_PROMPT = `
@@ -17,6 +19,10 @@ If the user complains about loneliness, awkwardness, or fear, do not coddle them
 export const AnthropicService = {
     async generateChatResponse(messages: { role: 'user' | 'assistant', content: string }[]) {
         try {
+            if (!ANTHROPIC_API_KEY) {
+                throw new Error('Anthropic API key not configured');
+            }
+
             const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: {

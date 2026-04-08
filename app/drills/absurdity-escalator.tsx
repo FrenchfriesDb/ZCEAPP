@@ -1,12 +1,13 @@
 import { View, Text, StyleSheet, Pressable, Alert, ScrollView, KeyboardAvoidingView, Platform, TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useUser } from '@/context/UserContext';
 import { useTimeColors } from '@/hooks/useTimeColors';
 import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
 import GlassCard from '@/components/GlassCard';
 import GlassButton from '@/components/GlassButton';
+import { AIService } from '@/services/ai';
 
 const INITIAL_PROMPTS = [
   "Your coffee is cold.",
@@ -17,23 +18,25 @@ const INITIAL_PROMPTS = [
 ];
 
 export default function AbsurdityEscalatorDrill() {
-  const { completeDrill } = useUser();
-  const { palette: timePalette } = useTimeColors();
-  const systemColor = timePalette[timePalette.length - 1];
+  const { user, completeDrill } = useUser();
+  const { textColors } = useTimeColors();
+  const systemColor = textColors.primary;
 
-  const [stage, setStage] = useState<'ready' | 'prompt' | 'volley' | 'complete'>('ready');
-  const [initialPrompt, setInitialPrompt] = useState('');
+  const [stage, setStage] = useState<'ready' | 'volley' | 'complete'>('ready');
+  const [initialPrompt, setInitialPrompt] = useState(() => {
+    const idx = Math.floor(Math.random() * INITIAL_PROMPTS.length);
+    return INITIAL_PROMPTS[idx] || 'Your coffee is cold.';
+  });
   const [voltCount, setVoltCount] = useState(0);
   const [userResponse, setUserResponse] = useState('');
   const [aiResponse, setAiResponse] = useState('');
+  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [exchanges, setExchanges] = useState<Array<{ user: string; ai: string }>>([]);
+  const safePrompt = (initialPrompt && initialPrompt.trim()) || 'Your coffee is cold.';
+  const stageLabel = stage === 'ready' ? 'READY' : stage === 'volley' ? 'LIVE VOLLEY' : 'COMPLETE';
+  const stageProgress = stage === 'ready' ? 0 : stage === 'complete' ? 100 : Math.min(100, Math.round((voltCount / 5) * 100));
 
-  useEffect(() => {
-    const idx = Math.floor(Math.random() * INITIAL_PROMPTS.length);
-    setInitialPrompt(INITIAL_PROMPTS[idx]);
-  }, []);
-
-  const generateAiResponse = (userInput: string, volleyNum: number) => {
+  const generateFallbackResponse = (volleyNum: number) => {
     const absurdityLevels = [
       ['You kidding?', 'That sucks.', 'Rough.'],
       ['So like what, you gonna call tech support?', 'Did you try turning it off and on?', 'Have you considered just living without it?'],
@@ -46,36 +49,70 @@ export default function AbsurdityEscalatorDrill() {
     return responses[Math.floor(Math.random() * responses.length)];
   };
 
+  const generateAiResponse = async (userInput: string, volleyNum: number) => {
+    const promptText = `
+You are the opponent in a fast improv drill called Absurdity Escalator.
+
+Current prompt: "${initialPrompt}"
+Volley number: ${volleyNum + 1} of 5
+User line: "${userInput}"
+
+Reply with ONE short comeback line that escalates the absurdity slightly.
+Constraints:
+- 4 to 12 words max
+- playful, punchy, socially sharp
+- no emojis
+- no quotes
+- no labels or explanations
+`;
+
+    try {
+      const result = await AIService.generateResponse(
+        [{ role: 'user', content: promptText }],
+        'groq',
+        user?.name || 'AGENT',
+        user?.level || 1,
+        'drill'
+      );
+
+      const cleaned = result
+        .split('\n')[0]
+        .replace(/^[-•\d.)\s]+/, '')
+        .trim();
+
+      if (!cleaned) return generateFallbackResponse(volleyNum);
+      return cleaned.length > 90 ? `${cleaned.slice(0, 87).trimEnd()}...` : cleaned;
+    } catch {
+      return generateFallbackResponse(volleyNum);
+    }
+  };
+
   const handleStartVolley = () => {
     setStage('volley');
     setVoltCount(0);
     setExchanges([]);
   };
 
-  const handleSendResponse = () => {
-    if (!userResponse.trim()) return;
+  const handleSendResponse = async () => {
+    if (!userResponse.trim() || isGeneratingAi) return;
 
-    const ai = generateAiResponse(userResponse, voltCount);
-    setExchanges([...exchanges, { user: userResponse, ai }]);
+    const message = userResponse.trim();
+    setIsGeneratingAi(true);
+    const ai = await generateAiResponse(message, voltCount);
+    setExchanges((prev) => [...prev, { user: message, ai }]);
     setAiResponse(ai);
     setUserResponse('');
-    setVoltCount((prev) => prev + 1);
+    setIsGeneratingAi(false);
 
-    if (voltCount >= 4) {
-      setTimeout(() => {
-        setStage('complete');
-      }, 800);
-    }
-  };
-
-  const handleSkipExchange = () => {
-    setVoltCount((prev) => prev + 1);
-    if (voltCount >= 4) {
-      setStage('complete');
-    } else {
-      setUserResponse('');
-      setAiResponse('');
-    }
+    setVoltCount((prev) => {
+      const next = prev + 1;
+      if (next >= 5) {
+        setTimeout(() => {
+          setStage('complete');
+        }, 600);
+      }
+      return next;
+    });
   };
 
   const calculateAbsurdityScore = () => {
@@ -113,23 +150,32 @@ export default function AbsurdityEscalatorDrill() {
         <View style={{ width: 60 }} />
       </View>
 
-      {stage === 'volley' && voltCount < 5 && (
-        <View style={{ paddingHorizontal: Spacing.md, paddingTop: 6 }}>
-          <GlassCard style={[styles.promptCard, { borderColor: systemColor + '44' }]}>
-            <Text style={styles.promptLabel}>VOLLEY {voltCount + 1}/5:</Text>
-            <Text style={[styles.promptText, { color: systemColor }]}>
-              {voltCount === 0 ? `"${initialPrompt}"` : aiResponse || 'Waiting for your absurdity...'}
-            </Text>
-          </GlassCard>
-        </View>
-      )}
-
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
       >
+        <GlassCard style={styles.hudCard}>
+          <View style={styles.hudHeaderRow}>
+            <Text style={styles.hudLabel}>ABSURDITY ENGINE</Text>
+            <Text style={[styles.hudStage, { color: systemColor }]}>{stageLabel}</Text>
+          </View>
+          <View style={styles.hudMeterTrack}>
+            <View style={[styles.hudMeterFill, { width: `${stageProgress}%`, backgroundColor: systemColor }]} />
+          </View>
+          <View style={styles.hudStatsRow}>
+            <View style={styles.hudStatPill}>
+              <Text style={styles.hudStatKey}>VOLLEY</Text>
+              <Text style={styles.hudStatVal}>{Math.min(voltCount, 5)}/5</Text>
+            </View>
+            <View style={styles.hudStatPill}>
+              <Text style={styles.hudStatKey}>PREMISE</Text>
+              <Text style={styles.hudStatVal} numberOfLines={1}>{initialPrompt}</Text>
+            </View>
+          </View>
+        </GlassCard>
+
         {stage === 'ready' && (
           <>
             <GlassCard style={styles.infoCard}>
@@ -141,8 +187,8 @@ export default function AbsurdityEscalatorDrill() {
 
             <GlassCard style={styles.promptCard}>
               <Text style={styles.promptLabel}>STARTING PREMISE:</Text>
-              <Text style={[styles.promptText, { color: systemColor }]}>
-                "{initialPrompt}"
+              <Text style={[styles.promptText, { color: '#FFFFFF' }]}>
+                "{safePrompt}"
               </Text>
             </GlassCard>
 
@@ -158,7 +204,7 @@ export default function AbsurdityEscalatorDrill() {
             </GlassCard>
 
             <GlassButton
-              label="START VOLLEY"
+              label="INITIATE VOLLEY"
               onPress={handleStartVolley}
               tint="blue"
               size="lg"
@@ -170,8 +216,19 @@ export default function AbsurdityEscalatorDrill() {
 
         {stage === 'volley' && (
           <>
+            <GlassCard style={styles.volleyContextCard}>
+              <Text style={styles.rulesLabel}>CURRENT PROMPT:</Text>
+              <Text style={[styles.volleyPromptText, { color: '#FFFFFF' }]}>"{safePrompt}"</Text>
+              <Text style={[styles.rulesLabel, { marginTop: 10 }]}>RULES:</Text>
+              <Text style={styles.rulesText}>
+                • Escalate each reply more than the last.{"\n"}
+                • Keep it playful, absurd, and committed.{"\n"}
+                • 5 volleys total.
+              </Text>
+            </GlassCard>
+
             <View style={styles.volleys}>
-              {exchanges.map((ex, idx) => (
+              {exchanges.slice(-2).map((ex, idx) => (
                 <View key={idx} style={styles.volleyPair}>
                   <GlassCard style={[styles.exchangeCard, { backgroundColor: 'rgba(113, 195, 247, 0.08)' }]}>
                     <Text style={styles.exchangeLabel}>YOU:</Text>
@@ -198,20 +255,14 @@ export default function AbsurdityEscalatorDrill() {
                 />
 
                 <GlassButton
-                  label="SEND"
+                  label={isGeneratingAi ? 'THINKING...' : 'SEND'}
                   onPress={handleSendResponse}
-                  tint="blue"
+                  tint="dark"
                   size="lg"
                   glow
-                  disabled={!userResponse.trim()}
+                  disabled={!userResponse.trim() || isGeneratingAi}
                   style={{ width: '100%' }}
                 />
-
-                {voltCount > 0 && (
-                  <Pressable onPress={handleSkipExchange} style={styles.skipLink}>
-                    <Text style={styles.skipText}>Skip this volley</Text>
-                  </Pressable>
-                )}
               </>
             )}
           </>
@@ -254,48 +305,105 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   backBtn: { padding: 8, minWidth: 60 },
-  backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12, letterSpacing: 1 },
+  backText: { color: '#FFFFFF', fontFamily: Fonts.mono, fontSize: 12, letterSpacing: 1 },
   title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, letterSpacing: 3, textAlign: 'center' },
 
-  scrollContent: { padding: Spacing.md, alignItems: 'center', gap: 12, paddingBottom: 10 },
+  scrollContent: { padding: Spacing.md, alignItems: 'center', gap: 12, paddingBottom: 14 },
 
-  infoCard: { width: '100%', padding: 12, backgroundColor: 'rgba(255,255,255,0.03)' },
+  hudCard: {
+    width: '100%',
+    padding: 14,
+    backgroundColor: 'rgba(0, 0, 0, 0.82)',
+    borderColor: 'rgba(255,255,255,0.2)',
+    borderWidth: 1,
+  },
+  hudHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  hudLabel: { fontFamily: Fonts.monoBold, fontSize: 9, letterSpacing: 2, color: 'rgba(255,255,255,0.55)' },
+  hudStage: { fontFamily: Fonts.monoBold, fontSize: 10, letterSpacing: 2 },
+  hudMeterTrack: {
+    width: '100%',
+    height: 7,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    overflow: 'hidden',
+    marginBottom: 10,
+  },
+  hudMeterFill: { height: '100%', borderRadius: 999 },
+  hudStatsRow: { flexDirection: 'row', gap: 10 },
+  hudStatPill: {
+    flex: 1,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  hudStatKey: { fontFamily: Fonts.mono, fontSize: 8, letterSpacing: 1.5, color: 'rgba(255,255,255,0.45)', marginBottom: 4 },
+  hudStatVal: { fontFamily: Fonts.nunito, fontSize: 12, color: '#FFFFFF' },
+
+  infoCard: {
+    width: '100%',
+    padding: 14,
+    backgroundColor: 'rgba(0, 0, 0, 0.78)',
+    borderColor: 'rgba(255,255,255,0.16)',
+    borderWidth: 1,
+  },
   infoLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, marginBottom: 6 },
-  infoText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 20 },
+  infoText: { fontFamily: Fonts.nunito, fontSize: 14, color: 'rgba(255,255,255,0.76)', lineHeight: 22 },
 
-  promptCard: { width: '100%', padding: 14, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.02)', borderWidth: 1 },
+  promptCard: {
+    width: '100%',
+    padding: 16,
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.82)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+  },
   promptLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 10 },
-  promptText: { fontFamily: Fonts.body, fontSize: 13, textAlign: 'center', lineHeight: 20 },
+  promptText: { fontFamily: Fonts.headingSemi, fontSize: 16, textAlign: 'center', lineHeight: 24 },
 
-  rulesCard: { width: '100%', padding: 12, backgroundColor: 'rgba(255,255,255,0.02)' },
+  rulesCard: {
+    width: '100%',
+    padding: 14,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    borderColor: 'rgba(255,255,255,0.12)',
+    borderWidth: 1,
+  },
   rulesLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 8 },
-  rulesText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary, lineHeight: 18 },
+  rulesText: { fontFamily: Fonts.nunito, fontSize: 13, color: 'rgba(255,255,255,0.72)', lineHeight: 20 },
+
+  volleyContextCard: {
+    width: '100%',
+    padding: 14,
+    backgroundColor: 'rgba(0, 0, 0, 0.82)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+  },
+  volleyPromptText: { fontFamily: Fonts.headingSemi, fontSize: 16, lineHeight: 22 },
 
   volleys: { width: '100%', gap: 8 },
   volleyPair: { gap: 8 },
   exchangeCard: { padding: 10, borderRadius: Radius.md },
   exchangeLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 4 },
-  exchangeText: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textSecondary },
+  exchangeText: { fontFamily: Fonts.nunito, fontSize: 12, color: '#FFFFFF' },
 
   input: {
     width: '100%',
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: 'rgba(12, 16, 32, 0.9)',
     borderWidth: 1,
-    borderColor: 'rgba(113, 195, 247, 0.3)',
+    borderColor: 'rgba(255,255,255,0.24)',
     borderRadius: Radius.md,
     color: Colors.textPrimary,
     padding: 12,
-    fontFamily: Fonts.body,
-    fontSize: 13,
+    fontFamily: Fonts.nunito,
+    fontSize: 14,
     minHeight: 60,
     maxHeight: 120,
     textAlignVertical: 'top',
   },
 
-  skipLink: { paddingVertical: 8 },
-  skipText: { fontFamily: Fonts.body, fontSize: 11, color: 'rgba(255,255,255,0.4)', textDecorationLine: 'underline' },
-
   completeCard: { width: '100%', padding: 20, backgroundColor: 'rgba(0, 245, 255, 0.05)', borderColor: 'rgba(0, 245, 255, 0.2)', borderWidth: 1 },
   completeTitle: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.accentCyan, marginBottom: 12 },
-  completeText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 20 },
+  completeText: { fontFamily: Fonts.nunito, fontSize: 13, color: '#FFFFFF', lineHeight: 20 },
 });

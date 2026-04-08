@@ -2,11 +2,13 @@ import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, Platform, Ale
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Fonts, Radius } from '@/constants/theme';
+import { useSubscription } from '@/context/SubscriptionContext';
 import { useUser } from '@/context/UserContext';
 import { useTimeColors } from '@/hooks/useTimeColors';
 import { formatDisplayName } from '@/utils/formatters';
 import { Ionicons } from '@expo/vector-icons';
 import FluentEmoji, { type FluentEmojiName, resolveFluentEmojiName } from '@/components/FluentEmoji';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Use explicit Fluent icon names to avoid unicode fallback glitches on web/native.
 const ICONS = {
@@ -28,6 +30,8 @@ const ICONS = {
 
 export default function EditProfileScreen() {
     const { user, updateProfile, signOut, changeEmail, changePassword, deleteAccount, resetProgress, changeUsername } = useUser();
+    const { isPremium, restorePurchases, refreshEntitlements } = useSubscription();
+    const insets = useSafeAreaInsets();
     const timePalette = useTimeColors();
     // Use the lightest color in the palette for text (last index) to ensure visibility on ALL themes including dark ones
     const systemColor = timePalette[timePalette.length - 1];
@@ -53,9 +57,9 @@ export default function EditProfileScreen() {
     const [tempTitle, setTempTitle] = useState(title);
     const [tempBio, setTempBio] = useState(bio);
     const [tempName, setTempName] = useState(name);
-    const subscriptionStatus = ((user as any)?.subscriptionStatus || 'inactive').toString().toUpperCase();
-    const subscriptionTier = ((user as any)?.subscriptionTier || 'initiate').toString().toUpperCase();
-    const hasActiveSubscription = subscriptionStatus === 'ACTIVE' || subscriptionStatus === 'GRACE';
+    const subscriptionStatus = isPremium ? 'ACTIVE' : ((user as any)?.subscriptionStatus || 'inactive').toString().toUpperCase();
+    const subscriptionTier = isPremium ? 'DIRECTOR' : ((user as any)?.subscriptionTier || 'initiate').toString().toUpperCase();
+    const hasActiveSubscription = isPremium || subscriptionStatus === 'ACTIVE' || subscriptionStatus === 'GRACE';
     const subscriptionRowValue = hasActiveSubscription
         ? `${subscriptionTier} • ${subscriptionStatus}`
         : 'INACTIVE — TAP TO UPGRADE';
@@ -317,6 +321,7 @@ export default function EditProfileScreen() {
     );
 
     return (
+        <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={styles.container}>
             <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
 
@@ -329,7 +334,10 @@ export default function EditProfileScreen() {
                 <View style={{ width: 60 }} />
             </View>
 
-            <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+            <ScrollView
+                contentContainerStyle={[styles.content, { paddingBottom: 32 + insets.bottom }]}
+                showsVerticalScrollIndicator={false}
+            >
 
                 {/* SECTION 1 — AGENT PROFILE */}
                 <SectionCard title="AGENT PROFILE">
@@ -406,7 +414,16 @@ export default function EditProfileScreen() {
                     <SettingRow
                         icon={ICONS.restore}
                         label="RESTORE PURCHASES"
-                        onPress={() => Alert.alert('RESTORE PURCHASES', 'Contact zaneprotocol@gmail.com to restore your purchases. We respond within 24 hours.')}
+                        onPress={async () => {
+                            const restored = await restorePurchases();
+                            await refreshEntitlements();
+                            Alert.alert(
+                                'Restore',
+                                restored
+                                    ? 'Purchases restored. ZCE Pro is active on this account.'
+                                    : 'No active entitlement found. Restore uses Apple ID purchase history, not app email login.'
+                            );
+                        }}
                     />
                     <SettingRow
                         icon={ICONS.privacy}
@@ -670,10 +687,15 @@ export default function EditProfileScreen() {
                 </View>
             </Modal>
         </View>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: '#000000',
+    },
     container: {
         flex: 1,
         backgroundColor: '#000000',
@@ -682,7 +704,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingTop: 60,
+        paddingTop: 10,
         paddingHorizontal: 20,
         paddingBottom: 20,
     },
@@ -727,7 +749,7 @@ const styles = StyleSheet.create({
     row: {
         flexDirection: 'row',
         alignItems: 'center',
-        minHeight: 52,
+        minHeight: 56,
         paddingHorizontal: 16,
         paddingVertical: 14,
     },
@@ -744,6 +766,7 @@ const styles = StyleSheet.create({
     },
     rowIconWrap: {
         width: 28,
+        height: 24,
         marginRight: 12,
         alignItems: 'center',
         justifyContent: 'center',

@@ -1,8 +1,8 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions, FlatList, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
-import Svg, { Rect } from 'react-native-svg';
-import { Colors, Fonts, Radius } from '@/constants/theme';
 import GlassCard from '@/components/GlassCard';
+import { Fonts, Radius } from '@/constants/theme';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Dimensions, FlatList, NativeScrollEvent, NativeSyntheticEvent, StyleSheet, Text, View } from 'react-native';
+import Svg, { Rect } from 'react-native-svg';
 
 interface StaticMapProps {
     dailyXp: { [date: string]: number };
@@ -219,7 +219,7 @@ const StaticMap: React.FC<StaticMapProps> = ({ dailyXp, drillLogs = [] }) => {
                     >
                         ‹
                     </Text>
-                    <Text style={styles.pageControlLabel}>WEEK BLOCK {activePage + 1}/{pagesData.length}</Text>
+                    <Text style={styles.pageControlLabel}>BLOCK {activePage + 1}/{pagesData.length}</Text>
                     <Text
                         style={[styles.pageControl, activePage >= pagesData.length - 1 && styles.pageControlDisabled]}
                         onPress={() => goToPage(activePage + 1)}

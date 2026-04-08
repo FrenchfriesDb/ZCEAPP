@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { Fonts } from '@/constants/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useMemo } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import GlassCard from './GlassCard';
-import { Colors, Fonts, Radius } from '@/constants/theme';
 
 type FeedbackSection = {
   title: string;
@@ -78,11 +79,33 @@ export default function DrillFeedbackPanel({ feedback, maxHeight = 430 }: DrillF
         return (
           <GlassCard
             key={`${section.title}-${index}`}
+            darkGlass
+            intensity={26}
             style={[
               styles.sectionCard,
               isScore && styles.scoreCard,
             ]}
           >
+            <View style={styles.cardChrome} pointerEvents="none">
+              <LinearGradient
+                colors={['rgba(255,255,255,0.06)', 'rgba(255,255,255,0.01)', 'rgba(255,255,255,0.00)']}
+                start={{ x: 0.15, y: 0 }}
+                end={{ x: 0.85, y: 1 }}
+                style={styles.cardRim}
+              />
+              <LinearGradient
+                colors={['rgba(255,255,255,0.04)', 'rgba(255,255,255,0.00)']}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 1 }}
+                style={styles.cardSheen}
+              />
+              <LinearGradient
+                colors={['rgba(0,0,0,0.00)', 'rgba(0,0,0,0.48)']}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 1 }}
+                style={styles.cardDepth}
+              />
+            </View>
             <Text style={[styles.sectionTitle, isScore && styles.scoreTitle]}>
               {section.title}
             </Text>
@@ -106,37 +129,62 @@ const styles = StyleSheet.create({
   },
   sectionCard: {
     padding: 14,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.74)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: 'rgba(255,255,255,0.06)',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  cardChrome: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  cardRim: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  cardSheen: {
+    position: 'absolute',
+    top: 0,
+    left: 10,
+    right: 10,
+    height: 24,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+  },
+  cardDepth: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 40,
   },
   sectionTitle: {
-    fontFamily: Fonts.monoBold,
-    fontSize: 10,
-    letterSpacing: 1.6,
-    color: 'rgba(255,255,255,0.55)',
-    marginBottom: 8,
+    fontFamily: Fonts.headingSemi,
+    fontSize: 11,
+    letterSpacing: 1.4,
+    color: 'rgba(255,255,255,0.56)',
+    marginBottom: 9,
   },
   sectionBody: {
-    fontFamily: Fonts.body,
-    fontSize: 14,
-    lineHeight: 21,
-    color: Colors.textPrimary,
+    fontFamily: Fonts.headingMedium,
+    fontSize: 15,
+    lineHeight: 24,
+    color: 'rgba(230,235,245,0.84)',
   },
   scoreCard: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    borderColor: 'rgba(255,255,255,0.09)',
     alignItems: 'center',
   },
   scoreTitle: {
-    color: Colors.accentCyan,
+    color: 'rgba(166, 208, 235, 0.9)',
     marginBottom: 6,
   },
   scoreBody: {
     fontFamily: Fonts.heading,
-    fontSize: 24,
-    lineHeight: 28,
-    color: Colors.accentPrimary,
+    fontSize: 26,
+    lineHeight: 30,
+    color: 'rgba(226,236,248,0.9)',
     textAlign: 'center',
   },
 });

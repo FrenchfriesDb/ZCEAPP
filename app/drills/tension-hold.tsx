@@ -30,10 +30,13 @@ export default function TensionHoldDrill() {
   const [stage, setStage] = useState<'prompt' | 'stare' | 'complete'>('prompt');
   const [timeLeft, setTimeLeft] = useState(15);
   const [response, setResponse] = useState('');
+  const timerRatio = Math.max(0, Math.min(1, timeLeft / 15));
+  const timerColor = timerRatio > 0.66 ? '#00FF64' : timerRatio > 0.33 ? '#F89B29' : '#FF3B30';
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    setPromptIdx(Math.floor(Math.random() * TENSION_PROMPTS.length));
+    const safePool = Array.isArray(TENSION_PROMPTS) && TENSION_PROMPTS.length > 0 ? TENSION_PROMPTS : ['Why are you always so quiet?'];
+    setPromptIdx(Math.floor(Math.random() * safePool.length));
   }, []);
 
   useEffect(() => {
@@ -91,8 +94,8 @@ export default function TensionHoldDrill() {
         <View style={{ paddingHorizontal: Spacing.md, paddingTop: 6 }}>
           <GlassCard style={[styles.promptCard, { borderColor: systemColor + '44' }]}>
             <Text style={styles.promptLabel}>THE PROMPT:</Text>
-            <Text style={[styles.promptText, { color: systemColor }]}>
-              "{TENSION_PROMPTS[promptIdx]}"
+            <Text style={[styles.promptText, { color: '#FFFFFF' }]}>
+              "{TENSION_PROMPTS[promptIdx] || 'Why are you always so quiet?'}"
             </Text>
           </GlassCard>
         </View>
@@ -137,7 +140,7 @@ export default function TensionHoldDrill() {
         {stage === 'stare' && (
           <>
             <Text style={styles.stareLabel}>NOW HOLD THE TENSION:</Text>
-            <Text style={[styles.timerText, { color: timeLeft <= 5 ? '#FF4444' : systemColor }]}>
+            <Text style={[styles.timerText, { color: timerColor }]}>
               {timeLeft}
             </Text>
             <Text style={styles.timerLabel}>SECONDS OF DEAD-EYE CONTACT</Text>
@@ -185,13 +188,13 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   backBtn: { padding: 8, minWidth: 60 },
-  backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12, letterSpacing: 1 },
+  backText: { color: '#FFFFFF', fontFamily: Fonts.mono, fontSize: 12, letterSpacing: 1 },
   title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, letterSpacing: 3, textAlign: 'center' },
 
   scrollContent: { padding: Spacing.md, alignItems: 'center', gap: 12, paddingBottom: 10 },
 
   infoCard: { width: '100%', padding: 14, backgroundColor: 'rgba(255,255,255,0.03)' },
-  infoText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 20 },
+  infoText: { fontFamily: Fonts.nunito, fontSize: 13, color: '#FFFFFF', lineHeight: 20 },
 
   promptCard: { width: '100%', padding: 14, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.02)', borderWidth: 1 },
   promptLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 10 },
@@ -207,7 +210,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     padding: 12,
     color: Colors.textPrimary,
-    fontFamily: Fonts.body,
+    fontFamily: Fonts.nunito,
     fontSize: 14,
     minHeight: 50,
   },
@@ -217,9 +220,9 @@ const styles = StyleSheet.create({
   timerLabel: { fontFamily: Fonts.mono, fontSize: 10, color: 'rgba(255,255,255,0.25)', letterSpacing: 2 },
 
   stareCard: { width: '100%', padding: 14, backgroundColor: 'rgba(255,255,255,0.02)', marginTop: 20 },
-  stareDesc: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 20 },
+  stareDesc: { fontFamily: Fonts.nunito, fontSize: 13, color: '#FFFFFF', lineHeight: 20 },
 
   completeCard: { width: '100%', padding: 20, backgroundColor: 'rgba(0, 245, 255, 0.05)', borderColor: 'rgba(0, 245, 255, 0.2)', borderWidth: 1 },
   completeTitle: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.accentCyan, marginBottom: 12 },
-  completeText: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary, lineHeight: 20 },
+  completeText: { fontFamily: Fonts.nunito, fontSize: 13, color: '#FFFFFF', lineHeight: 20 },
 });

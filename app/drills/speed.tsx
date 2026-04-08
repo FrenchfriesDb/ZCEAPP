@@ -19,6 +19,9 @@ export default function SpeedDrill() {
     const [feedback, setFeedback] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const TOTAL_SECONDS = 11.0;
+    const safePrompt = (prompt && prompt.trim()) || 'Someone asks: "Why are you so quiet today?"';
+    const timerRatio = Math.max(0, Math.min(1, timeLeft / TOTAL_SECONDS));
+    const timerColor = timerRatio > 0.66 ? '#00FF64' : timerRatio > 0.33 ? '#F89B29' : '#FF3B30';
 
     const timerAnim = useRef(new Animated.Value(1)).current;
 
@@ -46,7 +49,10 @@ export default function SpeedDrill() {
 
     const generatePrompt = () => {
         if (isLoading) return; // Prevent race condition
-        const random = SPEED_PROMPTS[Math.floor(Math.random() * SPEED_PROMPTS.length)];
+        const safePool = Array.isArray(SPEED_PROMPTS) && SPEED_PROMPTS.length > 0
+            ? SPEED_PROMPTS
+            : ['Someone asks: "Why are you so quiet today?"'];
+        const random = safePool[Math.floor(Math.random() * safePool.length)] || safePool[0];
         setPrompt(random);
         setResponse("");
         setFeedback("");
@@ -110,14 +116,6 @@ export default function SpeedDrill() {
                 <View style={styles.headerSpacer} />
             </View>
 
-            {active && (
-                <View style={{ paddingHorizontal: Spacing.lg, paddingTop: 6 }}>
-                    <GlassCard style={styles.promptCard}>
-                        <Text style={styles.promptText}>{prompt}</Text>
-                    </GlassCard>
-                </View>
-            )}
-
             <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                 <View style={styles.content}>
                     {!active && !feedback && (
@@ -138,18 +136,14 @@ export default function SpeedDrill() {
 
                     {active && (
                         <View style={styles.activeContainer}>
+                            <Text style={styles.promptText}>{safePrompt}</Text>
                             <View style={styles.timerBarBg}>
                                 <Animated.View style={[styles.timerBarFill, {
                                     width: timerAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
-                                    backgroundColor:
-                                        (timeLeft / TOTAL_SECONDS) > 0.66
-                                            ? '#00FF64'
-                                            : (timeLeft / TOTAL_SECONDS) > 0.33
-                                                ? '#F89B29'
-                                                : '#FF3B30'
+                                    backgroundColor: timerColor
                                 }]} />
                             </View>
-                            <Text style={styles.timerText}>{timeLeft.toFixed(1)}s</Text>
+                            <Text style={[styles.timerText, { color: timerColor }]}>{timeLeft.toFixed(1)}s</Text>
 
                             <TextInput
                                 style={styles.input}
@@ -198,13 +192,13 @@ const styles = StyleSheet.create({
     header: { flexDirection: 'row', alignItems: 'center', paddingTop: 56, paddingBottom: 16, paddingHorizontal: 20 },
     backBtn: { width: 60 },
     headerSpacer: { width: 60 },
-    backText: { color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12 },
+    backText: { color: '#FFFFFF', fontFamily: Fonts.mono, fontSize: 12 },
     title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: Colors.textPrimary, letterSpacing: 3, textAlign: 'center' },
 
     scrollContent: { flexGrow: 1 },
     content: { flex: 1, padding: Spacing.lg, paddingTop: 12 },
     centerBox: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 20 },
-    intro: { color: Colors.textSecondary, fontFamily: Fonts.body, fontSize: 16, marginBottom: 20, textAlign: 'center' },
+    intro: { color: '#FFFFFF', fontFamily: Fonts.nunito, fontSize: 16, marginBottom: 20, textAlign: 'center' },
 
     // Buttons use <GlassButton/> now (global liquid glass look)
 
@@ -213,12 +207,11 @@ const styles = StyleSheet.create({
     timerBarFill: { height: '100%' },
     timerText: { color: Colors.textPrimary, fontFamily: Fonts.heading, fontSize: 24, textAlign: 'center' },
 
-    promptCard: { padding: 14, alignItems: 'center' },
-    promptText: { color: Colors.textPrimary, fontFamily: Fonts.heading, fontSize: 16, textAlign: 'center', lineHeight: 24 },
+    promptText: { color: '#FFFFFF', fontFamily: Fonts.heading, fontSize: 16, textAlign: 'center', lineHeight: 24, marginBottom: 2 },
 
     input: {
         backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: 14,
-        color: Colors.textPrimary, fontFamily: Fonts.body, fontSize: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
+        color: Colors.textPrimary, fontFamily: Fonts.nunito, fontSize: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
     },
     // Buttons use <GlassButton/> now (global liquid glass look)
 

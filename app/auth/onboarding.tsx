@@ -1,26 +1,45 @@
-import React, { useState, useEffect, useRef } from 'react';
+import FluentEmoji, { resolveFluentEmojiName, type FluentEmojiName } from '@/components/FluentEmoji';
+import GlassButton from '@/components/GlassButton';
+import { Fonts } from '@/constants/theme';
+import { useSubscription } from '@/context/SubscriptionContext';
+import { useUser } from '@/context/UserContext';
+import { PaymentService } from '@/services/payments';
+import Constants from 'expo-constants';
+import { router, useFocusEffect } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-    View, Text, StyleSheet, Pressable, Animated,
-    Dimensions, ScrollView, SafeAreaView,
+    Alert,
+    Animated,
+    Dimensions,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
+    useWindowDimensions,
 } from 'react-native';
 import { PanGestureHandler, State } from 'react-native-gesture-handler';
-import { router, useFocusEffect } from 'expo-router';
-import Svg, { Path, G, Circle, Line, Defs, LinearGradient as SvgGrad, Stop } from 'react-native-svg';
-import { Fonts } from '@/constants/theme';
-import { useUser } from '@/context/UserContext';
-import SwipeSlider from '@/components/SwipeSlider';
-import FluentEmoji, { resolveFluentEmojiName, type FluentEmojiName } from '@/components/FluentEmoji';
+import RevenueCatUI from 'react-native-purchases-ui';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Circle, Defs, G, Line, Path, Stop, LinearGradient as SvgGrad } from 'react-native-svg';
 
 const { width: W, height: H } = Dimensions.get('window');
 const CYAN = '#333333';
 const ACCENT = '#333333';
+const PAYWALL_OFFERING_ID = 'ZCE PRO';
+const ONBOARDING_PROGRESS_STEPS = [1, 2, 3, 4, 5, 6] as const;
 
 // ─── Wireframe Head ───────────────────────────────────────────────────────────
-function WireframeHead({ stage }: { stage: number }) {
+function WireframeHead({ stage, compact = false }: { stage: number; compact?: boolean }) {
     const pulse = useRef(new Animated.Value(1)).current;
     const scanY = useRef(new Animated.Value(0)).current;
     const circuitOp = useRef(new Animated.Value(0)).current;
     const eyeOp = useRef(new Animated.Value(0)).current;
+    const svgWidth = compact ? 156 : 200;
+    const svgHeight = compact ? 200 : 260;
+    const scanStart = compact ? 30 : 40;
+    const scanEnd = compact ? 165 : 220;
 
     useEffect(() => {
         Animated.loop(
@@ -43,12 +62,12 @@ function WireframeHead({ stage }: { stage: number }) {
         }
     }, [stage]);
 
-    const scanLineY = scanY.interpolate({ inputRange: [0, 1], outputRange: [40, 220] });
+    const scanLineY = scanY.interpolate({ inputRange: [0, 1], outputRange: [scanStart, scanEnd] });
     const scanOp = scanY.interpolate({ inputRange: [0, 0.05, 0.95, 1], outputRange: [0, 0.8, 0.8, 0] });
 
     return (
         <Animated.View style={{ transform: [{ scale: pulse }], alignItems: 'center' }}>
-            <Svg width={200} height={260} viewBox="0 0 200 260">
+            <Svg width={svgWidth} height={svgHeight} viewBox="0 0 200 260">
                 <Defs>
                     <SvgGrad id="hg" x1="0" y1="0" x2="0" y2="1">
                         <Stop offset="0" stopColor="#FFFFFF" stopOpacity="0.9" />
@@ -106,7 +125,7 @@ function WireframeHead({ stage }: { stage: number }) {
                 pointerEvents="none"
                 style={{
                     position: 'absolute',
-                    top: 0, left: 0, right: 0, height: 260,
+                    top: 0, left: 0, right: 0, height: svgHeight,
                     justifyContent: 'flex-start',
                     overflow: 'hidden',
                 }}
@@ -166,7 +185,7 @@ function OptionBtn({ label, icon, selected, onPress }: {
     );
 }
 
-function AnimatedEmojiRail({ stage }: { stage: number }) {
+function AnimatedEmojiRail({ stage, compact = false }: { stage: number; compact?: boolean }) {
     const STAGE_EMOJI_MAP: Record<number, FluentEmojiName[]> = {
         1: ['movieCamera', 'barChart', 'megaphone', 'eyes', 'brain', 'highVoltage'],
         2: ['ghost', 'performingArts', 'highVoltage', 'bullseye', 'speakingHead', 'catFace'],
@@ -176,7 +195,8 @@ function AnimatedEmojiRail({ stage }: { stage: number }) {
         6: ['idButton', 'locked', 'mirror', 'notebook', 'label', 'bustInSilhouette'],
         7: ['locked', 'warning', 'skullAndCrossbones', 'eyes', 'rightFacingFist', 'personInLotusPosition'],
     };
-    const icons = STAGE_EMOJI_MAP[stage] ?? STAGE_EMOJI_MAP[1];
+    const stageIcons = STAGE_EMOJI_MAP[stage] ?? STAGE_EMOJI_MAP[1];
+    const icons = compact ? stageIcons.slice(0, 4) : stageIcons;
 
     const motions = useRef(Array.from({ length: 10 }, () => new Animated.Value(0))).current;
 
@@ -195,7 +215,7 @@ function AnimatedEmojiRail({ stage }: { stage: number }) {
     }, [motions, icons.length, stage]);
 
     return (
-        <View style={styles.emojiRail}>
+        <View style={[styles.emojiRail, compact && styles.emojiRailCompact]}>
             {icons.map((name, idx) => {
                 const translateY = motions[idx].interpolate({ inputRange: [0, 1], outputRange: [0, -6] });
                 const scale = motions[idx].interpolate({ inputRange: [0, 1], outputRange: [1, 1.08] });
@@ -205,7 +225,7 @@ function AnimatedEmojiRail({ stage }: { stage: number }) {
                         key={`${name}-${idx}`}
                         style={[styles.emojiRailItem, { transform: [{ translateY }, { scale }], opacity }]}
                     >
-                        <FluentEmoji name={name} size={26} />
+                        <FluentEmoji name={name} size={compact ? 20 : 26} />
                     </Animated.View>
                 );
             })}
@@ -216,6 +236,14 @@ function AnimatedEmojiRail({ stage }: { stage: number }) {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function OnboardingScreen() {
     const { signUp, signIn, setOnboardingData, onboardingData, completeOnboarding, returnToOnboardingStage, setReturnToOnboardingStage } = useUser();
+    const {
+        isRevenueCatAvailable,
+        isLoading: billingLoading,
+        lastError: billingError,
+        purchaseSubscription,
+        restorePurchases,
+        refreshEntitlements,
+    } = useSubscription();
     const [stage, setStage] = useState(1);
     const [stageKey, setStageKey] = useState(1);
 
@@ -243,7 +271,22 @@ export default function OnboardingScreen() {
     const [loginEmail, setLoginEmail] = useState('');
     const [loginPassword, setLoginPassword] = useState('');
     const [authError, setAuthError] = useState('');
+    const [selectionError, setSelectionError] = useState('');
+    const [paywallSelectionError, setPaywallSelectionError] = useState('');
+    const [selectedPaywallPlan, setSelectedPaywallPlan] = useState<'monthly' | 'yearly' | null>(null);
     const [authLoading, setAuthLoading] = useState(false);
+    const [paywallOffering, setPaywallOffering] = useState<any | null>(null);
+    const { height: windowHeight } = useWindowDimensions();
+    const isWeb = Platform.OS === 'web';
+    const isPhysicalDevice = Constants.isDevice ?? true;
+    const isPaywallStage = stage === 5;
+    const progressStage = Math.min(stage, ONBOARDING_PROGRESS_STEPS.length);
+    const hasNativeRevenueCatUi = PaymentService.isRevenueCatUiSupported();
+    const compactLayout = windowHeight < 860;
+    const compactAuthStage = windowHeight < 780;
+    const veryCompactLayout = windowHeight < 740;
+    const showHead = !isPaywallStage && stage < 6;
+    const showEmojiRail = stage >= 1 && stage <= 4;
 
     const btnGlow = useRef(new Animated.Value(0.7)).current;
     const glowOp = useRef(new Animated.Value(0.4)).current;
@@ -259,7 +302,68 @@ export default function OnboardingScreen() {
         ])).start();
     }, []);
 
+    useEffect(() => {
+        let active = true;
+
+        const loadOffering = async () => {
+            if (!isRevenueCatAvailable || !hasNativeRevenueCatUi) {
+                if (active) setPaywallOffering(null);
+                return;
+            }
+
+            try {
+                const offering =
+                    (await PaymentService.getOfferingByIdentifier(PAYWALL_OFFERING_ID)) ||
+                    (await PaymentService.getCurrentOffering());
+                if (active) setPaywallOffering(offering);
+            } catch {
+                if (active) setPaywallOffering(null);
+            }
+        };
+
+        void loadOffering();
+        return () => {
+            active = false;
+        };
+    }, [isRevenueCatAvailable, hasNativeRevenueCatUi]);
+    const showNativePaywall = isPaywallStage && isPhysicalDevice && isRevenueCatAvailable && hasNativeRevenueCatUi && !!paywallOffering;
+
+    const handleFallbackPaywallContinue = async () => {
+        if (!selectedPaywallPlan) {
+            setPaywallSelectionError('Select a plan or choose Continue Free.');
+            return;
+        }
+
+        setPaywallSelectionError('');
+        const upgraded = await purchaseSubscription(selectedPaywallPlan);
+        await refreshEntitlements();
+        if (upgraded) {
+            Alert.alert('ZCE PRO ACTIVATED', 'Director access unlocked. Let\'s move.');
+            setStage(6);
+            setStageKey(k => k + 1);
+        }
+    };
+
+    const handleFallbackRestore = async () => {
+        setPaywallSelectionError('');
+        const restored = await restorePurchases();
+        await refreshEntitlements();
+        if (restored) {
+            Alert.alert('RESTORE COMPLETE', 'ZCE PRO restored on this account.');
+            setStage(6);
+            setStageKey(k => k + 1);
+        } else {
+            Alert.alert('Restore Complete', 'No active Pro entitlement was found for this account.');
+        }
+    };
+
     const advance = () => {
+        if (isWeb) {
+            setStage(s => s + 1);
+            setStageKey(k => k + 1);
+            return;
+        }
+
         Animated.parallel([
             Animated.timing(pageOp, { toValue: 0, duration: 220, useNativeDriver: true }),
             Animated.timing(pageTy, { toValue: -24, duration: 220, useNativeDriver: true }),
@@ -275,6 +379,20 @@ export default function OnboardingScreen() {
     };
 
     const handleNext = async () => {
+        if (stage === 2 && !mission.level) {
+            setSelectionError('Select a social level to continue.');
+            return;
+        }
+        if (stage === 3 && !mission.goal) {
+            setSelectionError('Select your primary objective to continue.');
+            return;
+        }
+        if (stage === 4 && !mission.commitment) {
+            setSelectionError('Select your commitment window to continue.');
+            return;
+        }
+        setSelectionError('');
+
         if (stage === 7) {
             // Complete onboarding and go to main app
             setOnboardingData({ 
@@ -291,12 +409,18 @@ export default function OnboardingScreen() {
 
     const handleSkip = async () => {
         setOnboardingData({ level: 'NPC', goal: 'General', commitment: '30 days' });
-        setStage(6);
+        setStage(5);
         setStageKey(k => k + 1);
     };
 
     const handleBack = () => {
         if (stage > 1) {
+            if (isWeb) {
+                setStage(s => s - 1);
+                setStageKey(k => k + 1);
+                return;
+            }
+
             Animated.parallel([
                 Animated.timing(pageOp, { toValue: 0, duration: 220, useNativeDriver: true }),
                 Animated.timing(pageTy, { toValue: 24, duration: 220, useNativeDriver: true }),
@@ -320,20 +444,24 @@ export default function OnboardingScreen() {
         return true;
     };
 
-    return (
-        <PanGestureHandler
-            onGestureEvent={Animated.event([{ nativeEvent: { translationX: gestureX } }], { useNativeDriver: false })}
-            onHandlerStateChange={(event) => {
-                if (event.nativeEvent.state === State.END) {
-                    const { translationX } = event.nativeEvent;
-                    // Swipe right (positive translationX) to go back
-                    if (translationX > 50 && stage > 1) {
-                        handleBack();
-                    }
-                }
-            }}
-        >
-            <View style={styles.root}>
+    useEffect(() => {
+        if (stage !== 5 || showNativePaywall) return;
+
+        const reason = !isPhysicalDevice
+            ? 'Native RevenueCat checkout needs a physical iPhone, not Simulator.'
+            : !isRevenueCatAvailable
+                ? 'RevenueCat billing is not configured/available in this build.'
+                : !hasNativeRevenueCatUi
+                    ? 'RevenueCat native paywall module is missing in this build.'
+                    : 'RevenueCat paywall is unavailable right now.';
+
+        Alert.alert('Paywall Unavailable', `${reason} Continuing setup.`);
+        setStage(6);
+        setStageKey(k => k + 1);
+    }, [stage, showNativePaywall, isPhysicalDevice, isRevenueCatAvailable, hasNativeRevenueCatUi]);
+
+    const content = (
+        <View style={styles.root}>
                 <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
 
             {/* Ambient glow blobs - white only */}
@@ -358,7 +486,7 @@ export default function OnboardingScreen() {
 
             <SafeAreaView style={styles.safe}>
                 {/* Top bar */}
-                <View style={styles.topBar}>
+                {!isPaywallStage && <View style={styles.topBar}>
                     <View style={styles.topSide}>
                         {stage > 1 ? (
                             <Pressable onPress={handleBack} style={({ pressed }) => [styles.backBtn, pressed && styles.backBtnPressed]}>
@@ -369,35 +497,46 @@ export default function OnboardingScreen() {
                         )}
                     </View>
                     <View style={styles.topCenter}>
-                        {[1, 2, 3, 4, 5, 6, 7].map(n => (
-                            <View key={n} style={[styles.dot, stage === n && styles.dotActive]} />
+                        {ONBOARDING_PROGRESS_STEPS.map(n => (
+                            <View key={n} style={[styles.dot, progressStage === n && styles.dotActive]} />
                         ))}
                     </View>
                     <View style={[styles.topSide, { alignItems: 'flex-end' }]}>
-                        <Pressable onPress={handleSkip} style={({ pressed }) => [styles.skipBtn, pressed && styles.skipBtnPressed]}>
-                            <Text style={styles.skipText}>SKIP →</Text>
-                        </Pressable>
+                        {stage < 6 ? (
+                            <Pressable onPress={handleSkip} style={({ pressed }) => [styles.skipBtn, pressed && styles.skipBtnPressed]}>
+                                <Text style={styles.skipText}>SKIP →</Text>
+                            </Pressable>
+                        ) : (
+                            <View style={styles.sideSpacer} />
+                        )}
                     </View>
-                </View>
+                </View>}
 
                 {/* Head */}
-                <View style={styles.headArea}>
-                    <WireframeHead stage={stage} />
+                {showHead && <View style={[styles.headArea, compactLayout && styles.headAreaCompact, veryCompactLayout && styles.headAreaVeryCompact]}>
+                    <WireframeHead stage={stage} compact={compactLayout} />
                     <View style={styles.scanBadge}>
                         <Text style={[styles.scanBadgeText, stage >= 5 && { color: CYAN }]}>
                             {stage === 1 ? 'SCANNING . . .' : 
-                             stage === 5 ? 'UPGRADE COMPLETE' : 
+                             stage === 5 ? 'ZCE PRO PLAN' : 
                              stage === 6 ? 'CREATE IDENTITY' :
                              stage === 7 ? 'ACCESS RESTRICTED' :
                              'CONFIRM MISSION'}
                         </Text>
                     </View>
-                    <AnimatedEmojiRail stage={stage} />
-                </View>
+                    {showEmojiRail && <AnimatedEmojiRail stage={stage} compact={veryCompactLayout} />}
+                </View>}
 
                 {/* Stage content - scrollable to prevent overlap and overflow */}
                 <Animated.View key={stageKey}
-                    style={[styles.content, { opacity: pageOp, transform: [{ translateY: pageTy }] }]}>
+                    style={[
+                        styles.content,
+                        isPaywallStage && styles.paywallFullContent,
+                        veryCompactLayout && styles.contentVeryCompact,
+                        isWeb
+                            ? { opacity: 1, transform: [{ translateY: 0 }] }
+                            : { opacity: pageOp, transform: [{ translateY: pageTy }] },
+                    ]}> 
 
                     {/* ── STAGE 1 ── */}
                     {stage === 1 && (
@@ -429,7 +568,8 @@ export default function OnboardingScreen() {
 
                     {/* ── STAGE 2: SOCIAL LEVEL ── */}
                     {stage === 2 && (
-                        <ScrollView style={styles.scrollFlex}
+                        <ScrollView
+                            style={styles.scrollFlex}
                             contentContainerStyle={styles.scrollContent}
                             showsVerticalScrollIndicator={false}
                             keyboardShouldPersistTaps="handled">
@@ -445,25 +585,33 @@ export default function OnboardingScreen() {
                                 ].map(o => (
                                     <OptionBtn key={o.label} label={o.label} icon={o.icon}
                                         selected={mission.level === o.label}
-                                        onPress={() => setMission(m => ({ ...m, level: o.label }))} />
+                                        onPress={() => {
+                                            setMission(m => ({ ...m, level: o.label }));
+                                            setSelectionError('');
+                                        }} />
                                 ))}
                             </View>
+                            {!!selectionError && (
+                                <View style={styles.selectionErrorRow}>
+                                    <FluentEmoji name="warning" size={14} />
+                                    <Text style={styles.selectionErrorText}>{selectionError}</Text>
+                                </View>
+                            )}
 
                             <Pressable onPress={handleNext}
-                                style={({ pressed }) => [styles.ctaBtn, !canProceed() && { opacity: 0.38 }, pressed && canProceed() && styles.ctaBtnPressed]}
-                                disabled={!canProceed()}>
+                                style={({ pressed }) => [styles.ctaBtn, !canProceed() && { opacity: 0.82 }, pressed && styles.ctaBtnPressed]}>
                                 <View style={styles.ctaInner}>
                                     <Text style={styles.ctaText}>CONFIRM LEVEL</Text>
                                     <Text style={styles.ctaArrow}>→</Text>
                                 </View>
                             </Pressable>
-                            <View style={{ height: 32 }} />
                         </ScrollView>
                     )}
 
                     {/* ── STAGE 3: PRIMARY MISSION ── */}
                     {stage === 3 && (
-                        <ScrollView style={styles.scrollFlex}
+                        <ScrollView
+                            style={styles.scrollFlex}
                             contentContainerStyle={styles.scrollContent}
                             showsVerticalScrollIndicator={false}
                             keyboardShouldPersistTaps="handled">
@@ -480,25 +628,33 @@ export default function OnboardingScreen() {
                                 ].map(o => (
                                     <OptionBtn key={o.label} label={o.label} icon={o.icon}
                                         selected={mission.goal === o.label}
-                                        onPress={() => setMission(m => ({ ...m, goal: o.label }))} />
+                                        onPress={() => {
+                                            setMission(m => ({ ...m, goal: o.label }));
+                                            setSelectionError('');
+                                        }} />
                                 ))}
                             </View>
+                            {!!selectionError && (
+                                <View style={styles.selectionErrorRow}>
+                                    <FluentEmoji name="warning" size={14} />
+                                    <Text style={styles.selectionErrorText}>{selectionError}</Text>
+                                </View>
+                            )}
 
                             <Pressable onPress={handleNext}
-                                style={({ pressed }) => [styles.ctaBtn, !canProceed() && { opacity: 0.38 }, pressed && canProceed() && styles.ctaBtnPressed]}
-                                disabled={!canProceed()}>
+                                style={({ pressed }) => [styles.ctaBtn, !canProceed() && { opacity: 0.82 }, pressed && styles.ctaBtnPressed]}>
                                 <View style={styles.ctaInner}>
                                     <Text style={styles.ctaText}>LOCK OBJECTIVE</Text>
                                     <Text style={styles.ctaArrow}>→</Text>
                                 </View>
                             </Pressable>
-                            <View style={{ height: 32 }} />
                         </ScrollView>
                     )}
 
                     {/* ── STAGE 4: COMMITMENT DURATION ── */}
                     {stage === 4 && (
-                        <ScrollView style={styles.scrollFlex}
+                        <ScrollView
+                            style={styles.scrollFlex}
                             contentContainerStyle={styles.scrollContent}
                             showsVerticalScrollIndicator={false}
                             keyboardShouldPersistTaps="handled">
@@ -514,68 +670,178 @@ export default function OnboardingScreen() {
                                 ].map(o => (
                                     <OptionBtn key={o.label} label={o.label} icon={o.icon}
                                         selected={mission.commitment === o.label}
-                                        onPress={() => setMission(m => ({ ...m, commitment: o.label }))} />
+                                        onPress={() => {
+                                            setMission(m => ({ ...m, commitment: o.label }));
+                                            setSelectionError('');
+                                        }} />
                                 ))}
                             </View>
+                            {!!selectionError && (
+                                <View style={styles.selectionErrorRow}>
+                                    <FluentEmoji name="warning" size={14} />
+                                    <Text style={styles.selectionErrorText}>{selectionError}</Text>
+                                </View>
+                            )}
 
                             <Pressable onPress={handleNext}
-                                style={({ pressed }) => [styles.ctaBtn, !canProceed() && { opacity: 0.38 }, pressed && canProceed() && styles.ctaBtnPressed]}
-                                disabled={!canProceed()}>
+                                style={({ pressed }) => [styles.ctaBtn, !canProceed() && { opacity: 0.82 }, pressed && styles.ctaBtnPressed]}>
                                 <View style={styles.ctaInner}>
                                     <Text style={styles.ctaText}>LOCK COMMITMENT</Text>
                                     <Text style={styles.ctaArrow}>→</Text>
                                 </View>
                             </Pressable>
-                            <View style={{ height: 32 }} />
                         </ScrollView>
                     )}
 
-                    {/* ── STAGE 5: FRAME ACCEPTED ── */}
+                    {/* ── STAGE 5: ZCE PRO PAYWALL ── */}
                     {stage === 5 && (
-                        <ScrollView
-                            style={styles.scrollFlex}
-                            contentContainerStyle={styles.scrollContentCentered}
-                            showsVerticalScrollIndicator={false}
-                            keyboardShouldPersistTaps="handled">
-                        <View style={styles.stageBox}>
-                            <View style={styles.frameBadge}>
-                                <Text style={styles.frameBadgeText}>FRAME ACCEPTED</Text>
-                            </View>
-                            <View style={styles.termBlock}>
-                                <TerminalLine text="> Mission locked." delay={100} color="#FFFFFF" />
-                                <TerminalLine text={`> Level: ${mission.level?.split(' — ')[0] || 'NPC'}`} delay={600} />
-                                <TerminalLine text={`> Objective: ${mission.goal || 'General'}`} delay={1100} />
-                                <TerminalLine text={`> Commitment: ${mission.commitment?.split(' — ')[0] || '30 days'}`} delay={1600} />
-                                <TerminalLine text="> Daily reps required." delay={2300} color="rgba(255,255,255,0.6)" />
-                                <TerminalLine text="> Miss a day = streak dies." delay={2800} color="rgba(255,255,255,0.6)" />
-                                <TerminalLine text="> Welcome to the Engine." delay={3500} color="#FFFFFF" />
-                            </View>
-                            <SwipeSlider 
-                                onSwipeComplete={handleNext}
-                                label="SLIDE TO ENTER THE ENGINE →"
-                                width={Math.min(320, W - 48)}
-                                height={60}
-                            />
+                        <View style={styles.paywallStageWrap}>
+                            {showNativePaywall && (
+                                <View style={styles.nativePaywallStage}>
+                                    <RevenueCatUI.Paywall
+                                        options={{ offering: paywallOffering }}
+                                        displayCloseButton
+                                        onPurchaseCompleted={() => {
+                                            Alert.alert('ZCE PRO ACTIVATED', 'Director access unlocked. Let\'s move.');
+                                            void refreshEntitlements();
+                                            setStage(6);
+                                            setStageKey(k => k + 1);
+                                        }}
+                                        onDismiss={() => {
+                                            setStage(6);
+                                            setStageKey(k => k + 1);
+                                            void refreshEntitlements();
+                                        }}
+                                    />
+                                </View>
+                            )}
+                            {!showNativePaywall && (
+                                <ScrollView
+                                    style={styles.scrollFlex}
+                                    contentContainerStyle={styles.webPaywallScrollContent}
+                                    showsVerticalScrollIndicator={false}
+                                    keyboardShouldPersistTaps="handled"
+                                >
+                                    <View style={styles.webPaywallWrap}>
+                                        <Text style={styles.webPaywallEyebrow}>ZCE PRO UNLOCK</Text>
+                                        <Text style={styles.webPaywallTitle}>CHOOSE YOUR PLAN</Text>
+                                        <Text style={styles.webPaywallSubtitle}>
+                                            Pick Monthly or Yearly. Or continue free and upgrade later from Settings.
+                                        </Text>
+
+                                        <View style={styles.webPlansRow}>
+                                            <Pressable
+                                                onPress={() => {
+                                                    setSelectedPaywallPlan('monthly');
+                                                    setPaywallSelectionError('');
+                                                }}
+                                                style={[
+                                                    styles.webPlanCard,
+                                                    selectedPaywallPlan === 'monthly' && styles.webPlanCardSelected,
+                                                ]}
+                                            >
+                                                <Text style={styles.webPlanName}>MONTHLY</Text>
+                                                <Text style={styles.webPlanPrice}>$9.99</Text>
+                                                <Text style={styles.webPlanMeta}>Cancel anytime</Text>
+                                                {selectedPaywallPlan === 'monthly' && (
+                                                    <Text style={styles.webPlanSelectedTag}>SELECTED</Text>
+                                                )}
+                                            </Pressable>
+
+                                            <Pressable
+                                                onPress={() => {
+                                                    setSelectedPaywallPlan('yearly');
+                                                    setPaywallSelectionError('');
+                                                }}
+                                                style={[
+                                                    styles.webPlanCard,
+                                                    styles.webPlanCardFeatured,
+                                                    selectedPaywallPlan === 'yearly' && styles.webPlanCardSelected,
+                                                ]}
+                                            >
+                                                <Text style={styles.webPlanName}>YEARLY</Text>
+                                                <Text style={styles.webPlanPrice}>$59.99</Text>
+                                                <Text style={[styles.webPlanMeta, styles.webPlanFeaturedText]}>Best value</Text>
+                                                {selectedPaywallPlan === 'yearly' && (
+                                                    <Text style={styles.webPlanSelectedTag}>SELECTED</Text>
+                                                )}
+                                            </Pressable>
+                                        </View>
+
+                                        {!!paywallSelectionError && (
+                                            <View style={styles.selectionErrorRow}>
+                                                <FluentEmoji name="warning" size={14} />
+                                                <Text style={styles.selectionErrorText}>{paywallSelectionError}</Text>
+                                            </View>
+                                        )}
+
+                                        {!!billingError && (
+                                            <View style={styles.selectionErrorRow}>
+                                                <FluentEmoji name="warning" size={14} />
+                                                <Text style={styles.selectionErrorText}>{billingError}</Text>
+                                            </View>
+                                        )}
+
+                                        <GlassButton
+                                            label={billingLoading ? 'PROCESSING...' : 'CONTINUE'}
+                                            onPress={() => { void handleFallbackPaywallContinue(); }}
+                                            look="glass"
+                                            tint="dark"
+                                            size="md"
+                                            disabled={billingLoading}
+                                            style={styles.paywallGlassButton}
+                                        />
+
+                                        <View style={styles.paywallCancelWrap}>
+                                            <GlassButton
+                                                label="RESTORE PURCHASES"
+                                                onPress={() => { void handleFallbackRestore(); }}
+                                                look="glass"
+                                                tint="dark"
+                                                size="sm"
+                                                compact
+                                                disabled={billingLoading}
+                                            />
+                                        </View>
+
+                                        <View style={styles.paywallCancelWrap}>
+                                            <GlassButton
+                                                label="CONTINUE FREE"
+                                                onPress={() => {
+                                                    setPaywallSelectionError('');
+                                                    setStage(6);
+                                                    setStageKey(k => k + 1);
+                                                }}
+                                                look="glass"
+                                                tint="dark"
+                                                size="sm"
+                                                compact
+                                                disabled={billingLoading}
+                                            />
+                                        </View>
+                                    </View>
+                                </ScrollView>
+                            )}
                         </View>
-                        </ScrollView>
                     )}
 
                     {/* ── STAGE 6: SIGNUP ── */}
                     {stage === 6 && (
                         <ScrollView
                             style={styles.scrollFlex}
-                            contentContainerStyle={styles.scrollContentCentered}
+                            contentContainerStyle={[styles.scrollContentCenteredNoScroll, compactAuthStage && styles.scrollContentCenteredNoScrollCompact]}
                             showsVerticalScrollIndicator={false}
-                            keyboardShouldPersistTaps="handled">
-                        <View style={styles.stageBox}>
-                            <View style={styles.termBlock}>
+                            keyboardShouldPersistTaps="handled"
+                        >
+                        <View style={[styles.stageBox, compactAuthStage && styles.stageBoxCompact]}>
+                            <View style={[styles.termBlock, compactAuthStage && styles.termBlockCompact]}>
                                 <TerminalLine text="> Creating identity..." delay={0} color="rgba(255,255,255,0.5)" />
                                 <TerminalLine text="> Initialize neural signature..." delay={500} color="rgba(255,255,255,0.5)" />
                                 <TerminalLine text="> Establish agent credentials..." delay={1000} color="rgba(255,255,255,0.5)" />
                             </View>
-                            <View style={styles.authPrompt}>
-                                <Text style={styles.authTitle}>CREATE YOUR IDENTITY</Text>
-                                <Text style={styles.authSubtitle}>Choose your path to enter the system</Text>
+                            <View style={[styles.authPrompt, compactAuthStage && styles.authPromptCompact]}>
+                                <Text style={[styles.authTitle, compactAuthStage && styles.authTitleCompact]}>CREATE YOUR IDENTITY</Text>
+                                <Text style={[styles.authSubtitle, compactAuthStage && styles.authSubtitleCompact]}>Choose your path to enter the system</Text>
                                 <Pressable onPress={async () => {
                                     setOnboardingData({
                                         level: mission.level || 'NPC',
@@ -585,10 +851,19 @@ export default function OnboardingScreen() {
                                     await completeOnboarding();
                                     setReturnToOnboardingStage(6);
                                     router.push('/auth/signup');
-                                }} style={({ pressed }) => [styles.authBtn, pressed && styles.authBtnPressed]}>
-                                    <Text style={styles.authBtnText}>CREATE NEW IDENTITY →</Text>
+                                }} style={({ pressed }) => [styles.authBtn, compactAuthStage && styles.authBtnCompact, pressed && styles.authBtnPressed]}>
+                                    <Text style={[styles.authBtnText, compactAuthStage && styles.authBtnTextCompact]}>CREATE NEW IDENTITY →</Text>
                                 </Pressable>
-                                <Pressable onPress={() => setStage(7)} style={({ pressed }) => [styles.authLink, pressed && styles.authLinkPressed]}>
+                                <Pressable onPress={async () => {
+                                    setOnboardingData({
+                                        level: mission.level || 'NPC',
+                                        goal: mission.goal || 'General',
+                                        commitment: mission.commitment || '30 days',
+                                    });
+                                    await completeOnboarding();
+                                    setReturnToOnboardingStage(7);
+                                    router.push('/auth/login');
+                                }} style={({ pressed }) => [styles.authLink, pressed && styles.authLinkPressed]}>
                                     <Text style={styles.authLinkText}>Already have access? Sign In</Text>
                                 </Pressable>
                             </View>
@@ -600,19 +875,20 @@ export default function OnboardingScreen() {
                     {stage === 7 && (
                         <ScrollView
                             style={styles.scrollFlex}
-                            contentContainerStyle={styles.scrollContentCentered}
+                            contentContainerStyle={[styles.scrollContentCenteredNoScroll, compactAuthStage && styles.scrollContentCenteredNoScrollCompact]}
                             showsVerticalScrollIndicator={false}
-                            keyboardShouldPersistTaps="handled">
-                        <View style={styles.stageBox}>
-                            <View style={styles.termBlock}>
+                            keyboardShouldPersistTaps="handled"
+                        >
+                        <View style={[styles.stageBox, compactAuthStage && styles.stageBoxCompact]}>
+                            <View style={[styles.termBlock, compactAuthStage && styles.termBlockCompact]}>
                                 <TerminalLine text="> Authenticating agent..." delay={0} color="rgba(255,255,255,0.5)" />
                                 <TerminalLine text="> Verifying credentials..." delay={500} color="rgba(255,255,255,0.5)" />
                                 <TerminalLine text="> Granting system access..." delay={1000} color="rgba(255,255,255,0.5)" />
                             </View>
-                            <View style={styles.authPrompt}>
-                                <Text style={styles.authTitle}>ACCESS RESTRICTED</Text>
-                                <Text style={styles.authSubtitle}>Enter your credentials to proceed</Text>
-<Pressable onPress={async () => {
+                            <View style={[styles.authPrompt, compactAuthStage && styles.authPromptCompact]}>
+                                <Text style={[styles.authTitle, compactAuthStage && styles.authTitleCompact]}>ACCESS RESTRICTED</Text>
+                                <Text style={[styles.authSubtitle, compactAuthStage && styles.authSubtitleCompact]}>Enter your credentials to proceed</Text>
+                                <Pressable onPress={async () => {
                                         setOnboardingData({
                                             level: mission.level || 'NPC',
                                             goal: mission.goal || 'General',
@@ -621,8 +897,8 @@ export default function OnboardingScreen() {
                                         await completeOnboarding();
                                         setReturnToOnboardingStage(7);
                                         router.push('/auth/login');
-                                    }} style={({ pressed }) => [styles.authBtn, pressed && styles.authBtnPressed]}>
-                                    <Text style={styles.authBtnText}>SIGN IN →</Text>
+                                    }} style={({ pressed }) => [styles.authBtn, compactAuthStage && styles.authBtnCompact, pressed && styles.authBtnPressed]}>
+                                    <Text style={[styles.authBtnText, compactAuthStage && styles.authBtnTextCompact]}>SIGN IN →</Text>
                                 </Pressable>
                                 <Pressable onPress={() => setStage(6)} style={({ pressed }) => [styles.authLink, pressed && styles.authLinkPressed]}>
                                     <Text style={styles.authLinkText}>← Back to Create Identity</Text>
@@ -635,6 +911,28 @@ export default function OnboardingScreen() {
             
         </SafeAreaView>
         </View>
+    );
+
+    if (isWeb) {
+        return content;
+    }
+
+    return (
+        <PanGestureHandler
+            onGestureEvent={Animated.event([{ nativeEvent: { translationX: gestureX } }], { useNativeDriver: false })}
+            onHandlerStateChange={(event) => {
+                if (event.nativeEvent.state === State.END) {
+                    const { translationX } = event.nativeEvent;
+                    // Swipe right (positive translationX) to go back
+                    if (translationX > 50 && stage > 1) {
+                        handleBack();
+                    }
+                }
+            }}
+        >
+            <Animated.View style={{ flex: 1 }}>
+                {content}
+            </Animated.View>
         </PanGestureHandler>
     );
 }
@@ -660,6 +958,7 @@ const styles = StyleSheet.create({
     topSide: {
         width: 96,
         justifyContent: 'center',
+        alignItems: 'flex-start',
     },
     topCenter: {
         flexDirection: 'row',
@@ -683,6 +982,8 @@ const styles = StyleSheet.create({
     skipText: { fontFamily: Fonts.monoBold, color: '#FFFFFF', fontSize: 10, letterSpacing: 1.2, fontWeight: '800' },
 
     headArea: { alignItems: 'center', paddingVertical: 12, overflow: 'hidden' },
+    headAreaCompact: { paddingVertical: 2 },
+    headAreaVeryCompact: { paddingVertical: 0 },
     scanBadge: {
         marginTop: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
         paddingHorizontal: 16, paddingVertical: 5, borderRadius: 0,
@@ -701,6 +1002,11 @@ const styles = StyleSheet.create({
         gap: 8,
         paddingHorizontal: 8,
     },
+    emojiRailCompact: {
+        maxWidth: 280,
+        gap: 6,
+        marginTop: 8,
+    },
     emojiRailItem: {
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.08)',
@@ -717,6 +1023,14 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
         paddingHorizontal: 24,
     },
+    contentVeryCompact: {
+        paddingHorizontal: 16,
+    },
+    paywallFullContent: {
+        maxWidth: '100%',
+        alignSelf: 'stretch',
+        paddingHorizontal: 0,
+    },
     scrollContentCentered: {
         flexGrow: 1,
         justifyContent: 'center',
@@ -726,8 +1040,10 @@ const styles = StyleSheet.create({
     },
 
     stageBox: { gap: 24, paddingBottom: 40 },
+    stageBoxCompact: { gap: 14, paddingBottom: 20 },
 
     termBlock: { gap: 12, minHeight: 140, width: '100%' },
+    termBlockCompact: { minHeight: 96, gap: 8 },
     termLine: { fontFamily: Fonts.mono, color: 'rgba(255,255,255,0.7)', fontSize: 13, letterSpacing: 0.5, lineHeight: 22, flexShrink: 1 },
     versionTag: { fontFamily: Fonts.mono, color: 'rgba(255,255,255,0.35)', fontSize: 8, letterSpacing: 2, opacity: 0.6, flexShrink: 1 },
 
@@ -752,6 +1068,23 @@ const styles = StyleSheet.create({
 
     scrollFlex: { flex: 1 },
     scrollContent: { gap: 24, paddingBottom: 40 },
+    scrollContentNoScroll: {
+        flex: 1,
+        gap: 18,
+        justifyContent: 'center',
+        paddingBottom: 20,
+    },
+    scrollContentCenteredNoScroll: {
+        flex: 1,
+        justifyContent: 'center',
+        gap: 20,
+        paddingBottom: 20,
+    },
+    scrollContentCenteredNoScrollCompact: {
+        justifyContent: 'flex-start',
+        paddingTop: 12,
+        paddingBottom: 24,
+    },
     intakeTitle: { fontFamily: Fonts.heading, color: '#FFFFFF', fontSize: 22, letterSpacing: 1, fontWeight: '800', flexShrink: 1 },
     intakeSub: { fontFamily: Fonts.monoBold, color: 'rgba(255,255,255,0.5)', fontSize: 10, letterSpacing: 3, marginTop: -12, textTransform: 'uppercase' },
 
@@ -780,6 +1113,26 @@ const styles = StyleSheet.create({
     optText: { fontFamily: Fonts.body, color: 'rgba(255,255,255,0.6)', fontSize: 14, flex: 1, flexShrink: 1, minWidth: 0, fontWeight: '500' },
     optTextActive: { color: '#FFFFFF', fontWeight: '700' },
     optCheck: { color: '#FFFFFF', fontSize: 12, fontWeight: '800', marginLeft: 'auto' },
+    selectionErrorRow: {
+        marginTop: 2,
+        marginBottom: 4,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.22)',
+        backgroundColor: 'rgba(255,255,255,0.06)',
+        borderRadius: 10,
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+    },
+    selectionErrorText: {
+        flex: 1,
+        fontFamily: Fonts.bodyMedium,
+        fontSize: 12,
+        lineHeight: 16,
+        color: 'rgba(255,255,255,0.9)',
+    },
 
     frameBadge: {
         alignSelf: 'center', borderWidth: 1, borderColor: '#FFFFFF',
@@ -788,6 +1141,146 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     frameBadgeText: { fontFamily: Fonts.monoBold, color: '#FFFFFF', fontSize: 10, letterSpacing: 4, fontWeight: '800' },
+
+    paywallStageWrap: {
+        flex: 1,
+        width: '100%',
+    },
+    nativePaywallStage: {
+        flex: 1,
+        backgroundColor: '#000000',
+    },
+    paywallTopActions: {
+        position: 'absolute',
+        top: 8,
+        right: 16,
+        zIndex: 10,
+    },
+    paywallCancelButton: {
+        minWidth: 110,
+    },
+    webPaywallWrap: {
+        width: '100%',
+        maxWidth: 560,
+        alignSelf: 'center',
+        paddingHorizontal: 16,
+        paddingTop: 72,
+        paddingBottom: 40,
+        gap: 12,
+    },
+    webPaywallScrollContent: {
+        paddingBottom: 120,
+    },
+    webPaywallEyebrow: {
+        fontFamily: Fonts.monoBold,
+        color: 'rgba(255,255,255,0.7)',
+        fontSize: 11,
+        letterSpacing: 3,
+    },
+    webPaywallTitle: {
+        fontFamily: Fonts.heading,
+        color: '#FFFFFF',
+        fontSize: 34,
+        lineHeight: 38,
+        letterSpacing: 1,
+        fontWeight: '800',
+    },
+    webPaywallSubtitle: {
+        fontFamily: Fonts.body,
+        color: 'rgba(255,255,255,0.75)',
+        fontSize: 15,
+        lineHeight: 22,
+        maxWidth: 620,
+    },
+    webPlansRow: {
+        flexDirection: 'column',
+        gap: 10,
+        marginTop: 6,
+    },
+    webPlanCard: {
+        width: '100%',
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
+        backgroundColor: 'rgba(255,255,255,0.06)',
+        padding: 16,
+        gap: 6,
+    },
+    webPlanCardSelected: {
+        borderColor: 'rgba(255,255,255,0.85)',
+        backgroundColor: 'rgba(255,255,255,0.2)',
+    },
+    webPlanCardFeatured: {
+        borderColor: 'rgba(255,255,255,0.55)',
+        backgroundColor: 'rgba(255,255,255,0.14)',
+    },
+    webPlanName: {
+        fontFamily: Fonts.monoBold,
+        color: 'rgba(255,255,255,0.75)',
+        fontSize: 12,
+        letterSpacing: 2,
+        textTransform: 'uppercase',
+    },
+    webPlanPrice: {
+        fontFamily: Fonts.heading,
+        color: '#FFFFFF',
+        fontSize: 28,
+        lineHeight: 30,
+        fontWeight: '800',
+    },
+    webPlanMeta: {
+        fontFamily: Fonts.body,
+        color: 'rgba(255,255,255,0.66)',
+        fontSize: 13,
+    },
+    webPlanFeaturedText: {
+        color: '#FFFFFF',
+    },
+    webPlanSelectedTag: {
+        marginTop: 2,
+        fontFamily: Fonts.monoBold,
+        color: '#FFFFFF',
+        fontSize: 10,
+        letterSpacing: 2,
+    },
+    paywallFallbackCard: {
+        marginTop: 4,
+        padding: 20,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.15)',
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        gap: 14,
+    },
+    paywallFallbackTitle: {
+        fontFamily: Fonts.heading,
+        color: '#FFFFFF',
+        fontSize: 18,
+        letterSpacing: 2,
+        fontWeight: '800',
+    },
+    paywallFallbackText: {
+        fontFamily: Fonts.body,
+        color: 'rgba(255,255,255,0.72)',
+        fontSize: 13,
+        lineHeight: 20,
+    },
+    paywallCancelWrap: {
+        marginTop: 12,
+        alignItems: 'center',
+    },
+    paywallBtnDisabled: {
+        opacity: 0.5,
+    },
+    paywallGlassButton: {
+        width: '100%',
+        marginTop: 2,
+    },
+    paywallGlassButtonSelected: {
+        borderColor: 'rgba(255,255,255,0.86)',
+        borderWidth: 1,
+        backgroundColor: 'rgba(255,255,255,0.14)',
+    },
 
     backBtn: {
         paddingHorizontal: 14, paddingVertical: 10,
@@ -806,15 +1299,29 @@ const styles = StyleSheet.create({
         alignItems: 'center', gap: 16, marginTop: 10,
         paddingHorizontal: 20,
     },
+    authPromptCompact: {
+        marginTop: 0,
+        gap: 10,
+        paddingHorizontal: 10,
+    },
     authTitle: {
         fontFamily: Fonts.heading, color: '#FFFFFF', fontSize: 20,
         letterSpacing: 4, fontWeight: '800', textAlign: 'center',
         flexShrink: 1, paddingHorizontal: 8,
     },
+    authTitleCompact: {
+        fontSize: 16,
+        letterSpacing: 2.5,
+    },
     authSubtitle: {
         fontFamily: Fonts.mono, color: 'rgba(255,255,255,0.7)', fontSize: 12,
         textAlign: 'center', paddingHorizontal: 20, lineHeight: 18,
         flexShrink: 1,
+    },
+    authSubtitleCompact: {
+        fontSize: 10,
+        lineHeight: 14,
+        paddingHorizontal: 10,
     },
     authBtn: {
         backgroundColor: 'rgba(255, 255, 255, 0.08)',
@@ -830,6 +1337,11 @@ const styles = StyleSheet.create({
         shadowRadius: 20,
         elevation: 8,
     },
+    authBtnCompact: {
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        marginTop: 4,
+    },
     authBtnPressed: { borderColor: 'rgba(255, 255, 255, 0.9)', transform: [{ scale: 0.97 }] },
     authBtnText: {
         fontFamily: Fonts.monoBold,
@@ -838,6 +1350,10 @@ const styles = StyleSheet.create({
         letterSpacing: 3,
         fontWeight: '800',
         textTransform: 'uppercase',
+    },
+    authBtnTextCompact: {
+        fontSize: 12,
+        letterSpacing: 2,
     },
     authLink: {
         marginTop: 10,

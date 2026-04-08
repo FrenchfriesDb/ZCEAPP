@@ -1,5 +1,5 @@
-import { getFirstName } from './formatters';
 import { getNightlyRiskSnapshot, getQuestBehaviorSignals, getTodayXp } from '@/constants/habitEngine';
+import { getFirstName } from './formatters';
 
 type LogEntry = { type?: string; feedback?: string; date?: string };
 type ChatEntry = { role?: 'user' | 'assistant'; content?: string; timestamp?: string };
@@ -19,6 +19,14 @@ export type ZaneMemoryUser = {
   chatLogs?: ChatEntry[];
 };
 
+function getCanonicalStreak(user?: ZaneMemoryUser | null) {
+  if (!user) return 0;
+  const current = Number(user.streak || 0);
+  const previous = Number(user.previousStreak || 0);
+  // Prefer the larger valid streak to avoid stale previous/current desync in AI context.
+  return Math.max(0, Math.max(current, previous));
+}
+
 export function buildZaneMemoryContext(user?: ZaneMemoryUser | null) {
   if (!user) return 'No user memory available.';
 
@@ -37,14 +45,15 @@ export function buildZaneMemoryContext(user?: ZaneMemoryUser | null) {
     .map((log) => log.feedback || '')
     .join('\n');
 
+  const liveStreak = getCanonicalStreak(user);
+
   return `
 LIVE USER MEMORY:
 - Name: ${firstName}
 - Title: ${user.title || 'Initiate'}
 - Total XP: ${Math.round(user.xp || 0)}
 - Today's XP: ${todayXp}
-- Current Streak: ${user.streak || 0}
-- Previous Streak: ${user.previousStreak || 0}
+- Current Streak (Authoritative): ${liveStreak}
 - Streak At Risk: ${user.streakAtRisk ? 'YES' : 'NO'}
 - Primary Mission: ${user.primaryMission || 'General'}
 - Social Identity: ${user.socialLevel || 'NPC'}
@@ -68,7 +77,7 @@ Use this memory naturally. Reference patterns, streaks, XP, avoided behaviors, a
 
 export function getHarvestReport(user?: ZaneMemoryUser | null) {
   const todayXp = getTodayXp(user);
-  const streak = user?.streakAtRisk ? user?.previousStreak || 0 : user?.streak || 0;
+  const streak = getCanonicalStreak(user);
   const signals = getQuestBehaviorSignals(user);
 
   const avoided = [
