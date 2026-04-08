@@ -27,7 +27,7 @@ const fileEnv = {
 
 const env = { ...fileEnv, ...process.env };
 
-const PORT = Number(env.AI_PROXY_PORT || 8787);
+const PORT = Number(env.PORT || env.AI_PROXY_PORT || 8787);
 const HOST = env.AI_PROXY_HOST || '0.0.0.0';
 
 const KEYS = {
