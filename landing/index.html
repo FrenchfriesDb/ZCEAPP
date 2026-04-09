@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="ZCE is a confidence and presence training system. Daily drills, AI coaching, and streak pressure." />
+    <title>ZCE | Social Confidence Protocol</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="bg-grid"></div>
+    <header class="nav">
+      <div class="brand">
+        <img src="assets/logo.png" alt="ZCE" />
+        <span>ZCE</span>
+      </div>
+      <div class="nav-actions">
+        <a class="ghost" href="#protocol">Protocol</a>
+        <a class="ghost" href="#share">Share</a>
+        <a class="cta" href="https://apps.apple.com/app/id6759347826">Get the App</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-left">
+          <p class="eyebrow">Z.A.N.E. Protocol</p>
+          <h1>Stop freezing. Start leading.</h1>
+          <p class="lead">
+            ZCE trains real social confidence with daily drills, streak pressure, and AI coaching. Built for high-status
+            presence, not therapy talk.
+          </p>
+          <div class="hero-actions">
+            <button class="cta" data-open-app>Open the App</button>
+            <a class="ghost" href="https://apps.apple.com/app/id6759347826">App Store</a>
+          </div>
+          <div class="hero-stats">
+            <div>
+              <span class="stat">Daily</span>
+              <span class="label">rep-based drills</span>
+            </div>
+            <div>
+              <span class="stat">AI</span>
+              <span class="label">feedback engine</span>
+            </div>
+            <div>
+              <span class="stat">Streak</span>
+              <span class="label">pressure system</span>
+            </div>
+          </div>
+        </div>
+        <div class="hero-right">
+          <div class="glass-card">
+            <p class="card-title">Tonight's Harvest</p>
+            <p class="card-value">Status: STARVED</p>
+            <p class="card-body">
+              You skipped reps today. Protocol reset in 02:13:41. Stay soft or lock in.
+            </p>
+            <div class="chip-row">
+              <span class="chip">Mirror Drill</span>
+              <span class="chip">Eye Combat</span>
+              <span class="chip">Response Speed</span>
+            </div>
+          </div>
+          <div class="glass-card alt">
+            <p class="card-title">AI Coaching</p>
+            <p class="card-body">
+              "Direct your energy. Say the line first. Pause. Then drop the punch."
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="protocol" class="section">
+        <div class="section-head">
+          <h2>What you get</h2>
+          <p>Every feature is engineered to build real-world presence.</p>
+        </div>
+        <div class="grid">
+          <div class="tile">
+            <h3>Daily Missions</h3>
+            <p>Short, savage reps you can do in public. Track streak pressure and avoid soft resets.</p>
+          </div>
+          <div class="tile">
+            <h3>AI Operator</h3>
+            <p>Immediate breakdowns. No fluff. Clear next move.</p>
+          </div>
+          <div class="tile">
+            <h3>Harvest Report</h3>
+            <p>Nightly summary that calls out avoidance patterns and next reps.</p>
+          </div>
+          <div class="tile">
+            <h3>Paywall that makes sense</h3>
+            <p>Free drills unlock the system. Pro opens the full arsenal.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="share" class="section">
+        <div class="section-head">
+          <h2>Share the Protocol</h2>
+          <p>Friends can open the app if installed. Otherwise they land on the App Store.</p>
+        </div>
+        <div class="share-card">
+          <div>
+            <h3>Open app first</h3>
+            <p>We attempt to open ZCE using your device scheme. If it fails, we redirect to the App Store.</p>
+          </div>
+          <div class="share-actions">
+            <button class="cta" data-open-app>Try Open</button>
+            <a class="ghost" href="https://apps.apple.com/app/id6759347826">App Store</a>
+          </div>
+        </div>
+        <p class="note">
+          Universal Links are coming once a custom domain is attached. This is a temporary but reliable fallback.
+        </p>
+      </section>
+
+      <section class="section cta-panel">
+        <div>
+          <h2>Ready to stop freezing?</h2>
+          <p>Download ZCE and lock in your first rep today.</p>
+        </div>
+        <a class="cta" href="https://apps.apple.com/app/id6759347826">Get ZCE</a>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>ZCE Protocol</span>
+      <span>Built for real-world confidence reps</span>
+    </footer>
+
+    <script>
+      (function () {
+        var appStoreUrl = 'https://apps.apple.com/app/id6759347826';
+        function openApp() {
+          var src = new URLSearchParams(window.location.search).get('src');
+          var deepLink = 'zce:///?src=' + (src || 'share');
+          var timer = setTimeout(function () {
+            window.location.href = appStoreUrl;
+          }, 1400);
+          window.location.href = deepLink;
+          window.addEventListener('pagehide', function () { clearTimeout(timer); });
+        }
+        document.querySelectorAll('[data-open-app]').forEach(function (btn) {
+          btn.addEventListener('click', openApp);
+        });
+        if (window.location.pathname === '/share') {
+          openApp();
+        }
+      })();
+    </script>
+  </body>
+</html>
