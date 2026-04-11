@@ -520,12 +520,69 @@ function lineFromResponse(response: string, fallback: string): string {
     return clean.length > 90 ? `${clean.slice(0, 87).trimEnd()}...` : clean;
 }
 
+type DrillVariants = {
+    magnetic: string;
+    ceo: string;
+    classClown: string;
+    funny: string;
+    witty: string;
+};
+
+function cleanSeedLine(seed: string): string {
+    const clean = lineFromResponse(seed, '').replace(/["'“”]+/g, '').trim();
+    if (!clean) return '';
+    return clean.replace(/[.!?]+$/g, '').trim();
+}
+
+function buildDrillVariants(seedInput: string): DrillVariants {
+    const seed = cleanSeedLine(seedInput);
+    const shortSeed = seed ? (seed.length > 58 ? `${seed.slice(0, 55).trimEnd()}...` : seed) : '';
+
+    if (!shortSeed) {
+        return {
+            magnetic: 'Fair point. I stay calm, sharp, and in control.',
+            ceo: 'Understood. Clear frame, short delivery, move forward.',
+            classClown: 'Relax, I was giving everyone else a confidence head start.',
+            funny: 'I use fewer words so each one can hit like a truck.',
+            witty: 'Silence is expensive. I only spend it with intent.',
+        };
+    }
+
+    return {
+        magnetic: `${shortSeed}. Smooth, direct, no apology energy.`,
+        ceo: `${shortSeed}. One line, one frame, keep momentum.`,
+        classClown: `${shortSeed}. Congrats, you just unlocked my unhinged patch notes.`,
+        funny: `${shortSeed}. I keep it compact so the punchline lands harder.`,
+        witty: `${shortSeed}. Precision beats noise every time.`,
+    };
+}
+
+function ensureVariantSections(text: string, seedInput: string): string {
+    const variants = buildDrillVariants(seedInput);
+    let output = text.trim();
+    const hasBetterResponses = /BETTER RESPONSES:/i.test(output);
+
+    if (!hasBetterResponses) {
+        output += `\n\nBETTER RESPONSES:\n- MAGNETIC VERSION: ${variants.magnetic}\n- CEO VERSION: ${variants.ceo}\n- CLASS CLOWN VERSION: ${variants.classClown}\n- FUNNY VERSION: ${variants.funny}\n- WITTY VERSION: ${variants.witty}`;
+        return output;
+    }
+
+    if (!/MAGNETIC VERSION:/i.test(output)) output += `\n- MAGNETIC VERSION: ${variants.magnetic}`;
+    if (!/CEO VERSION:/i.test(output)) output += `\n- CEO VERSION: ${variants.ceo}`;
+    if (!/CLASS CLOWN VERSION:/i.test(output)) output += `\n- CLASS CLOWN VERSION: ${variants.classClown}`;
+    if (!/FUNNY VERSION:/i.test(output)) output += `\n- FUNNY VERSION: ${variants.funny}`;
+    if (!/WITTY VERSION:/i.test(output)) output += `\n- WITTY VERSION: ${variants.witty}`;
+
+    return output;
+}
+
 function buildContextAwareDrillFallback(userName: string, lastUserMessage: string): string {
     const { drill, response, prompt } = extractDrillContextFromPrompt(lastUserMessage);
     const safeResponse = response || 'No response captured this round.';
     const score = computeDeterministicDrillScore(safeResponse);
     const compactResponse = lineFromResponse(safeResponse, 'No usable line captured yet.');
     const promptHint = prompt ? `Prompt pressure was: ${lineFromResponse(prompt, 'live pressure')}` : 'Prompt pressure was live.';
+    const variants = buildDrillVariants(safeResponse);
 
     return `${userName}-la.
 
@@ -546,11 +603,11 @@ WHY IT WORKS / WHY IT FAILS:
 Social momentum rewards clear intent + concise framing. When the line is direct, people follow your frame. When it drifts or over-explains, status leaks and impact drops.
 
 BETTER RESPONSES:
-- MAGNETIC VERSION: Clean line. Calm tone. No apology energy.
-- CEO VERSION: One sentence. Clear frame. No filler.
-- CLASS CLOWN VERSION: Keep one chaotic twist, then land fast.
-- FUNNY VERSION: One sharp joke beats three average ones.
-- WITTY VERSION: Dry, tight, and intentional.
+- MAGNETIC VERSION: ${variants.magnetic}
+- CEO VERSION: ${variants.ceo}
+- CLASS CLOWN VERSION: ${variants.classClown}
+- FUNNY VERSION: ${variants.funny}
+- WITTY VERSION: ${variants.witty}
 
 SCORE: ${score}/10`;
 }
@@ -567,6 +624,7 @@ function ensureDrillScore(text: string, lastUserMessage: string): string {
 
 function normalizeDrillFeedbackOutput(rawText: string, userName: string, lastUserMessage: string): string {
     const cleaned = sanitizeModelText(rawText || '');
+    const ctx = extractDrillContextFromPrompt(lastUserMessage);
     const hasCoreSections =
         /PERFORMANCE REVIEW:/i.test(cleaned) &&
         /WHAT YOU DID WELL:/i.test(cleaned) &&
@@ -574,15 +632,8 @@ function normalizeDrillFeedbackOutput(rawText: string, userName: string, lastUse
         /WHY IT WORKS\s*\/\s*WHY IT FAILS:/i.test(cleaned) &&
         /BETTER RESPONSES:/i.test(cleaned);
 
-    const hasAllVariants =
-        /MAGNETIC VERSION:/i.test(cleaned) &&
-        /CEO VERSION:/i.test(cleaned) &&
-        /CLASS CLOWN VERSION:/i.test(cleaned) &&
-        /FUNNY VERSION:/i.test(cleaned) &&
-        /WITTY VERSION:/i.test(cleaned);
-
-    const normalized = hasCoreSections && hasAllVariants
-        ? ensureDrillScore(cleaned, lastUserMessage)
+    const normalized = hasCoreSections
+        ? ensureDrillScore(ensureVariantSections(cleaned, ctx.response || lastUserMessage), lastUserMessage)
         : buildContextAwareDrillFallback(userName, lastUserMessage);
 
     return enforceNameAddressing(normalized, userName);
