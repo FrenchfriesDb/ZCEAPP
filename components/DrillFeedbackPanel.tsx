@@ -1,7 +1,6 @@
 import { Fonts } from '@/constants/theme';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text } from 'react-native';
 import GlassCard from './GlassCard';
 
 type FeedbackSection = {
@@ -24,6 +23,7 @@ const SECTION_TITLES = [
   'CLASS CLOWN VERSION',
   'FUNNY VERSION',
   'WITTY VERSION',
+  'OPTIONAL MAGNETIC RESPONSE',
   'SCORE',
 ] as const;
 
@@ -57,7 +57,7 @@ function parseFeedback(text: string): FeedbackSection[] {
   }
 
   if (current) sections.push(current);
-  return sections;
+  return sections.filter((section) => section.title === 'SCORE' || section.body.trim().length > 0);
 }
 
 interface DrillFeedbackPanelProps {
@@ -86,26 +86,6 @@ export default function DrillFeedbackPanel({ feedback, maxHeight = 430 }: DrillF
               isScore && styles.scoreCard,
             ]}
           >
-            <View style={styles.cardChrome} pointerEvents="none">
-              <LinearGradient
-                colors={['rgba(255,255,255,0.06)', 'rgba(255,255,255,0.01)', 'rgba(255,255,255,0.00)']}
-                start={{ x: 0.15, y: 0 }}
-                end={{ x: 0.85, y: 1 }}
-                style={styles.cardRim}
-              />
-              <LinearGradient
-                colors={['rgba(255,255,255,0.04)', 'rgba(255,255,255,0.00)']}
-                start={{ x: 0.5, y: 0 }}
-                end={{ x: 0.5, y: 1 }}
-                style={styles.cardSheen}
-              />
-              <LinearGradient
-                colors={['rgba(0,0,0,0.00)', 'rgba(0,0,0,0.48)']}
-                start={{ x: 0.5, y: 0 }}
-                end={{ x: 0.5, y: 1 }}
-                style={styles.cardDepth}
-              />
-            </View>
             <Text style={[styles.sectionTitle, isScore && styles.scoreTitle]}>
               {section.title}
             </Text>
@@ -130,46 +110,24 @@ const styles = StyleSheet.create({
   sectionCard: {
     padding: 14,
     borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.74)',
+    backgroundColor: 'rgba(6,8,12,0.92)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: 'rgba(255,255,255,0.10)',
     position: 'relative',
     overflow: 'hidden',
-  },
-  cardChrome: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  cardRim: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  cardSheen: {
-    position: 'absolute',
-    top: 0,
-    left: 10,
-    right: 10,
-    height: 24,
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-  },
-  cardDepth: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 40,
   },
   sectionTitle: {
     fontFamily: Fonts.headingSemi,
     fontSize: 11,
     letterSpacing: 1.4,
-    color: 'rgba(255,255,255,0.56)',
+    color: 'rgba(230,235,245,0.72)',
     marginBottom: 9,
   },
   sectionBody: {
     fontFamily: Fonts.headingMedium,
     fontSize: 15,
     lineHeight: 24,
-    color: 'rgba(230,235,245,0.84)',
+    color: 'rgba(235,240,250,0.95)',
   },
   scoreCard: {
     backgroundColor: 'rgba(0,0,0,0.8)',

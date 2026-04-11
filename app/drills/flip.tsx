@@ -48,7 +48,7 @@ export default function FlipDrill() {
         try {
             const result = await AIService.generateResponse([
                 { role: 'user', content: promptText }
-            ], 'deepseek', user?.name || 'AGENT', user?.level || 1, 'drill');
+            ], 'deepseek', user?.name || 'AGENT', user?.level || 1, 'drill', { drillPlan: ((user as any)?.subscriptionTier === 'director' ? 'pro' : 'basic') });
             setAnalysis(result);
             await completeDrill(20);
             await addDrillLog('Flip Formula', 100, result);

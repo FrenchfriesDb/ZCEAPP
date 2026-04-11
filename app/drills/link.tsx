@@ -84,7 +84,7 @@ export default function LinkDrill() {
                 - Witty
                 End with SCORE: X/10
             `;
-            const result = await AIService.generateResponse([{ role: 'user', content: promptText }], 'groq', user?.name || 'AGENT', user?.level || 1, 'drill');
+            const result = await AIService.generateResponse([{ role: 'user', content: promptText }], 'groq', user?.name || 'AGENT', user?.level || 1, 'drill', { drillPlan: ((user as any)?.subscriptionTier === 'director' ? 'pro' : 'basic') });
             setFeedback(result);
             await completeDrill(20);
             await addDrillLog('Link Game', 100, result);

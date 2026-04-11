@@ -48,7 +48,7 @@ export default function ComedianDrill() {
                 - Witty
                 End with SCORE: X/10
             `;
-            const result = await AIService.generateResponse([{ role: 'user', content: promptText }], 'groq', user?.name || 'AGENT', user?.level || 1, 'drill');
+            const result = await AIService.generateResponse([{ role: 'user', content: promptText }], 'groq', user?.name || 'AGENT', user?.level || 1, 'drill', { drillPlan: ((user as any)?.subscriptionTier === 'director' ? 'pro' : 'basic') });
             setFeedback(result);
             await completeDrill(20);
             await addDrillLog('Stand-Up Drill', 100, result);

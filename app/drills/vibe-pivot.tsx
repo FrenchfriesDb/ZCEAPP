@@ -26,7 +26,7 @@ const COMPLAINTS = [
 const VIBE_PIVOT_SECONDS = 8;
 
 export default function VibePivotDrill() {
-  const { completeDrill } = useUser();
+  const { user, completeDrill } = useUser();
   const { palette: timePalette } = useTimeColors();
   const systemColor = timePalette[timePalette.length - 1];
 
@@ -114,7 +114,7 @@ USER PIVOT: ${input}
 
 Review this rep like a drill analyst. Focus on whether they successfully turned a boring complaint into entertainment, deadpan authority, absurdity, or a social frame shift. Give concrete notes and alternate versions. End with SCORE: X/10.`,
         },
-      ], 'groq', 'AGENT', 1, 'drill');
+  ], 'groq', user?.name || 'AGENT', user?.level || 1, 'drill', { drillPlan: ((user as any)?.subscriptionTier === 'director' ? 'pro' : 'basic') });
 
       setGrade(aiFeedback);
     } catch (error) {

@@ -420,6 +420,7 @@ Use the user's data and recent patterns naturally. Mention streaks, XP trends, a
 export type ZaneChatStyle = 'classic' | 'coach' | 'nervous';
 export type HomeSignalKind = 'quote' | 'roast';
 export type HomeSignalMode = 'classic' | 'personalized';
+type DrillPlan = 'basic' | 'pro';
 type AIProvider = 'groq' | 'deepseek' | 'kimi' | 'mistral' | 'glm5';
 
 type HomeSignalOptions = {
@@ -469,7 +470,7 @@ function sanitizeModelText(text: string): string {
 }
 
 function clampScore(score: number): number {
-    return Math.max(1, Math.min(10, Math.round(score)));
+    return Math.max(0, Math.min(10, Math.round(score)));
 }
 
 function computeDeterministicDrillScore(input: string): number {
@@ -477,7 +478,7 @@ function computeDeterministicDrillScore(input: string): number {
     const words = text.split(/\s+/).filter(Boolean);
     const len = text.length;
 
-    let base = 5;
+    let base = 3;
     if (len >= 24) base += 1;
     if (len >= 48) base += 1;
     if (len >= 90) base += 1;
@@ -489,7 +490,10 @@ function computeDeterministicDrillScore(input: string): number {
 
     // Penalize ultra-short reps while keeping motivation alive.
     if (words.length <= 3) base -= 2;
-    if (words.length <= 1) base -= 1;
+    if (words.length <= 1) base -= 2;
+
+    if (len <= 2) return 0;
+    if (len <= 5) return 1;
 
     return clampScore(base);
 }
@@ -498,10 +502,12 @@ function extractDrillContextFromPrompt(lastUserMessage: string): { drill: string
     const text = String(lastUserMessage || '');
     const drillMatch = text.match(/DRILL:\s*([^\n]+)/i);
     const responseMatch = text.match(/USER RESPONSE:\s*([\s\S]*?)(?:\n\s*[A-Z ]+:|$)/i);
+    const pivotMatch = text.match(/USER PIVOT:\s*([\s\S]*?)(?:\n\s*[A-Z ]+:|$)/i);
+    const entryMatch = text.match(/ENTRY:\s*([\s\S]*?)(?:\n\s*[A-Z ]+:|$)/i);
     const promptMatch = text.match(/PROMPT:\s*([\s\S]*?)(?:\n\s*USER RESPONSE:|$)/i);
 
     const drill = (drillMatch?.[1] || 'Drill Rep').trim();
-    const response = (responseMatch?.[1] || '').trim();
+    const response = (responseMatch?.[1] || pivotMatch?.[1] || entryMatch?.[1] || '').trim();
     const prompt = (promptMatch?.[1] || '').trim();
 
     return { drill, response, prompt };
@@ -555,6 +561,29 @@ function buildDrillVariants(seedInput: string): DrillVariants {
         funny: `${shortSeed}. I keep it compact so the punchline lands harder.`,
         witty: `${shortSeed}. Precision beats noise every time.`,
     };
+}
+
+function buildBasicDrillOutput(userName: string, lastUserMessage: string): string {
+    const { response } = extractDrillContextFromPrompt(lastUserMessage);
+    const score = computeDeterministicDrillScore(response || lastUserMessage);
+    const variants = buildDrillVariants(response || lastUserMessage);
+
+    return `${userName}-la.
+
+OPTIONAL MAGNETIC RESPONSE:
+${variants.magnetic}
+
+SCORE: ${score}/10`;
+}
+
+function maxScoreForWeakInput(input: string): number {
+    const text = String(input || '').trim();
+    const words = text.split(/\s+/).filter(Boolean).length;
+    if (text.length <= 2) return 0;
+    if (text.length <= 6 || words <= 1) return 1;
+    if (text.length <= 18 || words <= 3) return 3;
+    if (text.length <= 34 || words <= 6) return 5;
+    return 10;
 }
 
 function ensureVariantSections(text: string, seedInput: string): string {
@@ -613,16 +642,22 @@ SCORE: ${score}/10`;
 }
 
 function ensureDrillScore(text: string, lastUserMessage: string): string {
+    const drillInput = extractDrillContextFromPrompt(lastUserMessage).response || lastUserMessage;
+    const cap = maxScoreForWeakInput(drillInput);
     const existing = text.match(/SCORE:\s*(\d{1,2})\s*\/\s*10/i);
     if (existing) {
-        const normalized = clampScore(Number(existing[1]));
+        const normalized = Math.min(cap, clampScore(Number(existing[1])));
         return text.replace(/SCORE:\s*\d{1,2}\s*\/\s*10/i, `SCORE: ${normalized}/10`);
     }
-    const score = computeDeterministicDrillScore(extractDrillContextFromPrompt(lastUserMessage).response || lastUserMessage);
+    const score = Math.min(cap, computeDeterministicDrillScore(drillInput));
     return `${text.trim()}\n\nSCORE: ${score}/10`;
 }
 
-function normalizeDrillFeedbackOutput(rawText: string, userName: string, lastUserMessage: string): string {
+function normalizeDrillFeedbackOutput(rawText: string, userName: string, lastUserMessage: string, drillPlan: DrillPlan): string {
+    if (drillPlan === 'basic') {
+        return enforceNameAddressing(buildBasicDrillOutput(userName, lastUserMessage), userName);
+    }
+
     const cleaned = sanitizeModelText(rawText || '');
     const ctx = extractDrillContextFromPrompt(lastUserMessage);
     const hasCoreSections =
@@ -643,7 +678,7 @@ function buildUnifiedSystemPrompt(
     userName: string,
     level: number,
     promptType: 'main' | 'coach' | 'drill',
-    options?: { chatStyle?: ZaneChatStyle; memoryContext?: string }
+    options?: { chatStyle?: ZaneChatStyle; memoryContext?: string; drillPlan?: DrillPlan }
 ): string {
     const technicalConstraints = promptType === 'main'
         ? "\n\nFINAL REMINDER: NO MARKDOWN BOLDING. NO POST-CLOSER TEXT. VARY YOUR DRILLS—NEVER REPEAT THE SAME ADVICE. REFERENCE REAL USER DATA WHEN PROVIDED. END IMMEDIATELY AFTER THE CLOSER."
@@ -1070,7 +1105,7 @@ ${memoryBlock}
         userName: string = 'AGENT',
         level: number = 1,
         promptType: 'main' | 'coach' | 'drill' = 'main',
-        options?: { chatStyle?: ZaneChatStyle; memoryContext?: string },
+        options?: { chatStyle?: ZaneChatStyle; memoryContext?: string; drillPlan?: DrillPlan },
         attemptedProviders: Set<AIProvider> = new Set()
     ): Promise<string> {
         attemptedProviders.add(provider);
@@ -1147,7 +1182,7 @@ ${memoryBlock}
                 });
                 const cleanedProxy = sanitizeModelText(proxyText);
                 if (promptType === 'drill') {
-                    return normalizeDrillFeedbackOutput(cleanedProxy, userName, lastUserMessage);
+                    return normalizeDrillFeedbackOutput(cleanedProxy, userName, lastUserMessage, options?.drillPlan || 'pro');
                 }
                 return enforceNameAddressing(cleanedProxy, userName);
             } catch (error: any) {
@@ -1235,7 +1270,7 @@ ${memoryBlock}
                 latencyMs: Date.now() - directStartedAt,
             });
             if (promptType === 'drill') {
-                return normalizeDrillFeedbackOutput(cleaned, userName, lastUserMessage);
+                return normalizeDrillFeedbackOutput(cleaned, userName, lastUserMessage, options?.drillPlan || 'pro');
             }
             return enforceNameAddressing(cleaned, userName);
 
