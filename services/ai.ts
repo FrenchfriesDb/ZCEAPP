@@ -324,6 +324,11 @@ One short paragraph on the overall rep.
 
 4. WHY IT WORKS / WHY IT FAILS:
 Explain the psychology, frame control, tension, timing, charisma, status, or humor logic.
+Then include a compact list called "ZANE CHARM SYSTEM" with these 4 lines:
+- RECEIVE: What they said/did.
+- READ: Feeling + intent.
+- REACT: Positive flip.
+- REINFORCE: How to connect/include them.
 
 5. BETTER RESPONSES:
 Provide exactly these versions when the drill involves language or responses:
@@ -681,6 +686,12 @@ WHAT MISSED:
 
 WHY IT WORKS / WHY IT FAILS:
 Social momentum rewards clear intent + concise framing. When the line is direct, people follow your frame. When it drifts or over-explains, status leaks and impact drops.
+
+ZANE CHARM SYSTEM:
+- RECEIVE: ${compactResponse}
+- READ: Feeling = curious/playful. Intent = invite connection.
+- REACT: Flip it positive with confident humor.
+- REINFORCE: Include them by looping their energy back with a playful callback.
 
 BETTER RESPONSES:
 - MAGNETIC VERSION: ${variants.magnetic}
