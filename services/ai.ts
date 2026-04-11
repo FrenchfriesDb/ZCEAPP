@@ -292,6 +292,8 @@ Voice lock (CRITICAL):
 - Keep language current, concise, and magnetic.
 - Avoid stiff, old, or lecture-style phrasing.
 - Use short-to-medium sentences with impact.
+- Keep rewrite lines electric, playful, and socially usable in real conversations.
+- Avoid bland lines like "that's commitment" or generic praise filler.
 
 Hard bans:
 - Do NOT use phrases like "let's break down", "in this situation", "it is important to", "overall, your response demonstrates", "going forward".
@@ -327,6 +329,7 @@ Explain the psychology, frame control, tension, timing, charisma, status, or hum
 Provide exactly these versions when the drill involves language or responses:
 - MAGNETIC VERSION:
 - CEO VERSION:
+- BANTER/TEASING VERSION:
 - CLASS CLOWN VERSION:
 - FUNNY VERSION:
 - WITTY VERSION:
@@ -335,6 +338,7 @@ Version quality rules:
 - Keep them tight and socially usable (no essay responses).
 - Make them feel current and high-status, not old-fashioned.
 - Magnetic version should feel cool/confident, not motivational-speaker cringe.
+- Banter/teasing version should feel playful and flirty-adjacent, not mean or corny.
 
 If a version does not fit the drill cleanly, still adapt it as closely as possible instead of skipping it.
 
@@ -543,6 +547,7 @@ function lineFromResponse(response: string, fallback: string): string {
 type DrillVariants = {
     magnetic: string;
     ceo: string;
+    banter: string;
     classClown: string;
     funny: string;
     witty: string;
@@ -557,23 +562,39 @@ function cleanSeedLine(seed: string): string {
 function buildDrillVariants(seedInput: string): DrillVariants {
     const seed = cleanSeedLine(seedInput);
     const shortSeed = seed ? (seed.length > 58 ? `${seed.slice(0, 55).trimEnd()}...` : seed) : '';
+    const shortWords = shortSeed.split(/\s+/).filter(Boolean).length;
+    const lower = (seedInput || '').toLowerCase();
+    const hasRoyalTone = /queen|king|empress|majesty|kingdom|royal/.test(lower);
 
-    if (!shortSeed) {
+    if (!shortSeed || shortSeed.length < 7 || shortWords <= 1) {
         return {
-            magnetic: 'Fair point. I stay calm, sharp, and in control.',
-            ceo: 'Understood. Clear frame, short delivery, move forward.',
-            classClown: 'Relax, I was giving everyone else a confidence head start.',
-            funny: 'I use fewer words so each one can hit like a truck.',
-            witty: 'Silence is expensive. I only spend it with intent.',
+            magnetic: 'Calm voice. Clean eye contact. Controlled delivery. That is the vibe.',
+            ceo: 'One line, clear frame, move the moment forward.',
+            banter: 'Keep talking like that and I might start charging rent in your head.',
+            classClown: 'Respectfully chaotic, but sharp enough to land.',
+            funny: 'One crisp punchline. No filler. Exit clean.',
+            witty: 'Low volume, high precision. Let the line do the damage.',
+        };
+    }
+
+    if (hasRoyalTone) {
+        return {
+            magnetic: `${shortSeed}. Careful, you are making the whole kingdom jealous.`,
+            ceo: `${shortSeed}. Majesty is the title. Standards are the crown.`,
+            banter: `${shortSeed}. Queen? That is a downgrade. I was aiming for empress.`,
+            classClown: `${shortSeed}. Royal policy says you hype me, I roast you, everyone wins.`,
+            funny: `${shortSeed}. Thats a lot of commitment, my king.`,
+            witty: `${shortSeed}. Its majesty to you. Keep up.`,
         };
     }
 
     return {
-        magnetic: `${shortSeed}. Smooth, direct, no apology energy.`,
-        ceo: `${shortSeed}. One line, one frame, keep momentum.`,
-        classClown: `${shortSeed}. Congrats, you just unlocked my unhinged patch notes.`,
-        funny: `${shortSeed}. I keep it compact so the punchline lands harder.`,
-        witty: `${shortSeed}. Precision beats noise every time.`,
+        magnetic: `${shortSeed}. Smooth delivery, no apology energy, full presence.`,
+        ceo: `${shortSeed}. One line. One frame. Keep momentum.`,
+        banter: `${shortSeed}. Careful, keep that energy and I might keep you around.`,
+        classClown: `${shortSeed}. Unhinged enough to be fun, clean enough to still land.`,
+        funny: `${shortSeed}. Hit one sharp joke, then move.`,
+        witty: `${shortSeed}. Dry, surgical, slightly disrespectful. Perfect.`,
     };
 }
 
@@ -621,12 +642,13 @@ function ensureVariantSections(text: string, seedInput: string): string {
     const hasBetterResponses = /BETTER RESPONSES:/i.test(output);
 
     if (!hasBetterResponses) {
-        output += `\n\nBETTER RESPONSES:\n- MAGNETIC VERSION: ${variants.magnetic}\n- CEO VERSION: ${variants.ceo}\n- CLASS CLOWN VERSION: ${variants.classClown}\n- FUNNY VERSION: ${variants.funny}\n- WITTY VERSION: ${variants.witty}`;
+        output += `\n\nBETTER RESPONSES:\n- MAGNETIC VERSION: ${variants.magnetic}\n- CEO VERSION: ${variants.ceo}\n- BANTER/TEASING VERSION: ${variants.banter}\n- CLASS CLOWN VERSION: ${variants.classClown}\n- FUNNY VERSION: ${variants.funny}\n- WITTY VERSION: ${variants.witty}`;
         return output;
     }
 
     if (!/MAGNETIC VERSION:/i.test(output)) output += `\n- MAGNETIC VERSION: ${variants.magnetic}`;
     if (!/CEO VERSION:/i.test(output)) output += `\n- CEO VERSION: ${variants.ceo}`;
+    if (!/BANTER\/?TEASING VERSION:/i.test(output)) output += `\n- BANTER/TEASING VERSION: ${variants.banter}`;
     if (!/CLASS CLOWN VERSION:/i.test(output)) output += `\n- CLASS CLOWN VERSION: ${variants.classClown}`;
     if (!/FUNNY VERSION:/i.test(output)) output += `\n- FUNNY VERSION: ${variants.funny}`;
     if (!/WITTY VERSION:/i.test(output)) output += `\n- WITTY VERSION: ${variants.witty}`;
@@ -663,6 +685,7 @@ Social momentum rewards clear intent + concise framing. When the line is direct,
 BETTER RESPONSES:
 - MAGNETIC VERSION: ${variants.magnetic}
 - CEO VERSION: ${variants.ceo}
+- BANTER/TEASING VERSION: ${variants.banter}
 - CLASS CLOWN VERSION: ${variants.classClown}
 - FUNNY VERSION: ${variants.funny}
 - WITTY VERSION: ${variants.witty}
