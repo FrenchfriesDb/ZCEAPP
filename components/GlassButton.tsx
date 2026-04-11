@@ -204,7 +204,7 @@ export default function GlassButton({
         );
         loop.start();
         return () => loop.stop();
-    }, [glow]);
+    }, [glow, glowAnim]);
 
     const pressIn = () =>
         Animated.spring(scaleAnim, { toValue: 0.95, useNativeDriver: true, speed: 50, bounciness: 0 }).start();
