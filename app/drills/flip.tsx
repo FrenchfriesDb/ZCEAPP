@@ -158,13 +158,13 @@ const styles = StyleSheet.create({
     title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: Colors.textPrimary, letterSpacing: 3, textAlign: 'center' },
 
     scrollContent: { padding: Spacing.lg, paddingBottom: 60, gap: 20 },
-    instruction: { fontFamily: Fonts.nunito, fontSize: 14, color: '#FFFFFF', textAlign: 'center', marginBottom: 10 },
+    instruction: { fontFamily: Fonts.headingSemi, fontSize: 14, color: '#FFFFFF', textAlign: 'center', marginBottom: 10 },
     inputGroup: { gap: 10 },
     label: { fontFamily: Fonts.mono, fontSize: 10, color: Colors.accentPrimary, letterSpacing: 1 },
     row: { flexDirection: 'row', gap: 10 },
     input: {
         backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: 14,
-        color: Colors.textPrimary, fontFamily: Fonts.nunito, fontSize: 16, textAlignVertical: 'top',
+        color: Colors.textPrimary, fontFamily: Fonts.headingSemi, fontSize: 16, textAlignVertical: 'top',
         borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
     },
     genBtn: { width: 50, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, justifyContent: 'center', alignItems: 'center' },

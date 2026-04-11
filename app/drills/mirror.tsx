@@ -617,7 +617,7 @@ const styles = StyleSheet.create({
         width: 18,
         height: 18,
     },
-    flavorDesc: { fontFamily: Fonts.nunito, fontSize: 13, color: '#FFFFFF', textAlign: 'center' },
+    flavorDesc: { fontFamily: Fonts.headingSemi, fontSize: 13, color: '#FFFFFF', textAlign: 'center' },
 
     proofSection: { width: '100%', gap: 6, marginTop: 2 },
     proofLabel: { fontFamily: Fonts.monoBold, fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 4 },
@@ -629,7 +629,7 @@ const styles = StyleSheet.create({
         borderRadius: Radius.md,
         padding: 10,
         color: Colors.textPrimary,
-        fontFamily: Fonts.nunito,
+        fontFamily: Fonts.headingSemi,
         fontSize: 13,
         minHeight: 50,
         textAlignVertical: 'top',
@@ -677,7 +677,7 @@ const styles = StyleSheet.create({
     },
     voiceStatusText: {
         color: 'rgba(255,255,255,0.72)',
-        fontFamily: Fonts.nunito,
+        fontFamily: Fonts.headingSemi,
         fontSize: 12,
         lineHeight: 18,
         textAlign: 'center',

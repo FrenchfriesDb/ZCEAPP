@@ -334,24 +334,24 @@ const styles = StyleSheet.create({
 
   infoCard: { width: '100%', padding: 12, backgroundColor: 'rgba(255,255,255,0.03)' },
   infoLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, marginBottom: 6 },
-  infoText: { fontFamily: Fonts.nunito, fontSize: 13, color: 'rgba(255,255,255,0.82)', lineHeight: 20 },
+  infoText: { fontFamily: Fonts.headingSemi, fontSize: 13, color: 'rgba(255,255,255,0.82)', lineHeight: 20 },
 
   rulesCard: { width: '100%', padding: 12, backgroundColor: 'rgba(255,255,255,0.02)' },
   rulesLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 8 },
-  rulesText: { fontFamily: Fonts.nunito, fontSize: 12, color: 'rgba(255,255,255,0.82)', lineHeight: 18 },
+  rulesText: { fontFamily: Fonts.headingSemi, fontSize: 12, color: 'rgba(255,255,255,0.82)', lineHeight: 18 },
 
   promptCard: { width: '100%', padding: 14, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.02)' },
   promptLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 10 },
-  promptText: { fontFamily: Fonts.nunito, fontSize: 14, textAlign: 'center', lineHeight: 20 },
+  promptText: { fontFamily: Fonts.headingSemi, fontSize: 14, textAlign: 'center', lineHeight: 20 },
 
   weaponCard: { width: '100%', padding: 14, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1 },
   weaponLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 8 },
   weaponName: { fontFamily: Fonts.heading, fontSize: 18, marginBottom: 8 },
-  weaponDesc: { fontFamily: Fonts.nunito, fontSize: 12, color: 'rgba(255,255,255,0.82)', textAlign: 'center' },
+  weaponDesc: { fontFamily: Fonts.headingSemi, fontSize: 12, color: 'rgba(255,255,255,0.82)', textAlign: 'center' },
 
   instructionCard: { width: '100%', padding: 12, backgroundColor: 'rgba(255,255,255,0.02)' },
   instructionLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 8 },
-  instructionText: { fontFamily: Fonts.nunito, fontSize: 13, color: '#FFFFFF', fontStyle: 'italic', lineHeight: 20 },
+  instructionText: { fontFamily: Fonts.headingSemi, fontSize: 13, color: '#FFFFFF', fontStyle: 'italic', lineHeight: 20 },
   liveMetaText: { fontFamily: Fonts.mono, fontSize: 9, color: 'rgba(255,255,255,0.7)', letterSpacing: 1.2, marginTop: 8 },
 
   input: {
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     color: Colors.textPrimary,
     padding: 12,
-    fontFamily: Fonts.nunito,
+    fontFamily: Fonts.headingSemi,
     fontSize: 13,
     minHeight: 80,
     maxHeight: 150,
@@ -371,10 +371,10 @@ const styles = StyleSheet.create({
 
   gradeCard: { width: '100%', padding: 16, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.02)', borderWidth: 1 },
   gradeScore: { fontFamily: Fonts.heading, fontSize: 16, marginBottom: 8 },
-  gradeText: { fontFamily: Fonts.nunito, fontSize: 12, color: 'rgba(255,255,255,0.82)', textAlign: 'center', marginBottom: 10, lineHeight: 18 },
+  gradeText: { fontFamily: Fonts.headingSemi, fontSize: 12, color: 'rgba(255,255,255,0.82)', textAlign: 'center', marginBottom: 10, lineHeight: 18 },
 
   completeCard: { width: '100%', padding: 20, backgroundColor: 'rgba(0, 245, 255, 0.05)', borderColor: 'rgba(0, 245, 255, 0.2)', borderWidth: 1 },
   completeTitle: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.accentCyan, marginBottom: 12 },
-  completeText: { fontFamily: Fonts.nunito, fontSize: 13, color: 'rgba(255,255,255,0.82)', lineHeight: 20, marginBottom: 12 },
+  completeText: { fontFamily: Fonts.headingSemi, fontSize: 13, color: 'rgba(255,255,255,0.82)', lineHeight: 20, marginBottom: 12 },
   totalScore: { fontFamily: Fonts.heading, fontSize: 14, color: Colors.accentCyan, textAlign: 'center' },
 });

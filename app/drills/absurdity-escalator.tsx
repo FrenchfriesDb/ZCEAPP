@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   hudStatKey: { fontFamily: Fonts.mono, fontSize: 8, letterSpacing: 1.5, color: 'rgba(255,255,255,0.45)', marginBottom: 4 },
-  hudStatVal: { fontFamily: Fonts.nunito, fontSize: 12, color: '#FFFFFF' },
+  hudStatVal: { fontFamily: Fonts.headingSemi, fontSize: 12, color: '#FFFFFF' },
 
   infoCard: {
     width: '100%',
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   infoLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, marginBottom: 6 },
-  infoText: { fontFamily: Fonts.nunito, fontSize: 14, color: 'rgba(255,255,255,0.76)', lineHeight: 22 },
+  infoText: { fontFamily: Fonts.headingSemi, fontSize: 14, color: 'rgba(255,255,255,0.76)', lineHeight: 22 },
 
   promptCard: {
     width: '100%',
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   rulesLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 8 },
-  rulesText: { fontFamily: Fonts.nunito, fontSize: 13, color: 'rgba(255,255,255,0.72)', lineHeight: 20 },
+  rulesText: { fontFamily: Fonts.headingSemi, fontSize: 13, color: 'rgba(255,255,255,0.72)', lineHeight: 20 },
 
   volleyContextCard: {
     width: '100%',
@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
   volleyPair: { gap: 8 },
   exchangeCard: { padding: 10, borderRadius: Radius.md },
   exchangeLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 4 },
-  exchangeText: { fontFamily: Fonts.nunito, fontSize: 12, color: '#FFFFFF' },
+  exchangeText: { fontFamily: Fonts.headingSemi, fontSize: 12, color: '#FFFFFF' },
 
   input: {
     width: '100%',
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     color: Colors.textPrimary,
     padding: 12,
-    fontFamily: Fonts.nunito,
+    fontFamily: Fonts.headingSemi,
     fontSize: 14,
     minHeight: 60,
     maxHeight: 120,
@@ -405,5 +405,5 @@ const styles = StyleSheet.create({
 
   completeCard: { width: '100%', padding: 20, backgroundColor: 'rgba(0, 245, 255, 0.05)', borderColor: 'rgba(0, 245, 255, 0.2)', borderWidth: 1 },
   completeTitle: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.accentCyan, marginBottom: 12 },
-  completeText: { fontFamily: Fonts.nunito, fontSize: 13, color: '#FFFFFF', lineHeight: 20 },
+  completeText: { fontFamily: Fonts.headingSemi, fontSize: 13, color: '#FFFFFF', lineHeight: 20 },
 });

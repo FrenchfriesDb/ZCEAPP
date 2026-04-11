@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     padding: 14,
     color: Colors.textPrimary,
-    fontFamily: Fonts.nunito,
+    fontFamily: Fonts.headingSemi,
     fontSize: 14,
     minHeight: 60,
     textAlignVertical: 'top',
@@ -343,10 +343,10 @@ const styles = StyleSheet.create({
 
   responseCard: { width: '100%', padding: 14, backgroundColor: 'rgba(0, 245, 255, 0.05)', borderColor: 'rgba(0, 245, 255, 0.2)', borderWidth: 1 },
   responseLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(0, 245, 255, 0.5)', letterSpacing: 1, marginBottom: 8 },
-  responseText: { fontFamily: Fonts.nunito, fontSize: 14, color: Colors.textPrimary, lineHeight: 20 },
+  responseText: { fontFamily: Fonts.headingSemi, fontSize: 14, color: Colors.textPrimary, lineHeight: 20 },
 
   analysisCard: { width: '100%', padding: 16, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: Radius.lg },
-  analysisText: { fontFamily: Fonts.nunito, fontSize: 12, color: '#FFFFFF', lineHeight: 20 },
+  analysisText: { fontFamily: Fonts.headingSemi, fontSize: 12, color: '#FFFFFF', lineHeight: 20 },
 
   buttonGroup: { width: '100%', gap: 10, marginTop: 16 },
 });

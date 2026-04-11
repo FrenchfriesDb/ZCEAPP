@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
     title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: Colors.textPrimary, letterSpacing: 3, textAlign: 'center' },
 
     scrollContent: { paddingHorizontal: Spacing.lg, gap: 16, paddingBottom: 40 },
-    instruction: { fontFamily: Fonts.nunito, fontSize: 16, color: '#FFFFFF', textAlign: 'center' },
+    instruction: { fontFamily: Fonts.headingSemi, fontSize: 16, color: '#FFFFFF', textAlign: 'center' },
     subjectInlineLabel: { fontFamily: Fonts.mono, fontSize: 10, color: 'rgba(255,255,255,0.55)', letterSpacing: 2, textAlign: 'center', marginBottom: 4 },
     subjectInlineText: { fontFamily: Fonts.headingSemi, fontSize: 26, color: '#FFFFFF', textAlign: 'center' },
 
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
     inputLabel: { fontFamily: Fonts.mono, fontSize: 10, color: Colors.accentPrimary, letterSpacing: 2 },
     input: {
         backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: 14,
-        color: Colors.textPrimary, fontFamily: Fonts.nunito, fontSize: 16, minHeight: 80, textAlignVertical: 'top',
+        color: Colors.textPrimary, fontFamily: Fonts.headingSemi, fontSize: 16, minHeight: 80, textAlignVertical: 'top',
         borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
     },
     // Buttons use <GlassButton/> now (global liquid glass look)

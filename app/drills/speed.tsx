@@ -121,7 +121,7 @@ export default function SpeedDrill() {
                     {!active && !feedback && (
                         <View style={styles.centerBox}>
                             <Text style={styles.intro}>
-                                React in 11 seconds. Don't think. Flow.
+                                React in 11 seconds. Don&apos;t think. Flow.
                             </Text>
                             <GlassButton
                                 label="GENERATE PROMPT"
@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
     scrollContent: { flexGrow: 1 },
     content: { flex: 1, padding: Spacing.lg, paddingTop: 12 },
     centerBox: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 20 },
-    intro: { color: '#FFFFFF', fontFamily: Fonts.nunito, fontSize: 16, marginBottom: 20, textAlign: 'center' },
+    intro: { color: '#FFFFFF', fontFamily: Fonts.headingSemi, fontSize: 16, marginBottom: 20, textAlign: 'center' },
 
     // Buttons use <GlassButton/> now (global liquid glass look)
 
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
 
     input: {
         backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: 14,
-        color: Colors.textPrimary, fontFamily: Fonts.nunito, fontSize: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
+        color: Colors.textPrimary, fontFamily: Fonts.headingSemi, fontSize: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
     },
     // Buttons use <GlassButton/> now (global liquid glass look)
 
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
     },
     analyzingTitle: {
         color: '#FFFFFF',
-        fontFamily: Fonts.analysis,
+        fontFamily: Fonts.headingSemi,
         fontSize: 16,
         letterSpacing: 1.4,
         textAlign: 'center',
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     },
     analyzingBody: {
         color: 'rgba(230,235,245,0.86)',
-        fontFamily: Fonts.analysis,
+        fontFamily: Fonts.headingSemi,
         fontSize: 13,
         lineHeight: 20,
         textAlign: 'center',

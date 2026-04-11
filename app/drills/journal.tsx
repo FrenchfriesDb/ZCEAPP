@@ -124,11 +124,11 @@ const styles = StyleSheet.create({
     title: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.textPrimary, letterSpacing: 4 },
 
     content: { padding: 24, paddingBottom: 100 },
-    prompt: { fontFamily: Fonts.nunito, fontSize: 15, color: '#FFFFFF', marginBottom: 20, lineHeight: 22 },
+    prompt: { fontFamily: Fonts.headingSemi, fontSize: 15, color: '#FFFFFF', marginBottom: 20, lineHeight: 22 },
 
     input: {
         backgroundColor: 'rgba(255,255,255,0.05)',
-        borderRadius: 16, padding: 20, fontSize: 16, fontFamily: Fonts.nunito, color: Colors.textPrimary,
+        borderRadius: 16, padding: 20, fontSize: 16, fontFamily: Fonts.headingSemi, color: Colors.textPrimary,
         minHeight: 200, textAlignVertical: 'top', lineHeight: 24,
         borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
     },

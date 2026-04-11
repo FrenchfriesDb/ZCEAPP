@@ -152,13 +152,13 @@ const styles = StyleSheet.create({
     title: { flex: 1, fontFamily: Fonts.heading, fontSize: 16, color: Colors.textPrimary, letterSpacing: 3, textAlign: 'center' },
 
     content: { paddingBottom: 40, gap: 14 },
-    instruction: { color: '#FFFFFF', fontFamily: Fonts.nunito, fontSize: 14, textAlign: 'center', marginBottom: 6 },
+    instruction: { color: '#FFFFFF', fontFamily: Fonts.headingSemi, fontSize: 14, textAlign: 'center', marginBottom: 6 },
 
     card: { padding: 16 },
     label: { color: Colors.accentPrimary, fontFamily: Fonts.mono, fontSize: 10, letterSpacing: 1, marginBottom: 6 },
     input: {
         backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 8, padding: 12,
-        color: Colors.textPrimary, fontFamily: Fonts.nunito, fontSize: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
+        color: Colors.textPrimary, fontFamily: Fonts.headingSemi, fontSize: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
     },
 
     // Buttons use <GlassButton/> now (global liquid glass look)

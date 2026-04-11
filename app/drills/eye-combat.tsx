@@ -219,11 +219,11 @@ const styles = StyleSheet.create({
 
   infoCard: { width: '100%', padding: 12, backgroundColor: 'rgba(255,255,255,0.03)' },
   infoLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, marginBottom: 6 },
-  infoText: { fontFamily: Fonts.nunito, fontSize: 13, color: '#FFFFFF', lineHeight: 20 },
+  infoText: { fontFamily: Fonts.headingSemi, fontSize: 13, color: '#FFFFFF', lineHeight: 20 },
 
   rulesCard: { width: '100%', padding: 12, backgroundColor: 'rgba(255,255,255,0.02)' },
   rulesLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 8 },
-  rulesText: { fontFamily: Fonts.nunito, fontSize: 12, color: '#FFFFFF', lineHeight: 18 },
+  rulesText: { fontFamily: Fonts.headingSemi, fontSize: 12, color: '#FFFFFF', lineHeight: 18 },
 
   cameraSection: { width: '100%', alignItems: 'center' },
   cameraContainer: {
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
   timerText: { fontFamily: Fonts.heading, fontSize: 56, fontWeight: '700' },
 
   instructionCard: { width: '100%', padding: 14, backgroundColor: 'rgba(255,255,255,0.02)' },
-  instructionText: { fontFamily: Fonts.nunito, fontSize: 12, color: '#FFFFFF', textAlign: 'center' },
+  instructionText: { fontFamily: Fonts.headingSemi, fontSize: 12, color: '#FFFFFF', textAlign: 'center' },
 
   breakCard: { width: '100%', paddingVertical: 16, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.01)' },
   breakLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 8 },
@@ -266,6 +266,6 @@ const styles = StyleSheet.create({
 
   completeCard: { width: '100%', padding: 20, backgroundColor: 'rgba(0, 245, 255, 0.05)', borderColor: 'rgba(0, 245, 255, 0.2)', borderWidth: 1 },
   completeTitle: { fontFamily: Fonts.heading, fontSize: 18, color: Colors.accentCyan, marginBottom: 12 },
-  completeText: { fontFamily: Fonts.nunito, fontSize: 13, color: '#FFFFFF', lineHeight: 20, marginBottom: 12 },
-  breaksSummary: { fontFamily: Fonts.nunito, fontSize: 11, color: 'rgba(255,255,255,0.4)', fontStyle: 'italic', marginTop: 8 },
+  completeText: { fontFamily: Fonts.headingSemi, fontSize: 13, color: '#FFFFFF', lineHeight: 20, marginBottom: 12 },
+  breaksSummary: { fontFamily: Fonts.headingSemi, fontSize: 11, color: 'rgba(255,255,255,0.4)', fontStyle: 'italic', marginTop: 8 },
 });

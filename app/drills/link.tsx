@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
     scrollContent: { flexGrow: 1 },
     content: { flex: 1, paddingHorizontal: Spacing.lg, gap: 16, paddingTop: 12 },
     centerBox: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 24 },
-    intro: { color: '#FFFFFF', fontFamily: Fonts.nunito, fontSize: 16, textAlign: 'center' },
+    intro: { color: '#FFFFFF', fontFamily: Fonts.headingSemi, fontSize: 16, textAlign: 'center' },
 
     timerBarBg: { width: '100%', height: 4, backgroundColor: 'rgba(255,255,255,0.1)' },
     timerBarFill: { height: '100%' },
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     label: { fontFamily: Fonts.mono, fontSize: 10, color: Colors.accentPrimary, letterSpacing: 2 },
     input: {
         backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: 14,
-        color: Colors.textPrimary, fontFamily: Fonts.nunito, fontSize: 16, minHeight: 80, textAlignVertical: 'top',
+        color: Colors.textPrimary, fontFamily: Fonts.headingSemi, fontSize: 16, minHeight: 80, textAlignVertical: 'top',
         borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
     },
     // Buttons use <GlassButton/> now (global liquid glass look)

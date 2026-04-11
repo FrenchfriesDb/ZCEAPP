@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
 
   infoCard: { width: '100%', padding: 12, backgroundColor: 'rgba(255,255,255,0.03)' },
   infoLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, marginBottom: 6 },
-  infoText: { fontFamily: Fonts.nunito, fontSize: 13, color: '#FFFFFF', lineHeight: 20 },
+  infoText: { fontFamily: Fonts.headingSemi, fontSize: 13, color: '#FFFFFF', lineHeight: 20 },
 
   complaintCard: { width: '100%', padding: 14, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.02)', borderWidth: 1 },
   complaintLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 10 },
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     padding: 12,
     color: Colors.textPrimary,
-    fontFamily: Fonts.nunito,
+    fontFamily: Fonts.headingSemi,
     fontSize: 14,
     minHeight: 60,
     textAlignVertical: 'top',
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
 
   responseCard: { width: '100%', padding: 12, backgroundColor: 'rgba(0, 245, 255, 0.05)', borderColor: 'rgba(0, 245, 255, 0.2)', borderWidth: 1 },
   responseLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(0, 245, 255, 0.5)', letterSpacing: 1, marginBottom: 8 },
-  responseText: { fontFamily: Fonts.nunito, fontSize: 13, color: Colors.textPrimary },
+  responseText: { fontFamily: Fonts.headingSemi, fontSize: 13, color: Colors.textPrimary },
 
   gradeCard: { width: '100%', padding: 14, backgroundColor: 'rgba(255,255,255,0.03)' },
 });

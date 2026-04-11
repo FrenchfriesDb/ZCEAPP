@@ -241,26 +241,26 @@ const styles = StyleSheet.create({
 
   infoCard: { width: '100%', padding: 12, backgroundColor: 'rgba(255,255,255,0.03)' },
   infoLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, marginBottom: 6 },
-  infoText: { fontFamily: Fonts.nunito, fontSize: 13, color: '#FFFFFF', lineHeight: 20 },
+  infoText: { fontFamily: Fonts.headingSemi, fontSize: 13, color: '#FFFFFF', lineHeight: 20 },
 
   rulesCard: { width: '100%', padding: 12, backgroundColor: 'rgba(255,255,255,0.02)' },
   rulesLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 8 },
-  rulesText: { fontFamily: Fonts.nunito, fontSize: 12, color: '#FFFFFF', lineHeight: 18 },
+  rulesText: { fontFamily: Fonts.headingSemi, fontSize: 12, color: '#FFFFFF', lineHeight: 18 },
 
   promptCard: { width: '100%', padding: 14, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.02)', borderWidth: 1 },
   promptLabel: { fontFamily: Fonts.mono, fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, marginBottom: 10 },
-  promptText: { fontFamily: Fonts.nunito, fontSize: 14, textAlign: 'center', lineHeight: 22 },
+  promptText: { fontFamily: Fonts.headingSemi, fontSize: 14, textAlign: 'center', lineHeight: 22 },
 
   instructionCard: { width: '100%', padding: 12, backgroundColor: 'rgba(255,255,255,0.02)' },
-  instructionText: { fontFamily: Fonts.nunito, fontSize: 12, color: '#FFFFFF', textAlign: 'center' },
+  instructionText: { fontFamily: Fonts.headingSemi, fontSize: 12, color: '#FFFFFF', textAlign: 'center' },
 
   recordCard: { width: '100%', padding: 20, alignItems: 'center', backgroundColor: 'rgba(255, 68, 68, 0.05)', borderColor: 'rgba(255, 68, 68, 0.2)', borderWidth: 1 },
   recordIndicator: { fontFamily: Fonts.heading, fontSize: 20, marginBottom: 8 },
   recordTime: { fontFamily: Fonts.heading, fontSize: 32, color: Colors.textPrimary, marginBottom: 8 },
-  recordDesc: { fontFamily: Fonts.nunito, fontSize: 12, color: '#FFFFFF' },
+  recordDesc: { fontFamily: Fonts.headingSemi, fontSize: 12, color: '#FFFFFF' },
 
   analyzeCard: { width: '100%', padding: 16, backgroundColor: 'rgba(255,255,255,0.02)', borderWidth: 1 },
   analyzeScore: { fontFamily: Fonts.heading, fontSize: 18, marginBottom: 10 },
-  analyzeText: { fontFamily: Fonts.nunito, fontSize: 12, color: '#FFFFFF', lineHeight: 18, marginBottom: 10 },
+  analyzeText: { fontFamily: Fonts.headingSemi, fontSize: 12, color: '#FFFFFF', lineHeight: 18, marginBottom: 10 },
   analyzeMetric: { fontFamily: Fonts.mono, fontSize: 10, color: 'rgba(255,255,255,0.4)', letterSpacing: 1 },
 });

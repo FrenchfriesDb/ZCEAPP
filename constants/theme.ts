@@ -334,7 +334,6 @@ export const Fonts = {
   heading: 'Poppins_700Bold',
   headingSemi: 'Poppins_600SemiBold',
   headingMedium: 'Poppins_500Medium',
-  analysis: 'Montserrat_ExtraBold',
   body: 'Inter_400Regular',
   bodySemi: 'Inter_600SemiBold',
   bodyMedium: 'Inter_500Medium',

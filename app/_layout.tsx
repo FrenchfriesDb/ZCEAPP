@@ -48,7 +48,6 @@ export default function RootLayout() {
           Inter_600SemiBold,
           JetBrainsMono_500Medium,
           JetBrainsMono_700Bold,
-          Montserrat_ExtraBold: require('@/assets/fonts/Montserrat-ExtraBold.ttf'),
           NunitoSans_Variable: require('@/assets/fonts/NunitoSans-VariableFont.ttf'),
         });
         void preloadFluentEmojiAssets();
