@@ -20,6 +20,7 @@ import {
 } from '@expo-google-fonts/poppins';
 import * as Font from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
+import { enableScreens } from 'react-native-screens';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -76,6 +77,9 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
+
+// Enable native screens for react-native-screens to register native components
+enableScreens();
 
 function RootLayoutNav() {
   const { user, isLoading, hasCompletedOnboarding } = useUser();
