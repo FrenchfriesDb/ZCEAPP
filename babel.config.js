@@ -1,9 +1,8 @@
 module.exports = function(api) {
   api.cache(true);
   return {
-    presets: ['@react-native/babel-preset'],
-    plugins: [
-      // Required for expo-router (using babel-preset-expo instead)
-    ],
+    // Keep Expo's preset so RN codegen/babel versions match the Expo SDK.
+    presets: ['babel-preset-expo'],
+    plugins: ['react-native-reanimated/plugin'],
   };
 };
