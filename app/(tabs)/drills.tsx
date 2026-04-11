@@ -15,7 +15,6 @@ const DRILL_CATEGORIES = [
         drills: [
             { id: 'mirror', label: 'MR', title: 'Mirror Drill', desc: 'Master face control & tone.', route: '/drills/mirror', accent: '#96BAFF' },
             { id: 'eye-combat', label: 'EC', title: 'Eye Combat', desc: '60s unbroken stare.', route: '/drills/eye-combat', accent: '#FF007A' },
-            { id: 'tension-hold', label: 'TH', title: 'Tension Hold', desc: '15s stare challenge.', route: '/drills/tension-hold', accent: '#FF6B6B' },
         ],
     },
     {

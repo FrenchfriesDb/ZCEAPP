@@ -11,7 +11,6 @@ import {
     Platform,
     Pressable,
     ScrollView,
-    Share,
     StyleSheet,
     Text,
     TextInput,
@@ -567,6 +566,25 @@ export default function DojoScreen() {
     return ExpoLinking.createURL('/');
   }, []);
 
+  const rankLabel = isPremium ? 'Director' : 'NPC';
+  const streakTarget = 10;
+  const rankProgress = Math.min(1, Math.max(0, harvestReport.streak / streakTarget));
+  const nextRankLabel = harvestReport.streak >= streakTarget ? 'Maxed' : `Next: ${streakTarget}-Day`;
+
+  const auraCells = useMemo(() => {
+    const totalCells = 28;
+    const activityCount = Math.min(
+      totalCells,
+      Math.max(harvestReport.streak, (user?.completedQuests || []).length)
+    );
+    return Array.from({ length: totalCells }, (_, idx) => {
+      if (idx >= activityCount) return 0;
+      if (idx >= activityCount - 3) return 3;
+      if (idx >= activityCount - 8) return 2;
+      return 1;
+    });
+  }, [harvestReport.streak, user?.completedQuests]);
+
   const shareFriendChallenge = async () => {
     const challenge = fieldQuests[0] || dailyMissions[0] || microOps[0];
     if (!challenge) return;
@@ -582,20 +600,10 @@ export default function DojoScreen() {
   };
 
   const shareAppInvite = async () => {
-    const inviteLink = `${publicShareBaseUrl}?src=share_app`;
-    const message = `ZCE INVITE\n\nI’m building social confidence reps in ZCE. Join me and start your protocol.\n\n${inviteLink}`;
-    await Share.share({ message, url: inviteLink });
+    setShareMode('invite');
+    setShareChallenge(null);
+    setShareVisible(true);
   };
-
-  const shareFallbackText = useMemo(() => {
-    const challengeLink = `${publicShareBaseUrl}?src=challenge`;
-    const harvestLink = `${publicShareBaseUrl}?src=harvest`;
-    const challenge = shareChallenge || fieldQuests[0] || dailyMissions[0] || microOps[0];
-    if (shareMode === 'challenge' && challenge) {
-      return `ZCE FRIEND CHALLENGE\n\nQuest: ${challenge.title}\n${challenge.desc}\nReward: +${challenge.xp} XP\n\nAccept challenge: ${challengeLink}`;
-    }
-    return `ZCE HARVEST REPORT\n\n${getFirstName(user?.name)}\nStreak: ${harvestReport.streak} days\nXP Today: ${harvestReport.todayXp}\nStatus: ${harvestReport.tone.toUpperCase()}\n\nView protocol: ${harvestLink}`;
-  }, [dailyMissions, fieldQuests, harvestReport.streak, harvestReport.todayXp, harvestReport.tone, microOps, publicShareBaseUrl, shareChallenge, shareMode, user?.name]);
 
   const handleShareProtocol = useCallback(async () => {
     if (sharePending) return;
@@ -634,15 +642,19 @@ export default function DojoScreen() {
           // ExpoSharing native module may be missing in current dev client build.
         }
       }
-      const fallbackUrl = `${publicShareBaseUrl}?src=${shareMode === 'challenge' ? 'challenge' : 'harvest'}`;
-      await Share.share({ message: shareFallbackText, url: fallbackUrl });
+      Alert.alert(
+        'Share Requires App Build',
+        'Image-only sharing needs the native modules. Install expo-sharing + react-native-view-shot and rebuild the app (dev client or production build).'
+      );
     } catch {
-      const fallbackUrl = `${publicShareBaseUrl}?src=${shareMode === 'challenge' ? 'challenge' : 'harvest'}`;
-      await Share.share({ message: shareFallbackText, url: fallbackUrl });
+      Alert.alert(
+        'Share Requires App Build',
+        'Image-only sharing needs the native modules. Install expo-sharing + react-native-view-shot and rebuild the app (dev client or production build).'
+      );
     } finally {
       setSharePending(false);
     }
-  }, [publicShareBaseUrl, shareFallbackText, shareMode, sharePending]);
+  }, [sharePending]);
 
   const handlePress = (item: any) => {
     if (completedIds.includes(item.id)) return;
@@ -1305,6 +1317,11 @@ export default function DojoScreen() {
                 streak={harvestReport.streak}
                 todayXp={harvestReport.todayXp}
                 tone={harvestReport.tone}
+                rankLabel={rankLabel}
+                rankProgress={rankProgress}
+                nextRankLabel={nextRankLabel}
+                auraCells={auraCells}
+                shareUrlLabel={publicShareBaseUrl.replace(/^https?:\/\//i, '')}
                 challengeTitle={shareChallenge?.title}
                 challengeDesc={shareChallenge?.desc}
                 challengeXp={shareChallenge?.xp}

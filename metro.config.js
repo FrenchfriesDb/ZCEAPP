@@ -10,8 +10,11 @@ if (!Array.prototype.toReversed) {
 }
 
 const { getDefaultConfig } = require('expo/metro-config');
+const exclusionListModule = require('./node_modules/metro-config/src/defaults/exclusionList');
+const exclusionList = exclusionListModule && exclusionListModule.default ? exclusionListModule.default : exclusionListModule;
 
 const config = getDefaultConfig(__dirname);
+
 // Hard-disable Watchman for this project due local watchman daemon deadlock.
 config.resolver.useWatchman = false;
 
@@ -25,11 +28,13 @@ const ignoredFolders = [
   /.*\/android\/app\/build\/.*/,
   /.*\/android\/\.gradle\/.*/,
   /.*\/\.expo\/.*/,
+  /.*\/node_modules\/resolve 4\/.*/,
+  /.*\/node_modules\/\.expo-image .*/,
+  /.*\/node_modules\/\.expo-modules-core .*/,
+  /.*\/node_modules\/\.react-native-web .*/,
 ];
 
-config.resolver.blockList = [
-  ...(config.resolver.blockList || []),
-  ...ignoredFolders,
-];
+config.resolver.blockList = exclusionList(ignoredFolders);
+config.watchFolders = [__dirname];
 
 module.exports = config;

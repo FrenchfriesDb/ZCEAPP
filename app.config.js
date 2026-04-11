@@ -8,9 +8,25 @@ module.exports = () => {
   const extra = expo.extra || {};
   const revenuecat = extra.revenuecat || {};
   const allowInsecureClientProviders = toBool(process.env.EXPO_PUBLIC_ALLOW_INSECURE_CLIENT_PROVIDERS);
+  const fastStart = toBool(process.env.EXPO_FAST_START);
+  const enableSplash = toBool(process.env.EXPO_ENABLE_SPLASH);
+  const plugins = Array.isArray(expo.plugins) ? [...expo.plugins] : [];
+  const disableNewArch = toBool(process.env.EXPO_DISABLE_NEW_ARCH);
+  const filteredPlugins = plugins.filter((plugin) => {
+    const name = Array.isArray(plugin) ? plugin[0] : plugin;
+    if (!enableSplash && name === 'expo-splash-screen') {
+      return false;
+    }
+    if (fastStart && name === 'expo-splash-screen') {
+      return false;
+    }
+    return true;
+  });
 
   return {
     ...expo,
+    ...(disableNewArch ? { newArchEnabled: false } : {}),
+    plugins: filteredPlugins,
     extra: {
       ...extra,
       aiProxyUrl: process.env.EXPO_PUBLIC_AI_PROXY_URL || '',
