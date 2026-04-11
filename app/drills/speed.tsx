@@ -83,7 +83,7 @@ export default function SpeedDrill() {
                 `;
                 const aiFeedback = await AIService.generateResponse([
                     { role: 'user', content: analysisRequest }
-                ], 'groq', user?.name || 'AGENT', user?.level || 1, 'coach');
+                ], 'groq', user?.name || 'AGENT', user?.level || 1, 'drill');
 
                 setFeedback(aiFeedback);
                 await completeDrill(20);
