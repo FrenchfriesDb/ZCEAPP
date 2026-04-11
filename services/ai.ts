@@ -524,7 +524,7 @@ function extractDrillContextFromPrompt(lastUserMessage: string): { drill: string
     ).trim();
 
     const response = rawResponse
-        .split(/\n\s*(?:\d+\.\s+|Give drill feedback only|Then provide|Do NOT include|End with SCORE|Analyze\b|Review this rep\b|Constraints:|Reply with)\b/i)[0]
+        .split(/\n\s*(?:\d+\.\s+|Give drill feedback only\b|Then provide\b|Do NOT include\b|End with SCORE\b|Analyze\b|Review this rep\b|Constraints:|Reply with\b)/i)[0]
         .trim();
     const prompt = (promptMatch?.[1] || '').trim();
 
