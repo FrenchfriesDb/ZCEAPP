@@ -159,14 +159,14 @@ const styles = StyleSheet.create({
     height: 40,
   },
   sectionTitle: {
-    fontFamily: Fonts.headingSemi,
+    fontFamily: Fonts.analysis,
     fontSize: 11,
     letterSpacing: 1.4,
     color: 'rgba(255,255,255,0.56)',
     marginBottom: 9,
   },
   sectionBody: {
-    fontFamily: Fonts.headingMedium,
+    fontFamily: Fonts.analysis,
     fontSize: 15,
     lineHeight: 24,
     color: 'rgba(230,235,245,0.84)',
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   scoreBody: {
-    fontFamily: Fonts.heading,
+    fontFamily: Fonts.analysis,
     fontSize: 26,
     lineHeight: 30,
     color: 'rgba(226,236,248,0.9)',

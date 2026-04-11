@@ -181,6 +181,17 @@ export default function SpeedDrill() {
                             />
                         </View>
                     ) : null}
+
+                    {isLoading && (
+                        <View style={styles.analyzingOverlay}>
+                            <GlassCard darkGlass intensity={30} style={styles.analyzingCard}>
+                                <Text style={styles.analyzingTitle}>ANALYZING RESPONSE...</Text>
+                                <Text style={styles.analyzingBody}>
+                                    Zane is processing your frame control, timing, and charisma signal.
+                                </Text>
+                            </GlassCard>
+                        </View>
+                    )}
                 </View>
             </ScrollView>
         </KeyboardAvoidingView>
@@ -216,4 +227,35 @@ const styles = StyleSheet.create({
     // Buttons use <GlassButton/> now (global liquid glass look)
 
     feedbackContainer: { flex: 1, gap: 16 },
+    analyzingOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.55)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+    },
+    analyzingCard: {
+        width: '100%',
+        paddingVertical: 24,
+        paddingHorizontal: 18,
+        borderRadius: 18,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.14)',
+    },
+    analyzingTitle: {
+        color: '#FFFFFF',
+        fontFamily: Fonts.analysis,
+        fontSize: 16,
+        letterSpacing: 1.4,
+        textAlign: 'center',
+        marginBottom: 8,
+    },
+    analyzingBody: {
+        color: 'rgba(230,235,245,0.86)',
+        fontFamily: Fonts.analysis,
+        fontSize: 13,
+        lineHeight: 20,
+        textAlign: 'center',
+    },
 });
