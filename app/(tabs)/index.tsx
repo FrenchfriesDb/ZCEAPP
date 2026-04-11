@@ -181,6 +181,20 @@ function getNextSignalMode(kind: 'roast' | 'quote'): 'classic' | 'personalized' 
 export default function DojoScreen() {
   const { user, completeQuest, resetQuests, recoverStreak, deploySystemBackup } = useUser();
   const { textPrimary, textTertiary } = useTextColors();
+  const premiumEntitlementId =
+    ((Constants.expoConfig?.extra as any)?.revenuecat?.entitlementId as string | undefined) ||
+    'ZCE Pro';
+  const isPremium = useMemo(() => {
+    const tier = String((user as any)?.subscriptionTier || 'initiate').toLowerCase();
+    const status = String((user as any)?.subscriptionStatus || 'inactive').toLowerCase();
+    const entitlements = Array.isArray((user as any)?.entitlements) ? (user as any).entitlements : [];
+    return (
+      tier === 'director' ||
+      status === 'active' ||
+      status === 'grace' ||
+      entitlements.includes(premiumEntitlementId)
+    );
+  }, [premiumEntitlementId, user]);
 
   // Use textPrimary as the UI accent so time themes like Battle Glory remain readable
   // (Battle Glory's last palette stop is a deep navy, which makes small UI text unreadable).
