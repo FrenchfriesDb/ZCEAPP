@@ -7,7 +7,6 @@ import {
     Animated,
     ViewStyle,
     TextStyle,
-    Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
@@ -363,16 +362,6 @@ export default function GlassButton({
                                 end={{ x: 0.5, y: 1 }}
                                 style={StyleSheet.absoluteFill}
                             />        
-                            <View
-                                pointerEvents="none"
-                                style={[
-                                    styles.specularOverlay,
-                                    isCircle
-                                        ? { width: circle - 2.4, height: (circle - 2.4) * 0.45, borderRadius: br - 1.2, justifyContent: 'center' as const, alignItems: 'center' as const }
-                                        : { height: '45%', borderRadius: br },
-                                ]}
-                            />
-
                                 {/* 6 ── LABEL */}
                                 {icon ? (
                                     <Text style={{
@@ -428,13 +417,6 @@ const styles = StyleSheet.create({
         shadowRadius: 20,
         shadowOpacity: 0.6,
         elevation: 12,
-    },
-    specularOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 2,
-        right: 2,
-        overflow: 'hidden',
     },
     label: {
         fontFamily: Fonts.headingSemi,

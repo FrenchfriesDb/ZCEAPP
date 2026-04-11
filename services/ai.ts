@@ -510,7 +510,7 @@ function extractDrillContextFromPrompt(lastUserMessage: string): { drill: string
     const promptMatch = text.match(/PROMPT:\s*([\s\S]*?)(?:\n\s*USER RESPONSE:|$)/i);
 
     const drill = (drillMatch?.[1] || 'Drill Rep').trim();
-    const response = (
+    const rawResponse = (
         responseMatch?.[1] ||
         userLinkMatch?.[1] ||
         pivotMatch?.[1] ||
@@ -518,6 +518,10 @@ function extractDrillContextFromPrompt(lastUserMessage: string): { drill: string
         entryMatch?.[1] ||
         (rewriteMatches.length ? rewriteMatches.join(' | ') : '')
     ).trim();
+
+    const response = rawResponse
+        .split(/\n\s*(?:\d+\.\s+|Give drill feedback only|Then provide|Do NOT include|End with SCORE|Analyze\b|Review this rep\b|Constraints:|Reply with)\b/i)[0]
+        .trim();
     const prompt = (promptMatch?.[1] || '').trim();
 
     return { drill, response, prompt };
@@ -594,6 +598,21 @@ function maxScoreForWeakInput(input: string): number {
     if (text.length <= 18 || words <= 3) return 3;
     if (text.length <= 34 || words <= 6) return 5;
     return 10;
+}
+
+function isLikelyPromptEchoOrLowQuality(text: string): boolean {
+    const normalized = String(text || '').trim();
+    if (!normalized) return true;
+
+    // Model sometimes echoes user instructions instead of evaluating performance.
+    if (/\b(?:1\.|2\.)\s*provide\b/i.test(normalized)) return true;
+    if (/provide a psychological breakdown|do not include a brutal truth|give drill feedback only/i.test(normalized)) return true;
+    if (/\bDRILL:\b|\bUSER RESPONSE:\b|\bPROMPT:\b/i.test(normalized)) return true;
+
+    // Very short non-structured output is not useful for pro drill analysis.
+    if (normalized.length < 40 && !/SCORE:\s*\d+\s*\/\s*10/i.test(normalized)) return true;
+
+    return false;
 }
 
 function ensureVariantSections(text: string, seedInput: string): string {
@@ -679,7 +698,7 @@ function normalizeDrillFeedbackOutput(rawText: string, userName: string, lastUse
 
     const normalized = hasCoreSections
         ? ensureDrillScore(ensureVariantSections(cleaned, ctx.response || lastUserMessage), lastUserMessage)
-        : cleaned
+        : cleaned && !isLikelyPromptEchoOrLowQuality(cleaned)
             ? ensureDrillScore(ensureVariantSections(cleaned, ctx.response || lastUserMessage), lastUserMessage)
             : buildContextAwareDrillFallback(userName, lastUserMessage);
 
