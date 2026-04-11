@@ -502,12 +502,22 @@ function extractDrillContextFromPrompt(lastUserMessage: string): { drill: string
     const text = String(lastUserMessage || '');
     const drillMatch = text.match(/DRILL:\s*([^\n]+)/i);
     const responseMatch = text.match(/USER RESPONSE:\s*([\s\S]*?)(?:\n\s*[A-Z ]+:|$)/i);
+    const userLinkMatch = text.match(/USER'?S\s+LINK:\s*([\s\S]*?)(?:\n\s*[A-Z ]+:|$)/i);
     const pivotMatch = text.match(/USER PIVOT:\s*([\s\S]*?)(?:\n\s*[A-Z ]+:|$)/i);
     const entryMatch = text.match(/ENTRY:\s*([\s\S]*?)(?:\n\s*[A-Z ]+:|$)/i);
+    const genericResponseMatch = text.match(/(?:^|\n)\s*RESPONSE:\s*([\s\S]*?)(?:\n\s*[A-Z ]+:|$)/i);
+    const rewriteMatches = Array.from(text.matchAll(/REWRITE\s*\d*:\s*([^\n]+)/gi)).map((m) => String(m[1] || '').trim()).filter(Boolean);
     const promptMatch = text.match(/PROMPT:\s*([\s\S]*?)(?:\n\s*USER RESPONSE:|$)/i);
 
     const drill = (drillMatch?.[1] || 'Drill Rep').trim();
-    const response = (responseMatch?.[1] || pivotMatch?.[1] || entryMatch?.[1] || '').trim();
+    const response = (
+        responseMatch?.[1] ||
+        userLinkMatch?.[1] ||
+        pivotMatch?.[1] ||
+        genericResponseMatch?.[1] ||
+        entryMatch?.[1] ||
+        (rewriteMatches.length ? rewriteMatches.join(' | ') : '')
+    ).trim();
     const prompt = (promptMatch?.[1] || '').trim();
 
     return { drill, response, prompt };
@@ -669,7 +679,9 @@ function normalizeDrillFeedbackOutput(rawText: string, userName: string, lastUse
 
     const normalized = hasCoreSections
         ? ensureDrillScore(ensureVariantSections(cleaned, ctx.response || lastUserMessage), lastUserMessage)
-        : buildContextAwareDrillFallback(userName, lastUserMessage);
+        : cleaned
+            ? ensureDrillScore(ensureVariantSections(cleaned, ctx.response || lastUserMessage), lastUserMessage)
+            : buildContextAwareDrillFallback(userName, lastUserMessage);
 
     return enforceNameAddressing(normalized, userName);
 }
