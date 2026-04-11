@@ -1287,6 +1287,25 @@ if (
   log(`[patch-node-modules-ios] Patched expo CLI startAsync guard: ${path.relative(root, expoCliStartAsync)}`);
 }
 
+// ---- expo-dev-launcher appBridge compatibility ----
+const expoDevLauncherController = p(
+  'node_modules',
+  'expo-dev-launcher',
+  'ios',
+  'EXDevLauncherController.m'
+);
+if (
+  replaceInFile(expoDevLauncherController, (s) =>
+    s.replace(
+      '[manager updateCurrentBridge:self.appBridge];',
+      'id bridge = nil;\n  @try { bridge = [self valueForKey:@"appBridge"]; } @catch (NSException *exception) { bridge = nil; }\n  [manager updateCurrentBridge:bridge];'
+    )
+  )
+) {
+  changed = true;
+  log(`[patch-node-modules-ios] Patched expo-dev-launcher bridge handoff: ${path.relative(root, expoDevLauncherController)}`);
+}
+
 if (!changed) {
   log('[patch-node-modules-ios] No changes needed.');
 }
