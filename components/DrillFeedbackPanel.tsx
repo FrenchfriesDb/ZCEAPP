@@ -78,10 +78,10 @@ export default function DrillFeedbackPanel({ feedback, maxHeight = 430 }: DrillF
               isScore && styles.scoreCard,
             ]}
           >
-            <Text selectable selectionColor="rgba(255,255,255,0.35)" style={[styles.sectionTitle, isScore && styles.scoreTitle]}>
+            <Text selectable style={[styles.sectionTitle, isScore && styles.scoreTitle]}>
               {section.title}
             </Text>
-            <Text selectable selectionColor="rgba(255,255,255,0.35)" style={[styles.sectionBody, isScore && styles.scoreBody]}>
+            <Text selectable style={[styles.sectionBody, isScore && styles.scoreBody]}>
               {section.body}
             </Text>
           </View>
