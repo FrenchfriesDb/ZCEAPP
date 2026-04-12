@@ -241,14 +241,14 @@ export default function QuestsScreen() {
                 <View style={styles.microOpsShell}>
                     <BlurView intensity={120} tint="dark" style={styles.microOpsBlur} pointerEvents="none" />
                     <LinearGradient
-                        colors={['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.01)', 'rgba(0,0,0,0.985)']}
+                        colors={['rgba(255,255,255,0.045)', 'rgba(255,255,255,0.006)', 'rgba(0,0,0,0.988)']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
                         style={styles.microOpsRim}
                         pointerEvents="none"
                     />
                     <LinearGradient
-                        colors={['rgba(255,255,255,0.10)', 'rgba(255,255,255,0.015)', 'rgba(255,255,255,0.00)']}
+                        colors={['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.008)', 'rgba(255,255,255,0.00)']}
                         start={{ x: 0.5, y: 0 }}
                         end={{ x: 0.5, y: 1 }}
                         style={styles.microOpsSheen}
@@ -262,42 +262,42 @@ export default function QuestsScreen() {
                         pointerEvents="none"
                     />
                     <LinearGradient
-                        colors={['rgba(255,255,255,0.14)', 'rgba(255,255,255,0.03)', 'rgba(255,255,255,0.00)']}
+                        colors={['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.015)', 'rgba(255,255,255,0.00)']}
                         start={{ x: 0.5, y: 0 }}
                         end={{ x: 0.5, y: 1 }}
                         style={styles.microOpsTopEdge}
                         pointerEvents="none"
                     />
                     <LinearGradient
-                        colors={['rgba(255,255,255,0.07)', 'rgba(255,255,255,0.02)', 'rgba(255,255,255,0.00)']}
+                        colors={['rgba(255,255,255,0.04)', 'rgba(255,255,255,0.01)', 'rgba(255,255,255,0.00)']}
                         start={{ x: 0.05, y: 0 }}
                         end={{ x: 0.95, y: 1 }}
                         style={styles.microOpsSpecularArc}
                         pointerEvents="none"
                     />
                     <LinearGradient
-                        colors={['rgba(255,255,255,0.04)', 'rgba(255,255,255,0.00)', 'rgba(255,255,255,0.04)']}
+                        colors={['rgba(255,255,255,0.025)', 'rgba(255,255,255,0.00)', 'rgba(255,255,255,0.025)']}
                         start={{ x: 0, y: 0.5 }}
                         end={{ x: 1, y: 0.5 }}
                         style={styles.microOpsSideRefraction}
                         pointerEvents="none"
                     />
                     <LinearGradient
-                        colors={['rgba(255,255,255,0.03)', 'rgba(255,255,255,0.00)', 'rgba(255,255,255,0.02)']}
+                        colors={['rgba(255,255,255,0.016)', 'rgba(255,255,255,0.00)', 'rgba(255,255,255,0.012)']}
                         start={{ x: 0, y: 0.15 }}
                         end={{ x: 1, y: 0.85 }}
                         style={styles.microOpsLiquidRefraction}
                         pointerEvents="none"
                     />
                     <LinearGradient
-                        colors={['rgba(255,255,255,0.025)', 'rgba(255,255,255,0.00)', 'rgba(255,255,255,0.02)']}
+                        colors={['rgba(255,255,255,0.012)', 'rgba(255,255,255,0.00)', 'rgba(255,255,255,0.010)']}
                         start={{ x: 0.12, y: 0.05 }}
                         end={{ x: 0.88, y: 0.95 }}
                         style={styles.microOpsLiquidFlow}
                         pointerEvents="none"
                     />
                     <LinearGradient
-                        colors={['rgba(255,255,255,0.03)', 'rgba(255,255,255,0.00)', 'rgba(255,255,255,0.03)']}
+                        colors={['rgba(255,255,255,0.016)', 'rgba(255,255,255,0.00)', 'rgba(255,255,255,0.016)']}
                         start={{ x: 0, y: 0.5 }}
                         end={{ x: 1, y: 0.5 }}
                         style={styles.microOpsCurvatureBand}
@@ -318,14 +318,14 @@ export default function QuestsScreen() {
                         pointerEvents="none"
                     />
                     <LinearGradient
-                        colors={['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.00)']}
+                        colors={['rgba(255,255,255,0.06)', 'rgba(255,255,255,0.00)']}
                         start={{ x: 0.12, y: 0 }}
                         end={{ x: 0.62, y: 0.95 }}
                         style={styles.microOpsDropletHighlightPrimary}
                         pointerEvents="none"
                     />
                     <LinearGradient
-                        colors={['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.00)']}
+                        colors={['rgba(255,255,255,0.04)', 'rgba(255,255,255,0.00)']}
                         start={{ x: 0.3, y: 0 }}
                         end={{ x: 0.8, y: 1 }}
                         style={styles.microOpsDropletHighlightSecondary}
@@ -680,7 +680,7 @@ const styles = StyleSheet.create({
         width: '62%',
         height: 38,
         borderRadius: 999,
-        opacity: 0.26,
+        opacity: 0.16,
     },
     microOpsDropletHighlightSecondary: {
         position: 'absolute',
@@ -689,7 +689,7 @@ const styles = StyleSheet.create({
         width: '34%',
         height: 24,
         borderRadius: 999,
-        opacity: 0.20,
+        opacity: 0.12,
     },
     microOpsInnerFrame: {
         position: 'absolute',
