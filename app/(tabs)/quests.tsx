@@ -383,6 +383,20 @@ export default function QuestsScreen() {
                         style={styles.microOpsMeniscusRing}
                         pointerEvents="none"
                     />
+                    <LinearGradient
+                        colors={['rgba(170,170,170,0.18)', 'rgba(90,90,90,0.06)', 'rgba(20,20,20,0.00)']}
+                        start={{ x: 0.24, y: 0.02 }}
+                        end={{ x: 0.74, y: 0.96 }}
+                        style={styles.microOpsTopLensBloom}
+                        pointerEvents="none"
+                    />
+                    <LinearGradient
+                        colors={['rgba(20,20,20,0.00)', 'rgba(10,10,10,0.50)', 'rgba(0,0,0,0.82)']}
+                        start={{ x: 0.5, y: 0 }}
+                        end={{ x: 0.5, y: 1 }}
+                        style={styles.microOpsCompressionShadow}
+                        pointerEvents="none"
+                    />
                     <View style={styles.microOpsGelOrbLarge} pointerEvents="none" />
                     <View style={styles.microOpsGelOrbSmall} pointerEvents="none" />
                     <View style={styles.microOpsEdgeGlow} pointerEvents="none" />
@@ -864,6 +878,24 @@ const styles = StyleSheet.create({
         borderTopRightRadius: 40,
         opacity: 0.78,
     },
+    microOpsTopLensBloom: {
+        position: 'absolute',
+        top: 2,
+        left: 10,
+        right: 10,
+        height: 72,
+        borderTopLeftRadius: 40,
+        borderTopRightRadius: 40,
+        opacity: 0.72,
+    },
+    microOpsCompressionShadow: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        height: 144,
+        opacity: 0.7,
+    },
     microOpsGelOrbLarge: {
         position: 'absolute',
         top: -14,
@@ -913,8 +945,10 @@ const styles = StyleSheet.create({
     },
     microOpsCard: {
         width: '100%',
-        padding: 18,
-        backgroundColor: 'rgba(20,20,20,0.72)',
+        paddingHorizontal: 18,
+        paddingBottom: 18,
+        paddingTop: 38,
+        backgroundColor: 'rgba(20,20,20,0.58)',
     },
     microOpsLabel: {
         fontFamily: Fonts.monoBold,
@@ -940,8 +974,8 @@ const styles = StyleSheet.create({
         padding: 12,
         borderRadius: Radius.md,
         borderWidth: 1,
-        borderColor: 'rgba(54,54,54,0.72)',
-        backgroundColor: 'rgba(20,20,20,0.74)',
+        borderColor: 'rgba(90,90,90,0.48)',
+        backgroundColor: 'rgba(20,20,20,0.56)',
     },
     microOpsGlassVeilPrimary: {
         position: 'absolute',
