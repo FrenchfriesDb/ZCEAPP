@@ -304,6 +304,20 @@ export default function QuestsScreen() {
                         pointerEvents="none"
                     />
                     <LinearGradient
+                        colors={['rgba(54,54,54,0.34)', 'rgba(54,54,54,0.04)', 'rgba(54,54,54,0.00)']}
+                        start={{ x: 0.14, y: 0.08 }}
+                        end={{ x: 0.86, y: 0.92 }}
+                        style={styles.microOpsCausticPrimary}
+                        pointerEvents="none"
+                    />
+                    <LinearGradient
+                        colors={['rgba(54,54,54,0.26)', 'rgba(54,54,54,0.02)', 'rgba(54,54,54,0.00)']}
+                        start={{ x: 0.78, y: 0.14 }}
+                        end={{ x: 0.22, y: 0.94 }}
+                        style={styles.microOpsCausticSecondary}
+                        pointerEvents="none"
+                    />
+                    <LinearGradient
                         colors={['rgba(0,0,0,0.42)', 'rgba(0,0,0,0.00)', 'rgba(0,0,0,0.42)']}
                         start={{ x: 0, y: 0.5 }}
                         end={{ x: 1, y: 0.5 }}
@@ -345,6 +359,9 @@ export default function QuestsScreen() {
                         style={styles.microOpsDropletPillSecondary}
                         pointerEvents="none"
                     />
+                    <View style={styles.microOpsLensPillPrimary} pointerEvents="none" />
+                    <View style={styles.microOpsLensPillSecondary} pointerEvents="none" />
+                    <View style={styles.microOpsLensSpark} pointerEvents="none" />
                     <View style={styles.microOpsInnerFrame} pointerEvents="none" />
 
                     <View style={styles.microOpsCard}>
@@ -673,6 +690,26 @@ const styles = StyleSheet.create({
         bottom: 0,
         opacity: 0.22,
     },
+    microOpsCausticPrimary: {
+        position: 'absolute',
+        top: -12,
+        left: -10,
+        width: '82%',
+        height: 86,
+        borderRadius: 999,
+        opacity: 0.36,
+        transform: [{ rotate: '-6deg' }],
+    },
+    microOpsCausticSecondary: {
+        position: 'absolute',
+        top: -6,
+        right: -8,
+        width: '56%',
+        height: 70,
+        borderRadius: 999,
+        opacity: 0.28,
+        transform: [{ rotate: '9deg' }],
+    },
     microOpsSideVignette: {
         position: 'absolute',
         top: 0,
@@ -722,6 +759,41 @@ const styles = StyleSheet.create({
         height: 22,
         borderRadius: 999,
         opacity: 0.78,
+    },
+    microOpsLensPillPrimary: {
+        position: 'absolute',
+        top: 7,
+        left: 14,
+        width: '52%',
+        height: 18,
+        borderRadius: 999,
+        backgroundColor: 'rgba(54,54,54,0.30)',
+        borderWidth: 1,
+        borderColor: 'rgba(54,54,54,0.48)',
+        opacity: 0.84,
+    },
+    microOpsLensPillSecondary: {
+        position: 'absolute',
+        top: 16,
+        right: 24,
+        width: '28%',
+        height: 12,
+        borderRadius: 999,
+        backgroundColor: 'rgba(54,54,54,0.24)',
+        borderWidth: 1,
+        borderColor: 'rgba(54,54,54,0.40)',
+        opacity: 0.78,
+    },
+    microOpsLensSpark: {
+        position: 'absolute',
+        top: 10,
+        left: '32%',
+        width: 40,
+        height: 8,
+        borderRadius: 999,
+        backgroundColor: 'rgba(54,54,54,0.38)',
+        opacity: 0.7,
+        transform: [{ rotate: '-7deg' }],
     },
     microOpsInnerFrame: {
         position: 'absolute',
