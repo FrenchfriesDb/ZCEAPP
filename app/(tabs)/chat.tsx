@@ -9,7 +9,7 @@ import { buildZaneMemoryContext } from '@/utils/zaneMemory';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Animated, Clipboard, Easing, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface Message {
@@ -39,8 +39,28 @@ export default function ChatScreen() {
     const dotAnim = useRef(new Animated.Value(0)).current;
     const pulseAnim = useRef(new Animated.Value(1)).current;
     const inputFocusAnim = useRef(new Animated.Value(0)).current;
+    const copyResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const memoryContext = buildZaneMemoryContext(user);
     const runtimeName = getFirstName(user?.name) || 'AGENT';
+    const [copiedMessageId, setCopiedMessageId] = useState<number | null>(null);
+
+    const shouldUseMemoryContext = (text: string) => {
+        const q = String(text || '').toLowerCase();
+        return /(remember|last time|previous|earlier|from before|my streak|my xp|tracker|my logs|cfop|rubik|based on my|as i said|you said)/i.test(q);
+    };
+
+    const maybeMemoryContextFor = (text: string) => (shouldUseMemoryContext(text) ? memoryContext : undefined);
+
+    const copyMessage = async (id: number, text: string) => {
+        try {
+            Clipboard.setString(text);
+            setCopiedMessageId(id);
+            if (copyResetTimerRef.current) clearTimeout(copyResetTimerRef.current);
+            copyResetTimerRef.current = setTimeout(() => setCopiedMessageId(null), 1200);
+        } catch {
+            setCopiedMessageId(null);
+        }
+    };
 
     useEffect(() => {
         setChatStyle((user?.zaneChatStyle as ZaneChatStyle) || 'classic');
@@ -66,6 +86,12 @@ export default function ChatScreen() {
         };
     }, []);
 
+    useEffect(() => {
+        return () => {
+            if (copyResetTimerRef.current) clearTimeout(copyResetTimerRef.current);
+        };
+    }, []);
+
     // Restart if user changes or history is empty
     useEffect(() => {
         if (user?.chatLogs && user.chatLogs.length > 0) {
@@ -86,7 +112,7 @@ export default function ChatScreen() {
                         runtimeName,
                         user?.level || 1,
                         'main',
-                        { chatStyle, memoryContext }
+                        { chatStyle }
                     );
                     setMessages([{
                         id: 0,
@@ -171,7 +197,7 @@ export default function ChatScreen() {
                 runtimeName,
                 user?.level || 1,
                 'main',
-                { chatStyle, memoryContext }
+                { chatStyle, memoryContext: maybeMemoryContextFor(text) }
             );
 
             // Fail-safe: Strip any trailing fluff added after the official closer
@@ -287,7 +313,20 @@ export default function ChatScreen() {
                                 <Text selectable selectionColor="rgba(255,255,255,0.35)" style={[styles.bubbleText, msg.sender === 'user' && styles.bubbleTextUser]}>
                                     {msg.text}
                                 </Text>
-                                <Text selectable selectionColor="rgba(255,255,255,0.35)" style={styles.timestamp}>{msg.timestamp}</Text>
+                                <View style={styles.bubbleMetaRow}>
+                                    <Text selectable selectionColor="rgba(255,255,255,0.35)" style={styles.timestamp}>{msg.timestamp}</Text>
+                                    <Pressable
+                                        onPress={() => copyMessage(msg.id, msg.text)}
+                                        style={({ pressed }) => [
+                                            styles.copyBtn,
+                                            copiedMessageId === msg.id && styles.copyBtnActive,
+                                            pressed && styles.copyBtnPressed,
+                                        ]}
+                                        hitSlop={8}
+                                    >
+                                        <Text style={styles.copyIcon}>{copiedMessageId === msg.id ? '✓' : '⧉'}</Text>
+                                    </Pressable>
+                                </View>
                             </View>
                         </View>
                     ))}
@@ -473,6 +512,31 @@ const styles = StyleSheet.create({
     bubbleText: { fontFamily: Fonts.body, fontSize: 15, color: Colors.textPrimary, lineHeight: 22 },
     bubbleTextUser: { color: '#fff', fontWeight: '500' },
     timestamp: { fontFamily: Fonts.mono, fontSize: 8, color: Colors.textTertiary, alignSelf: 'flex-end', marginTop: 4, letterSpacing: 1 },
+    bubbleMetaRow: { marginTop: 2, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    copyBtn: {
+        minWidth: 24,
+        height: 22,
+        borderRadius: 11,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.14)',
+        backgroundColor: 'rgba(255,255,255,0.04)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginLeft: 10,
+    },
+    copyBtnActive: {
+        borderColor: 'rgba(160,235,190,0.55)',
+        backgroundColor: 'rgba(96,201,136,0.18)',
+    },
+    copyBtnPressed: {
+        transform: [{ scale: 0.96 }],
+    },
+    copyIcon: {
+        color: 'rgba(235,240,250,0.88)',
+        fontFamily: Fonts.headingSemi,
+        fontSize: 11,
+        lineHeight: 12,
+    },
 
     typingBubble: { paddingVertical: 14, paddingHorizontal: 18, backgroundColor: 'rgba(255, 255, 255, 0.05)', borderColor: 'rgba(255,255,255,0.1)' },
     typingDots: { flexDirection: 'row', gap: 4 },
