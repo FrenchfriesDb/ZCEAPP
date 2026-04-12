@@ -305,61 +305,57 @@ Opening rule:
 - Respond directly to the user's actual message.
 - Do not add canned greeting fragments unless the user greeted you first.
 
-Your job:
-- identify what the user did well
-- identify what missed or felt weak
-- explain the social logic behind both
-- give better alternate responses in distinct styles
-- score the rep honestly out of 10
+STRICT FORMAT (use this exact structure):
+Your analysis:
+✓ Feeling: ...
+✓ Intent: ...
+✓ Positive: ...
+✓ Include: ...
 
-STRICT FORMAT:
-1. PERFORMANCE REVIEW:
-One short paragraph on the overall rep.
+Now, let's turn this into a Zane-like response:
+"..." (with a warm smile)
 
-2. WHAT YOU DID WELL:
-2-4 concrete points.
+Why this works:
+1. ...
+2. ...
+3. ...
+4. ...
 
-3. WHAT MISSED:
-2-4 concrete points.
+Zane Formula
+A simple framework to respond with Zane's charm from Uglies:
+Pause and Absorb: Notice their mood and intent (e.g., happy, shy, curious).
+Find the Positive Spin: Amplify or reframe their words positively.
+Connect with a Smile: Respond with warmth, a question, or a compliment that includes them.
+Add a Zane Touch: Use a playful nickname, chuckle, or confident gesture (e.g., lean-in, wink).
 
-4. WHY IT WORKS / WHY IT FAILS:
-Explain the psychology, frame control, tension, timing, charisma, status, or humor logic.
-Then include a compact list called "ZANE CHARM SYSTEM" with these 4 lines:
-- RECEIVE: What they said/did.
-- READ: Feeling + intent.
-- REACT: Positive flip.
-- REINFORCE: How to connect/include them.
+ZANE CHARISMA FORMULA:
+Feeling: What were they feeling?
 
-5. BETTER RESPONSES:
-Provide exactly these versions when the drill involves language or responses:
-- MAGNETIC VERSION:
-- CEO VERSION:
-- BANTER/TEASING VERSION:
-- CLASS CLOWN VERSION:
-- FUNNY VERSION:
-- WITTY VERSION:
-Version quality rules:
-- Each version must feel like a real line someone would actually say out loud.
-- Keep them tight and socially usable (no essay responses).
-- Make them feel current and high-status, not old-fashioned.
-- Magnetic version should feel cool/confident, not motivational-speaker cringe.
-- Banter/teasing version should feel playful and flirty-adjacent, not mean or corny.
+Intent: What were they trying to do?
 
-If a version does not fit the drill cleanly, still adapt it as closely as possible instead of skipping it.
+Flip: What's a witty or warm twist?
 
-6. SCORE:
-End with exactly: SCORE: X/10
+Connect: How can I include them?
+
+Zane touch: Add smirk, nickname, or tease
+
+Then immediately apply it to the line using this exact analysis block:
+They: "..."
+
+Feeling: ...
+
+Intent: ...
+
+Flip: ...
+
+Connection: ...
+
+Zane Touch: ...
 
 RULES:
 - No markdown bolding.
-- No BRUTAL TRUTH section.
-- No challenge section.
-- No quote section.
-- No “great job” fluff.
-- No giant motivational monologue.
-- Be specific. Point to what actually landed or failed.
-- If the user input is weak, say so clearly.
-- If the user input is strong, say exactly why.
+- No RECEIVE/READ/REACT/REINFORCE structure.
+- No extra sections before or after this template.
 `;
 
 export const ZANE_COACH_ANALYST_PROMPT = `
@@ -478,35 +474,6 @@ function sanitizeModelText(text: string): string {
         .trim();
 }
 
-function clampScore(score: number): number {
-    return Math.max(0, Math.min(10, Math.round(score)));
-}
-
-function computeDeterministicDrillScore(input: string): number {
-    const text = (input || '').trim();
-    const words = text.split(/\s+/).filter(Boolean);
-    const len = text.length;
-
-    let base = 3;
-    if (len >= 24) base += 1;
-    if (len >= 48) base += 1;
-    if (len >= 90) base += 1;
-    if (/[?!]/.test(text)) base += 1;
-
-    // Add tiny deterministic variation so fallback doesn't always feel identical.
-    const hash = text.split('').reduce((acc, ch) => ((acc * 31) + ch.charCodeAt(0)) >>> 0, 7);
-    base += hash % 2;
-
-    // Penalize ultra-short reps while keeping motivation alive.
-    if (words.length <= 3) base -= 2;
-    if (words.length <= 1) base -= 2;
-
-    if (len <= 2) return 0;
-    if (len <= 5) return 1;
-
-    return clampScore(base);
-}
-
 function extractDrillContextFromPrompt(lastUserMessage: string): { drill: string; response: string; prompt: string } {
     const text = String(lastUserMessage || '');
     const drillMatch = text.match(/DRILL:\s*([^\n]+)/i);
@@ -549,15 +516,6 @@ function lineFromResponse(response: string, fallback: string): string {
     return clean.length > 90 ? `${clean.slice(0, 87).trimEnd()}...` : clean;
 }
 
-type DrillVariants = {
-    magnetic: string;
-    ceo: string;
-    banter: string;
-    classClown: string;
-    funny: string;
-    witty: string;
-};
-
 type DrillFormulaFields = {
     feeling: string;
     intent: string;
@@ -569,51 +527,6 @@ type DrillFormulaFields = {
     responseLine: string;
     whyWorks: [string, string, string, string];
 };
-
-function cleanSeedLine(seed: string): string {
-    const clean = lineFromResponse(seed, '').replace(/["'“”]+/g, '').trim();
-    if (!clean) return '';
-    return clean.replace(/[.!?]+$/g, '').trim();
-}
-
-function buildDrillVariants(seedInput: string): DrillVariants {
-    const seed = cleanSeedLine(seedInput);
-    const shortSeed = seed ? (seed.length > 58 ? `${seed.slice(0, 55).trimEnd()}...` : seed) : '';
-    const shortWords = shortSeed.split(/\s+/).filter(Boolean).length;
-    const lower = (seedInput || '').toLowerCase();
-    const hasRoyalTone = /queen|king|empress|majesty|kingdom|royal/.test(lower);
-
-    if (!shortSeed || shortSeed.length < 7 || shortWords <= 1) {
-        return {
-            magnetic: 'Calm voice. Clean eye contact. Controlled delivery. That is the vibe.',
-            ceo: 'One line, clear frame, move the moment forward.',
-            banter: 'Keep talking like that and I might start charging rent in your head.',
-            classClown: 'Respectfully chaotic, but sharp enough to land.',
-            funny: 'One crisp punchline. No filler. Exit clean.',
-            witty: 'Low volume, high precision. Let the line do the damage.',
-        };
-    }
-
-    if (hasRoyalTone) {
-        return {
-            magnetic: `${shortSeed}. Careful, you are making the whole kingdom jealous.`,
-            ceo: `${shortSeed}. Majesty is the title. Standards are the crown.`,
-            banter: `${shortSeed}. Queen? That is a downgrade. I was aiming for empress.`,
-            classClown: `${shortSeed}. Royal policy says you hype me, I roast you, everyone wins.`,
-            funny: `${shortSeed}. Thats a lot of commitment, my king.`,
-            witty: `${shortSeed}. Its majesty to you. Keep up.`,
-        };
-    }
-
-    return {
-        magnetic: `${shortSeed}. Smooth delivery, no apology energy, full presence.`,
-        ceo: `${shortSeed}. One line. One frame. Keep momentum.`,
-        banter: `${shortSeed}. Careful, keep that energy and I might keep you around.`,
-        classClown: `${shortSeed}. Unhinged enough to be fun, clean enough to still land.`,
-        funny: `${shortSeed}. Hit one sharp joke, then move.`,
-        witty: `${shortSeed}. Dry, surgical, slightly disrespectful. Perfect.`,
-    };
-}
 
 function deriveDrillFormulaFields(theyLine: string, userResponse: string): DrillFormulaFields {
     const line = String(theyLine || '').trim();
@@ -706,6 +619,16 @@ Connect with a Smile: Respond with warmth, a question, or a compliment that incl
 Add a Zane Touch: Use a playful nickname, chuckle, or confident gesture (e.g., lean-in, wink).
 
 ZANE CHARISMA FORMULA:
+Feeling: What were they feeling?
+
+Intent: What were they trying to do?
+
+Flip: What's a witty or warm twist?
+
+Connect: How can I include them?
+
+Zane touch: Add smirk, nickname, or tease
+
 They: "${theyLine}"
 
 Feeling: ${fields.feeling}
@@ -714,73 +637,13 @@ Intent: ${fields.intent}
 
 Flip: ${fields.flip}
 
-Connect: ${fields.connect}
+Connection: ${fields.connect}
 
-Zane touch: ${fields.zaneTouch}`;
-}
-
-function buildBasicDrillOutput(userName: string, lastUserMessage: string): string {
-    const { response } = extractDrillContextFromPrompt(lastUserMessage);
-    const score = computeDeterministicDrillScore(response || lastUserMessage);
-    const variants = buildDrillVariants(response || lastUserMessage);
-
-    return `${userName}-la.
-
-OPTIONAL MAGNETIC RESPONSE:
-${variants.magnetic}
-
-SCORE: ${score}/10`;
-}
-
-function buildContextAwareDrillFallback(userName: string, lastUserMessage: string): string {
-    const { drill, response, prompt } = extractDrillContextFromPrompt(lastUserMessage);
-    const safeResponse = response || 'No response captured this round.';
-    const score = computeDeterministicDrillScore(safeResponse);
-    const compactResponse = lineFromResponse(safeResponse, 'No usable line captured yet.');
-    const promptHint = prompt ? `Prompt pressure was: ${lineFromResponse(prompt, 'live pressure')}` : 'Prompt pressure was live.';
-    const variants = buildDrillVariants(safeResponse);
-
-    return `${userName}-la.
-
-PERFORMANCE REVIEW:
-Signal jam hit analysis on ${drill}, but this rep still gives usable data. ${promptHint}
-
-WHAT YOU DID WELL:
-- You completed the rep instead of freezing out.
-- Your line had intent: "${compactResponse}".
-- You stayed in the pocket under time pressure.
-
-WHAT MISSED:
-- Delivery could be tighter and more specific.
-- Frame control needs a cleaner edge on the first line.
-- Punchline density dipped before the finish.
-
-WHY IT WORKS / WHY IT FAILS:
-Social momentum rewards clear intent + concise framing. When the line is direct, people follow your frame. When it drifts or over-explains, status leaks and impact drops.
-
-ZANE CHARM SYSTEM:
-- RECEIVE: ${compactResponse}
-- READ: Feeling = curious/playful. Intent = invite connection.
-- REACT: Flip it positive with confident humor.
-- REINFORCE: Include them by looping their energy back with a playful callback.
-
-BETTER RESPONSES:
-- MAGNETIC VERSION: ${variants.magnetic}
-- CEO VERSION: ${variants.ceo}
-- BANTER/TEASING VERSION: ${variants.banter}
-- CLASS CLOWN VERSION: ${variants.classClown}
-- FUNNY VERSION: ${variants.funny}
-- WITTY VERSION: ${variants.witty}
-
-SCORE: ${score}/10`;
+Zane Touch: ${fields.zaneTouch}`;
 }
 
 function normalizeDrillFeedbackOutput(_rawText: string, userName: string, lastUserMessage: string, drillPlan: DrillPlan): string {
-    if (drillPlan === 'basic') {
-        return enforceNameAddressing(buildBasicDrillOutput(userName, lastUserMessage), userName);
-    }
-
-    // Enforce a single consistent analysis structure for drill feedback.
+    // Enforce a single exact analysis structure for all drill plans.
     return buildExactFormulaDrillOutput(lastUserMessage);
 }
 
