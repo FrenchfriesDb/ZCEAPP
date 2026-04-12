@@ -363,6 +363,20 @@ export default function QuestsScreen() {
                     <View style={styles.microOpsLensPillSecondary} pointerEvents="none" />
                     <View style={styles.microOpsLensSpark} pointerEvents="none" />
                     <LinearGradient
+                        colors={['rgba(90,90,90,0.30)', 'rgba(54,54,54,0.06)', 'rgba(20,20,20,0.00)']}
+                        start={{ x: 0.14, y: 0.04 }}
+                        end={{ x: 0.86, y: 0.96 }}
+                        style={styles.microOpsLiquidFilmPrimary}
+                        pointerEvents="none"
+                    />
+                    <LinearGradient
+                        colors={['rgba(90,90,90,0.20)', 'rgba(54,54,54,0.00)']}
+                        start={{ x: 0.82, y: 0.10 }}
+                        end={{ x: 0.2, y: 0.92 }}
+                        style={styles.microOpsLiquidFilmSecondary}
+                        pointerEvents="none"
+                    />
+                    <LinearGradient
                         colors={['rgba(54,54,54,0.48)', 'rgba(54,54,54,0.14)', 'rgba(20,20,20,0.00)']}
                         start={{ x: 0.5, y: 0 }}
                         end={{ x: 0.5, y: 1 }}
@@ -371,6 +385,7 @@ export default function QuestsScreen() {
                     />
                     <View style={styles.microOpsGelOrbLarge} pointerEvents="none" />
                     <View style={styles.microOpsGelOrbSmall} pointerEvents="none" />
+                    <View style={styles.microOpsEdgeGlow} pointerEvents="none" />
                     <View style={styles.microOpsInnerFrame} pointerEvents="none" />
 
                     <View style={styles.microOpsCard}>
@@ -786,38 +801,58 @@ const styles = StyleSheet.create({
     },
     microOpsLensPillPrimary: {
         position: 'absolute',
-        top: 7,
-        left: 14,
-        width: '52%',
-        height: 18,
+        top: 6,
+        left: 12,
+        width: '58%',
+        height: 22,
         borderRadius: 999,
-        backgroundColor: 'rgba(54,54,54,0.30)',
+        backgroundColor: 'rgba(90,90,90,0.32)',
         borderWidth: 1,
-        borderColor: 'rgba(54,54,54,0.48)',
-        opacity: 0.84,
+        borderColor: 'rgba(90,90,90,0.56)',
+        opacity: 0.9,
     },
     microOpsLensPillSecondary: {
         position: 'absolute',
-        top: 16,
-        right: 24,
-        width: '28%',
-        height: 12,
+        top: 14,
+        right: 20,
+        width: '32%',
+        height: 14,
         borderRadius: 999,
-        backgroundColor: 'rgba(54,54,54,0.24)',
+        backgroundColor: 'rgba(90,90,90,0.26)',
         borderWidth: 1,
-        borderColor: 'rgba(54,54,54,0.40)',
-        opacity: 0.78,
+        borderColor: 'rgba(90,90,90,0.48)',
+        opacity: 0.84,
     },
     microOpsLensSpark: {
         position: 'absolute',
-        top: 10,
-        left: '32%',
-        width: 40,
-        height: 8,
+        top: 9,
+        left: '30%',
+        width: 56,
+        height: 10,
         borderRadius: 999,
-        backgroundColor: 'rgba(54,54,54,0.38)',
-        opacity: 0.7,
+        backgroundColor: 'rgba(110,110,110,0.36)',
+        opacity: 0.82,
         transform: [{ rotate: '-7deg' }],
+    },
+    microOpsLiquidFilmPrimary: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 128,
+        borderTopLeftRadius: 40,
+        borderTopRightRadius: 40,
+        opacity: 0.48,
+    },
+    microOpsLiquidFilmSecondary: {
+        position: 'absolute',
+        top: 4,
+        left: 0,
+        right: 0,
+        height: 102,
+        borderTopLeftRadius: 40,
+        borderTopRightRadius: 40,
+        opacity: 0.4,
     },
     microOpsMeniscusRing: {
         position: 'absolute',
@@ -831,29 +866,40 @@ const styles = StyleSheet.create({
     },
     microOpsGelOrbLarge: {
         position: 'absolute',
-        top: -10,
-        left: '14%',
-        width: 170,
-        height: 86,
+        top: -14,
+        left: '10%',
+        width: 198,
+        height: 98,
         borderRadius: 999,
-        backgroundColor: 'rgba(54,54,54,0.26)',
+        backgroundColor: 'rgba(90,90,90,0.26)',
         borderWidth: 1,
-        borderColor: 'rgba(54,54,54,0.52)',
-        opacity: 0.58,
-        transform: [{ rotate: '-7deg' }],
+        borderColor: 'rgba(100,100,100,0.56)',
+        opacity: 0.68,
+        transform: [{ rotate: '-8deg' }],
     },
     microOpsGelOrbSmall: {
         position: 'absolute',
-        top: -4,
-        right: '14%',
-        width: 102,
-        height: 54,
+        top: -8,
+        right: '11%',
+        width: 124,
+        height: 62,
         borderRadius: 999,
-        backgroundColor: 'rgba(54,54,54,0.20)',
+        backgroundColor: 'rgba(90,90,90,0.20)',
         borderWidth: 1,
-        borderColor: 'rgba(54,54,54,0.44)',
-        opacity: 0.5,
+        borderColor: 'rgba(100,100,100,0.46)',
+        opacity: 0.58,
         transform: [{ rotate: '8deg' }],
+    },
+    microOpsEdgeGlow: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        borderRadius: 40,
+        borderWidth: 1,
+        borderColor: 'rgba(90,90,90,0.56)',
+        opacity: 0.62,
     },
     microOpsInnerFrame: {
         position: 'absolute',
@@ -863,12 +909,12 @@ const styles = StyleSheet.create({
         bottom: 2,
         borderRadius: 38,
         borderWidth: 1,
-        borderColor: 'rgba(54,54,54,0.65)',
+        borderColor: 'rgba(90,90,90,0.34)',
     },
     microOpsCard: {
         width: '100%',
         padding: 18,
-        backgroundColor: 'rgba(20,20,20,0.90)',
+        backgroundColor: 'rgba(20,20,20,0.72)',
     },
     microOpsLabel: {
         fontFamily: Fonts.monoBold,
@@ -895,7 +941,7 @@ const styles = StyleSheet.create({
         borderRadius: Radius.md,
         borderWidth: 1,
         borderColor: 'rgba(54,54,54,0.72)',
-        backgroundColor: 'rgba(20,20,20,0.90)',
+        backgroundColor: 'rgba(20,20,20,0.74)',
     },
     microOpsGlassVeilPrimary: {
         position: 'absolute',
