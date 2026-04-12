@@ -71,7 +71,7 @@ export default function XPBar({ xp }: Props) {
                     {/* Gradient rendered at full bar width so colors are always proportional */}
                     {barWidth > 0 && (
                         <LinearGradient
-                            colors={palette.length >= 2 ? [...palette].reverse() as any : ['#60EFFF', '#0061FF']}
+                            colors={palette.length >= 2 ? palette as any : ['#60EFFF', '#0061FF']}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 0 }}
                             style={{ width: barWidth, height: '100%' }}
