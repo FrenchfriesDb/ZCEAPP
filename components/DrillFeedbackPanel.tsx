@@ -1,7 +1,6 @@
 import { Fonts } from '@/constants/theme';
 import { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text } from 'react-native';
-import GlassCard from './GlassCard';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 type FeedbackSection = {
   title: string;
@@ -72,10 +71,8 @@ export default function DrillFeedbackPanel({ feedback, maxHeight = 430 }: DrillF
       {sections.map((section, index) => {
         const isScore = section.title === 'SCORE';
         return (
-          <GlassCard
+          <View
             key={`${section.title}-${index}`}
-            darkGlass
-            intensity={26}
             style={[
               styles.sectionCard,
               isScore && styles.scoreCard,
@@ -87,7 +84,7 @@ export default function DrillFeedbackPanel({ feedback, maxHeight = 430 }: DrillF
             <Text style={[styles.sectionBody, isScore && styles.scoreBody]}>
               {section.body}
             </Text>
-          </GlassCard>
+          </View>
         );
       })}
     </ScrollView>
