@@ -558,6 +558,18 @@ type DrillVariants = {
     witty: string;
 };
 
+type DrillFormulaFields = {
+    feeling: string;
+    intent: string;
+    positive: string;
+    include: string;
+    flip: string;
+    connect: string;
+    zaneTouch: string;
+    responseLine: string;
+    whyWorks: [string, string, string, string];
+};
+
 function cleanSeedLine(seed: string): string {
     const clean = lineFromResponse(seed, '').replace(/["'“”]+/g, '').trim();
     if (!clean) return '';
@@ -603,6 +615,110 @@ function buildDrillVariants(seedInput: string): DrillVariants {
     };
 }
 
+function deriveDrillFormulaFields(theyLine: string, userResponse: string): DrillFormulaFields {
+    const line = String(theyLine || '').trim();
+    const source = `${line} ${String(userResponse || '')}`.toLowerCase();
+
+    const complimentSignal = /(beautiful|cute|handsome|amazing|great|nice|sweet|hot|love|good taste|queen|king)/i.test(source);
+    const hostileSignal = /(shut up|stfu|annoying|leave me alone|stop talking|get lost|can you not|go away)/i.test(source);
+
+    if (hostileSignal) {
+        return {
+            feeling: 'Annoyed, maybe overwhelmed',
+            intent: 'Control the situation',
+            positive: 'They were direct about their boundary',
+            include: 'Acknowledge intensity, then invite them into playful calm',
+            flip: 'Reclaim the moment with humor',
+            connect: 'Invite them into the joke',
+            zaneTouch: '"Dramatic. I like that in a villain."',
+            responseLine: 'Dramatic. I like that in a villain.',
+            whyWorks: [
+                'Acknowledges the intensity without escalating.',
+                'Reframes conflict into playful tension.',
+                'Shows composure and social control.',
+                'Invites them back into a lighter frame.',
+            ],
+        };
+    }
+
+    if (complimentSignal) {
+        return {
+            feeling: 'Happy',
+            intent: 'Make you feel good',
+            positive: 'Acknowledge compliment',
+            include: 'Return positivity',
+            flip: 'Turn the compliment into a playful shared vibe',
+            connect: 'Include them with warmth and reciprocity',
+            zaneTouch: 'Warm smile + confident eye contact',
+            responseLine: 'Thanks! You know, people with good taste tend to notice each other.',
+            whyWorks: [
+                'Acknowledges compliment (Thanks!).',
+                'Creates connection (notice each other).',
+                'Implies they have good taste too.',
+                'Keeps it light and warm.',
+            ],
+        };
+    }
+
+    return {
+        feeling: 'Curious, testing your vibe',
+        intent: 'Start or shape the interaction',
+        positive: 'They opened the door to connection',
+        include: 'Mirror their energy and include them in the frame',
+        flip: 'Add a warm or witty twist',
+        connect: 'Ask or imply shared energy',
+        zaneTouch: 'Small smirk + playful tease',
+        responseLine: 'I like your energy. You always enter like you know something I do not.',
+        whyWorks: [
+            'Shows you read their emotional signal.',
+            'Keeps status while staying warm.',
+            'Turns a plain moment into chemistry.',
+            'Invites them to keep the interaction alive.',
+        ],
+    };
+}
+
+function buildExactFormulaDrillOutput(lastUserMessage: string): string {
+    const { response, prompt } = extractDrillContextFromPrompt(lastUserMessage);
+    const theyLine = lineFromResponse(prompt || response || lastUserMessage, 'No clear line captured yet.');
+    const fields = deriveDrillFormulaFields(theyLine, response || lastUserMessage);
+
+    return `Your analysis:
+✓ Feeling: ${fields.feeling}
+✓ Intent: ${fields.intent}
+✓ Positive: ${fields.positive}
+✓ Include: ${fields.include}
+
+Now, let's turn this into a Zane-like response:
+"${fields.responseLine}" (with a warm smile)
+
+Why this works:
+1. ${fields.whyWorks[0]}
+2. ${fields.whyWorks[1]}
+3. ${fields.whyWorks[2]}
+4. ${fields.whyWorks[3]}
+
+Zane Formula
+A simple framework to respond with Zane's charm from Uglies:
+Pause and Absorb: Notice their mood and intent (e.g., happy, shy, curious).
+Find the Positive Spin: Amplify or reframe their words positively.
+Connect with a Smile: Respond with warmth, a question, or a compliment that includes them.
+Add a Zane Touch: Use a playful nickname, chuckle, or confident gesture (e.g., lean-in, wink).
+
+ZANE CHARISMA FORMULA:
+They: "${theyLine}"
+
+Feeling: ${fields.feeling}
+
+Intent: ${fields.intent}
+
+Flip: ${fields.flip}
+
+Connect: ${fields.connect}
+
+Zane touch: ${fields.zaneTouch}`;
+}
+
 function buildBasicDrillOutput(userName: string, lastUserMessage: string): string {
     const { response } = extractDrillContextFromPrompt(lastUserMessage);
     const score = computeDeterministicDrillScore(response || lastUserMessage);
@@ -614,51 +730,6 @@ OPTIONAL MAGNETIC RESPONSE:
 ${variants.magnetic}
 
 SCORE: ${score}/10`;
-}
-
-function maxScoreForWeakInput(input: string): number {
-    const text = String(input || '').trim();
-    const words = text.split(/\s+/).filter(Boolean).length;
-    if (text.length <= 2) return 0;
-    if (text.length <= 6 || words <= 1) return 1;
-    if (text.length <= 18 || words <= 3) return 3;
-    if (text.length <= 34 || words <= 6) return 5;
-    return 10;
-}
-
-function isLikelyPromptEchoOrLowQuality(text: string): boolean {
-    const normalized = String(text || '').trim();
-    if (!normalized) return true;
-
-    // Model sometimes echoes user instructions instead of evaluating performance.
-    if (/\b(?:1\.|2\.)\s*provide\b/i.test(normalized)) return true;
-    if (/provide a psychological breakdown|do not include a brutal truth|give drill feedback only/i.test(normalized)) return true;
-    if (/\bDRILL:\b|\bUSER RESPONSE:\b|\bPROMPT:\b/i.test(normalized)) return true;
-
-    // Very short non-structured output is not useful for pro drill analysis.
-    if (normalized.length < 40 && !/SCORE:\s*\d+\s*\/\s*10/i.test(normalized)) return true;
-
-    return false;
-}
-
-function ensureVariantSections(text: string, seedInput: string): string {
-    const variants = buildDrillVariants(seedInput);
-    let output = text.trim();
-    const hasBetterResponses = /BETTER RESPONSES:/i.test(output);
-
-    if (!hasBetterResponses) {
-        output += `\n\nBETTER RESPONSES:\n- MAGNETIC VERSION: ${variants.magnetic}\n- CEO VERSION: ${variants.ceo}\n- BANTER/TEASING VERSION: ${variants.banter}\n- CLASS CLOWN VERSION: ${variants.classClown}\n- FUNNY VERSION: ${variants.funny}\n- WITTY VERSION: ${variants.witty}`;
-        return output;
-    }
-
-    if (!/MAGNETIC VERSION:/i.test(output)) output += `\n- MAGNETIC VERSION: ${variants.magnetic}`;
-    if (!/CEO VERSION:/i.test(output)) output += `\n- CEO VERSION: ${variants.ceo}`;
-    if (!/BANTER\/?TEASING VERSION:/i.test(output)) output += `\n- BANTER/TEASING VERSION: ${variants.banter}`;
-    if (!/CLASS CLOWN VERSION:/i.test(output)) output += `\n- CLASS CLOWN VERSION: ${variants.classClown}`;
-    if (!/FUNNY VERSION:/i.test(output)) output += `\n- FUNNY VERSION: ${variants.funny}`;
-    if (!/WITTY VERSION:/i.test(output)) output += `\n- WITTY VERSION: ${variants.witty}`;
-
-    return output;
 }
 
 function buildContextAwareDrillFallback(userName: string, lastUserMessage: string): string {
@@ -704,39 +775,13 @@ BETTER RESPONSES:
 SCORE: ${score}/10`;
 }
 
-function ensureDrillScore(text: string, lastUserMessage: string): string {
-    const drillInput = extractDrillContextFromPrompt(lastUserMessage).response || lastUserMessage;
-    const cap = maxScoreForWeakInput(drillInput);
-    const existing = text.match(/SCORE:\s*(\d{1,2})\s*\/\s*10/i);
-    if (existing) {
-        const normalized = Math.min(cap, clampScore(Number(existing[1])));
-        return text.replace(/SCORE:\s*\d{1,2}\s*\/\s*10/i, `SCORE: ${normalized}/10`);
-    }
-    const score = Math.min(cap, computeDeterministicDrillScore(drillInput));
-    return `${text.trim()}\n\nSCORE: ${score}/10`;
-}
-
-function normalizeDrillFeedbackOutput(rawText: string, userName: string, lastUserMessage: string, drillPlan: DrillPlan): string {
+function normalizeDrillFeedbackOutput(_rawText: string, userName: string, lastUserMessage: string, drillPlan: DrillPlan): string {
     if (drillPlan === 'basic') {
         return enforceNameAddressing(buildBasicDrillOutput(userName, lastUserMessage), userName);
     }
 
-    const cleaned = sanitizeModelText(rawText || '');
-    const ctx = extractDrillContextFromPrompt(lastUserMessage);
-    const hasCoreSections =
-        /PERFORMANCE REVIEW:/i.test(cleaned) &&
-        /WHAT YOU DID WELL:/i.test(cleaned) &&
-        /WHAT MISSED:/i.test(cleaned) &&
-        /WHY IT WORKS\s*\/\s*WHY IT FAILS:/i.test(cleaned) &&
-        /BETTER RESPONSES:/i.test(cleaned);
-
-    const normalized = hasCoreSections
-        ? ensureDrillScore(ensureVariantSections(cleaned, ctx.response || lastUserMessage), lastUserMessage)
-        : cleaned && !isLikelyPromptEchoOrLowQuality(cleaned)
-            ? ensureDrillScore(ensureVariantSections(cleaned, ctx.response || lastUserMessage), lastUserMessage)
-            : buildContextAwareDrillFallback(userName, lastUserMessage);
-
-    return enforceNameAddressing(normalized, userName);
+    // Enforce a single consistent analysis structure for drill feedback.
+    return buildExactFormulaDrillOutput(lastUserMessage);
 }
 
 function buildUnifiedSystemPrompt(
