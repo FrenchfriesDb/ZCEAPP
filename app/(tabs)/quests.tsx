@@ -362,6 +362,15 @@ export default function QuestsScreen() {
                     <View style={styles.microOpsLensPillPrimary} pointerEvents="none" />
                     <View style={styles.microOpsLensPillSecondary} pointerEvents="none" />
                     <View style={styles.microOpsLensSpark} pointerEvents="none" />
+                    <LinearGradient
+                        colors={['rgba(54,54,54,0.48)', 'rgba(54,54,54,0.14)', 'rgba(20,20,20,0.00)']}
+                        start={{ x: 0.5, y: 0 }}
+                        end={{ x: 0.5, y: 1 }}
+                        style={styles.microOpsMeniscusRing}
+                        pointerEvents="none"
+                    />
+                    <View style={styles.microOpsGelOrbLarge} pointerEvents="none" />
+                    <View style={styles.microOpsGelOrbSmall} pointerEvents="none" />
                     <View style={styles.microOpsInnerFrame} pointerEvents="none" />
 
                     <View style={styles.microOpsCard}>
@@ -403,6 +412,21 @@ export default function QuestsScreen() {
                             })}
                         </View>
                     </View>
+
+                    <LinearGradient
+                        colors={['rgba(54,54,54,0.22)', 'rgba(54,54,54,0.03)', 'rgba(20,20,20,0.00)']}
+                        start={{ x: 0.18, y: 0.02 }}
+                        end={{ x: 0.82, y: 0.98 }}
+                        style={styles.microOpsGlassVeilPrimary}
+                        pointerEvents="none"
+                    />
+                    <LinearGradient
+                        colors={['rgba(54,54,54,0.16)', 'rgba(54,54,54,0.00)']}
+                        start={{ x: 0.86, y: 0.12 }}
+                        end={{ x: 0.2, y: 0.9 }}
+                        style={styles.microOpsGlassVeilSecondary}
+                        pointerEvents="none"
+                    />
                 </View>
 
                 {!isPremium && (
@@ -795,6 +819,42 @@ const styles = StyleSheet.create({
         opacity: 0.7,
         transform: [{ rotate: '-7deg' }],
     },
+    microOpsMeniscusRing: {
+        position: 'absolute',
+        top: 2,
+        left: 10,
+        right: 10,
+        height: 44,
+        borderTopLeftRadius: 40,
+        borderTopRightRadius: 40,
+        opacity: 0.78,
+    },
+    microOpsGelOrbLarge: {
+        position: 'absolute',
+        top: -10,
+        left: '14%',
+        width: 170,
+        height: 86,
+        borderRadius: 999,
+        backgroundColor: 'rgba(54,54,54,0.26)',
+        borderWidth: 1,
+        borderColor: 'rgba(54,54,54,0.52)',
+        opacity: 0.58,
+        transform: [{ rotate: '-7deg' }],
+    },
+    microOpsGelOrbSmall: {
+        position: 'absolute',
+        top: -4,
+        right: '14%',
+        width: 102,
+        height: 54,
+        borderRadius: 999,
+        backgroundColor: 'rgba(54,54,54,0.20)',
+        borderWidth: 1,
+        borderColor: 'rgba(54,54,54,0.44)',
+        opacity: 0.5,
+        transform: [{ rotate: '8deg' }],
+    },
     microOpsInnerFrame: {
         position: 'absolute',
         top: 2,
@@ -808,7 +868,7 @@ const styles = StyleSheet.create({
     microOpsCard: {
         width: '100%',
         padding: 18,
-        backgroundColor: '#141414',
+        backgroundColor: 'rgba(20,20,20,0.90)',
     },
     microOpsLabel: {
         fontFamily: Fonts.monoBold,
@@ -835,7 +895,27 @@ const styles = StyleSheet.create({
         borderRadius: Radius.md,
         borderWidth: 1,
         borderColor: 'rgba(54,54,54,0.72)',
-        backgroundColor: 'rgba(20,20,20,0.98)',
+        backgroundColor: 'rgba(20,20,20,0.90)',
+    },
+    microOpsGlassVeilPrimary: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 116,
+        borderTopLeftRadius: 40,
+        borderTopRightRadius: 40,
+        opacity: 0.42,
+    },
+    microOpsGlassVeilSecondary: {
+        position: 'absolute',
+        top: 8,
+        left: 0,
+        right: 0,
+        height: 92,
+        borderTopLeftRadius: 40,
+        borderTopRightRadius: 40,
+        opacity: 0.32,
     },
     microOpRowDone: {
         opacity: 0.5,
