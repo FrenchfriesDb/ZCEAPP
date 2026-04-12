@@ -284,10 +284,10 @@ export default function ChatScreen() {
                                 </View>
                             )}
                             <View style={[styles.bubble, msg.sender === 'user' ? styles.bubbleUser : styles.bubbleAI]}>
-                                <Text selectable style={[styles.bubbleText, msg.sender === 'user' && styles.bubbleTextUser]}>
+                                <Text selectable selectionColor="rgba(255,255,255,0.35)" style={[styles.bubbleText, msg.sender === 'user' && styles.bubbleTextUser]}>
                                     {msg.text}
                                 </Text>
-                                <Text style={styles.timestamp}>{msg.timestamp}</Text>
+                                <Text selectable selectionColor="rgba(255,255,255,0.35)" style={styles.timestamp}>{msg.timestamp}</Text>
                             </View>
                         </View>
                     ))}
