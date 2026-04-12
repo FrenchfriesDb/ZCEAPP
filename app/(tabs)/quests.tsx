@@ -239,16 +239,16 @@ export default function QuestsScreen() {
                 </View>
 
                 <View style={styles.microOpsShell}>
-                    <BlurView intensity={120} tint="dark" style={styles.microOpsBlur} pointerEvents="none" />
+                    <BlurView intensity={92} tint="dark" style={styles.microOpsBlur} pointerEvents="none" />
                     <LinearGradient
-                        colors={['rgba(54,54,54,0.36)', 'rgba(54,54,54,0.08)', 'rgba(20,20,20,1)']}
+                        colors={['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.03)', 'rgba(0,0,0,0.22)', 'rgba(0,0,0,0.46)']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
                         style={styles.microOpsRim}
                         pointerEvents="none"
                     />
                     <LinearGradient
-                        colors={['rgba(54,54,54,0.42)', 'rgba(54,54,54,0.12)', 'rgba(54,54,54,0.00)']}
+                        colors={['rgba(255,255,255,0.38)', 'rgba(255,255,255,0.12)', 'rgba(255,255,255,0.00)']}
                         start={{ x: 0.5, y: 0 }}
                         end={{ x: 0.5, y: 1 }}
                         style={styles.microOpsSheen}
@@ -363,28 +363,28 @@ export default function QuestsScreen() {
                     <View style={styles.microOpsLensPillSecondary} pointerEvents="none" />
                     <View style={styles.microOpsLensSpark} pointerEvents="none" />
                     <LinearGradient
-                        colors={['rgba(90,90,90,0.30)', 'rgba(54,54,54,0.06)', 'rgba(20,20,20,0.00)']}
+                        colors={['rgba(255,255,255,0.18)', 'rgba(255,255,255,0.05)', 'rgba(20,20,20,0.00)']}
                         start={{ x: 0.14, y: 0.04 }}
                         end={{ x: 0.86, y: 0.96 }}
                         style={styles.microOpsLiquidFilmPrimary}
                         pointerEvents="none"
                     />
                     <LinearGradient
-                        colors={['rgba(90,90,90,0.20)', 'rgba(54,54,54,0.00)']}
+                        colors={['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.00)']}
                         start={{ x: 0.82, y: 0.10 }}
                         end={{ x: 0.2, y: 0.92 }}
                         style={styles.microOpsLiquidFilmSecondary}
                         pointerEvents="none"
                     />
                     <LinearGradient
-                        colors={['rgba(54,54,54,0.48)', 'rgba(54,54,54,0.14)', 'rgba(20,20,20,0.00)']}
+                        colors={['rgba(255,255,255,0.20)', 'rgba(255,255,255,0.08)', 'rgba(20,20,20,0.00)']}
                         start={{ x: 0.5, y: 0 }}
                         end={{ x: 0.5, y: 1 }}
                         style={styles.microOpsMeniscusRing}
                         pointerEvents="none"
                     />
                     <LinearGradient
-                        colors={['rgba(170,170,170,0.18)', 'rgba(90,90,90,0.06)', 'rgba(20,20,20,0.00)']}
+                        colors={['rgba(255,255,255,0.24)', 'rgba(255,255,255,0.08)', 'rgba(20,20,20,0.00)']}
                         start={{ x: 0.24, y: 0.02 }}
                         end={{ x: 0.74, y: 0.96 }}
                         style={styles.microOpsTopLensBloom}
@@ -443,14 +443,14 @@ export default function QuestsScreen() {
                     </View>
 
                     <LinearGradient
-                        colors={['rgba(54,54,54,0.22)', 'rgba(54,54,54,0.03)', 'rgba(20,20,20,0.00)']}
+                        colors={['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.03)', 'rgba(20,20,20,0.00)']}
                         start={{ x: 0.18, y: 0.02 }}
                         end={{ x: 0.82, y: 0.98 }}
                         style={styles.microOpsGlassVeilPrimary}
                         pointerEvents="none"
                     />
                     <LinearGradient
-                        colors={['rgba(54,54,54,0.16)', 'rgba(54,54,54,0.00)']}
+                        colors={['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.00)']}
                         start={{ x: 0.86, y: 0.12 }}
                         end={{ x: 0.2, y: 0.9 }}
                         style={styles.microOpsGlassVeilSecondary}
@@ -663,13 +663,13 @@ const styles = StyleSheet.create({
         borderRadius: 40,
         overflow: 'hidden',
         borderWidth: 1,
-        borderColor: '#363636',
-        backgroundColor: '#141414',
+        borderColor: 'rgba(255, 255, 255, 0.06)',
+        backgroundColor: 'rgba(2, 2, 7, 0.54)',
         shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 18 },
-        shadowOpacity: 0.92,
-        shadowRadius: 58,
-        elevation: 14,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.42,
+        shadowRadius: 28,
+        elevation: 24,
         marginBottom: 6,
     },
     microOpsBlur: {
@@ -696,10 +696,10 @@ const styles = StyleSheet.create({
     },
     microOpsTopEdge: {
         position: 'absolute',
-        top: 0,
-        left: 10,
-        right: 10,
-        height: 3,
+        top: 1,
+        left: 8,
+        right: 8,
+        height: 2,
         borderTopLeftRadius: 40,
         borderTopRightRadius: 40,
     },
@@ -820,10 +820,10 @@ const styles = StyleSheet.create({
         width: '58%',
         height: 22,
         borderRadius: 999,
-        backgroundColor: 'rgba(90,90,90,0.32)',
+        backgroundColor: 'rgba(255,255,255,0.10)',
         borderWidth: 1,
-        borderColor: 'rgba(90,90,90,0.56)',
-        opacity: 0.9,
+        borderColor: 'rgba(255,255,255,0.20)',
+        opacity: 0.72,
     },
     microOpsLensPillSecondary: {
         position: 'absolute',
@@ -832,10 +832,10 @@ const styles = StyleSheet.create({
         width: '32%',
         height: 14,
         borderRadius: 999,
-        backgroundColor: 'rgba(90,90,90,0.26)',
+        backgroundColor: 'rgba(255,255,255,0.08)',
         borderWidth: 1,
-        borderColor: 'rgba(90,90,90,0.48)',
-        opacity: 0.84,
+        borderColor: 'rgba(255,255,255,0.16)',
+        opacity: 0.68,
     },
     microOpsLensSpark: {
         position: 'absolute',
@@ -844,8 +844,8 @@ const styles = StyleSheet.create({
         width: 56,
         height: 10,
         borderRadius: 999,
-        backgroundColor: 'rgba(110,110,110,0.36)',
-        opacity: 0.82,
+        backgroundColor: 'rgba(255,255,255,0.22)',
+        opacity: 0.64,
         transform: [{ rotate: '-7deg' }],
     },
     microOpsLiquidFilmPrimary: {
@@ -903,10 +903,10 @@ const styles = StyleSheet.create({
         width: 198,
         height: 98,
         borderRadius: 999,
-        backgroundColor: 'rgba(90,90,90,0.26)',
+        backgroundColor: 'rgba(255,255,255,0.07)',
         borderWidth: 1,
-        borderColor: 'rgba(100,100,100,0.56)',
-        opacity: 0.68,
+        borderColor: 'rgba(255,255,255,0.16)',
+        opacity: 0.5,
         transform: [{ rotate: '-8deg' }],
     },
     microOpsGelOrbSmall: {
@@ -916,10 +916,10 @@ const styles = StyleSheet.create({
         width: 124,
         height: 62,
         borderRadius: 999,
-        backgroundColor: 'rgba(90,90,90,0.20)',
+        backgroundColor: 'rgba(255,255,255,0.06)',
         borderWidth: 1,
-        borderColor: 'rgba(100,100,100,0.46)',
-        opacity: 0.58,
+        borderColor: 'rgba(255,255,255,0.14)',
+        opacity: 0.44,
         transform: [{ rotate: '8deg' }],
     },
     microOpsEdgeGlow: {
@@ -930,8 +930,8 @@ const styles = StyleSheet.create({
         bottom: 0,
         borderRadius: 40,
         borderWidth: 1,
-        borderColor: 'rgba(90,90,90,0.56)',
-        opacity: 0.62,
+        borderColor: 'rgba(255,255,255,0.10)',
+        opacity: 0.54,
     },
     microOpsInnerFrame: {
         position: 'absolute',
@@ -941,14 +941,14 @@ const styles = StyleSheet.create({
         bottom: 2,
         borderRadius: 38,
         borderWidth: 1,
-        borderColor: 'rgba(90,90,90,0.34)',
+        borderColor: 'rgba(255,255,255,0.02)',
     },
     microOpsCard: {
         width: '100%',
         paddingHorizontal: 18,
         paddingBottom: 18,
         paddingTop: 38,
-        backgroundColor: 'rgba(20,20,20,0.58)',
+        backgroundColor: 'rgba(2, 2, 7, 0.5)',
     },
     microOpsLabel: {
         fontFamily: Fonts.monoBold,
@@ -974,8 +974,8 @@ const styles = StyleSheet.create({
         padding: 12,
         borderRadius: Radius.md,
         borderWidth: 1,
-        borderColor: 'rgba(90,90,90,0.48)',
-        backgroundColor: 'rgba(20,20,20,0.56)',
+        borderColor: 'rgba(255,255,255,0.08)',
+        backgroundColor: 'rgba(2, 2, 7, 0.44)',
     },
     microOpsGlassVeilPrimary: {
         position: 'absolute',
