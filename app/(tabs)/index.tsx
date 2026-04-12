@@ -1335,7 +1335,7 @@ export default function DojoScreen() {
           <BlurView intensity={40} style={StyleSheet.absoluteFill} />
           <GlassCard style={styles.nudgeCard}>
             <Text style={styles.nudgeTitle}>SYSTEM ALERT</Text>
-            <Text style={styles.nudgeQuote}>"Yesterday you chose average."</Text>
+            <Text style={styles.nudgeQuote}>&quot;Yesterday you chose average.&quot;</Text>
             <Text style={styles.nudgeSubTitle}>Today choose power.</Text>
             <View style={styles.nudgeDivider} />
             <Text style={styles.nudgeInstruction}>Your streak handle is compromised. Initiate a session immediately to stabilize your momentum.</Text>
