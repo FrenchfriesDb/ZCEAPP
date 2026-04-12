@@ -1,9 +1,8 @@
 import { View, Text, StyleSheet, Pressable, TextInput, Animated, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
+import { Colors, Fonts, Spacing } from '@/constants/theme';
 import { router } from 'expo-router';
 import { useState, useEffect, useRef } from 'react';
-import GlassCard from '@/components/GlassCard';
 import GlassButton from '@/components/GlassButton';
 import DrillFeedbackPanel from '@/components/DrillFeedbackPanel';
 import { SPEED_PROMPTS } from '@/constants/zane';
@@ -88,7 +87,7 @@ export default function SpeedDrill() {
                 setFeedback(aiFeedback);
                 await completeDrill(20);
                 await addDrillLog('Speed Response', 100, aiFeedback);
-            } catch (e) {
+            } catch {
                 setFeedback("Connection severed. You took too long to think anyway.");
             } finally {
                 setIsLoading(false);
@@ -180,19 +179,7 @@ export default function SpeedDrill() {
                                 style={{ width: '100%' }}
                             />
                         </View>
-                    ) : null}
-
-                    {isLoading && (
-                        <View style={styles.analyzingOverlay}>
-                            <GlassCard darkGlass intensity={30} style={styles.analyzingCard}>
-                                <Text style={styles.analyzingTitle}>ANALYZING RESPONSE...</Text>
-                                <Text style={styles.analyzingBody}>
-                                    Zane is processing your frame control, timing, and charisma signal.
-                                </Text>
-                            </GlassCard>
-                        </View>
-                    )}
-                </View>
+                    ) : null}                </View>
             </ScrollView>
         </KeyboardAvoidingView>
     );
@@ -227,35 +214,4 @@ const styles = StyleSheet.create({
     // Buttons use <GlassButton/> now (global liquid glass look)
 
     feedbackContainer: { flex: 1, gap: 16 },
-    analyzingOverlay: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0,0,0,0.55)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-    },
-    analyzingCard: {
-        width: '100%',
-        paddingVertical: 24,
-        paddingHorizontal: 18,
-        borderRadius: 18,
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.14)',
-    },
-    analyzingTitle: {
-        color: '#FFFFFF',
-        fontFamily: Fonts.headingSemi,
-        fontSize: 16,
-        letterSpacing: 1.4,
-        textAlign: 'center',
-        marginBottom: 8,
-    },
-    analyzingBody: {
-        color: 'rgba(230,235,245,0.86)',
-        fontFamily: Fonts.headingSemi,
-        fontSize: 13,
-        lineHeight: 20,
-        textAlign: 'center',
-    },
 });
