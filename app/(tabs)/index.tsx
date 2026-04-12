@@ -1043,14 +1043,50 @@ export default function DojoScreen() {
         <View style={styles.divider} />
 
         {/* ═══ MICRO OPS ═══ */}
-        <SectionHeader
-          title="TODAY'S MINIMUM MOVE"
-          done={allMicroDone}
-          onReboot={rebootMicro}
-          count={microOps.filter(m => completedIds.includes(m.id)).length}
-          total={microOps.length}
-        />
-        {microOps.map(m => <MissionRow key={m.id} item={m} />)}
+        <View style={styles.microOpsBubbleShell}>
+          <BlurView intensity={110} tint="dark" style={styles.microOpsBubbleBlur} pointerEvents="none" />
+          <LinearGradient
+            colors={['rgba(54,54,54,0.54)', 'rgba(54,54,54,0.12)', 'rgba(20,20,20,1)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.microOpsBubbleRim}
+            pointerEvents="none"
+          />
+          <LinearGradient
+            colors={['rgba(54,54,54,0.46)', 'rgba(54,54,54,0.10)', 'rgba(54,54,54,0.00)']}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={styles.microOpsBubbleTopEdge}
+            pointerEvents="none"
+          />
+          <LinearGradient
+            colors={['rgba(54,54,54,0.40)', 'rgba(54,54,54,0.04)', 'rgba(54,54,54,0.00)']}
+            start={{ x: 0.16, y: 0.06 }}
+            end={{ x: 0.84, y: 0.94 }}
+            style={styles.microOpsBubbleCausticA}
+            pointerEvents="none"
+          />
+          <LinearGradient
+            colors={['rgba(54,54,54,0.28)', 'rgba(54,54,54,0.02)', 'rgba(54,54,54,0.00)']}
+            start={{ x: 0.78, y: 0.14 }}
+            end={{ x: 0.22, y: 0.94 }}
+            style={styles.microOpsBubbleCausticB}
+            pointerEvents="none"
+          />
+          <View style={styles.microOpsBubblePillPrimary} pointerEvents="none" />
+          <View style={styles.microOpsBubblePillSecondary} pointerEvents="none" />
+
+          <View style={styles.microOpsBubbleContent}>
+            <SectionHeader
+              title="TODAY'S MINIMUM MOVE"
+              done={allMicroDone}
+              onReboot={rebootMicro}
+              count={microOps.filter(m => completedIds.includes(m.id)).length}
+              total={microOps.length}
+            />
+            {microOps.map(m => <MissionRow key={m.id} item={m} />)}
+          </View>
+        </View>
 
         {/* ═══ STANDING ORDERS ═══ */}
         <View style={styles.divider} />
@@ -1688,6 +1724,83 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     marginBottom: 8,
     paddingHorizontal: 2,
+  },
+  microOpsBubbleShell: {
+    borderRadius: 28,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#363636',
+    backgroundColor: '#141414',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.5,
+    shadowRadius: 28,
+    elevation: 10,
+    marginBottom: 6,
+  },
+  microOpsBubbleBlur: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  microOpsBubbleRim: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  microOpsBubbleTopEdge: {
+    position: 'absolute',
+    top: 0,
+    left: 8,
+    right: 8,
+    height: 34,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    opacity: 0.88,
+  },
+  microOpsBubbleCausticA: {
+    position: 'absolute',
+    top: -10,
+    left: -12,
+    width: '84%',
+    height: 84,
+    borderRadius: 999,
+    opacity: 0.42,
+    transform: [{ rotate: '-7deg' }],
+  },
+  microOpsBubbleCausticB: {
+    position: 'absolute',
+    top: -6,
+    right: -10,
+    width: '56%',
+    height: 68,
+    borderRadius: 999,
+    opacity: 0.34,
+    transform: [{ rotate: '9deg' }],
+  },
+  microOpsBubblePillPrimary: {
+    position: 'absolute',
+    top: 6,
+    left: 14,
+    width: '56%',
+    height: 20,
+    borderRadius: 999,
+    backgroundColor: 'rgba(54,54,54,0.30)',
+    borderWidth: 1,
+    borderColor: 'rgba(54,54,54,0.52)',
+    opacity: 0.86,
+  },
+  microOpsBubblePillSecondary: {
+    position: 'absolute',
+    top: 14,
+    right: 18,
+    width: '30%',
+    height: 12,
+    borderRadius: 999,
+    backgroundColor: 'rgba(54,54,54,0.24)',
+    borderWidth: 1,
+    borderColor: 'rgba(54,54,54,0.44)',
+    opacity: 0.8,
+  },
+  microOpsBubbleContent: {
+    padding: 14,
+    backgroundColor: 'rgba(20,20,20,0.90)',
   },
   sectionTitle: {
     fontFamily: Fonts.monoBold,
