@@ -137,7 +137,7 @@ export default function ProfileScreen() {
                 </GlassCard>
 
                 {!hasActiveSubscription && (
-                    <GlassCard themed style={styles.subscriptionBanner} intensity={22}>
+                    <GlassCard themed style={styles.subscriptionBanner} intensity={22} noPadding>
                         <Pressable onPress={() => router.push('/settings/subscription')} style={styles.subscriptionBannerPressable}>
                             <LinearGradient
                                 colors={['rgba(255,255,255,0.14)', 'rgba(255,255,255,0.04)', 'rgba(0,0,0,0.26)', 'rgba(0,0,0,0.52)']}
@@ -455,11 +455,16 @@ const styles = StyleSheet.create({
     },
     subscriptionBanner: {
         marginBottom: 16,
-        borderColor: 'rgba(255,255,255,0.10)',
+        borderColor: 'rgba(255,255,255,0.06)',
         borderWidth: 1,
         borderRadius: Radius.xl,
         overflow: 'hidden',
-        backgroundColor: 'rgba(2, 2, 7, 0.56)',
+        backgroundColor: 'rgba(2, 2, 7, 0.54)',
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.42,
+        shadowRadius: 28,
+        elevation: 24,
     },
     subscriptionBannerPressable: {
         flexDirection: 'row',
@@ -468,7 +473,8 @@ const styles = StyleSheet.create({
         gap: 12,
         borderRadius: Radius.xl,
         overflow: 'hidden',
-        paddingVertical: 4,
+        paddingVertical: 14,
+        paddingHorizontal: 16,
     },
     subscriptionBannerRim: {
         ...StyleSheet.absoluteFillObject,
@@ -476,8 +482,8 @@ const styles = StyleSheet.create({
     subscriptionBannerSheen: {
         position: 'absolute',
         top: 2,
-        left: 10,
-        right: 10,
+        left: 7,
+        right: 7,
         height: '52%',
         borderRadius: Radius.xl,
     },
@@ -492,8 +498,8 @@ const styles = StyleSheet.create({
     },
     subscriptionBannerPillPrimary: {
         position: 'absolute',
-        top: 7,
-        left: 14,
+        top: 8,
+        left: 16,
         width: '52%',
         height: 14,
         borderRadius: 999,
@@ -504,8 +510,8 @@ const styles = StyleSheet.create({
     },
     subscriptionBannerPillSecondary: {
         position: 'absolute',
-        top: 15,
-        right: 20,
+        top: 16,
+        right: 22,
         width: '28%',
         height: 9,
         borderRadius: 999,
