@@ -3,8 +3,8 @@ import GlassCard from '@/components/GlassCard';
 import ProgressGraph from '@/components/ProgressGraph';
 import StaticMap from '@/components/StaticMap';
 import { Fonts, Radius, Spacing, XPConfig } from '@/constants/theme';
-import { useTextColors } from '@/context/TextColorsContext';
 import { useSubscription } from '@/context/SubscriptionContext';
+import { useTextColors } from '@/context/TextColorsContext';
 import { useUser } from '@/context/UserContext';
 import { useTimeColors } from '@/hooks/useTimeColors';
 import { formatDisplayName } from '@/utils/formatters';
@@ -147,14 +147,14 @@ export default function ProfileScreen() {
                                 pointerEvents="none"
                             />
                             <LinearGradient
-                                colors={['rgba(255,255,255,0.28)', 'rgba(255,255,255,0.08)', 'rgba(255,255,255,0.00)']}
+                                colors={['rgba(150,150,150,0.16)', 'rgba(120,120,120,0.04)', 'rgba(255,255,255,0.00)']}
                                 start={{ x: 0.5, y: 0 }}
                                 end={{ x: 0.5, y: 1 }}
                                 style={styles.subscriptionBannerSheen}
                                 pointerEvents="none"
                             />
                             <LinearGradient
-                                colors={['rgba(255,255,255,0.15)', 'rgba(255,255,255,0.02)', 'rgba(255,255,255,0.00)']}
+                                colors={['rgba(120,120,120,0.10)', 'rgba(100,100,100,0.02)', 'rgba(255,255,255,0.00)']}
                                 start={{ x: 0.2, y: 0.05 }}
                                 end={{ x: 0.82, y: 0.95 }}
                                 style={styles.subscriptionBannerVeil}
@@ -481,44 +481,45 @@ const styles = StyleSheet.create({
     },
     subscriptionBannerSheen: {
         position: 'absolute',
-        top: 2,
-        left: 7,
-        right: 7,
-        height: '52%',
+        top: 3,
+        left: 14,
+        right: 14,
+        height: '34%',
         borderRadius: Radius.xl,
+        opacity: 0.62,
     },
     subscriptionBannerVeil: {
         position: 'absolute',
-        top: 2,
-        left: 4,
-        right: 4,
-        height: '60%',
+        top: 3,
+        left: 12,
+        right: 12,
+        height: '42%',
         borderRadius: Radius.xl,
-        opacity: 0.6,
+        opacity: 0.38,
     },
     subscriptionBannerPillPrimary: {
         position: 'absolute',
-        top: 8,
+        top: 9,
         left: 16,
-        width: '52%',
-        height: 14,
+        width: '42%',
+        height: 10,
         borderRadius: 999,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.20)',
-        backgroundColor: 'rgba(255,255,255,0.08)',
-        opacity: 0.72,
+        borderColor: 'rgba(140,140,140,0.20)',
+        backgroundColor: 'rgba(100,100,100,0.08)',
+        opacity: 0.52,
     },
     subscriptionBannerPillSecondary: {
         position: 'absolute',
-        top: 16,
-        right: 22,
-        width: '28%',
-        height: 9,
+        top: 14,
+        right: 24,
+        width: '20%',
+        height: 7,
         borderRadius: 999,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.16)',
-        backgroundColor: 'rgba(255,255,255,0.06)',
-        opacity: 0.62,
+        borderColor: 'rgba(130,130,130,0.18)',
+        backgroundColor: 'rgba(100,100,100,0.06)',
+        opacity: 0.46,
     },
     subscriptionBannerLeft: {
         flex: 1,
