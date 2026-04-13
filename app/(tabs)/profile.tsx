@@ -8,6 +8,7 @@ import { useSubscription } from '@/context/SubscriptionContext';
 import { useUser } from '@/context/UserContext';
 import { useTimeColors } from '@/hooks/useTimeColors';
 import { formatDisplayName } from '@/utils/formatters';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -138,6 +139,29 @@ export default function ProfileScreen() {
                 {!hasActiveSubscription && (
                     <GlassCard themed style={styles.subscriptionBanner} intensity={22}>
                         <Pressable onPress={() => router.push('/settings/subscription')} style={styles.subscriptionBannerPressable}>
+                            <LinearGradient
+                                colors={['rgba(255,255,255,0.14)', 'rgba(255,255,255,0.04)', 'rgba(0,0,0,0.26)', 'rgba(0,0,0,0.52)']}
+                                start={{ x: 0.12, y: 0 }}
+                                end={{ x: 0.9, y: 1 }}
+                                style={styles.subscriptionBannerRim}
+                                pointerEvents="none"
+                            />
+                            <LinearGradient
+                                colors={['rgba(255,255,255,0.28)', 'rgba(255,255,255,0.08)', 'rgba(255,255,255,0.00)']}
+                                start={{ x: 0.5, y: 0 }}
+                                end={{ x: 0.5, y: 1 }}
+                                style={styles.subscriptionBannerSheen}
+                                pointerEvents="none"
+                            />
+                            <LinearGradient
+                                colors={['rgba(255,255,255,0.15)', 'rgba(255,255,255,0.02)', 'rgba(255,255,255,0.00)']}
+                                start={{ x: 0.2, y: 0.05 }}
+                                end={{ x: 0.82, y: 0.95 }}
+                                style={styles.subscriptionBannerVeil}
+                                pointerEvents="none"
+                            />
+                            <View style={styles.subscriptionBannerPillPrimary} pointerEvents="none" />
+                            <View style={styles.subscriptionBannerPillSecondary} pointerEvents="none" />
                             <View style={styles.subscriptionBannerLeft}>
                                 <Text style={styles.subscriptionBannerTitle}>ZCE PRO STATUS</Text>
                                 <Text style={styles.subscriptionBannerPlan}>
@@ -431,17 +455,69 @@ const styles = StyleSheet.create({
     },
     subscriptionBanner: {
         marginBottom: 16,
-        borderColor: 'rgba(255,255,255,0.14)',
+        borderColor: 'rgba(255,255,255,0.10)',
+        borderWidth: 1,
+        borderRadius: Radius.xl,
+        overflow: 'hidden',
+        backgroundColor: 'rgba(2, 2, 7, 0.56)',
     },
     subscriptionBannerPressable: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: 12,
+        borderRadius: Radius.xl,
+        overflow: 'hidden',
+        paddingVertical: 4,
+    },
+    subscriptionBannerRim: {
+        ...StyleSheet.absoluteFillObject,
+    },
+    subscriptionBannerSheen: {
+        position: 'absolute',
+        top: 2,
+        left: 10,
+        right: 10,
+        height: '52%',
+        borderRadius: Radius.xl,
+    },
+    subscriptionBannerVeil: {
+        position: 'absolute',
+        top: 2,
+        left: 4,
+        right: 4,
+        height: '60%',
+        borderRadius: Radius.xl,
+        opacity: 0.6,
+    },
+    subscriptionBannerPillPrimary: {
+        position: 'absolute',
+        top: 7,
+        left: 14,
+        width: '52%',
+        height: 14,
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.20)',
+        backgroundColor: 'rgba(255,255,255,0.08)',
+        opacity: 0.72,
+    },
+    subscriptionBannerPillSecondary: {
+        position: 'absolute',
+        top: 15,
+        right: 20,
+        width: '28%',
+        height: 9,
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.16)',
+        backgroundColor: 'rgba(255,255,255,0.06)',
+        opacity: 0.62,
     },
     subscriptionBannerLeft: {
         flex: 1,
         minWidth: 0,
+        zIndex: 2,
     },
     subscriptionBannerTitle: {
         fontFamily: Fonts.monoBold,
@@ -468,7 +544,8 @@ const styles = StyleSheet.create({
     },
     subscriptionBannerArrow: {
         fontSize: 22,
-        color: 'rgba(255,255,255,0.62)',
+        color: 'rgba(255,255,255,0.74)',
+        zIndex: 2,
     },
     emojiFix: {
         fontFamily: Platform.select({

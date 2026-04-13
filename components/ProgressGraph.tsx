@@ -97,7 +97,7 @@ export default function ProgressGraph({ dailyXp, color, totalXp, currentStreak }
                     <Pressable
                         key={r}
                         onPress={() => setRange(r)}
-                        style={[styles.toggleBtn, range === r && [styles.toggleBtnActive, { borderColor: graphColor + '66', backgroundColor: graphColor + '22' }]]}
+                        style={[styles.toggleBtn, range === r && [styles.toggleBtnActive, { borderColor: graphColor + '33', backgroundColor: graphColor + '10' }]]}
                     >
                         <Text style={[styles.toggleText, { color: graphColor }, range === r && [styles.toggleTextActive, { color: graphColor }]]}>{r}</Text>
                     </Pressable>
@@ -198,13 +198,13 @@ const styles = StyleSheet.create({
         paddingVertical: 6,
         paddingHorizontal: 14,
         borderRadius: Radius.pill,
-        backgroundColor: 'rgba(255,255,255,0.04)',
+        backgroundColor: 'rgba(255,255,255,0.02)',
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.08)',
+        borderColor: 'rgba(255,255,255,0.06)',
     },
     toggleBtnActive: {
-        backgroundColor: 'rgba(255,255,255,0.12)',
-        borderColor: 'rgba(255,255,255,0.2)',
+        backgroundColor: 'rgba(255,255,255,0.08)',
+        borderColor: 'rgba(255,255,255,0.16)',
     },
     toggleText: {
         fontFamily: Fonts.monoBold,
