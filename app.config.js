@@ -10,8 +10,8 @@ module.exports = () => {
     name: 'ZCE',
     slug: 'ZCE',
     scheme: 'zce',
-    version: '1.0.2',
-    runtimeVersion: '1.0.2',
+    version: '2.0',
+    runtimeVersion: '2.0',
     updates: {
       url: 'https://u.expo.dev/d97e9439-eb4a-498b-ab9a-862ee3f3a6a5',
     },

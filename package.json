@@ -1,7 +1,7 @@
 {
   "name": "zce",
   "main": "expo-router/entry",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "scripts": {
     "start": "NODE_OPTIONS=--max-old-space-size=8192 expo start --host lan --port 8082",
     "start:clear": "NODE_OPTIONS=--max-old-space-size=8192 expo start --clear --host lan --port 8082",
