@@ -1,34 +1,29 @@
-const base = require('./app.json');
-
 const truthy = new Set(['1', 'true', 'yes', 'on']);
 const toBool = (value) => truthy.has(String(value || '').toLowerCase());
 
 module.exports = () => {
-  const expo = base.expo || {};
-  const extra = expo.extra || {};
+  const extra = {};
   const revenuecat = extra.revenuecat || {};
   const allowInsecureClientProviders = toBool(process.env.EXPO_PUBLIC_ALLOW_INSECURE_CLIENT_PROVIDERS);
-  const fastStart = toBool(process.env.EXPO_FAST_START);
-  const enableSplash = toBool(process.env.EXPO_ENABLE_SPLASH);
-  const plugins = Array.isArray(expo.plugins) ? [...expo.plugins] : [];
-  const disableNewArch = toBool(process.env.EXPO_DISABLE_NEW_ARCH);
-  const filteredPlugins = plugins.filter((plugin) => {
-    const name = Array.isArray(plugin) ? plugin[0] : plugin;
-    if (!enableSplash && name === 'expo-splash-screen') {
-      return false;
-    }
-    if (fastStart && name === 'expo-splash-screen') {
-      return false;
-    }
-    return true;
-  });
 
   return {
-    ...expo,
-    ...(disableNewArch ? { newArchEnabled: false } : {}),
-    plugins: filteredPlugins,
+    name: 'ZCE',
+    slug: 'ZCE',
+    scheme: 'zce',
+    version: '1.0.2',
+    runtimeVersion: '1.0.2',
+    updates: {
+      url: 'https://u.expo.dev/d97e9439-eb4a-498b-ab9a-862ee3f3a6a5',
+    },
+    experiments: {
+      typedRoutes: false,
+      reactCompiler: false,
+    },
     extra: {
       ...extra,
+      router: {
+        root: 'app',
+      },
       aiProxyUrl: process.env.EXPO_PUBLIC_AI_PROXY_URL || '',
       publicShareUrl: process.env.EXPO_PUBLIC_SHARE_URL || '',
       allowInsecureClientProviders,
@@ -37,6 +32,9 @@ module.exports = () => {
       aiProviders: {},
       revenuecat: {
         ...revenuecat,
+        entitlementId: 'ZCE Pro',
+        monthlyProductId: 'zce_director_monthly_sub',
+        yearlyProductId: 'zce_director_yearly_sub',
         iosApiKey: process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY || '',
         androidApiKey: process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY || '',
       },
@@ -48,6 +46,9 @@ module.exports = () => {
         messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '',
         appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || '',
         measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID || '',
+      },
+      eas: {
+        projectId: 'd97e9439-eb4a-498b-ab9a-862ee3f3a6a5',
       },
     },
   };

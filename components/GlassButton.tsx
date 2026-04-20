@@ -1,18 +1,18 @@
-import React, { useRef, useEffect } from 'react';
-import {
-    View,
-    Text,
-    Pressable,
-    StyleSheet,
-    Animated,
-    ViewStyle,
-    TextStyle,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import { usePathname } from 'expo-router';
 import { Colors, Fonts, FontSizes, Radius } from '@/constants/theme';
 import { useTimeColors } from '@/hooks/useTimeColors';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import { usePathname } from 'expo-router';
+import { useEffect, useRef } from 'react';
+import {
+    Animated,
+    Pressable,
+    StyleSheet,
+    Text,
+    TextStyle,
+    View,
+    ViewStyle,
+} from 'react-native';
 
 /**
  * Ultra-realistic "water-glass" button.
@@ -211,6 +211,8 @@ export default function GlassButton({
     const pressOut = () =>
         Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, speed: 30, bounciness: 5 }).start();
 
+    const showGlow = glow && !disabled;
+
     const { ph, pv, fs, circle } = SIZE[size];
     const t = look === 'plain'
         ? (isDrillRoute ? TINT.monochrome : TINT.dark)
@@ -298,7 +300,7 @@ export default function GlassButton({
                 style={{ opacity: disabled ? 0.3 : 1 }}
             >
                 {/* 1 ── GLOW HALO (optional) */}
-                {glow && (
+                {showGlow && (
                     <Animated.View style={[
                         styles.glowHalo,
                         {

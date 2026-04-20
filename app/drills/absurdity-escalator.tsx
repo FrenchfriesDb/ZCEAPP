@@ -181,14 +181,14 @@ Constraints:
             <GlassCard style={styles.infoCard}>
               <Text style={styles.infoLabel}>THE PROBLEM:</Text>
               <Text style={styles.infoText}>
-                You stay surface-level. Your humor doesn't escalate. You're afraid to go absurd. Time to lean into insanity.
+                You stay surface-level. Your humor doesn&apos;t escalate. You&apos;re afraid to go absurd. Time to lean into insanity.
               </Text>
             </GlassCard>
 
             <GlassCard style={styles.promptCard}>
               <Text style={styles.promptLabel}>STARTING PREMISE:</Text>
               <Text style={[styles.promptText, { color: '#FFFFFF' }]}>
-                "{safePrompt}"
+                &quot;{safePrompt}&quot;
               </Text>
             </GlassCard>
 
@@ -218,7 +218,7 @@ Constraints:
           <>
             <GlassCard style={styles.volleyContextCard}>
               <Text style={styles.rulesLabel}>CURRENT PROMPT:</Text>
-              <Text style={[styles.volleyPromptText, { color: '#FFFFFF' }]}>"{safePrompt}"</Text>
+              <Text style={[styles.volleyPromptText, { color: '#FFFFFF' }]}>&quot;{safePrompt}&quot;</Text>
               <Text style={[styles.rulesLabel, { marginTop: 10 }]}>RULES:</Text>
               <Text style={styles.rulesText}>
                 • Escalate each reply more than the last.{"\n"}
@@ -273,7 +273,7 @@ Constraints:
             <GlassCard style={styles.completeCard}>
               <Text style={styles.completeTitle}>ABSURDITY MASTERED ✓</Text>
               <Text style={styles.completeText}>
-                5 volleys of pure escalation. You just proved you can take a boring premise and launch it into the stratosphere. That's comedic control.
+                5 volleys of pure escalation. You just proved you can take a boring premise and launch it into the stratosphere. That&apos;s comedic control.
               </Text>
             </GlassCard>
 

@@ -1,14 +1,14 @@
-import { View, Text, StyleSheet, Pressable, Animated, ScrollView, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
-import { router } from 'expo-router';
-import { useState, useRef, useEffect } from 'react';
-import GlassCard from '@/components/GlassCard';
-import GlassButton from '@/components/GlassButton';
 import DrillFeedbackPanel from '@/components/DrillFeedbackPanel';
+import GlassButton from '@/components/GlassButton';
+import GlassCard from '@/components/GlassCard';
+import { Colors, Fonts, Spacing } from '@/constants/theme';
 import { LINK_WORDS } from '@/constants/zane';
 import { useUser } from '@/context/UserContext';
 import { AIService } from '@/services/ai';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export default function LinkDrill() {
     const { user, completeDrill, addDrillLog } = useUser();
@@ -115,7 +115,7 @@ export default function LinkDrill() {
                 <View style={styles.content}>
                     {!active && !isFinished && !feedback ? (
                         <View style={styles.centerBox}>
-                            <Text style={styles.intro}>Find the connection in 10s. Don't let the frame slip.</Text>
+                            <Text style={styles.intro}>Find the connection in 10s. Don&apos;t let the frame slip.</Text>
                             <GlassButton
                                 label="RANDOMIZE + START"
                                 onPress={shuffle}
@@ -157,7 +157,7 @@ export default function LinkDrill() {
                         <View style={styles.feedbackSection}>
                             {!feedback ? (
                                 <View style={styles.logSection}>
-                                    <Text style={styles.label}>WHAT'S THE LINK?</Text>
+                                    <Text style={styles.label}>WHAT&apos;S THE LINK?</Text>
                                     <TextInput
                                         style={styles.input}
                                         placeholder="Explain the connection..."

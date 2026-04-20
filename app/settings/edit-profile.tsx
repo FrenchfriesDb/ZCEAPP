@@ -1,13 +1,13 @@
-import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, Platform, Alert, Modal } from 'react-native';
-import { router } from 'expo-router';
-import { useState } from 'react';
+import FluentEmoji, { type FluentEmojiName, resolveFluentEmojiName } from '@/components/FluentEmoji';
 import { Fonts, Radius } from '@/constants/theme';
 import { useSubscription } from '@/context/SubscriptionContext';
 import { useUser } from '@/context/UserContext';
 import { useTimeColors } from '@/hooks/useTimeColors';
 import { formatDisplayName } from '@/utils/formatters';
 import { Ionicons } from '@expo/vector-icons';
-import FluentEmoji, { type FluentEmojiName, resolveFluentEmojiName } from '@/components/FluentEmoji';
+import { router } from 'expo-router';
+import { useState } from 'react';
+import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Use explicit Fluent icon names to avoid unicode fallback glitches on web/native.
@@ -34,7 +34,7 @@ export default function EditProfileScreen() {
     const insets = useSafeAreaInsets();
     const timePalette = useTimeColors();
     // Use the lightest color in the palette for text (last index) to ensure visibility on ALL themes including dark ones
-    const systemColor = timePalette[timePalette.length - 1];
+    const systemColor = timePalette.palette[timePalette.palette.length - 1] || '#FFFFFF';
 
     // Form state
     const [name, setName] = useState(user?.name || '');

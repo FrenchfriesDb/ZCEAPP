@@ -1,12 +1,12 @@
-import { View, Text, StyleSheet, Pressable, Alert, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
-import { useState, useEffect } from 'react';
+import GlassButton from '@/components/GlassButton';
+import GlassCard from '@/components/GlassCard';
+import { Colors, Fonts, Spacing } from '@/constants/theme';
 import { useUser } from '@/context/UserContext';
 import { useTimeColors } from '@/hooks/useTimeColors';
-import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
-import GlassCard from '@/components/GlassCard';
-import GlassButton from '@/components/GlassButton';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 const PROMPTS = [
   "Your startup just got acquired for $100M.",
@@ -122,7 +122,7 @@ export default function YesAndSimulatorDrill() {
             <GlassCard style={styles.infoCard}>
               <Text style={styles.infoLabel}>THE PROBLEM:</Text>
               <Text style={styles.infoText}>
-                You shut down ideas or offer no real build. You kill creativity. It's time to master the improv move that makes people genius: "Yes And."
+                You shut down ideas or offer no real build. You kill creativity. It&apos;s time to master the improv move that makes people genius: &quot;Yes And.&quot;
               </Text>
             </GlassCard>
 
@@ -130,7 +130,7 @@ export default function YesAndSimulatorDrill() {
               <Text style={styles.rulesLabel}>RULES:</Text>
               <Text style={styles.rulesText}>
                 • I give you a premise.{'\n'}
-                • You say "Yeah, and..." and continue the idea.{'\n'}
+                • You say &quot;Yeah, and...&quot; and continue the idea.{"\n"}
                 • Add specificity, humor, absurdity.{'\n'}
                 • Build momentum, not just agreement.{'\n'}
                 • Record your voice clearly.
@@ -153,13 +153,13 @@ export default function YesAndSimulatorDrill() {
             <GlassCard style={[styles.promptCard, { borderColor: systemColor + '44' }]}>
               <Text style={styles.promptLabel}>THE PREMISE:</Text>
               <Text style={[styles.promptText, { color: '#FFFFFF' }]}>
-                "{safePrompt}"
+                &quot;{safePrompt}&quot;
               </Text>
             </GlassCard>
 
             <GlassCard style={styles.instructionCard}>
               <Text style={styles.instructionText}>
-                Record yourself saying "Yeah, and..." then build on this premise with specificity and absurdity.
+                Record yourself saying &quot;Yeah, and...&quot; then build on this premise with specificity and absurdity.
               </Text>
             </GlassCard>
 
@@ -179,7 +179,7 @@ export default function YesAndSimulatorDrill() {
             <GlassCard style={styles.recordCard}>
               <Text style={[styles.recordIndicator, { color: '#FF4444' }]}>● RECORDING</Text>
               <Text style={styles.recordTime}>{recordingTime}s</Text>
-              <Text style={styles.recordDesc}>Start with "Yeah, and..." – speak clearly.</Text>
+              <Text style={styles.recordDesc}>Start with &quot;Yeah, and...&quot; - speak clearly.</Text>
             </GlassCard>
 
             <GlassButton

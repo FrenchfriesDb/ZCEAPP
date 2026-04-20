@@ -1,14 +1,13 @@
-import { View, Text, StyleSheet, Pressable, TextInput, Animated, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Fonts, Spacing } from '@/constants/theme';
-import { router } from 'expo-router';
-import { useState, useEffect, useRef } from 'react';
-import GlassButton from '@/components/GlassButton';
 import DrillFeedbackPanel from '@/components/DrillFeedbackPanel';
+import GlassButton from '@/components/GlassButton';
+import { Colors, Fonts, Spacing } from '@/constants/theme';
 import { SPEED_PROMPTS } from '@/constants/zane';
 import { useUser } from '@/context/UserContext';
 import { AIService } from '@/services/ai';
-
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 export default function SpeedDrill() {
     const { user, completeDrill, addDrillLog } = useUser();
     const [active, setActive] = useState(false);
@@ -23,42 +22,6 @@ export default function SpeedDrill() {
     const timerColor = timerRatio > 0.66 ? '#00FF64' : timerRatio > 0.33 ? '#F89B29' : '#FF3B30';
 
     const timerAnim = useRef(new Animated.Value(1)).current;
-
-    useEffect(() => {
-        let interval: any = null;
-        if (active && timeLeft > 0) {
-            interval = setInterval(() => {
-                setTimeLeft((prev) => Math.max(0, prev - 0.1));
-            }, 100);
-
-            Animated.timing(timerAnim, {
-                toValue: 0,
-                duration: timeLeft * 1000,
-                useNativeDriver: false
-            }).start();
-
-        } else if (active && timeLeft <= 0) { // Timeout
-            finishDrill(false);
-        }
-        return () => {
-            if (interval) clearInterval(interval);
-            timerAnim.stopAnimation();
-        };
-    }, [active, timeLeft]);
-
-    const generatePrompt = () => {
-        if (isLoading) return; // Prevent race condition
-        const safePool = Array.isArray(SPEED_PROMPTS) && SPEED_PROMPTS.length > 0
-            ? SPEED_PROMPTS
-            : ['Someone asks: "Why are you so quiet today?"'];
-        const random = safePool[Math.floor(Math.random() * safePool.length)] || safePool[0];
-        setPrompt(random);
-        setResponse("");
-        setFeedback("");
-        setTimeLeft(TOTAL_SECONDS);
-        setActive(true);
-        timerAnim.setValue(1);
-    };
 
     const finishDrill = async (success: boolean) => {
         setActive(false);
@@ -82,7 +45,7 @@ export default function SpeedDrill() {
                 `;
                 const aiFeedback = await AIService.generateResponse([
                     { role: 'user', content: analysisRequest }
-                ], 'groq', user?.name || 'AGENT', user?.level || 1, 'drill', { drillPlan: ((user as any)?.subscriptionTier === 'director' ? 'pro' : 'basic') });
+                ], 'groq', user?.name || 'AGENT', user?.level || 1, 'drill');
 
                 setFeedback(aiFeedback);
                 await completeDrill(20);
@@ -97,6 +60,45 @@ export default function SpeedDrill() {
             setFeedback(msg);
             await addDrillLog('Speed Response', 0, msg);
         }
+    };
+
+    const finishDrillRef = useRef(finishDrill);
+    finishDrillRef.current = finishDrill;
+
+    useEffect(() => {
+        let interval: any = null;
+        if (active && timeLeft > 0) {
+            interval = setInterval(() => {
+                setTimeLeft((prev) => Math.max(0, prev - 0.1));
+            }, 100);
+
+            Animated.timing(timerAnim, {
+                toValue: 0,
+                duration: timeLeft * 1000,
+                useNativeDriver: false
+            }).start();
+
+        } else if (active && timeLeft <= 0) { // Timeout
+            void finishDrillRef.current(false);
+        }
+        return () => {
+            if (interval) clearInterval(interval);
+            timerAnim.stopAnimation();
+        };
+    }, [active, timeLeft, timerAnim]);
+
+    const generatePrompt = () => {
+        if (isLoading) return; // Prevent race condition
+        const safePool = Array.isArray(SPEED_PROMPTS) && SPEED_PROMPTS.length > 0
+            ? SPEED_PROMPTS
+            : ['Someone asks: "Why are you so quiet today?"'];
+        const random = safePool[Math.floor(Math.random() * safePool.length)] || safePool[0];
+        setPrompt(random);
+        setResponse("");
+        setFeedback("");
+        setTimeLeft(TOTAL_SECONDS);
+        setActive(true);
+        timerAnim.setValue(1);
     };
 
     return (
@@ -179,7 +181,9 @@ export default function SpeedDrill() {
                                 style={{ width: '100%' }}
                             />
                         </View>
-                    ) : null}                </View>
+                    ) : null}
+
+                </View>
             </ScrollView>
         </KeyboardAvoidingView>
     );
@@ -196,7 +200,7 @@ const styles = StyleSheet.create({
     scrollContent: { flexGrow: 1 },
     content: { flex: 1, padding: Spacing.lg, paddingTop: 12 },
     centerBox: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 20 },
-    intro: { color: '#FFFFFF', fontFamily: Fonts.headingSemi, fontSize: 16, marginBottom: 20, textAlign: 'center' },
+    intro: { color: '#FFFFFF', fontFamily: Fonts.nunito, fontSize: 16, marginBottom: 20, textAlign: 'center' },
 
     // Buttons use <GlassButton/> now (global liquid glass look)
 
@@ -209,7 +213,7 @@ const styles = StyleSheet.create({
 
     input: {
         backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: 14,
-        color: Colors.textPrimary, fontFamily: Fonts.headingSemi, fontSize: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
+        color: Colors.textPrimary, fontFamily: Fonts.nunito, fontSize: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
     },
     // Buttons use <GlassButton/> now (global liquid glass look)
 

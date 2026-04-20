@@ -409,7 +409,7 @@ export default function DecibelBreakerDrill() {
               <Text style={styles.rulesLabel}>RULES:</Text>
               <Text style={styles.rulesText}>
                 • Speak from your diaphragm, not your throat{'\n'}
-                • Project like you're talking to the back of a theater{'\n'}
+                • Project like you&apos;re talking to the back of a theater{'\n'}
                 • No mumbling. Every word crisp and strong.{'\n'}
                 • Uses live mic metering. Numbers are device-estimated, not lab-calibrated SPL.
               </Text>

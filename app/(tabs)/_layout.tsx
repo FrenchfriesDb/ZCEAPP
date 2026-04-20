@@ -1,14 +1,12 @@
-import React from 'react';
-import { View, Pressable, StyleSheet } from 'react-native';
-import { Tabs } from 'expo-router';
-import { Redirect } from 'expo-router';
+import FluentEmoji, { type FluentEmojiName } from '@/components/FluentEmoji';
+import { Radius } from '@/constants/theme';
+import { useUser } from '@/context/UserContext';
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Radius } from '@/constants/theme';
+import { Redirect, Tabs } from 'expo-router';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { TextColorsProvider, useTextColors } from '../../context/TextColorsContext';
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import FluentEmoji, { type FluentEmojiName } from '@/components/FluentEmoji';
-import { useUser } from '@/context/UserContext';
 
 const TAB_ICON_SIZE = 24;
 const TAB_ICON_FRAME = 30;
@@ -106,12 +104,12 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
 }
 
 export default function TabLayout() {
-  const { user, isLoading, hasCompletedOnboarding } = useUser();
+  const { user, isLoading } = useUser();
 
   if (isLoading) return null;
 
   if (!user) {
-    return <Redirect href={hasCompletedOnboarding ? '/auth/login' : '/auth/onboarding'} />;
+    return <Redirect href="/auth/login" />;
   }
 
   return (

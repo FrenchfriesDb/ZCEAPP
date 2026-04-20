@@ -1,12 +1,21 @@
-import React, { useState } from 'react';
-import {
-    View, Text, StyleSheet, Modal, TextInput, Pressable,
-    Animated, Image, Alert, ScrollView, Platform, ActionSheetIOS,
-    KeyboardAvoidingView
-} from 'react-native';
+import { Colors, Fonts, Radius } from '@/constants/theme';
 import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
-import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
+import { useState } from 'react';
+import {
+    ActionSheetIOS,
+    Alert,
+    Image,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View
+} from 'react-native';
 import GlassButton from './GlassButton';
 
 interface ProofModalProps {
@@ -25,7 +34,7 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
             Alert.alert('PROOF REQUIRED', 'Submit at least one form of proof: text or photo.');
             return;
         }
-        onComplete({ textProof, photoUri });
+        onComplete({ text: textProof || undefined, photoUri: photoUri ?? undefined });
         setTextProof('');
         setPhotoUri(null);
         onClose();
@@ -131,13 +140,13 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
 
                         <View style={styles.modalActions}>
                             <GlassButton
-                                title="CANCEL"
+                                label="CANCEL"
                                 onPress={onClose}
                                 style={styles.cancelButton}
-                                textStyle={styles.cancelText}
+                                labelStyle={styles.cancelText}
                             />
                             <GlassButton
-                                title="SUBMIT PROOF"
+                                label="SUBMIT PROOF"
                                 onPress={handleSubmit}
                                 style={styles.submitButton}
                             />

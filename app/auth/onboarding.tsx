@@ -700,7 +700,6 @@ export default function OnboardingScreen() {
                                 <View style={styles.nativePaywallStage}>
                                     <RevenueCatUI.Paywall
                                         options={{ offering: paywallOffering }}
-                                        displayCloseButton
                                         onPurchaseCompleted={() => {
                                             Alert.alert('ZCE PRO ACTIVATED', 'Director access unlocked. Let\'s move.');
                                             void refreshEntitlements();
@@ -848,7 +847,6 @@ export default function OnboardingScreen() {
                                         goal: mission.goal || 'General',
                                         commitment: mission.commitment || '30 days',
                                     });
-                                    await completeOnboarding();
                                     setReturnToOnboardingStage(6);
                                     router.push('/auth/signup');
                                 }} style={({ pressed }) => [styles.authBtn, compactAuthStage && styles.authBtnCompact, pressed && styles.authBtnPressed]}>
@@ -860,7 +858,6 @@ export default function OnboardingScreen() {
                                         goal: mission.goal || 'General',
                                         commitment: mission.commitment || '30 days',
                                     });
-                                    await completeOnboarding();
                                     setReturnToOnboardingStage(7);
                                     router.push('/auth/login');
                                 }} style={({ pressed }) => [styles.authLink, pressed && styles.authLinkPressed]}>
@@ -894,7 +891,6 @@ export default function OnboardingScreen() {
                                             goal: mission.goal || 'General',
                                             commitment: mission.commitment || '30 days',
                                         });
-                                        await completeOnboarding();
                                         setReturnToOnboardingStage(7);
                                         router.push('/auth/login');
                                     }} style={({ pressed }) => [styles.authBtn, compactAuthStage && styles.authBtnCompact, pressed && styles.authBtnPressed]}>

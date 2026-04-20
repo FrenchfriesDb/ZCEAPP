@@ -3,7 +3,6 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#05060b" />
     <meta name="description" content="ZCE is a confidence and presence training system. Daily drills, AI coaching, and streak pressure." />
     <title>ZCE | Z.A.N.E. Protocol</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -27,7 +26,6 @@
         <a href="#share">Share</a>
       </nav>
       <div class="nav-actions">
-        <a class="ghost" href="https://apps.apple.com/app/id6759347826">App Store</a>
         <button class="cta" data-open-app>Open App</button>
       </div>
     </header>
@@ -42,7 +40,6 @@
           </p>
           <div class="hero-actions">
             <button class="cta" data-open-app>Open the App</button>
-            <a class="ghost" href="https://apps.apple.com/app/id6759347826">Get on App Store</a>
           </div>
           <div class="hero-metrics">
             <div>
@@ -143,7 +140,6 @@
           </div>
           <div class="share-actions">
             <button class="cta" data-open-app>Open App</button>
-            <a class="ghost" href="https://apps.apple.com/app/id6759347826">App Store</a>
           </div>
         </div>
       </section>
@@ -165,18 +161,15 @@
     <script>
       (function () {
         var appStoreUrl = 'https://apps.apple.com/app/id6759347826';
+
         function openApp() {
-          var src = new URLSearchParams(window.location.search).get('src');
-          var deepLink = 'zce:///?src=' + (src || 'share');
-          var timer = setTimeout(function () {
-            window.location.href = appStoreUrl;
-          }, 1400);
-          window.location.href = deepLink;
-          window.addEventListener('pagehide', function () { clearTimeout(timer); });
+          window.location.href = appStoreUrl;
         }
+
         document.querySelectorAll('[data-open-app]').forEach(function (btn) {
           btn.addEventListener('click', openApp);
         });
+
         if (window.location.pathname === '/share') {
           openApp();
         }

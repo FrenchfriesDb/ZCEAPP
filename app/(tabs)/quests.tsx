@@ -190,10 +190,12 @@ export default function QuestsScreen() {
         // Construct log with proof summary
         let log = `Verified: ${selectedQuest.title}.`;
         if (proofData.text) log += ` Description: ${proofData.text}`;
-        if (proofData.photoUri) log += ` [Photo Proof Attached]`;
-        if (proofData.voiceUri) log += ` [Voice Proof Attached]`;
 
-        await completeQuest(selectedQuest.id, selectedQuest.xpReward, log, { photoUri: proofData.photoUri, voiceUri: proofData.voiceUri });
+        await completeQuest(selectedQuest.id, selectedQuest.xpReward, log, {
+            text: proofData.text,
+            photoUri: proofData.photoUri,
+            voiceUri: proofData.voiceUri,
+        });
         setIsProofVisible(false);
         setSelectedQuest(null);
     };

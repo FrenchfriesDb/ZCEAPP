@@ -38,6 +38,8 @@ export default function SignupScreen() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [signupStep, setSignupStep] = useState<1 | 2>(1);
@@ -178,6 +180,11 @@ export default function SignupScreen() {
                             {(signupStep === 1 ? STEP1_FIELDS : STEP2_FIELDS).map((field) => {
                                 const isFocused = focusedField === field.key;
                                 const isUsername = field.key === 'username';
+                                const isPasswordField = field.key === 'password';
+                                const isConfirmPasswordField = field.key === 'confirmPassword';
+                                const shouldSecureEntry = field.secure
+                                    ? (isPasswordField ? !showPassword : isConfirmPasswordField ? !showConfirmPassword : true)
+                                    : false;
                                 const showStatus = isUsername && usernameMessage() !== '';
 
                                 return (
@@ -211,13 +218,33 @@ export default function SignupScreen() {
                                                 onChangeText={v => setFieldValue(field.key, v)}
                                                 placeholder={field.placeholder}
                                                 placeholderTextColor="rgba(255, 255, 255, 0.3)"
-                                                secureTextEntry={field.secure}
+                                                secureTextEntry={shouldSecureEntry}
                                                 autoCapitalize={field.key === 'name' ? 'words' : 'none'}
                                                 autoCorrect={false}
                                                 keyboardType={field.board}
                                                 onFocus={() => { setFocusedField(field.key); scrollToField(field.key); }}
                                                 onBlur={() => setFocusedField(null)}
                                             />
+                                            {(isPasswordField || isConfirmPasswordField) && (
+                                                <Pressable
+                                                    onPress={() => {
+                                                        if (isPasswordField) setShowPassword((prev) => !prev);
+                                                        if (isConfirmPasswordField) setShowConfirmPassword((prev) => !prev);
+                                                    }}
+                                                    hitSlop={8}
+                                                    style={styles.passwordToggle}
+                                                    accessibilityRole="button"
+                                                    accessibilityLabel={
+                                                        (isPasswordField ? showPassword : showConfirmPassword)
+                                                            ? 'Hide password'
+                                                            : 'Show password'
+                                                    }
+                                                >
+                                                    <Text style={styles.passwordToggleText}>
+                                                        {(isPasswordField ? showPassword : showConfirmPassword) ? 'HIDE' : 'SHOW'}
+                                                    </Text>
+                                                </Pressable>
+                                            )}
                                             {/* Inline status for username */}
                                             {isUsername && usernameStatus !== 'checking' && usernameStatus !== 'idle' && (
                                                 <View style={[styles.statusPill, { backgroundColor: usernameColor() + '22', borderColor: usernameColor() + '55' }]}>
@@ -408,8 +435,26 @@ const styles = StyleSheet.create({
     input: {
         flex: 1,
         color: '#FFFFFF',
-        fontFamily: Fonts.body,
+        fontFamily: Fonts.nunito,
         fontSize: 15,
+        paddingVertical: 0,
+        paddingRight: 8,
+    },
+    passwordToggle: {
+        minWidth: 52,
+        height: 30,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
+        backgroundColor: 'rgba(255,255,255,0.08)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    passwordToggleText: {
+        fontFamily: Fonts.bodySemi,
+        fontSize: 11,
+        color: '#FFFFFF',
+        letterSpacing: 0.8,
     },
     statusPill: {
         width: 24, height: 24, borderRadius: 12,

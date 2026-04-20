@@ -1,13 +1,13 @@
-import { View, Text, StyleSheet, Pressable, Alert, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
-import { useState, useEffect } from 'react';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import GlassButton from '@/components/GlassButton';
+import GlassCard from '@/components/GlassCard';
+import { Colors, Fonts, Radius, Spacing } from '@/constants/theme';
 import { useUser } from '@/context/UserContext';
 import { useTimeColors } from '@/hooks/useTimeColors';
-import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
-import GlassCard from '@/components/GlassCard';
-import GlassButton from '@/components/GlassButton';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 export default function EyeCombatDrill() {
   const CHALLENGE_SECONDS = 20;
@@ -102,7 +102,7 @@ export default function EyeCombatDrill() {
             <GlassCard style={styles.infoCard}>
               <Text style={styles.infoLabel}>THE PROBLEM:</Text>
               <Text style={styles.infoText}>
-                Your eyes dart. You look away first. You're uncomfortable holding power contact. Time to train your stare.
+                Your eyes dart. You look away first. You&apos;re uncomfortable holding power contact. Time to train your stare.
               </Text>
             </GlassCard>
 
@@ -111,7 +111,7 @@ export default function EyeCombatDrill() {
               <Text style={styles.rulesText}>
                 • Stare directly at the screen (front camera).{'\n'}
                 • Hold eye contact for 20 seconds.{'\n'}
-                • Don't blink excessively.{'\n'}
+                • Don&apos;t blink excessively.{"\n"}
                 • Each eye break resets your timer.{'\n'}
                 • Goal: 20 seconds with zero breaks.
               </Text>
@@ -149,7 +149,7 @@ export default function EyeCombatDrill() {
 
             <GlassCard style={styles.instructionCard}>
               <Text style={styles.instructionText}>
-                HOLD THE STARE. Look directly into the front camera. Don't blink. Don't look away.
+                HOLD THE STARE. Look directly into the front camera. Don&apos;t blink. Don&apos;t look away.
               </Text>
             </GlassCard>
 

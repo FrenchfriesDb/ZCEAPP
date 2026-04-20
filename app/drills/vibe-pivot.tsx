@@ -199,14 +199,14 @@ Review this rep like a drill analyst. Focus on whether they successfully turned 
             <GlassCard style={[styles.complaintCard, { borderColor: systemColor + '44' }]}>
               <Text style={styles.complaintLabel}>THE COMPLAINT:</Text>
               <Text style={[styles.complaintText, { color: '#FFFFFF' }]}>
-                "{COMPLAINTS[complaintIdx]}"
+                &quot;{COMPLAINTS[complaintIdx]}&quot;
               </Text>
             </GlassCard>
 
             <GlassCard style={styles.infoCard}>
               <Text style={styles.infoLabel}>HOW IT WORKS:</Text>
               <Text style={styles.infoText}>
-                Someone drops a boring complaint. You have 8 seconds to pivot it into a deadpan flex or absurd conspiracy. Move the topic from "reality" to "entertainment."
+                Someone drops a boring complaint. You have 8 seconds to pivot it into a deadpan flex or absurd conspiracy. Move the topic from &quot;reality&quot; to &quot;entertainment.&quot;
               </Text>
             </GlassCard>
 
@@ -255,7 +255,7 @@ Review this rep like a drill analyst. Focus on whether they successfully turned 
           <>
             <GlassCard style={styles.responseCard}>
               <Text style={styles.responseLabel}>YOUR RESPONSE:</Text>
-              <Text style={styles.responseText}>"{response}"</Text>
+              <Text style={styles.responseText}>&quot;{response}&quot;</Text>
             </GlassCard>
 
             <GlassCard style={styles.gradeCard}>

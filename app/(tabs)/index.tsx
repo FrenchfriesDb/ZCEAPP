@@ -1,8 +1,9 @@
 import { BlurView } from 'expo-blur';
+import Constants from 'expo-constants';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import * as ExpoSharing from 'expo-sharing';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Constants from 'expo-constants';
 import {
     Alert,
     FlatList, Image,
@@ -11,11 +12,14 @@ import {
     Platform,
     Pressable,
     ScrollView,
+    Share,
     StyleSheet,
     Text,
     TextInput,
+    useWindowDimensions,
     View
 } from 'react-native';
+import { captureRef } from 'react-native-view-shot';
 // Don't import expo-av at module load time — load it at runtime where available.
 import FluentEmoji, { resolveFluentEmojiName } from '@/components/FluentEmoji';
 import GlassButton from '@/components/GlassButton';
@@ -31,8 +35,8 @@ import { useXPBarColors } from '@/hooks/useXPBarColors';
 import { AIService } from '@/services/ai';
 import { getFirstName } from '@/utils/formatters';
 import { buildZaneMemoryContext, getHarvestReport } from '@/utils/zaneMemory';
-import { requireOptionalNativeModule } from 'expo-modules-core';
 import * as ExpoLinking from 'expo-linking';
+import { requireOptionalNativeModule } from 'expo-modules-core';
 
 const ROASTS = [
   "I've seen NPCs with more dialogue than you. Wake the beast or stay background noise.",
@@ -117,14 +121,9 @@ let _cachedAudio: any | null | undefined;
 const loadAudio = async () => {
   if (Platform.OS === 'web') return null;
   if (_cachedAudio !== undefined) return _cachedAudio;
-  const expoAudio = requireOptionalNativeModule<any>('ExpoAudio');
-  if (!expoAudio || typeof expoAudio.setAudioModeAsync !== 'function') {
-    _cachedAudio = null;
-    return null;
-  }
   try {
-    const mod = await import('expo-audio');
-    _cachedAudio = mod;
+    const audioModule = requireOptionalNativeModule<any>('ExpoAudio');
+    _cachedAudio = audioModule || null;
     return _cachedAudio;
   } catch {
     _cachedAudio = null;
@@ -179,6 +178,7 @@ function getNextSignalMode(kind: 'roast' | 'quote'): 'classic' | 'personalized' 
 }
 
 export default function DojoScreen() {
+  const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
   const { user, completeQuest, resetQuests, recoverStreak, deploySystemBackup } = useUser();
   const { textPrimary, textTertiary } = useTextColors();
   const premiumEntitlementId =
@@ -277,17 +277,72 @@ export default function DojoScreen() {
         return;
       }
 
+      const setAudioModeAsync = Audio?.setAudioModeAsync;
+      const createAudioPlayer = Audio?.createAudioPlayer;
+      const AudioPlayerCtor = Audio?.AudioPlayer;
+      const buildPlayer =
+        typeof createAudioPlayer === 'function'
+          ? (source: string) => {
+              try {
+                return createAudioPlayer({ uri: source });
+              } catch {
+                return createAudioPlayer(source);
+              }
+            }
+          : (typeof AudioPlayerCtor === 'function'
+            ? (source: string) => {
+                const attempts = [
+                  () => new AudioPlayerCtor(source, 500, false, 0),
+                  () => new AudioPlayerCtor({ uri: source }, 500, false, 0),
+                  () => {
+                    const player = new AudioPlayerCtor(null, 500, false, 0);
+                    if (typeof player?.replace === 'function') {
+                      try {
+                        player.replace(source);
+                      } catch {
+                        player.replace({ uri: source });
+                      }
+                    }
+                    return player;
+                  },
+                ];
+
+                let lastError: unknown = null;
+                for (const attempt of attempts) {
+                  try {
+                    const player = attempt();
+                    if (player) return player;
+                  } catch (err) {
+                    lastError = err;
+                  }
+                }
+                throw lastError instanceof Error ? lastError : new Error('Failed to initialize audio player');
+              }
+            : null);
+      if (!buildPlayer) {
+        Alert.alert('Playback Not Available', 'Audio player is not available in this build.');
+        return;
+      }
+
       setPlayingUri(uri);
-      await Audio.setAudioModeAsync({ playsInSilentMode: true });
-      const player = Audio.createAudioPlayer(uri);
+      if (typeof setAudioModeAsync === 'function') {
+        await setAudioModeAsync({ playsInSilentMode: true });
+      }
+      const player = buildPlayer(uri);
       playbackRef.current = player;
-      player.addListener('playbackStatusUpdate', (status: any) => {
+      player?.addListener?.('playbackStatusUpdate', (status: any) => {
         if (status?.didJustFinish || (status?.isLoaded && !status?.playing)) {
           stopPlayback();
           setPlayingUri(null);
         }
       });
-      player.play();
+      if (typeof player?.play === 'function') {
+        player.play();
+      } else if (typeof player?.playAsync === 'function') {
+        await player.playAsync();
+      } else {
+        throw new Error('Audio player instance has no supported play method.');
+      }
     } catch (err) {
       console.error('Playback error', err);
       Alert.alert('Playback Error', 'Unable to play recording.');
@@ -315,7 +370,7 @@ export default function DojoScreen() {
   const [historyVisible, setHistoryVisible] = useState(false);
   const [historyDetailItem, setHistoryDetailItem] = useState<any>(null);
   const [selectedItem, setSelectedItem] = useState<any>(null);
-  const [historyTab, setHistoryTab] = useState<'drills' | 'journal'>('drills');
+  const [historyTab, setHistoryTab] = useState<'logs' | 'verify'>('logs');
   const [recoveryVisible, setRecoveryVisible] = useState(false);
   const [recoveryQuestion, setRecoveryQuestion] = useState('');
   const [recoveryAnswer, setRecoveryAnswer] = useState('');
@@ -325,6 +380,98 @@ export default function DojoScreen() {
   const [shareChallenge, setShareChallenge] = useState<any>(null);
   const [sharePending, setSharePending] = useState(false);
   const shareCardRef = useRef<View | null>(null);
+  const historyListRef = useRef<FlatList<any> | null>(null);
+  const historyScrollOffsetRef = useRef(0);
+
+  const restoreHistoryScrollPosition = () => {
+    const offset = historyScrollOffsetRef.current;
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        historyListRef.current?.scrollToOffset({ offset, animated: false });
+      }, 0);
+    });
+  };
+
+  const getLogTimestamp = (value: any, fallbackId?: string): number => {
+    if (!value) return 0;
+    if (typeof value === 'string' || typeof value === 'number') {
+      const parsed = new Date(value).getTime();
+      if (Number.isFinite(parsed)) return parsed;
+      const idTs = Number(fallbackId);
+      return Number.isFinite(idTs) ? idTs : 0;
+    }
+    if (typeof value?.toDate === 'function') {
+      const parsed = value.toDate().getTime();
+      if (Number.isFinite(parsed)) return parsed;
+      const idTs = Number(fallbackId);
+      return Number.isFinite(idTs) ? idTs : 0;
+    }
+    if (typeof value?.seconds === 'number') {
+      return value.seconds * 1000;
+    }
+    const idTs = Number(fallbackId);
+    if (Number.isFinite(idTs)) return idTs;
+    return 0;
+  };
+
+  const formatLogDate = (value: any, fallbackId?: string): string => {
+    const ts = getLogTimestamp(value, fallbackId);
+    return ts > 0 ? new Date(ts).toLocaleDateString() : 'Unknown date';
+  };
+
+  const getLogDateValue = (item: any) => (
+    item?.date ?? item?.createdAt ?? item?.timestamp ?? item?.at ?? item?.updatedAt ?? null
+  );
+
+  const getLogStableId = (item: any, index: number): string => {
+    const rawId = item?.id || item?.logId || item?.createdAt || item?.timestamp;
+    if (rawId !== undefined && rawId !== null && String(rawId).trim() !== '') {
+      return `${item?._source || 'log'}-${String(rawId)}`;
+    }
+    const ts = getLogTimestamp(getLogDateValue(item));
+    return `${item?._source || 'log'}-${ts}-${index}`;
+  };
+
+  const isVerifyRepLog = (item: any): boolean => {
+    const type = String(item?.type || '').toLowerCase();
+    const content = `${item?.feedback || ''} ${item?.entry || ''}`.toLowerCase();
+    const hasProofMedia = Boolean(
+      item?.proof ||
+      item?.proofData ||
+      item?.mediaProof ||
+      item?.photoUri ||
+      item?.voiceUri ||
+      item?.imageUri ||
+      item?.recording ||
+      item?.recordingUri ||
+      item?.textProof ||
+      item?.proof?.photoUri ||
+      item?.proof?.voiceUri ||
+      item?.proof?.imageUri ||
+      item?.proof?.audioUri ||
+      item?.photoURL ||
+      item?.voiceURL ||
+      item?.audioUrl ||
+      item?.attachments?.photoUri ||
+      item?.attachments?.imageUri ||
+      item?.attachments?.voiceUri ||
+      item?.attachments?.audioUri ||
+      item?.attachments?.photoURL ||
+      item?.attachments?.voiceURL ||
+      item?.attachments?.url ||
+      item?.attachments?.media ||
+      (Array.isArray(item?.media) && item.media.length > 0)
+    );
+
+    if (type === 'mission') return true;
+    if (type === 'quest') return true;
+    if (content.includes('verified:')) return true;
+    if (content.includes('completed mission')) return true;
+    if (/\[id:\s*(?:q_|qs_|dm_)/i.test(content)) return true;
+    if (/\[(?:photo|voice|media)\s*proof\s*attached\]/i.test(content)) return true;
+    if (hasProofMedia) return true;
+    return false;
+  };
   const hasShownNudge = useRef(false);
   const hasShownRecoveryPrompt = useRef(false);
   const recoveryWindowOpen = !!user?.streakRecoveryExpiresAt && new Date(user.streakRecoveryExpiresAt).getTime() > Date.now();
@@ -582,14 +729,34 @@ export default function DojoScreen() {
 
   const rankLabel = isPremium ? 'Director' : 'NPC';
   const streakTarget = 10;
-  const rankProgress = Math.min(1, Math.max(0, harvestReport.streak / streakTarget));
-  const nextRankLabel = harvestReport.streak >= streakTarget ? 'Maxed' : `Next: ${streakTarget}-Day`;
+  const streakCount = user?.streakAtRisk ? (user?.previousStreak || 0) : (user?.streak || 0);
+  const rankProgress = Math.min(1, Math.max(0, streakCount / streakTarget));
+  const nextRankLabel = streakCount >= streakTarget ? 'Maxed' : `Next: ${streakTarget}-Day`;
 
   const auraCells = useMemo(() => {
     const totalCells = 28;
+    const dailyXp = user?.dailyXp || {};
+    const levels = Array.from({ length: totalCells }, (_, idx) => {
+      const dayOffset = totalCells - 1 - idx;
+      const date = new Date();
+      date.setHours(0, 0, 0, 0);
+      date.setDate(date.getDate() - dayOffset);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      const xp = Number(dailyXp[key] || 0);
+      if (xp <= 0) return 0;
+      if (xp < 15) return 1;
+      if (xp < 35) return 2;
+      return 3;
+    });
+
+    if (levels.some((level) => level > 0)) {
+      return levels;
+    }
+
+    // Fallback for legacy accounts with little/no daily XP history.
     const activityCount = Math.min(
       totalCells,
-      Math.max(harvestReport.streak, (user?.completedQuests || []).length)
+      Math.max(streakCount, (user?.completedQuests || []).length)
     );
     return Array.from({ length: totalCells }, (_, idx) => {
       if (idx >= activityCount) return 0;
@@ -597,7 +764,16 @@ export default function DojoScreen() {
       if (idx >= activityCount - 8) return 2;
       return 1;
     });
-  }, [harvestReport.streak, user?.completedQuests]);
+  }, [streakCount, user?.completedQuests, user?.dailyXp]);
+
+  const shareCardWidth = useMemo(() => {
+    const horizontalPadding = 40;
+    const reservedHeight = Platform.OS === 'ios' ? 250 : 220;
+    const maxByWidth = Math.max(240, viewportWidth - horizontalPadding);
+    const availableHeight = Math.max(320, viewportHeight - reservedHeight);
+    const maxByHeight = availableHeight * 0.6;
+    return Math.min(maxByWidth, maxByHeight);
+  }, [viewportHeight, viewportWidth]);
 
   const shareFriendChallenge = async () => {
     const challenge = fieldQuests[0] || dailyMissions[0] || microOps[0];
@@ -624,11 +800,21 @@ export default function DojoScreen() {
     setSharePending(true);
     try {
       let uri: string | null = null;
+      const shareText = shareMode === 'challenge'
+        ? `${getFirstName(user?.name)} challenge: ${shareChallenge?.title || 'Today Challenge'} (+${shareChallenge?.xp || 10} XP). Join me on ZCE: ${publicShareBaseUrl}`
+        : shareMode === 'invite'
+          ? `${getFirstName(user?.name)} invited you to ZCE. Build charisma reps daily: ${publicShareBaseUrl}`
+          : `${getFirstName(user?.name)} | ${streakCount}-day streak | ${harvestReport.todayXp} XP today | Aura: ${harvestReport.tone}. Join me on ZCE: ${publicShareBaseUrl}`;
+
+      // Ensure the card has completed layout/paint before capture.
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      });
+
       try {
         const hasViewShotNative = !!requireOptionalNativeModule('RNViewShot');
         if (hasViewShotNative && shareCardRef.current) {
-          const ViewShot = await import('react-native-view-shot');
-          uri = await ViewShot.captureRef(shareCardRef.current, {
+          uri = await captureRef(shareCardRef.current, {
             format: 'png',
             quality: 1,
             result: 'tmpfile',
@@ -637,38 +823,77 @@ export default function DojoScreen() {
       } catch {
         // RNViewShot native module may be missing in current dev client build.
       }
+
+      const normalizedUri = uri
+        ? (uri.startsWith('file://') ? uri : `file://${uri}`)
+        : null;
+
       if (uri) {
         try {
           const hasExpoSharingNative = !!requireOptionalNativeModule('ExpoSharing');
           if (hasExpoSharingNative) {
-            const Sharing = await import('expo-sharing');
-            const canUseImageSharing = await Sharing.isAvailableAsync();
+            const canUseImageSharing = await ExpoSharing.isAvailableAsync();
             if (canUseImageSharing) {
-              await Sharing.shareAsync(uri, {
+              await ExpoSharing.shareAsync(normalizedUri || uri, {
                 dialogTitle: 'Share your Protocol',
                 mimeType: 'image/png',
-                UTI: 'public.png',
+                UTI: 'public.image',
               });
               return;
             }
           }
         } catch {
-          // ExpoSharing native module may be missing in current dev client build.
+          // Fallback to RN Share below.
+        }
+
+        try {
+          const payload: { message: string; url?: string; title?: string } = {
+            title: 'Share your Protocol',
+            message: shareText,
+          };
+
+          if (normalizedUri) {
+            payload.url = normalizedUri;
+          }
+
+          await Share.share(payload);
+          return;
+        } catch {
+          // If both image-share routes fail, drop to actionable error.
         }
       }
-      Alert.alert(
-        'Share Requires App Build',
-        'Image-only sharing needs the native modules. Install expo-sharing + react-native-view-shot and rebuild the app (dev client or production build).'
-      );
+
+      try {
+        await Share.share({
+          title: 'Share your Protocol',
+          message: shareText,
+        });
+        return;
+      } catch {
+        Alert.alert(
+          'Share Failed',
+          'Could not export image share on this build, and text-share fallback also failed. Please retry after reopening the share modal.'
+        );
+      }
     } catch {
       Alert.alert(
-        'Share Requires App Build',
-        'Image-only sharing needs the native modules. Install expo-sharing + react-native-view-shot and rebuild the app (dev client or production build).'
+        'Share Failed',
+        'Share protocol hit an unexpected error. Close and reopen the share screen, then try again.'
       );
     } finally {
       setSharePending(false);
     }
-  }, [sharePending]);
+  }, [
+    harvestReport.todayXp,
+    harvestReport.tone,
+    publicShareBaseUrl,
+    shareChallenge?.title,
+    shareChallenge?.xp,
+    shareMode,
+    sharePending,
+    streakCount,
+    user?.name,
+  ]);
 
   const handlePress = (item: any) => {
     if (completedIds.includes(item.id)) return;
@@ -692,8 +917,6 @@ export default function DojoScreen() {
     setRecoveryAnswer('');
     Alert.alert('Protocol Success', 'Streak restored. Character integrity intact.');
   };
-
-  const streakCount = user?.streakAtRisk ? (user?.previousStreak || 0) : (user?.streak || 0);
 
   // ── MISSION ROW ──────────────────────────────────────────────────────────────
   const MissionRow = ({ item }: { item: any }) => {
@@ -1022,7 +1245,7 @@ export default function DojoScreen() {
         <GlassCard style={styles.harvestCard}>
           <View style={styles.harvestHeader}>
             <Text style={styles.harvestLabel}>NIGHTLY HARVEST REPORT</Text>
-            <Text style={styles.harvestTone}>{harvestReport.tone.toUpperCase()}</Text>
+            <Text numberOfLines={2} style={styles.harvestTone}>{harvestReport.tone.toUpperCase()}</Text>
           </View>
           <Text style={styles.harvestHeadline}>
             Today you harvested {harvestReport.todayXp} XP. Current streak pressure: {harvestReport.streak} days.
@@ -1167,10 +1390,12 @@ export default function DojoScreen() {
 
           let log = `Verified: ${selectedItem.title}.`;
           if (proofData.text) log += ` Description: ${proofData.text}`;
-          if (proofData.photoUri) log += ` [Photo Proof Attached]`;
-          if (proofData.voiceUri) log += ` [Voice Proof Attached]`;
 
-          await completeQuest(selectedItem.id, selectedItem.xp, log, { photoUri: proofData.photoUri, voiceUri: proofData.voiceUri });
+          await completeQuest(selectedItem.id, selectedItem.xp, log, {
+            text: proofData.text,
+            photoUri: proofData.photoUri,
+            voiceUri: proofData.voiceUri,
+          });
           setModalVisible(false);
           setSelectedItem(null);
         }}
@@ -1217,115 +1442,161 @@ export default function DojoScreen() {
       </Modal>
 
       {/* ── ARCHIVES MODAL ── */}
-      <Modal animationType="fade" transparent visible={historyVisible} onRequestClose={() => setHistoryVisible(false)}>
-        <View style={styles.modalOverlay}>
+      <Modal animationType="fade" transparent visible={historyVisible} onRequestClose={() => { setHistoryVisible(false); setHistoryDetailItem(null); }}>
+        <View style={styles.historyOverlay}>
           <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
           <View style={styles.historyHeader}>
-            <Pressable onPress={() => { setHistoryVisible(false); setHistoryDetailItem(null); }} style={styles.backBtn}>
-              <Text style={styles.backText}>← CLOSE</Text>
+            <Pressable
+              onPress={() => {
+                if (historyDetailItem) {
+                  setHistoryDetailItem(null);
+                  restoreHistoryScrollPosition();
+                  return;
+                }
+                setHistoryVisible(false);
+              }}
+              style={styles.backBtn}
+            >
+              <Text style={styles.backText}>{historyDetailItem ? '← BACK' : '← CLOSE'}</Text>
             </Pressable>
-            <Text style={styles.historyTitle}>ARCHIVES</Text>
+            <Text style={styles.historyTitle}>{historyDetailItem ? 'LOG DETAIL' : 'ARCHIVES'}</Text>
+            <View style={styles.historyHeaderSpacer} />
           </View>
-          <View style={styles.historyTabs}>
-            {(['drills', 'journal'] as const).map(tab => (
-              <Pressable
-                key={tab}
-                onPress={() => setHistoryTab(tab)}
-                style={[styles.historyTabBtn, historyTab === tab && styles.historyTabBtnActive]}
-              >
-                <Text style={[styles.historyTabText, historyTab === tab && styles.historyTabTextActive]}>
-                  {tab === 'drills' ? 'TRAINING' : 'JOURNAL'}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-                <FlatList
-            data={(() => {
-              if (historyTab === 'drills') {
-                return (user?.drillLogs || []).filter((l: any) => l.type !== 'Mission');
-              } else {
-                const missionLogs = (user?.drillLogs || []).filter((l: any) => l.type === 'Mission').map((l: any) => ({
-                  ...l, entry: l.feedback, analysis: null, _source: 'mission'
-                }));
-                const journals = (user?.journalLogs || []).map((j: any) => ({ ...j, _source: 'journal' }));
-                return [...missionLogs, ...journals].sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
-              }
-            })()}
-            keyExtractor={item => item.id}
-            contentContainerStyle={styles.historyList}
+          {historyDetailItem ? (
+            <ScrollView style={styles.historyDetailScroll} contentContainerStyle={styles.historyDetailContent} showsVerticalScrollIndicator={false}>
+              {(() => {
+                const item = historyDetailItem;
+                const source = item._source === 'journal' ? 'journal' : 'drill';
+                const typeLabel = source === 'journal'
+                  ? 'JOURNAL ENTRY'
+                  : (historyTab === 'verify' ? 'VERIFY REP' : (item.type?.toUpperCase() || 'LOG'));
+
+                const content = (source === 'journal' ? (item.entry || item.feedback) : (item.feedback || item.entry)) || '';
+                let cleaned = content.replace(/\[ID:[^\]]+\]/g, '').trim();
+                cleaned = cleaned.replace(/\[(?:Photo|Voice|Media)\s*Proof\s*Attached\]/gi, '').trim();
+                cleaned = cleaned.replace(/\b(?:qs_|dm_|q_|id_)[A-Za-z0-9_-]+\b/gi, (match: string) => {
+                  const pretty = match.replace(/^(?:qs_|dm_|q_|id_)/i, '').replace(/[_-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                  return pretty;
+                });
+
+                const mediaEntries = Array.isArray(item.media) ? item.media : [];
+                const firstMedia = mediaEntries[0];
+                const mediaImage = typeof firstMedia === 'string'
+                  ? firstMedia
+                  : (firstMedia?.uri || firstMedia?.url || firstMedia?.photoUri || firstMedia?.imageUri || firstMedia?.photoURL || null);
+                const mediaAudio = mediaEntries.find((m: any) => {
+                  const candidate = typeof m === 'string' ? m : (m?.uri || m?.url || m?.audioUri || m?.voiceUri);
+                  if (typeof m === 'object') {
+                    const mediaType = String(m?.type || m?.mediaType || m?.mimeType || '').toLowerCase();
+                    if (mediaType.includes('audio')) return true;
+                  }
+                  return typeof candidate === 'string' && /\.(m4a|aac|mp3|wav|caf|ogg)(\?|$)/i.test(candidate);
+                });
+                const mediaAudioUri = typeof mediaAudio === 'string'
+                  ? mediaAudio
+                  : (mediaAudio?.uri || mediaAudio?.url || mediaAudio?.audioUri || mediaAudio?.voiceUri || null);
+
+                const img = item.photoUri || item.proof?.photoUri || item.proof?.imageUri || item.proof?.photoURL || item.proofData?.photoUri || item.proofData?.imageUri || item.imageUri || item.imageUrl || item.image || item.photo || item.photoURL || item.attachments?.photoUri || item.attachments?.imageUri || item.attachments?.photoURL || item.attachments?.url || mediaImage;
+                const audio = item.voiceUri || item.proof?.voiceUri || item.proof?.audioUri || item.proof?.voiceURL || item.proofData?.voiceUri || item.proofData?.audioUri || item.recording || item.recordingUri || item.audio || item.audioUrl || item.voiceURL || item.attachments?.voiceUri || item.attachments?.audioUri || item.attachments?.voiceURL || mediaAudioUri;
+                const extractedProofText = item.proof?.text
+                  || item.proofData?.text
+                  || item.mediaProof?.text
+                  || item.textProof
+                  || ((content.match(/Description:\s*([\s\S]*?)(?:\s*\[(?:Photo|Voice|Media)\s*Proof\s*Attached\]|$)/i) || [])[1] || '')
+                    .trim();
+                const bodyWithoutProof = extractedProofText
+                  ? cleaned.replace(/Description:\s*[\s\S]*$/i, '').trim()
+                  : cleaned;
+
+                return (
+                  <GlassCard style={styles.historyDetailCard}>
+                    <View style={styles.logTop}>
+                      <Text style={styles.logType}>{typeLabel}</Text>
+                      <Text style={styles.logDate}>{formatLogDate(getLogDateValue(item), item.id || item.logId || item.timestamp)}</Text>
+                    </View>
+
+                    {img ? (
+                      <Image source={{ uri: img }} style={{ width: '100%', height: 180, borderRadius: 12, marginTop: 8 }} resizeMode="cover" />
+                    ) : null}
+
+                    {audio ? (
+                      <Pressable onPress={() => togglePlay(audio)} style={{ marginTop: 8, padding: 12, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.03)' }}>
+                        <Text style={{ color: textPrimary }}>{playingUri === audio ? 'Playing...' : 'Play recording'}</Text>
+                      </Pressable>
+                    ) : null}
+
+                    {(extractedProofText || img || audio) ? (
+                      <View style={styles.analysisBox}>
+                        <Text style={styles.analysisLabel}>PROOF</Text>
+                        {extractedProofText ? <Text selectable selectionColor="#0A84FF" style={styles.analysisContent}>{extractedProofText}</Text> : null}
+                      </View>
+                    ) : null}
+
+                    {bodyWithoutProof ? (
+                      <Text selectable selectionColor="#0A84FF" style={styles.logBody}>{bodyWithoutProof}</Text>
+                    ) : null}
+
+                    {source === 'journal' && item.analysis && (
+                      <View style={styles.analysisBox}>
+                        <Text style={styles.analysisLabel}>ZANE ANALYSIS:</Text>
+                        <Text selectable selectionColor="#0A84FF" style={styles.analysisContent}>{item.analysis}</Text>
+                      </View>
+                    )}
+                  </GlassCard>
+                );
+              })()}
+            </ScrollView>
+          ) : (
+            <>
+              <View style={styles.historyTabs}>
+                {(['logs', 'verify'] as const).map(tab => (
+                  <Pressable
+                    key={tab}
+                    onPress={() => setHistoryTab(tab)}
+                    style={[styles.historyTabBtn, historyTab === tab && styles.historyTabBtnActive]}
+                  >
+                    <Text style={[styles.historyTabText, historyTab === tab && styles.historyTabTextActive]}>
+                      {tab === 'logs' ? 'LOGS' : 'VERIFY REPS'}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+              <FlatList
+                ref={historyListRef}
+                data={(() => {
+                  const drillItems = [...(user?.drillLogs || [])].map((d: any) => ({ ...d, _source: 'drill' }));
+                  const journalItems = [...(user?.journalLogs || [])].map((j: any) => ({ ...j, _source: 'journal' }));
+                  const combined = [...drillItems, ...journalItems];
+
+                  const filtered = historyTab === 'verify'
+                    ? combined.filter((item: any) => isVerifyRepLog(item))
+                    : combined.filter((item: any) => !isVerifyRepLog(item));
+
+                  return filtered.sort((a: any, b: any) => getLogTimestamp(getLogDateValue(b), b?.id || b?.logId || b?.timestamp) - getLogTimestamp(getLogDateValue(a), a?.id || a?.logId || a?.timestamp));
+                })()}
+                onScroll={(event) => {
+                  historyScrollOffsetRef.current = event.nativeEvent.contentOffset.y;
+                }}
+                scrollEventThrottle={16}
+                keyExtractor={(item, index) => getLogStableId(item, index)}
+                contentContainerStyle={styles.historyList}
                 renderItem={({ item }) => (
                   <GlassCard style={styles.logCard} onPress={() => setHistoryDetailItem(item)}>
                     <View style={styles.logTopCompact}>
                       <Text style={styles.logType}>
-                        {historyTab === 'drills' ? item.type?.toUpperCase() : (item._source === 'mission' ? 'MISSION LOG' : 'JOURNAL ENTRY')}
+                        {item._source === 'journal'
+                          ? 'JOURNAL ENTRY'
+                          : (historyTab === 'verify' ? 'VERIFY REP' : (item.type?.toUpperCase() || 'LOG'))}
                       </Text>
-                      <Text style={styles.logDate}>{new Date(item.date).toLocaleDateString()}</Text>
+                      <Text style={styles.logDate}>{formatLogDate(getLogDateValue(item), item.id || item.logId || item.timestamp)}</Text>
                     </View>
                     <Text style={styles.logTapHint}>Tap to view details</Text>
                   </GlassCard>
                 )}
-            ListEmptyComponent={<Text style={styles.emptyText}>No data in neural buffers.</Text>}
-          />
-        </View>
-      </Modal>
-
-      <Modal
-        animationType="fade"
-        transparent
-        visible={!!historyDetailItem}
-        onRequestClose={() => setHistoryDetailItem(null)}
-      >
-        <View style={styles.historyDetailOverlay}>
-          <GlassCard style={styles.historyDetailCard}>
-            {(() => {
-              const item = historyDetailItem;
-              if (!item) return null;
-
-              const typeLabel = historyTab === 'drills'
-                ? item.type?.toUpperCase()
-                : (item._source === 'mission' ? 'MISSION LOG' : 'JOURNAL ENTRY');
-
-              const content = (historyTab === 'drills' ? item.feedback : item.entry) || '';
-              let cleaned = content.replace(/\[ID:[^\]]+\]/g, '').trim();
-              cleaned = cleaned.replace(/\b(?:qs_|dm_|q_|id_)[A-Za-z0-9_-]+\b/gi, (match) => {
-                const pretty = match.replace(/^(?:qs_|dm_|q_|id_)/i, '').replace(/[_-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-                return pretty;
-              });
-
-              const img = item.photoUri || item.imageUrl || item.image || item.photo || (item.media && item.media[0]);
-              const audio = item.recording || item.recordingUri || item.voiceUri || item.audio;
-
-              return (
-                <>
-                  <View style={styles.logTop}>
-                    <Text style={styles.logType}>{typeLabel}</Text>
-                    <Text style={styles.logDate}>{new Date(item.date).toLocaleDateString()}</Text>
-                  </View>
-
-                  {img ? (
-                    <Image source={{ uri: img }} style={{ width: '100%', height: 180, borderRadius: 12, marginTop: 8 }} resizeMode="cover" />
-                  ) : audio ? (
-                    <Pressable onPress={() => togglePlay(audio)} style={{ marginTop: 8, padding: 12, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.03)' }}>
-                      <Text style={{ color: textPrimary }}>{playingUri === audio ? 'Playing...' : 'Play recording'}</Text>
-                    </Pressable>
-                  ) : (
-                    <Text style={styles.logBody}>{cleaned || '(no description provided)'}</Text>
-                  )}
-
-                  {historyTab === 'journal' && item.analysis && (
-                    <View style={styles.analysisBox}>
-                      <Text style={styles.analysisLabel}>ZANE ANALYSIS:</Text>
-                      <Text style={styles.analysisContent}>{item.analysis}</Text>
-                    </View>
-                  )}
-                </>
-              );
-            })()}
-
-            <Pressable onPress={() => setHistoryDetailItem(null)} style={styles.historyDetailCloseBtn}>
-              <Text style={styles.historyDetailCloseText}>CLOSE</Text>
-            </Pressable>
-          </GlassCard>
+                ListEmptyComponent={<Text style={styles.emptyText}>No data in neural buffers.</Text>}
+              />
+            </>
+          )}
         </View>
       </Modal>
 
@@ -1354,41 +1625,51 @@ export default function DojoScreen() {
             <View style={styles.shareTopRightSpacer} />
           </View>
 
-          <View style={styles.shareCardWrap}>
-            <View
-              ref={(ref) => { shareCardRef.current = ref; }}
-              collapsable={false}
-              style={styles.shareShotFrame}
-            >
-              <ViralShareCard
-                mode={shareMode}
-                agentName={getFirstName(user?.name)}
-                archetype={((user as any)?.subscriptionTier || 'Initiate').toString()}
-                streak={harvestReport.streak}
-                todayXp={harvestReport.todayXp}
-                tone={harvestReport.tone}
-                rankLabel={rankLabel}
-                rankProgress={rankProgress}
-                nextRankLabel={nextRankLabel}
-                auraCells={auraCells}
-                shareUrlLabel={publicShareBaseUrl.replace(/^https?:\/\//i, '')}
-                challengeTitle={shareChallenge?.title}
-                challengeDesc={shareChallenge?.desc}
-                challengeXp={shareChallenge?.xp}
-                shareDateLabel={new Date().toLocaleDateString()}
-              />
+          <ScrollView
+            style={styles.shareScroll}
+            contentContainerStyle={styles.shareScrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            bounces
+          >
+            <View style={styles.shareCardWrap}>
+              <View
+                ref={(ref) => { shareCardRef.current = ref; }}
+                collapsable={false}
+                style={[styles.shareShotFrame, { width: shareCardWidth }]}
+              >
+                <ViralShareCard
+                  mode={shareMode}
+                  agentName={getFirstName(user?.name)}
+                  archetype={((user as any)?.subscriptionTier || 'Initiate').toString()}
+                  streak={streakCount}
+                  todayXp={harvestReport.todayXp}
+                  tone={harvestReport.tone}
+                  rankLabel={rankLabel}
+                  rankProgress={rankProgress}
+                  nextRankLabel={nextRankLabel}
+                  auraCells={auraCells}
+                  todayCellIndex={Math.max(0, auraCells.length - 1)}
+                  shareUrl={publicShareBaseUrl}
+                  shareUrlLabel={publicShareBaseUrl.replace(/^https?:\/\//i, '')}
+                  challengeTitle={shareChallenge?.title}
+                  challengeDesc={shareChallenge?.desc}
+                  challengeXp={shareChallenge?.xp}
+                  shareDateLabel={new Date().toLocaleDateString()}
+                />
+              </View>
             </View>
-          </View>
 
-          <GlassButton
-            label={sharePending ? 'CAPTURING...' : 'SHARE PROTOCOL'}
-            onPress={handleShareProtocol}
-            tint="blue"
-            glow
-            size="lg"
-            disabled={sharePending}
-            style={styles.shareBtn}
-          />
+            <GlassButton
+              label={sharePending ? 'CAPTURING...' : 'SHARE PROTOCOL'}
+              onPress={handleShareProtocol}
+              tint="blue"
+              glow
+              size="lg"
+              disabled={sharePending}
+              style={styles.shareBtn}
+            />
+          </ScrollView>
         </View>
       </Modal>
     </View >
@@ -1615,7 +1896,7 @@ const styles = StyleSheet.create({
   harvestHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 10,
   },
   harvestLabel: {
@@ -1623,6 +1904,8 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#9B9B9B',
     letterSpacing: 2.5,
+    flexShrink: 1,
+    paddingRight: 10,
   },
   harvestTone: {
     fontFamily: Fonts.monoBold,
@@ -1630,6 +1913,10 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     letterSpacing: 1,
     opacity: 0.5,
+    textAlign: 'right',
+    maxWidth: '48%',
+    flexShrink: 1,
+    lineHeight: 12,
   },
   harvestHeadline: {
     fontFamily: Fonts.heading,
@@ -1969,17 +2256,22 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  historyHeaderSpacer: {
+    width: 72,
   },
   historyTitle: {
-    flex: 1, textAlign: 'center',
+    flex: 1,
+    textAlign: 'center',
     fontFamily: Fonts.heading,
     fontSize: FontSizes.xl,
     color: Colors.textPrimary,
     letterSpacing: 3,
-    marginRight: 60,
     fontWeight: '800',
+    paddingHorizontal: 10,
   },
-  backBtn: { padding: 8 },
+  backBtn: { padding: 8, minWidth: 72 },
   backText: {
     color: Colors.textSecondary,
     fontFamily: Fonts.bodySemi,
@@ -1993,51 +2285,68 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   historyTabBtn: {
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     justifyContent: 'center', alignItems: 'center',
-    borderWidth: 1, borderColor: Colors.borderGlass,
+    minHeight: 46,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.16)',
+    borderRadius: 12,
+    shadowColor: '#AEE8FF',
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 0 },
   },
   historyTabBtnActive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'rgba(174,232,255,0.14)',
+    borderColor: 'rgba(174,232,255,0.72)',
+    shadowOpacity: 0.22,
   },
   historyTabText: {
-    fontFamily: Fonts.bodySemi,
-    fontSize: 11,
-    color: Colors.textSecondary,
-    letterSpacing: 0.8,
+    fontFamily: Fonts.monoBold,
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.68)',
+    letterSpacing: 1.2,
+    textAlign: 'center',
   },
-  historyTabTextActive: { color: '#FFFFFF' },
+  historyTabTextActive: { color: '#EAF8FF' },
   historyList: { padding: Spacing.xl, gap: 14, paddingBottom: 120 },
   logCard: {
     borderRadius: Radius.lg,
-    backgroundColor: 'rgba(0,0,0,0.22)',
-    borderColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderColor: 'rgba(255,255,255,0.16)',
   },
-  logTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  logTopCompact: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  logTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
+  logTopCompact: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   logTapHint: {
     marginTop: 8,
-    fontFamily: Fonts.nunito,
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.45)',
-    letterSpacing: 0.2,
+    fontFamily: Fonts.mono,
+    fontSize: 9,
+    color: 'rgba(255,255,255,0.42)',
+    letterSpacing: 1,
   },
   logType: {
-    fontFamily: Fonts.nunito,
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.74)',
-    letterSpacing: 0.7,
+    fontFamily: Fonts.monoBold,
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.8)',
+    letterSpacing: 1.3,
+    flexShrink: 1,
+    paddingRight: 8,
   },
   logDate: {
-    fontFamily: Fonts.nunito,
-    fontSize: 11,
-    color: Colors.textTertiary,
+    fontFamily: Fonts.mono,
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.52)',
+    marginLeft: 8,
   },
   logBody: {
-    fontFamily: Fonts.nunito,
-    fontSize: 15,
-    color: Colors.textPrimary, lineHeight: 22,
+    marginTop: 10,
+    fontFamily: Fonts.body,
+    fontSize: 14,
+    color: '#EEF4F7',
+    lineHeight: 22,
   },
   footerLink: { fontFamily: Fonts.mono, color: 'rgba(255,255,255,0.4)', fontSize: 9, textDecorationLine: 'underline' },
   analysisBox: {
@@ -2059,6 +2368,19 @@ const styles = StyleSheet.create({
     textAlign: 'center', color: Colors.textTertiary,
     fontFamily: Fonts.mono, marginTop: 40, fontSize: 13,
   },
+  historyDetailContent: {
+    paddingHorizontal: Spacing.xl,
+    paddingBottom: 28,
+  },
+  historyOverlay: {
+    flex: 1,
+    backgroundColor: '#000000',
+    paddingTop: Platform.OS === 'ios' ? 8 : 0,
+  },
+  historyDetailScroll: {
+    flex: 1,
+    minHeight: 0,
+  },
   historyDetailOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.78)',
@@ -2068,7 +2390,6 @@ const styles = StyleSheet.create({
   },
   historyDetailCard: {
     width: '100%',
-    maxHeight: '82%',
     backgroundColor: 'rgba(0,0,0,0.2)',
     borderColor: 'rgba(255,255,255,0.16)',
   },
@@ -2130,12 +2451,23 @@ const styles = StyleSheet.create({
   shareTopRightSpacer: {
     minWidth: 62,
   },
-  shareCardWrap: {
+  shareScroll: {
     flex: 1,
+  },
+  shareScrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
+    paddingBottom: 8,
+  },
+  shareCardWrap: {
+    flexGrow: 1,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 0,
   },
   shareShotFrame: {
-    width: '100%',
+    maxWidth: '100%',
   },
   shareBtn: {
     width: '100%',

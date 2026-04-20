@@ -1,8 +1,7 @@
-import CustomSplashScreen from '@/components/SplashScreen';
 import { preloadFluentEmojiAssets } from '@/components/FluentEmoji';
+import CustomSplashScreen from '@/components/SplashScreen';
 import { Colors } from '@/constants/theme';
 import { SubscriptionProvider } from '@/context/SubscriptionContext';
-import { TextColorsProvider } from '../context/TextColorsContext';
 import { UserProvider, useUser } from '@/context/UserContext';
 import {
     Inter_400Regular,
@@ -20,11 +19,12 @@ import {
 } from '@expo-google-fonts/poppins';
 import * as Font from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
-import { enableScreens } from 'react-native-screens';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { enableScreens } from 'react-native-screens';
+import { TextColorsProvider } from '../context/TextColorsContext';
 
 const ROASTS = [
   "You didn't talk to anyone today? Bro, I'm a robot and even I'm disappointed.",
@@ -93,9 +93,11 @@ function RootLayoutNav() {
 
   useEffect(() => {
     if (isLoading) return;
+    const segmentList = Array.isArray(segments) ? [...segments] : [];
+    if (segmentList.length === 0) return;
 
-    const s0 = segments[0] as string | undefined;
-    const s1 = segments[1] as string | undefined;
+    const s0 = segmentList[0] as string | undefined;
+    const s1 = segmentList[1] as string | undefined;
 
     const inAuthGroup = s0 === 'auth';
     const inTabsGroup = s0 === '(tabs)';
@@ -114,23 +116,15 @@ function RootLayoutNav() {
     }
 
     if (!user) {
-      // 1. If we are on Login/Signup/ForgotPassword, allow access
-      if (isLoginOrSignup || isForgotPassword) {
-        // Allow users to stay on auth pages if they came from onboarding flow
-        // Don't redirect them back to onboarding
+      // Allow all auth routes while unauthenticated to avoid route churn/flicker.
+      if (inAuthGroup) {
         return;
       }
 
-      // If unauthenticated user is in tabs (or any non-auth route), route to onboarding/login flow.
+      // If unauthenticated user is outside auth routes, route directly to login.
+      // This avoids onboarding flashes after failed login attempts.
       if (inTabsGroup || !inAuthGroup) {
-        router.replace('/auth/onboarding');
-        return;
-      }
-
-      // 2. If we haven't finished onboarding, force to onboarding
-      if (!hasCompletedOnboarding && !isOnboarding) {
-        console.log('[NAV] Redirecting to onboarding...');
-        router.replace('/auth/onboarding');
+        router.replace('/auth/login');
         return;
       }
     } else {

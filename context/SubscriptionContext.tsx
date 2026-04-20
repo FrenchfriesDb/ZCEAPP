@@ -2,7 +2,7 @@ import { useUser } from '@/context/UserContext';
 import { auth } from '@/services/firebase';
 import { PaymentService, type SubscriptionSku } from '@/services/payments';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 export type SubscriptionPlan = 'initiate' | 'director';
 export type PremiumFeature = 'unlimited_chat' | 'advanced_drill_feedback' | 'all_drills' | 'sky_sync_themes' | 'advanced_biometrics';
@@ -31,6 +31,7 @@ const FREE_WINDOW_CHAT_LIMIT = 10;
 const FREE_WINDOW_DURATION_MS = 60 * 60 * 1000; // 1 hour
 const ENTITLEMENT_ID = PaymentService.getConfig().entitlementId;
 const FREE_CHAT_WINDOW_KEY = '@zce/free_chat_window_timestamps_v1';
+const BILLING_OWNER_UID_KEY = '@zce/billing_owner_uid_v1';
 
 function pruneWindowTimestamps(timestamps: number[], now = Date.now()): number[] {
     return timestamps.filter((ts) => Number.isFinite(ts) && now - ts < FREE_WINDOW_DURATION_MS);
@@ -98,7 +99,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     const [isLoading, setIsLoading] = useState(false);
     const [lastError, setLastError] = useState<string | null>(null);
     const [currentProductId, setCurrentProductId] = useState<string | null>(null);
-    const lastAutoRestoreUidRef = useRef<string | null>(null);
     const isRevenueCatAvailable = PaymentService.isRevenueCatConfigured() && PaymentService.isRevenueCatSdkInstalled();
     const getRevenueCatAppUserID = useCallback(() => auth.currentUser?.uid || null, []);
 
@@ -135,34 +135,59 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     const syncEntitlementsFromRevenueCat = useCallback(async () => {
         const snapshot = await PaymentService.getEntitlementSnapshot();
         if (!snapshot) return;
-        setCurrentProductId(snapshot.activeProductId);
+        const currentUid = getRevenueCatAppUserID();
+        let ownerUid = '';
+        try {
+            ownerUid = (await AsyncStorage.getItem(BILLING_OWNER_UID_KEY)) || '';
+        } catch {
+            ownerUid = '';
+        }
+
+        // Guard against RevenueCat transfer behavior leaking premium between app accounts.
+        // Premium is only auto-applied when no owner is known, or when current user is the owner.
+        const shouldBlockTransferredPremium = Boolean(
+            snapshot.isPremium && (!currentUid || ownerUid !== currentUid)
+        );
+
+        const safeSnapshot = shouldBlockTransferredPremium
+            ? {
+                ...snapshot,
+                isPremium: false,
+                tier: 'initiate' as const,
+                activeEntitlements: [],
+                activeProductId: null,
+                expiresAt: null,
+            }
+            : snapshot;
+
+        setCurrentProductId(safeSnapshot.activeProductId);
 
         if (!user) {
-            return snapshot;
+            return safeSnapshot;
         }
 
         const currentTier = ((user as any)?.subscriptionTier || 'initiate') as SubscriptionPlan;
         const currentEntitlements = (((user as any)?.entitlements || []) as string[]).slice().sort().join(',');
-        const nextEntitlements = snapshot.activeEntitlements.slice().sort().join(',');
-        const nextStatus = snapshot.isPremium ? 'active' : 'inactive';
+        const nextEntitlements = safeSnapshot.activeEntitlements.slice().sort().join(',');
+        const nextStatus = safeSnapshot.isPremium ? 'active' : 'inactive';
         const currentStatus = (((user as any)?.subscriptionStatus || 'inactive') as string);
         const currentExpires = (((user as any)?.subscriptionExpiresAt || null) as string | null) || null;
 
         if (
-            currentTier !== snapshot.tier ||
+            currentTier !== safeSnapshot.tier ||
             currentEntitlements !== nextEntitlements ||
             currentStatus !== nextStatus ||
-            currentExpires !== snapshot.expiresAt
+            currentExpires !== safeSnapshot.expiresAt
         ) {
             await updateProfile({
-                subscriptionTier: snapshot.tier,
+                subscriptionTier: safeSnapshot.tier,
                 subscriptionStatus: nextStatus as 'active' | 'inactive' | 'expired' | 'grace',
-                subscriptionExpiresAt: snapshot.expiresAt,
-                entitlements: snapshot.activeEntitlements,
+                subscriptionExpiresAt: safeSnapshot.expiresAt,
+                entitlements: safeSnapshot.activeEntitlements,
             } as any);
         }
-        return snapshot;
-    }, [updateProfile, user]);
+        return safeSnapshot;
+    }, [getRevenueCatAppUserID, updateProfile, user]);
 
     useEffect(() => {
         let cancelled = false;
@@ -174,30 +199,9 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
             try {
                 setIsLoading(true);
                 setLastError(null);
-                const initialized = await PaymentService.initialize(appUserID);
+                const initialized = await PaymentService.initialize(appUserID ?? undefined);
                 if (!initialized || cancelled) return;
                 const snapshot = await syncEntitlementsFromRevenueCat();
-                // One-time auto-restore on login to pull sandbox purchases made pre-sign-in.
-                if (
-                    appUserID &&
-                    lastAutoRestoreUidRef.current !== appUserID &&
-                    !snapshot?.isPremium
-                ) {
-                    lastAutoRestoreUidRef.current = appUserID;
-                    await PaymentService.syncPurchases();
-                    const restored = await PaymentService.restorePurchases();
-                    if (restored) {
-                        setCurrentProductId(restored.activeProductId);
-                        if (user) {
-                            await updateProfile({
-                                subscriptionTier: restored.tier,
-                                subscriptionStatus: restored.isPremium ? 'active' : 'inactive',
-                                subscriptionExpiresAt: restored.expiresAt,
-                                entitlements: restored.activeEntitlements,
-                            } as any);
-                        }
-                    }
-                }
             } catch (error: any) {
                 if (!cancelled) {
                     setLastError(error?.message || 'Failed to initialize billing');
@@ -271,7 +275,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
             try {
                 setLastError(null);
                 const appUserID = getRevenueCatAppUserID();
-                const initialized = await PaymentService.initialize(appUserID);
+                const initialized = await PaymentService.initialize(appUserID ?? undefined);
                 if (!initialized) {
                     setLastError('Billing initialization failed. Check RevenueCat keys and environment.');
                     return false;
@@ -290,6 +294,10 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
                         subscriptionExpiresAt: snapshot.expiresAt,
                         entitlements: snapshot.activeEntitlements,
                     } as any);
+                }
+                const currentUid = getRevenueCatAppUserID();
+                if (snapshot.isPremium && currentUid) {
+                    await AsyncStorage.setItem(BILLING_OWNER_UID_KEY, currentUid);
                 }
                 return snapshot.isPremium;
             } catch (error: any) {
@@ -331,7 +339,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
             try {
                 setLastError(null);
                 const appUserID = getRevenueCatAppUserID();
-                const initialized = await PaymentService.initialize(appUserID);
+                const initialized = await PaymentService.initialize(appUserID ?? undefined);
                 if (!initialized) {
                     setLastError('Billing initialization failed. Check RevenueCat keys and environment.');
                     return false;
@@ -351,6 +359,10 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
                         subscriptionExpiresAt: snapshot.expiresAt,
                         entitlements: snapshot.activeEntitlements,
                     } as any);
+                }
+                const currentUid = getRevenueCatAppUserID();
+                if (snapshot.isPremium && currentUid) {
+                    await AsyncStorage.setItem(BILLING_OWNER_UID_KEY, currentUid);
                 }
                 return snapshot.isPremium;
             } catch (error: any) {

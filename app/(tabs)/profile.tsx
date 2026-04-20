@@ -8,23 +8,183 @@ import { useTextColors } from '@/context/TextColorsContext';
 import { useUser } from '@/context/UserContext';
 import { useTimeColors } from '@/hooks/useTimeColors';
 import { formatDisplayName } from '@/utils/formatters';
+import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
+import { requireOptionalNativeModule } from 'expo-modules-core';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Clipboard, FlatList, Image, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
+
+let _cachedAudio: any | null | undefined;
+const loadAudio = async () => {
+    if (Platform.OS === 'web') return null;
+    if (_cachedAudio !== undefined) return _cachedAudio;
+    try {
+        const audioModule = requireOptionalNativeModule<any>('ExpoAudio');
+        _cachedAudio = audioModule || null;
+        return _cachedAudio;
+    } catch {
+        _cachedAudio = null;
+        return null;
+    }
+};
 
 export default function ProfileScreen() {
-    const { user, isLoading, signOut, changeUsername, purchaseSystemBackup } = useUser();
+    const { user, isLoading, signOut, changeUsername, purchaseSystemBackup, updateProfile } = useUser();
     const { isPremium } = useSubscription();
     const { textColors } = useTimeColors();
     const { textPrimary, textSecondary } = useTextColors();
 
     // UI State
     const [archivesVisible, setArchivesVisible] = useState(false);
-    const [archiveTab, setArchiveTab] = useState<'drills' | 'journal'>('journal');
+    const [archiveTab, setArchiveTab] = useState<'logs' | 'verify' | 'trash'>('logs');
+    const [archiveDetailItem, setArchiveDetailItem] = useState<any | null>(null);
     const [usernameModalVisible, setUsernameModalVisible] = useState(false);
     const [newUsername, setNewUsername] = useState('');
     const [usernameLoading, setUsernameLoading] = useState(false);
+    const playbackRef = useRef<any>(null);
+    const [playingUri, setPlayingUri] = useState<string | null>(null);
+    const archiveListRef = useRef<FlatList<any> | null>(null);
+    const archiveScrollOffsetRef = useRef(0);
+    const TRASH_RETENTION_MS = 15 * 24 * 60 * 60 * 1000;
+
+    const restoreArchiveScrollPosition = () => {
+        const offset = archiveScrollOffsetRef.current;
+        requestAnimationFrame(() => {
+            setTimeout(() => {
+                archiveListRef.current?.scrollToOffset({ offset, animated: false });
+            }, 0);
+        });
+    };
+
+    const stopPlayback = () => {
+        const player = playbackRef.current;
+        if (!player) return;
+        try { player.pause?.(); } catch (error) { void error; }
+        try { player.seekTo?.(0); } catch (error) { void error; }
+        try { player.remove?.(); } catch (error) { void error; }
+        playbackRef.current = null;
+    };
+
+    const normalizeAudioUri = (raw?: string) => {
+        if (!raw || typeof raw !== 'string') return null;
+        const trimmed = raw.trim();
+        if (!trimmed) return null;
+        if (/^gs:\/\//i.test(trimmed)) {
+            Alert.alert('Playback Error', 'This recording uses a Firebase storage path and cannot be streamed directly. Save a download URL to play it.');
+            return null;
+        }
+        return trimmed.replace(/ /g, '%20');
+    };
+
+    const togglePlay = async (rawUri?: string) => {
+        const uri = normalizeAudioUri(rawUri);
+        if (!uri) return;
+        try {
+            if (playingUri === uri) {
+                stopPlayback();
+                setPlayingUri(null);
+                return;
+            }
+
+            stopPlayback();
+
+            const Audio = await loadAudio();
+            if (!Audio) {
+                Alert.alert('Playback Not Available', 'Audio playback is not available in this build.');
+                return;
+            }
+
+            const setAudioModeAsync = Audio?.setAudioModeAsync;
+            const createAudioPlayer = Audio?.createAudioPlayer;
+            const AudioPlayerCtor = Audio?.AudioPlayer;
+            const buildPlayer =
+                typeof createAudioPlayer === 'function'
+                    ? (source: string) => {
+                        try {
+                            return createAudioPlayer({ uri: source });
+                        } catch {
+                            return createAudioPlayer(source);
+                        }
+                    }
+                    : (typeof AudioPlayerCtor === 'function'
+                        ? (source: string) => {
+                            const attempts = [
+                                () => new AudioPlayerCtor(source, 500, false, 0),
+                                () => new AudioPlayerCtor({ uri: source }, 500, false, 0),
+                                () => {
+                                    const player = new AudioPlayerCtor(null, 500, false, 0);
+                                    if (typeof player?.replace === 'function') {
+                                        try {
+                                            player.replace(source);
+                                        } catch {
+                                            player.replace({ uri: source });
+                                        }
+                                    }
+                                    return player;
+                                },
+                            ];
+
+                            let lastError: unknown = null;
+                            for (const attempt of attempts) {
+                                try {
+                                    const player = attempt();
+                                    if (player) return player;
+                                } catch (err) {
+                                    lastError = err;
+                                }
+                            }
+                            throw lastError instanceof Error ? lastError : new Error('Failed to initialize audio player');
+                        }
+                        : null);
+            if (!buildPlayer) {
+                Alert.alert('Playback Not Available', 'Audio player is not available in this build.');
+                return;
+            }
+
+            setPlayingUri(uri);
+            if (typeof setAudioModeAsync === 'function') {
+                await setAudioModeAsync({ playsInSilentMode: true });
+            }
+
+            const player = buildPlayer(uri);
+            playbackRef.current = player;
+            player?.addListener?.('playbackStatusUpdate', (status: any) => {
+                if (status?.didJustFinish || (status?.isLoaded && !status?.playing)) {
+                    stopPlayback();
+                    setPlayingUri(null);
+                }
+            });
+
+            if (typeof player?.play === 'function') {
+                player.play();
+            } else if (typeof player?.playAsync === 'function') {
+                await player.playAsync();
+            } else {
+                throw new Error('Audio player instance has no supported play method.');
+            }
+        } catch (err) {
+            console.error('Playback error', err);
+            Alert.alert('Playback Error', 'Unable to play recording.');
+            stopPlayback();
+            setPlayingUri(null);
+        }
+    };
+
+    useEffect(() => {
+        return () => {
+            stopPlayback();
+            setPlayingUri(null);
+        };
+    }, []);
+
+    const handleCopyUsername = () => {
+        if (!user?.username) return;
+        const value = `@${user.username.toLowerCase()}`;
+        Clipboard.setString(value);
+        Alert.alert('Copied', `${value} copied to clipboard.`);
+    };
 
     // Derived Constants
     const levelInfo = XPConfig.getLevel(user?.xp || 0);
@@ -37,6 +197,148 @@ export default function ProfileScreen() {
     const expirationLabel = subscriptionExpiresAt
         ? new Date(subscriptionExpiresAt).toLocaleDateString()
         : null;
+
+    const getLogTimestamp = (value: any, fallbackId?: string): number => {
+        if (!value) return 0;
+        if (typeof value === 'string' || typeof value === 'number') {
+            const parsed = new Date(value).getTime();
+            if (Number.isFinite(parsed)) return parsed;
+            const idTs = Number(fallbackId);
+            return Number.isFinite(idTs) ? idTs : 0;
+        }
+        if (typeof value?.toDate === 'function') {
+            const parsed = value.toDate().getTime();
+            if (Number.isFinite(parsed)) return parsed;
+            const idTs = Number(fallbackId);
+            return Number.isFinite(idTs) ? idTs : 0;
+        }
+        if (typeof value?.seconds === 'number') {
+            return value.seconds * 1000;
+        }
+        const idTs = Number(fallbackId);
+        if (Number.isFinite(idTs)) return idTs;
+        return 0;
+    };
+
+    const formatLogDate = (value: any, fallbackId?: string): string => {
+        const ts = getLogTimestamp(value, fallbackId);
+        return ts > 0 ? new Date(ts).toLocaleDateString() : 'Unknown date';
+    };
+
+    const getLogDateValue = (item: any) => (
+        item?.date ?? item?.createdAt ?? item?.timestamp ?? item?.at ?? item?.updatedAt ?? null
+    );
+
+    const getLogStableId = (item: any, index: number): string => {
+        const rawId = item?.id || item?.logId || item?.createdAt || item?.timestamp;
+        if (rawId !== undefined && rawId !== null && String(rawId).trim() !== '') {
+            return `${item?._source || 'log'}-${String(rawId)}`;
+        }
+        const ts = getLogTimestamp(getLogDateValue(item));
+        return `${item?._source || 'log'}-${ts}-${index}`;
+    };
+
+    const isVerifyRepLog = (item: any): boolean => {
+        const type = String(item?.type || '').toLowerCase();
+        const content = `${item?.feedback || ''} ${item?.entry || ''}`.toLowerCase();
+        const hasProofMedia = Boolean(
+            item?.proof ||
+            item?.proofData ||
+            item?.mediaProof ||
+            item?.photoUri ||
+            item?.voiceUri ||
+            item?.imageUri ||
+            item?.recording ||
+            item?.recordingUri ||
+            item?.textProof ||
+            item?.proof?.photoUri ||
+            item?.proof?.voiceUri ||
+            item?.proof?.imageUri ||
+            item?.proof?.audioUri ||
+            item?.photoURL ||
+            item?.voiceURL ||
+            item?.audioUrl ||
+            item?.attachments?.photoUri ||
+            item?.attachments?.imageUri ||
+            item?.attachments?.voiceUri ||
+            item?.attachments?.audioUri ||
+            item?.attachments?.photoURL ||
+            item?.attachments?.voiceURL ||
+            item?.attachments?.url ||
+            item?.attachments?.media ||
+            (Array.isArray(item?.media) && item.media.length > 0)
+        );
+
+        if (type === 'mission') return true;
+        if (type === 'quest') return true;
+        if (content.includes('verified:')) return true;
+        if (content.includes('completed mission')) return true;
+        if (/\[id:\s*(?:q_|qs_|dm_)/i.test(content)) return true;
+        if (/\[(?:photo|voice|media)\s*proof\s*attached\]/i.test(content)) return true;
+        if (hasProofMedia) return true;
+        return false;
+    };
+
+    const getTrashExpiryTs = (item: any): number => {
+        const raw = item?.trashExpiresAt || item?.deletedAt;
+        if (!raw) return 0;
+        const ts = new Date(raw).getTime();
+        return Number.isFinite(ts) ? ts : 0;
+    };
+
+    const isInTrash = (item: any): boolean => Boolean(item?.deletedAt || item?.trashExpiresAt);
+    const isTrashExpired = (item: any): boolean => {
+        const ts = getTrashExpiryTs(item);
+        if (!ts) return false;
+        return ts <= Date.now();
+    };
+
+    useEffect(() => {
+        if (!user) return;
+
+        const now = Date.now();
+        const keep = (entry: any) => {
+            const raw = entry?.trashExpiresAt || entry?.deletedAt;
+            if (!raw) return true;
+            const ts = new Date(raw).getTime();
+            return !Number.isFinite(ts) || ts > now;
+        };
+
+        const currentDrillLogs = user.drillLogs || [];
+        const currentJournalLogs = user.journalLogs || [];
+        const nextDrillLogs = currentDrillLogs.filter(keep);
+        const nextJournalLogs = currentJournalLogs.filter(keep);
+
+        const changed = nextDrillLogs.length !== currentDrillLogs.length || nextJournalLogs.length !== currentJournalLogs.length;
+        if (!changed) return;
+
+        void updateProfile({
+            drillLogs: nextDrillLogs,
+            journalLogs: nextJournalLogs,
+        } as any);
+    }, [updateProfile, user]);
+
+    const moveArchiveItemToTrash = async (item: any) => {
+        if (!user || isInTrash(item)) return;
+
+        const deletedAt = new Date().toISOString();
+        const trashExpiresAt = new Date(Date.now() + TRASH_RETENTION_MS).toISOString();
+
+        if (item._source === 'journal') {
+            const nextJournalLogs = (user.journalLogs || []).map((entry: any, index: number) => {
+                if (index !== item._sourceIndex) return entry;
+                return { ...entry, deletedAt, trashExpiresAt };
+            });
+            await updateProfile({ journalLogs: nextJournalLogs } as any);
+            return;
+        }
+
+        const nextDrillLogs = (user.drillLogs || []).map((entry: any, index: number) => {
+            if (index !== item._sourceIndex) return entry;
+            return { ...entry, deletedAt, trashExpiresAt };
+        });
+        await updateProfile({ drillLogs: nextDrillLogs } as any);
+    };
 
     if (isLoading) return (
         <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', padding: 32 }]}> 
@@ -110,7 +412,7 @@ export default function ProfileScreen() {
                             <View style={styles.identityMetaWrapper}>
                                 <View style={styles.identityMeta}>
                                     {user.username ? (
-                                        <Pressable onPress={() => setUsernameModalVisible(true)}>
+                                        <Pressable onPress={handleCopyUsername} onLongPress={() => setUsernameModalVisible(true)} delayLongPress={280}>
                                             <Text style={[styles.usernameTag, { color: systemColor }]}>@{user.username.toLowerCase()}</Text>
                                         </Pressable>
                                     ) : (
@@ -147,14 +449,14 @@ export default function ProfileScreen() {
                                 pointerEvents="none"
                             />
                             <LinearGradient
-                                colors={['rgba(150,150,150,0.16)', 'rgba(120,120,120,0.04)', 'rgba(255,255,255,0.00)']}
+                                colors={['rgba(170,170,170,0.14)', 'rgba(120,120,120,0.035)', 'rgba(255,255,255,0.00)']}
                                 start={{ x: 0.5, y: 0 }}
                                 end={{ x: 0.5, y: 1 }}
                                 style={styles.subscriptionBannerSheen}
                                 pointerEvents="none"
                             />
                             <LinearGradient
-                                colors={['rgba(120,120,120,0.10)', 'rgba(100,100,100,0.02)', 'rgba(255,255,255,0.00)']}
+                                colors={['rgba(120,120,120,0.08)', 'rgba(90,90,90,0.02)', 'rgba(255,255,255,0.00)']}
                                 start={{ x: 0.2, y: 0.05 }}
                                 end={{ x: 0.82, y: 0.95 }}
                                 style={styles.subscriptionBannerVeil}
@@ -274,64 +576,228 @@ export default function ProfileScreen() {
             </ScrollView>
 
             {/* Archives Modal */}
-            <Modal animationType="fade" transparent visible={archivesVisible} onRequestClose={() => setArchivesVisible(false)}>
+            <Modal animationType="fade" transparent visible={archivesVisible} onRequestClose={() => { setArchivesVisible(false); setArchiveDetailItem(null); }}>
                 <View style={styles.archiveModalOverlay}>
-                    <View style={styles.archiveHeader}>
-                        <Pressable onPress={() => setArchivesVisible(false)}>
-                            <Text style={styles.closeText}>← CLOSE</Text>
-                        </Pressable>
-                        <Text style={styles.archiveHeaderTitle}>ARCHIVES</Text>
-                        <View style={{ width: 60 }} />
-                    </View>
-                    <View style={styles.archiveTabs}>
-                        {(['drills', 'journal'] as const).map(tab => (
-                            <Pressable
-                                key={tab}
-                                onPress={() => setArchiveTab(tab)}
-                                style={[styles.archiveTabBtn, archiveTab === tab && styles.archiveTabBtnActive]}
-                            >
-                                <Text style={[styles.archiveTabText, archiveTab === tab && styles.archiveTabTextActive]}>
-                                    {tab === 'drills' ? 'TRAINING' : 'JOURNAL'}
-                                </Text>
-                            </Pressable>
-                        ))}
-                    </View>
-                    <FlatList
-                        data={(() => {
-                            if (archiveTab === 'drills') return (user.drillLogs || []).filter((l: any) => l.type !== 'Mission');
-                            const missionLogs = (user.drillLogs || []).filter((l: any) => l.type === 'Mission').map((l: any) => ({ ...l, entry: l.feedback, _source: 'mission' }));
-                            const journals = (user.journalLogs || []).map((j: any) => ({ ...j, _source: 'journal' }));
-                            return [...missionLogs, ...journals].sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
-                        })()}
-                        keyExtractor={item => item.id}
-                        contentContainerStyle={{ padding: 20 }}
-                        renderItem={({ item }) => (
-                            <GlassCard style={styles.archiveItem}>
-                                <View style={styles.archiveItemHeader}>
-                                    <Text style={styles.archiveItemType}>
-                                        {archiveTab === 'drills' ? item.type?.toUpperCase() : (item._source === 'mission' ? 'MISSION LOG' : 'JOURNAL ENTRY')}
-                                    </Text>
-                                    <Text style={styles.archiveItemDate}>{new Date(item.date).toLocaleDateString()}</Text>
-                                </View>
-                                {(() => {
-                                    const content = archiveTab === 'drills' ? (item.feedback || '') : (item.entry || '');
-                                    let cleaned = content.replace(/\[ID:[^\]]+\]/g, '').trim();
-                                    cleaned = cleaned.replace(/\b(?:qs_|dm_|q_|id_)[A-Za-z0-9_-]+\b/gi, (match: string) => {
-                                        const pretty = match.replace(/^(?:qs_|dm_|q_|id_)/i, '').replace(/[_-]/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
-                                        return pretty;
-                                    });
-                                    return <Text style={styles.archiveItemText}>{cleaned || '(no description provided)'}</Text>;
-                                })()}
-                                {archiveTab === 'journal' && item.analysis && (
-                                    <View style={styles.analysisContainer}>
-                                        <Text style={styles.analysisLabel}>ZANE ANALYSIS:</Text>
-                                        <Text style={styles.analysisText}>{item.analysis}</Text>
-                                    </View>
-                                )}
-                            </GlassCard>
-                        )}
-                        ListEmptyComponent={<Text style={styles.emptyText}>No data in neural buffers.</Text>}
+                    <BlurView intensity={28} tint="dark" style={StyleSheet.absoluteFill} />
+                    <LinearGradient
+                        colors={['rgba(255,255,255,0.06)', 'rgba(0,0,0,0.55)', 'rgba(0,0,0,0.9)']}
+                        start={{ x: 0.1, y: 0 }}
+                        end={{ x: 0.9, y: 1 }}
+                        style={StyleSheet.absoluteFill}
+                        pointerEvents="none"
                     />
+                    <View style={styles.archiveHeader}>
+                        <Pressable
+                            onPress={() => {
+                                if (archiveDetailItem) {
+                                    setArchiveDetailItem(null);
+                                    restoreArchiveScrollPosition();
+                                    return;
+                                }
+                                setArchivesVisible(false);
+                            }}
+                        >
+                            <Text style={styles.closeText}>{archiveDetailItem ? '← BACK' : '← CLOSE'}</Text>
+                        </Pressable>
+                        <Text style={styles.archiveHeaderTitle}>{archiveDetailItem ? 'LOG DETAIL' : 'ARCHIVES'}</Text>
+                        <View style={styles.archiveHeaderSpacer} />
+                    </View>
+                    {archiveDetailItem ? (
+                        <ScrollView style={styles.archiveDetailScroll} contentContainerStyle={styles.archiveDetailContent} showsVerticalScrollIndicator={false}>
+                            {(() => {
+                                const item = archiveDetailItem;
+                                const source = item._source === 'journal' ? 'journal' : 'drill';
+                                const typeLabel = source === 'journal'
+                                    ? 'JOURNAL ENTRY'
+                                    : (archiveTab === 'verify' ? 'VERIFY REP' : (item.type?.toUpperCase() || 'LOG'));
+
+                                const content = (source === 'journal' ? (item.entry || item.feedback) : (item.feedback || item.entry)) || '';
+                                let cleaned = content.replace(/\[ID:[^\]]+\]/g, '').trim();
+                                cleaned = cleaned.replace(/\[(?:Photo|Voice|Media)\s*Proof\s*Attached\]/gi, '').trim();
+                                cleaned = cleaned.replace(/\b(?:qs_|dm_|q_|id_)[A-Za-z0-9_-]+\b/gi, (match: string) => {
+                                    const pretty = match.replace(/^(?:qs_|dm_|q_|id_)/i, '').replace(/[_-]/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
+                                    return pretty;
+                                });
+
+                                const mediaEntries = Array.isArray(item.media) ? item.media : [];
+                                const firstMedia = mediaEntries[0];
+                                const mediaImage = typeof firstMedia === 'string'
+                                    ? firstMedia
+                                    : (firstMedia?.uri || firstMedia?.url || firstMedia?.photoUri || firstMedia?.imageUri || firstMedia?.photoURL || null);
+                                const mediaAudio = mediaEntries.find((m: any) => {
+                                    const candidate = typeof m === 'string' ? m : (m?.uri || m?.url || m?.audioUri || m?.voiceUri);
+                                    if (typeof m === 'object') {
+                                        const mediaType = String(m?.type || m?.mediaType || m?.mimeType || '').toLowerCase();
+                                        if (mediaType.includes('audio')) return true;
+                                    }
+                                    return typeof candidate === 'string' && /\.(m4a|aac|mp3|wav|caf|ogg)(\?|$)/i.test(candidate);
+                                });
+                                const mediaAudioUri = typeof mediaAudio === 'string'
+                                    ? mediaAudio
+                                    : (mediaAudio?.uri || mediaAudio?.url || mediaAudio?.audioUri || mediaAudio?.voiceUri || null);
+
+                                const img = item.photoUri || item.proof?.photoUri || item.proof?.imageUri || item.proof?.photoURL || item.proofData?.photoUri || item.proofData?.imageUri || item.imageUri || item.imageUrl || item.image || item.photo || item.photoURL || item.attachments?.photoUri || item.attachments?.imageUri || item.attachments?.photoURL || item.attachments?.url || mediaImage;
+                                const audio = item.voiceUri || item.proof?.voiceUri || item.proof?.audioUri || item.proof?.voiceURL || item.proofData?.voiceUri || item.proofData?.audioUri || item.recording || item.recordingUri || item.audio || item.audioUrl || item.voiceURL || item.attachments?.voiceUri || item.attachments?.audioUri || item.attachments?.voiceURL || mediaAudioUri;
+                                const extractedProofText = item.proof?.text
+                                    || item.proofData?.text
+                                    || item.mediaProof?.text
+                                    || item.textProof
+                                    || ((content.match(/Description:\s*([\s\S]*?)(?:\s*\[(?:Photo|Voice|Media)\s*Proof\s*Attached\]|$)/i) || [])[1] || '')
+                                        .trim();
+                                const bodyWithoutProof = extractedProofText
+                                    ? cleaned.replace(/Description:\s*[\s\S]*$/i, '').trim()
+                                    : cleaned;
+
+                                return (
+                                    <GlassCard style={styles.archiveDetailCard}>
+                                        <View style={styles.archiveItemHeader}>
+                                            <Text style={styles.archiveItemType}>{typeLabel}</Text>
+                                            <Text style={styles.archiveItemDate}>{formatLogDate(getLogDateValue(item), item.id || item.logId || item.timestamp)}</Text>
+                                        </View>
+
+                                        {img ? (
+                                            <View style={styles.archiveDetailImageFrame}>
+                                                <Image source={{ uri: img }} style={styles.archiveDetailImage} resizeMode="contain" />
+                                            </View>
+                                        ) : null}
+
+                                        {audio ? (
+                                            <Pressable onPress={() => togglePlay(audio)} style={{ marginTop: 8, padding: 12, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.03)' }}>
+                                                <Text style={{ color: textPrimary }}>{playingUri === audio ? 'Playing...' : 'Play recording'}</Text>
+                                            </Pressable>
+                                        ) : null}
+
+                                        {(extractedProofText || img || audio) ? (
+                                            <View style={styles.analysisContainer}>
+                                                <Text style={styles.analysisLabel}>PROOF:</Text>
+                                                {extractedProofText ? <Text selectable selectionColor="#0A84FF" style={styles.analysisText}>{extractedProofText}</Text> : null}
+                                            </View>
+                                        ) : null}
+
+                                        {bodyWithoutProof ? <Text selectable selectionColor="#0A84FF" style={styles.archiveItemText}>{bodyWithoutProof}</Text> : null}
+
+                                        {source === 'journal' && item.analysis && (
+                                            <View style={styles.analysisContainer}>
+                                                <Text style={styles.analysisLabel}>ZANE ANALYSIS:</Text>
+                                                <Text selectable selectionColor="#0A84FF" style={styles.analysisText}>{item.analysis}</Text>
+                                            </View>
+                                        )}
+                                    </GlassCard>
+                                );
+                            })()}
+                        </ScrollView>
+                    ) : (
+                        <>
+                            <View style={styles.archiveTabs}>
+                                {(['logs', 'verify', 'trash'] as const).map(tab => (
+                                    <Pressable
+                                        key={tab}
+                                        onPress={() => setArchiveTab(tab)}
+                                        style={[styles.archiveTabBtn, archiveTab === tab && styles.archiveTabBtnActive]}
+                                    >
+                                        <Text style={[styles.archiveTabText, archiveTab === tab && styles.archiveTabTextActive]}>
+                                            {tab === 'logs' ? 'LOGS' : tab === 'verify' ? 'VERIFY REPS' : 'TRASH'}
+                                        </Text>
+                                    </Pressable>
+                                ))}
+                            </View>
+                            <FlatList
+                                ref={archiveListRef}
+                                data={(() => {
+                                    const drillItems = [...(user.drillLogs || [])].map((d: any, idx: number) => ({ ...d, _source: 'drill', _sourceIndex: idx }));
+                                    const journalItems = [...(user.journalLogs || [])].map((j: any, idx: number) => ({ ...j, _source: 'journal', _sourceIndex: idx }));
+                                    const combined = [...drillItems, ...journalItems];
+
+                                    const filtered = archiveTab === 'trash'
+                                        ? combined.filter((item: any) => isInTrash(item) && !isTrashExpired(item))
+                                        : archiveTab === 'verify'
+                                            ? combined.filter((item: any) => !isInTrash(item) && isVerifyRepLog(item))
+                                            : combined.filter((item: any) => !isInTrash(item) && !isVerifyRepLog(item));
+
+                                    return filtered.sort((a: any, b: any) => {
+                                        if (archiveTab === 'trash') {
+                                            return getTrashExpiryTs(b) - getTrashExpiryTs(a);
+                                        }
+                                        return getLogTimestamp(getLogDateValue(b), b?.id || b?.logId || b?.timestamp) - getLogTimestamp(getLogDateValue(a), a?.id || a?.logId || a?.timestamp);
+                                    });
+                                })()}
+                                onScroll={(event) => {
+                                    archiveScrollOffsetRef.current = event.nativeEvent.contentOffset.y;
+                                }}
+                                scrollEventThrottle={16}
+                                keyExtractor={(item, index) => getLogStableId(item, index)}
+                                contentContainerStyle={{ padding: 20 }}
+                                renderItem={({ item }) => {
+                                    const card = (
+                                        <GlassCard style={styles.archiveItem} onPress={() => setArchiveDetailItem(item)}>
+                                            <View style={styles.archiveItemHeader}>
+                                                <Text style={styles.archiveItemType}>
+                                                    {item._source === 'journal'
+                                                        ? 'JOURNAL ENTRY'
+                                                        : archiveTab === 'trash'
+                                                            ? 'TRASHED LOG'
+                                                            : (archiveTab === 'verify' ? 'VERIFY REP' : (item.type?.toUpperCase() || 'LOG'))}
+                                                </Text>
+                                                <Text style={styles.archiveItemDate}>{formatLogDate(getLogDateValue(item), item.id || item.logId || item.timestamp)}</Text>
+                                            </View>
+                                            {(() => {
+                                                const content = item._source === 'journal'
+                                                    ? (item.entry || item.feedback || '')
+                                                    : (item.feedback || item.entry || '');
+                                                let cleaned = content.replace(/\[ID:[^\]]+\]/g, '').trim();
+                                                cleaned = cleaned.replace(/\[(?:Photo|Voice|Media)\s*Proof\s*Attached\]/gi, '').trim();
+                                                cleaned = cleaned.replace(/\b(?:qs_|dm_|q_|id_)[A-Za-z0-9_-]+\b/gi, (match: string) => {
+                                                    const pretty = match.replace(/^(?:qs_|dm_|q_|id_)/i, '').replace(/[_-]/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
+                                                    return pretty;
+                                                });
+                                                return <Text style={styles.archiveItemText}>{cleaned || '(no description provided)'}</Text>;
+                                            })()}
+                                            {archiveTab === 'trash' ? <Text style={styles.archiveTrashHint}>Auto deletes 15 days after trashing.</Text> : null}
+                                            {item._source === 'journal' && item.analysis && (
+                                                <View style={styles.analysisContainer}>
+                                                    <Text style={styles.analysisLabel}>ZANE ANALYSIS:</Text>
+                                                    <Text style={styles.analysisText}>{item.analysis}</Text>
+                                                </View>
+                                            )}
+                                            <Text style={styles.archiveTapHint}>Tap to expand</Text>
+                                        </GlassCard>
+                                    );
+
+                                    if (archiveTab === 'trash') return card;
+
+                                    return (
+                                        <Swipeable
+                                            overshootRight={false}
+                                            renderRightActions={() => (
+                                                <Pressable
+                                                    onPress={() => {
+                                                        Alert.alert(
+                                                            'Move To Trash',
+                                                            'This log will remain in Trash for 15 days before auto deletion.',
+                                                            [
+                                                                { text: 'Cancel', style: 'cancel' },
+                                                                {
+                                                                    text: 'Trash',
+                                                                    style: 'destructive',
+                                                                    onPress: () => { void moveArchiveItemToTrash(item); },
+                                                                },
+                                                            ]
+                                                        );
+                                                    }}
+                                                    style={styles.archiveTrashAction}
+                                                >
+                                                    <Text style={styles.archiveTrashActionIcon}>🗑</Text>
+                                                </Pressable>
+                                            )}
+                                        >
+                                            {card}
+                                        </Swipeable>
+                                    );
+                                }}
+                                ListEmptyComponent={<Text style={styles.emptyText}>No data in neural buffers.</Text>}
+                            />
+                        </>
+                    )}
                 </View>
             </Modal>
 
@@ -481,21 +947,21 @@ const styles = StyleSheet.create({
     },
     subscriptionBannerSheen: {
         position: 'absolute',
-        top: 3,
-        left: 14,
-        right: 14,
-        height: '34%',
-        borderRadius: Radius.xl,
-        opacity: 0.62,
+        top: 2,
+        left: 8,
+        right: 8,
+        height: '21%',
+        borderRadius: Radius.pill,
+        opacity: 0.52,
     },
     subscriptionBannerVeil: {
         position: 'absolute',
-        top: 3,
-        left: 12,
-        right: 12,
-        height: '42%',
-        borderRadius: Radius.xl,
-        opacity: 0.38,
+        top: 2,
+        left: 8,
+        right: 8,
+        height: '28%',
+        borderRadius: Radius.pill,
+        opacity: 0.28,
     },
     subscriptionBannerPillPrimary: {
         position: 'absolute',
@@ -609,22 +1075,114 @@ const styles = StyleSheet.create({
     footerVersion: { fontFamily: Fonts.mono, color: 'rgba(255,255,255,0.1)', fontSize: 8 },
     archiveModalOverlay: { flex: 1, backgroundColor: '#000' },
     archiveHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, paddingTop: 60 },
-    closeText: { color: 'rgba(255,255,255,0.5)', fontFamily: Fonts.mono, fontSize: 11 },
-    archiveHeaderTitle: { fontFamily: Fonts.heading, fontSize: 20, color: '#fff', letterSpacing: 4 },
+    archiveHeaderSpacer: { width: 72 },
+    closeText: { color: 'rgba(255,255,255,0.68)', fontFamily: Fonts.monoBold, fontSize: 11, letterSpacing: 1 },
+    archiveHeaderTitle: { flex: 1, textAlign: 'center', fontFamily: Fonts.heading, fontSize: 20, color: '#fff', letterSpacing: 3, paddingHorizontal: 10 },
     archiveTabs: { flexDirection: 'row', padding: 20, gap: 10 },
-    archiveTabBtn: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
-    archiveTabBtnActive: { backgroundColor: 'rgba(255, 255, 255, 0.1)', borderColor: 'rgba(255, 255, 255, 0.3)' },
-    archiveTabText: { fontFamily: Fonts.mono, fontSize: 10, color: 'rgba(255,255,255,0.4)', letterSpacing: 1 },
-    archiveTabTextActive: { color: '#fff' },
-    archiveItem: { padding: 16, marginBottom: 12, borderRadius: Radius.lg },
-    archiveItemHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-    archiveItemType: { fontFamily: Fonts.nunito, fontSize: 9, color: '#fff', opacity: 0.5 },
-    archiveItemDate: { fontFamily: Fonts.nunito, fontSize: 9, color: 'rgba(255,255,255,0.3)' },
-    archiveItemText: { fontFamily: Fonts.nunito, fontSize: 14, color: '#fff', lineHeight: 22 },
-    analysisContainer: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)' },
+    archiveTabBtn: {
+        flex: 1,
+        minHeight: 46,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 12,
+        alignItems: 'center',
+        backgroundColor: 'rgba(255,255,255,0.04)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.14)',
+        shadowColor: '#AEE8FF',
+        shadowOpacity: 0.08,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 0 },
+    },
+    archiveTabBtnActive: {
+        backgroundColor: 'rgba(174,232,255,0.15)',
+        borderColor: 'rgba(174,232,255,0.65)',
+        shadowOpacity: 0.24,
+    },
+    archiveTabText: { fontFamily: Fonts.monoBold, fontSize: 10, color: 'rgba(255,255,255,0.65)', letterSpacing: 1.2, textAlign: 'center' },
+    archiveTabTextActive: { color: '#E8F7FF' },
+    archiveItem: {
+        padding: 16,
+        marginBottom: 12,
+        borderRadius: Radius.lg,
+        backgroundColor: 'rgba(255,255,255,0.045)',
+        borderColor: 'rgba(255,255,255,0.12)',
+    },
+    archiveItemHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
+    archiveItemType: { flexShrink: 1, paddingRight: 8, fontFamily: Fonts.monoBold, fontSize: 10, color: 'rgba(255,255,255,0.78)', letterSpacing: 1.3 },
+    archiveItemDate: { marginLeft: 8, fontFamily: Fonts.mono, fontSize: 10, color: 'rgba(255,255,255,0.5)' },
+    archiveItemText: { fontFamily: Fonts.body, fontSize: 14, color: '#F1F5F7', lineHeight: 22 },
+    archiveTapHint: { marginTop: 10, fontFamily: Fonts.mono, fontSize: 9, letterSpacing: 1, color: 'rgba(255,255,255,0.35)' },
+    archiveTrashHint: { marginTop: 8, fontFamily: Fonts.mono, fontSize: 9, letterSpacing: 0.8, color: 'rgba(255,180,180,0.74)' },
+    archiveTrashAction: {
+        width: 72,
+        marginBottom: 12,
+        borderRadius: Radius.lg,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(255,59,48,0.85)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,120,120,0.9)',
+    },
+    archiveTrashActionIcon: {
+        fontSize: 20,
+        color: '#FFFFFF',
+    },
+    analysisContainer: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)' },
     analysisLabel: { fontFamily: Fonts.monoBold, fontSize: 9, color: '#fff', opacity: 0.4, marginBottom: 4 },
     analysisText: { fontFamily: Fonts.body, fontSize: 13, color: 'rgba(255,255,255,0.6)', lineHeight: 20 },
     emptyText: { fontFamily: Fonts.body, fontSize: 13, color: 'rgba(255,255,255,0.3)', textAlign: 'center', marginTop: 40, fontStyle: 'italic' },
+    archiveDetailContent: {
+        paddingHorizontal: 20,
+        paddingBottom: 28,
+    },
+    archiveDetailScroll: {
+        flex: 1,
+        minHeight: 0,
+    },
+    archiveDetailOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        justifyContent: 'center',
+        padding: 20,
+    },
+    archiveDetailCard: {
+        padding: 18,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.14)',
+        backgroundColor: 'rgba(20,20,20,0.82)',
+    },
+    archiveDetailImageFrame: {
+        width: '100%',
+        height: 240,
+        borderRadius: 12,
+        marginTop: 8,
+        marginBottom: 4,
+        overflow: 'hidden',
+        backgroundColor: 'rgba(0,0,0,0.45)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.08)',
+    },
+    archiveDetailImage: {
+        width: '100%',
+        height: '100%',
+    },
+    archiveDetailCloseBtn: {
+        marginTop: 14,
+        alignSelf: 'flex-end',
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
+        backgroundColor: 'rgba(255,255,255,0.04)',
+    },
+    archiveDetailCloseText: {
+        fontFamily: Fonts.monoBold,
+        fontSize: 10,
+        letterSpacing: 1,
+        color: 'rgba(255,255,255,0.82)',
+    },
     usernameModalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', padding: 20 },
     usernameModalCard: { backgroundColor: '#111', borderRadius: 24, padding: 28, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
     usernameModalTitle: { fontFamily: Fonts.heading, fontSize: 18, color: '#fff', letterSpacing: 2, marginBottom: 20, textAlign: 'center' },

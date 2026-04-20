@@ -1,12 +1,12 @@
-import { View, Text, StyleSheet, Pressable, Alert, ScrollView, KeyboardAvoidingView, Platform, TextInput } from 'react-native';
+import GlassButton from '@/components/GlassButton';
+import GlassCard from '@/components/GlassCard';
+import { Colors, Fonts, Radius, Spacing } from '@/constants/theme';
+import { useTextColors } from '@/context/TextColorsContext';
+import { useUser } from '@/context/UserContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useState, useEffect } from 'react';
-import { useUser } from '@/context/UserContext';
-import { useTextColors } from '@/context/TextColorsContext';
-import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
-import GlassCard from '@/components/GlassCard';
-import GlassButton from '@/components/GlassButton';
+import { useEffect, useState } from 'react';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 const WEAPONS = [
   { name: 'FLIP', desc: 'Turn it around. Reverse the energy.' },
@@ -33,7 +33,6 @@ export default function WeaponPickerDrill() {
   const [roundTimer, setRoundTimer] = useState(30);
   const roundTimerRatio = Math.max(0, Math.min(1, roundTimer / 30));
   const roundTimerColor = roundTimerRatio > 0.66 ? '#00FF64' : roundTimerRatio > 0.33 ? '#F89B29' : '#FF3B30';
-  const safePrompt = (currentPrompt && currentPrompt.trim()) || 'Your idea just got rejected.';
 
   const PROMPTS = [
     'Your idea just got rejected.',
@@ -44,6 +43,7 @@ export default function WeaponPickerDrill() {
   ];
 
   const [currentPrompt, setCurrentPrompt] = useState(() => PROMPTS[Math.floor(Math.random() * PROMPTS.length)] || 'Your idea just got rejected.');
+  const safePrompt = (currentPrompt && currentPrompt.trim()) || 'Your idea just got rejected.';
 
   useEffect(() => {
     setCurrentPrompt(PROMPTS[Math.floor(Math.random() * PROMPTS.length)]);
@@ -205,7 +205,7 @@ export default function WeaponPickerDrill() {
             <GlassCard style={styles.promptCard}>
               <Text style={styles.promptLabel}>SCENARIO:</Text>
               <Text style={[styles.promptText, { color: '#FFFFFF' }]}>
-                "{safePrompt}"
+                &quot;{safePrompt}&quot;
               </Text>
             </GlassCard>
 
@@ -235,7 +235,7 @@ export default function WeaponPickerDrill() {
             <GlassCard style={[styles.instructionCard, { borderColor: systemColor + '44', borderWidth: 1 }]}>
               <Text style={styles.instructionLabel}>SCENARIO (WEAPON: {randomWeapon.name}):</Text>
               <Text style={styles.instructionText}>
-                "{safePrompt}"
+                &quot;{safePrompt}&quot;
               </Text>
               <Text style={[styles.liveMetaText, { color: roundTimerColor }]}>TIMER: {roundTimer}s • RULE: Use only {randomWeapon.name}</Text>
             </GlassCard>

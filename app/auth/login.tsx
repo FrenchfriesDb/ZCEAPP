@@ -1,19 +1,19 @@
-import { View, Text, StyleSheet, TextInput, Pressable, KeyboardAvoidingView, Platform, Animated, ScrollView } from 'react-native';
-import { PanGestureHandler, State, NativeViewGestureHandler } from 'react-native-gesture-handler';
-import { router } from 'expo-router';
-import { useState, useRef, useEffect } from 'react';
 import { Fonts, Spacing } from '@/constants/theme';
 import { useUser } from '@/context/UserContext';
+import { router } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { NativeViewGestureHandler } from 'react-native-gesture-handler';
 
 export default function LoginScreen() {
-    const { signIn, forgotPassword, isLoading, setReturnToOnboardingStage } = useUser();
+    const { signIn, forgotPassword, isLoading } = useUser();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [focusedField, setFocusedField] = useState<string | null>(null);
 
     const fadeAnim = useRef(new Animated.Value(0)).current;
-    const gestureX = useRef(new Animated.Value(0)).current;
     const isWeb = Platform.OS === 'web';
 
     useEffect(() => {
@@ -79,10 +79,19 @@ export default function LoginScreen() {
                                     placeholderTextColor="rgba(255, 255, 255, 0.3)"
                                     value={password}
                                     onChangeText={setPassword}
-                                    secureTextEntry
+                                    secureTextEntry={!showPassword}
                                     onFocus={() => setFocusedField('password')}
                                     onBlur={() => setFocusedField(null)}
                                 />
+                                <Pressable
+                                    onPress={() => setShowPassword((prev) => !prev)}
+                                    hitSlop={8}
+                                    style={styles.passwordToggle}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                                >
+                                    <Text style={styles.passwordToggleText}>{showPassword ? 'HIDE' : 'SHOW'}</Text>
+                                </Pressable>
                             </View>
 </NativeViewGestureHandler>
                         <Pressable
@@ -110,30 +119,7 @@ export default function LoginScreen() {
         </KeyboardAvoidingView>
     );
 
-    if (isWeb) {
-        // RNGH web requires a real DOM element child; avoid crashing by disabling the swipe gesture on web.
-        return <View style={{ flex: 1 }}>{content}</View>;
-    }
-
-    return (
-        <PanGestureHandler
-            onGestureEvent={Animated.event([{ nativeEvent: { translationX: gestureX } }], { useNativeDriver: false })}
-            onHandlerStateChange={(event) => {
-                if (event.nativeEvent.state === State.END) {
-                    const { translationX } = event.nativeEvent;
-                    // Swipe right: return to the end of onboarding flow (auth handoff stage).
-                    if (translationX > 30) {
-                        setReturnToOnboardingStage(7);
-                        router.replace('/auth/onboarding');
-                    }
-                }
-            }}
-        >
-            <Animated.View style={{ flex: 1 }}>
-                {content}
-            </Animated.View>
-        </PanGestureHandler>
-    );
+    return <View style={{ flex: 1 }}>{content}</View>;
 }
 
 const styles = StyleSheet.create({
@@ -146,6 +132,8 @@ const styles = StyleSheet.create({
     inputGroup: { gap: 10 },
     label: { fontFamily: Fonts.mono, fontSize: 9, color: 'rgba(255,255,255,0.5)', letterSpacing: 2, fontWeight: '600' },
     inputWrap: {
+        flexDirection: 'row',
+        alignItems: 'center',
         height: 52,
         backgroundColor: 'rgba(255, 255, 255, 0.04)',
         borderTopWidth: 1,
@@ -157,15 +145,31 @@ const styles = StyleSheet.create({
         borderBottomColor: 'rgba(0, 0, 0, 0.3)',
         borderRightColor: 'rgba(0, 0, 0, 0.3)',
         borderRadius: 10,
-        paddingHorizontal: 18,
-        justifyContent: 'center',
+        paddingHorizontal: 14,
     },
     input: {
         flex: 1,
         color: '#FFFFFF',
-        fontFamily: Fonts.body,
+        fontFamily: Fonts.nunito,
         fontSize: 15,
-        padding: 0,
+        paddingVertical: 0,
+        paddingRight: 8,
+    },
+    passwordToggle: {
+        minWidth: 52,
+        height: 30,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
+        backgroundColor: 'rgba(255,255,255,0.08)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    passwordToggleText: {
+        fontFamily: Fonts.bodySemi,
+        fontSize: 11,
+        color: '#FFFFFF',
+        letterSpacing: 0.8,
     },
     inputWrapFocused: {
         borderTopColor: 'rgba(255, 255, 255, 0.5)',
@@ -195,7 +199,7 @@ const styles = StyleSheet.create({
     buttonPressed: { borderColor: 'rgba(255, 255, 255, 0.9)', transform: [{ scale: 0.97 }] },
     buttonInner: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'transparent' },
     buttonText: { fontFamily: Fonts.heading, fontSize: 14, color: '#FFFFFF', letterSpacing: 3, fontWeight: '800', textTransform: 'uppercase' },
-    errorText: { color: 'rgba(255,255,255,0.7)', fontFamily: Fonts.mono, fontSize: 10, textAlign: 'center' },
+    errorText: { color: 'rgba(255,255,255,0.7)', fontFamily: Fonts.nunito, fontSize: 11, textAlign: 'center' },
     link: { alignItems: 'center', marginTop: 16 },
-    linkText: { fontFamily: Fonts.monoBold, fontSize: 10, color: 'rgba(255,255,255,0.4)', textDecorationLine: 'underline', letterSpacing: 1 },
+    linkText: { fontFamily: Fonts.bodyMedium, fontSize: 10, color: 'rgba(255,255,255,0.4)', textDecorationLine: 'underline', letterSpacing: 1 },
 });

@@ -15,5 +15,15 @@
   "include": [
     "**/*.ts",
     "**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "node_modules_backup",
+    "ios",
+    "android",
+    "landing",
+    "dist",
+    "temp_working.tsx",
+    "components/ProofModalOld.tsx"
   ]
 }

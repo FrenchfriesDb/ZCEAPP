@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
 import { Colors, Fonts, FontSizes, Spacing } from '@/constants/theme';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, StyleSheet, Text, View } from 'react-native';
 
 const MENTOR_QUOTES = [
     { text: "You didn't talk to anyone today? Bro, I'm not even human and I'm disappointed.", mood: 'roast' },
@@ -64,7 +64,7 @@ export default function MentorEntity() {
 
             {/* Quote */}
             <View style={styles.quoteBox}>
-                <Text style={styles.quoteText}>"{quote.text}"</Text>
+                <Text style={styles.quoteText}>&quot;{quote.text}&quot;</Text>
                 <View style={[styles.moodTag, quote.mood === 'roast' && styles.moodRoast, quote.mood === 'motivate' && styles.moodMotivate]}>
                     <Text style={styles.moodText}>{quote.mood.toUpperCase()}</Text>
                 </View>

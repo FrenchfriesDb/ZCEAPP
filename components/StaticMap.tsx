@@ -1,7 +1,7 @@
 import GlassCard from '@/components/GlassCard';
 import { Fonts, Radius } from '@/constants/theme';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Dimensions, FlatList, NativeScrollEvent, NativeSyntheticEvent, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, FlatList, NativeScrollEvent, NativeSyntheticEvent, Platform, StyleSheet, Text, View } from 'react-native';
 import Svg, { Rect } from 'react-native-svg';
 
 interface StaticMapProps {
@@ -66,6 +66,7 @@ const StaticMap: React.FC<StaticMapProps> = ({ dailyXp, drillLogs = [] }) => {
     }, [dailyXp]);
 
     const [selectedDate, setSelectedDate] = useState<string | null>(todayStr);
+    const isWeb = Platform.OS === 'web';
     const scrollRef = useRef<FlatList>(null);
 
     const { pagesData, currentPageIndex } = useMemo(() => {
@@ -191,7 +192,9 @@ const StaticMap: React.FC<StaticMapProps> = ({ dailyXp, drillLogs = [] }) => {
                         fill={getSquareColor(day.xp, day.date)}
                         stroke={selectedDate === day.date ? '#fff' : 'transparent'}
                         strokeWidth={OUTLINE_WIDTH}
-                        onPress={() => setSelectedDate(day.date)}
+                        {...(isWeb
+                            ? ({ onPointerDown: () => setSelectedDate(day.date) } as any)
+                            : ({ onPress: () => setSelectedDate(day.date) } as any))}
                     />
                 ))}
             </Svg>
@@ -277,7 +280,7 @@ const StaticMap: React.FC<StaticMapProps> = ({ dailyXp, drillLogs = [] }) => {
                             </Text>
                         </View>
 
-                        <Text style={styles.analysisComment}>"{analysis.comment}"</Text>
+                        <Text style={styles.analysisComment}>&quot;{analysis.comment}&quot;</Text>
 
                         {analysis.dayLogs.length > 0 && (
                             <View style={styles.logsList}>

@@ -83,6 +83,19 @@ function isCancelledPurchaseLog(message: string): boolean {
     return msg.includes('purchase was cancelled') || msg.includes('purchase cancelled') || msg.includes('user cancelled');
 }
 
+function isIgnorableRevenueCatLog(message: string): boolean {
+    const msg = String(message || '').toLowerCase();
+    return (
+        msg.includes('error when syncing subscriber attributes') ||
+        msg.includes('logout was called but the current user is anonymous')
+    );
+}
+
+function isAnonymousLogoutError(error: any): boolean {
+    const msg = String(error?.message || error || '').toLowerCase();
+    return msg.includes('current user is anonymous') || msg.includes('logout was called but the current user is anonymous');
+}
+
 function mapCustomerInfoToEntitlements(customerInfo: any, config: PaymentConfig): EntitlementSnapshot {
     const active = customerInfo?.entitlements?.active || {};
     const entitlementKeys = Object.keys(active);
@@ -184,7 +197,7 @@ export const PaymentService = {
         if (typeof purchases.setLogHandler === 'function') {
             try {
                 purchases.setLogHandler((level, message) => {
-                    if (isCancelledPurchaseLog(message)) {
+                    if (isCancelledPurchaseLog(message) || isIgnorableRevenueCatLog(message)) {
                         return;
                     }
                     const text = `[RevenueCat] ${String(message || '')}`;
@@ -214,7 +227,13 @@ export const PaymentService = {
                 purchases.configure({ apiKey, appUserID: normalizedAppUserID });
             }
         } else if (initializedAppUserID && typeof purchases.logOut === 'function') {
-            await purchases.logOut();
+            try {
+                await purchases.logOut();
+            } catch (error) {
+                if (!isAnonymousLogoutError(error)) {
+                    throw error;
+                }
+            }
         }
 
         initializedApiKey = apiKey;

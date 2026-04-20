@@ -1,16 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import {
-    View, Text, StyleSheet, Modal, TextInput, Pressable,
-    Animated, Image, Alert, ScrollView, Platform, ActionSheetIOS,
-    KeyboardAvoidingView
-} from 'react-native';
+import { Colors, Fonts, Radius, Spacing } from '@/constants/theme';
+import { useTextColors } from '@/context/TextColorsContext';
+import { useTimeColors } from '@/hooks/useTimeColors';
 import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
-import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
-import { useTimeColors } from '@/hooks/useTimeColors';
-import { useTextColors } from '@/context/TextColorsContext';
-import GlassButton from './GlassButton';
+import { requireOptionalNativeModule } from 'expo-modules-core';
+import React, { useEffect, useState } from 'react';
+import {
+    ActionSheetIOS,
+    Alert,
+    Animated, Image,
+    Keyboard,
+    KeyboardAvoidingView,
+    Modal,
+    PanResponder,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View
+} from 'react-native';
 import FluentEmoji from './FluentEmoji';
+import GlassButton from './GlassButton';
 
 // Web platform check
 const isWeb = Platform.OS === 'web';
@@ -44,7 +56,7 @@ const loadAudio = async () => {
     if (Platform.OS === 'web') return null;
     if (_cachedAudio !== undefined) return _cachedAudio;
     try {
-        _cachedAudio = await import('expo-audio');
+        _cachedAudio = requireOptionalNativeModule<any>('ExpoAudio');
     } catch {
         _cachedAudio = null;
     }
@@ -68,6 +80,7 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
     const [isRecording, setIsRecording] = useState(false);
     const [recordingSeconds, setRecordingSeconds] = useState(0);
     const pulseAnim = React.useRef(new Animated.Value(1)).current;
+    const sheetTranslateY = React.useRef(new Animated.Value(0)).current;
     const recordingRef = React.useRef<any>(null);
     const webStreamRef = React.useRef<any>(null);
     const webChunksRef = React.useRef<any[]>([]);
@@ -76,6 +89,52 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
     const systemColor = timePalette[timePalette.length - 1];
     const middleColor = timePalette[Math.floor(timePalette.length / 2)];
     const firstColor = timePalette[0];
+
+    const closeWithSwipe = React.useCallback(() => {
+        Animated.timing(sheetTranslateY, {
+            toValue: 520,
+            duration: 180,
+            useNativeDriver: true,
+        }).start(() => {
+            sheetTranslateY.setValue(0);
+            onClose();
+        });
+    }, [onClose, sheetTranslateY]);
+
+    const panResponder = React.useMemo(
+        () => PanResponder.create({
+            onMoveShouldSetPanResponder: (_, gesture) => {
+                const vertical = Math.abs(gesture.dy) > Math.abs(gesture.dx);
+                return vertical && gesture.dy > 8;
+            },
+            onPanResponderMove: (_, gesture) => {
+                if (gesture.dy > 0) {
+                    sheetTranslateY.setValue(gesture.dy);
+                }
+            },
+            onPanResponderRelease: (_, gesture) => {
+                if (gesture.dy > 120 || gesture.vy > 1) {
+                    closeWithSwipe();
+                    return;
+                }
+                Animated.spring(sheetTranslateY, {
+                    toValue: 0,
+                    useNativeDriver: true,
+                    tension: 80,
+                    friction: 12,
+                }).start();
+            },
+            onPanResponderTerminate: () => {
+                Animated.spring(sheetTranslateY, {
+                    toValue: 0,
+                    useNativeDriver: true,
+                    tension: 80,
+                    friction: 12,
+                }).start();
+            },
+        }),
+        [closeWithSwipe, sheetTranslateY]
+    );
 
     useEffect(() => {
         if (isRecording) {
@@ -257,8 +316,16 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
             setIsRecording(false);
             try {
                 if (recordingRef.current) {
-                    await recordingRef.current.stop();
-                    const uri = recordingRef.current.uri;
+                    if (typeof recordingRef.current.stop === 'function') {
+                        await recordingRef.current.stop();
+                    } else if (typeof recordingRef.current.stopAsync === 'function') {
+                        await recordingRef.current.stopAsync();
+                    }
+                    const uri =
+                        recordingRef.current?.uri ||
+                        (typeof recordingRef.current?.getURI === 'function'
+                            ? recordingRef.current.getURI()
+                            : null);
                     setVoiceUri(uri || null);
                     recordingRef.current = null;
                 }
@@ -284,12 +351,46 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                     playsInSilentMode: true,
                 });
                 const AudioRecorderClass = getExpoAudioRecorderClass(Audio);
-                if (typeof AudioRecorderClass !== 'function' || !Audio.RecordingPresets?.HIGH_QUALITY) {
+                if (typeof AudioRecorderClass !== 'function') {
                     throw new Error('expo-audio recorder API is missing from this runtime.');
                 }
-                const rec = new AudioRecorderClass(Audio.RecordingPresets.HIGH_QUALITY);
+
+                const ctorAttempts: Array<() => any> = [
+                    () => new AudioRecorderClass(Audio?.RecordingPresets?.HIGH_QUALITY),
+                    () => new AudioRecorderClass({}),
+                    () => new AudioRecorderClass(),
+                ];
+
+                let rec: any = null;
+                let ctorError: any = null;
+                for (const attempt of ctorAttempts) {
+                    try {
+                        rec = attempt();
+                        if (rec) break;
+                    } catch (err) {
+                        ctorError = err;
+                    }
+                }
+
+                if (!rec) {
+                    console.warn('[ProofModal] expo-audio recorder ctor failed in runtime', {
+                        hasRecorderClass: typeof AudioRecorderClass === 'function',
+                        hasHighQualityPreset: !!Audio?.RecordingPresets?.HIGH_QUALITY,
+                        audioKeys: Audio ? Object.keys(Audio) : [],
+                    });
+                    throw (ctorError instanceof Error ? ctorError : new Error('Unable to initialize audio recorder in this runtime.'));
+                }
+
                 await rec.prepareToRecordAsync();
-                rec.record();
+                if (typeof rec.record === 'function') {
+                    rec.record();
+                } else if (typeof rec.recordAsync === 'function') {
+                    await rec.recordAsync();
+                } else if (typeof rec.start === 'function') {
+                    rec.start();
+                } else {
+                    throw new Error('Recorder started, but no supported record method exists in this runtime.');
+                }
                 recordingRef.current = rec;
                 setIsRecording(true);
             } catch (err: any) {
@@ -310,20 +411,45 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
         setPhotoUri(null);
     };
 
+    const handleRemovePhoto = () => {
+        setPhotoUri(null);
+    };
+
+    const handleRemoveVoice = () => {
+        if (voiceUri?.startsWith?.('blob:')) {
+            URL.revokeObjectURL(voiceUri);
+        }
+        setVoiceUri(null);
+        setIsRecording(false);
+        setRecordingSeconds(0);
+    };
+
     return (
-        <Modal visible={visible} transparent animationType="slide">
+        <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
             <KeyboardAvoidingView
                 style={styles.overlay}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
             >
-                <BlurView intensity={60} style={StyleSheet.absoluteFill} tint="dark" />
+                <BlurView intensity={26} style={StyleSheet.absoluteFill} tint="dark" />
+                <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
-                <View style={styles.modal}>
+                <Animated.View
+                    style={styles.modal}
+                >
+                    <View style={styles.dragHandle} />
                     <Text style={styles.eyebrow}>VERIFICATION REQUIRED</Text>
                     <Text style={styles.title} numberOfLines={2}>{questTitle.toUpperCase()}</Text>
 
-                    <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+                    <ScrollView
+                        style={styles.content}
+                        contentContainerStyle={styles.contentContainer}
+                        showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="always"
+                        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+                        onScrollBeginDrag={Keyboard.dismiss}
+                        alwaysBounceVertical={false}
+                    >
                         {/* ── Text Proof ── */}
                         <Text style={styles.sectionLabel}>DESCRIBE THE INTERACTION</Text>
                         <TextInput
@@ -331,6 +457,9 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                             placeholder="What happened? Who did you talk to? What was the outcome?"
                             placeholderTextColor="rgba(255,255,255,0.3)"
                             multiline
+                            blurOnSubmit
+                            returnKeyType="done"
+                            onSubmitEditing={Keyboard.dismiss}
                             value={textProof}
                             onChangeText={setTextProof}
                         />
@@ -338,9 +467,14 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                         {/* ── Media Row ── */}
                         <View style={styles.mediaRow}>
                             {/* Photo */}
-                            <Pressable onPress={handlePickImage} style={styles.mediaBtn}>
+                            <Pressable onPress={handlePickImage} style={[styles.mediaBtn, styles.photoBtn]}>
                                 {photoUri ? (
-                                    <Image source={{ uri: photoUri }} style={styles.previewImage} />
+                                    <>
+                                        <Image source={{ uri: photoUri }} style={styles.previewImage} resizeMode="contain" />
+                                        <Pressable style={styles.removeChip} onPress={handleRemovePhoto}>
+                                            <Text style={styles.removeChipText}>REMOVE</Text>
+                                        </Pressable>
+                                    </>
                                 ) : (
                                     <View style={styles.mediaPlaceholder}>
                                         <FluentEmoji name="camera" size={30} style={styles.mediaEmojiImage} />
@@ -353,7 +487,7 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                             {/* Voice — tap to toggle */}
                             <Pressable
                                 onPress={handleMicToggle}
-                                style={[styles.mediaBtn, isRecording && styles.mediaBtnActive]}
+                                style={[styles.mediaBtn, styles.voiceBtn, isRecording && styles.mediaBtnActive]}
                             >
                                 <Animated.View style={{ transform: [{ scale: pulseAnim }], alignItems: 'center' }}>
                                     {isRecording ? (
@@ -377,67 +511,85 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                         {isRecording && <Text style={styles.statusMsg}>● Recording now. Tap the mic tile again to stop. {recordingSeconds}s captured.</Text>}
                         {voiceUri && !isRecording && <Text style={styles.statusMsg}>✅ Voice proof ready. Tap the mic tile again if you want a cleaner take.</Text>}
                         {photoUri && <Text style={styles.statusMsg}>✅ Photo proof attached.</Text>}
+                        {voiceUri && !isRecording && (
+                            <Pressable onPress={handleRemoveVoice} style={styles.removeVoiceBtn}>
+                                <Text style={styles.removeVoiceText}>DELETE RECORDING</Text>
+                            </Pressable>
+                        )}
                     </ScrollView>
 
                     <View style={styles.footer}>
-                        <Pressable onPress={onClose} style={styles.cancelBtn}>
+                        <Pressable onPress={() => { Keyboard.dismiss(); onClose(); }} style={styles.cancelBtn}>
                             <Text style={styles.cancelText}>ABANDON</Text>
                         </Pressable>
                         <GlassButton 
                             label="VERIFY & COMPLETE" 
-                            onPress={handleSubmit} 
+                            onPress={() => { Keyboard.dismiss(); handleSubmit(); }} 
                             look="verify"
                             tint="blue"
                             size="sm" 
                             glow
                             style={{ 
+                                flex: 1,
+                                minWidth: 0,
                                 shadowColor: firstColor,
                             }}
                         />
                     </View>
-                </View>
+                </Animated.View>
             </KeyboardAvoidingView>
         </Modal>
     );
 }
 
 const styles = StyleSheet.create({
-    overlay: { flex: 1, justifyContent: 'flex-end', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.82)' },
+    overlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.62)', paddingHorizontal: 14 },
     modal: {
-        width: '100%',
+        width: '93%',
+        maxWidth: 480,
         backgroundColor: '#0A0A0A',
-        borderTopLeftRadius: Radius.xl,
-        borderTopRightRadius: Radius.xl,
+        borderRadius: Radius.xl,
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.1)',
-        padding: Spacing.xl,
-        paddingBottom: 36,
-        minHeight: '68%',
-        maxHeight: '86%',
+        padding: Spacing.lg,
+        paddingBottom: 16,
+        maxHeight: '88%',
+    },
+    dragHandle: {
+        width: 44,
+        height: 4,
+        borderRadius: 999,
+        backgroundColor: 'rgba(255,255,255,0.26)',
+        alignSelf: 'center',
+        marginBottom: 10,
     },
     eyebrow: { fontFamily: proofMonoFont, fontSize: 10, color: Colors.accentCyan, letterSpacing: 3, marginBottom: 6, textAlign: 'center' },
     title: { fontFamily: proofHeadingFont, fontSize: 18, color: '#fff', textAlign: 'center', marginBottom: 20, letterSpacing: 1, lineHeight: 24 },
 
-    content: { marginBottom: 20 },
+    content: { maxHeight: '68%', marginBottom: 10 },
+    contentContainer: { paddingBottom: 16 },
     sectionLabel: { fontFamily: proofMonoBoldFont, fontSize: 9, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, marginBottom: 10 },
     textInput: {
         backgroundColor: 'rgba(255,255,255,0.04)',
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.1)',
         borderRadius: Radius.md,
-        padding: 14,
+        paddingHorizontal: 18,
+        paddingTop: 14,
+        paddingBottom: 14,
         color: '#fff',
         fontFamily: proofBodyFont,
         fontSize: 14,
-        minHeight: 100,
+        lineHeight: 20,
+        minHeight: 92,
         textAlignVertical: 'top',
-        marginBottom: 18,
+        marginBottom: 10,
     },
 
-    mediaRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
+    mediaRow: { flexDirection: 'row', gap: 10, marginBottom: 8 },
     mediaBtn: {
         flex: 1,
-        minHeight: 104,
+        height: 120,
         backgroundColor: 'rgba(255,255,255,0.04)',
         borderRadius: Radius.md,
         borderWidth: 1,
@@ -445,6 +597,12 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         overflow: 'hidden',
+    },
+    photoBtn: {
+        flex: 1,
+    },
+    voiceBtn: {
+        flex: 1,
     },
     mediaBtnActive: {
         borderColor: Colors.accentCyan,
@@ -476,8 +634,45 @@ const styles = StyleSheet.create({
     mediaBtnDisabled: {
         opacity: 0.4,
     },
-    previewImage: { width: '100%', height: '100%' },
+    previewImage: {
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'rgba(0,0,0,0.22)',
+    },
+    removeChip: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        backgroundColor: 'rgba(0,0,0,0.72)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.18)',
+        borderRadius: 999,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+    },
+    removeChipText: {
+        fontFamily: proofMonoBoldFont,
+        fontSize: 9,
+        color: '#fff',
+        letterSpacing: 1,
+    },
     statusMsg: { fontFamily: proofMonoFont, fontSize: 10, color: Colors.accentCyan, marginTop: 4, letterSpacing: 1 },
+    removeVoiceBtn: {
+        marginTop: 8,
+        alignSelf: 'flex-start',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.18)',
+        borderRadius: 999,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        backgroundColor: 'rgba(255,255,255,0.04)',
+    },
+    removeVoiceText: {
+        fontFamily: proofMonoBoldFont,
+        fontSize: 9,
+        color: 'rgba(255,255,255,0.76)',
+        letterSpacing: 1,
+    },
     recordingCounter: {
         fontFamily: proofMonoBoldFont,
         fontSize: 10,
@@ -500,9 +695,9 @@ const styles = StyleSheet.create({
 
     footer: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
-        paddingTop: 18,
+        gap: 12,
+        paddingTop: 12,
         borderTopWidth: 1,
         borderTopColor: 'rgba(255,255,255,0.06)',
     },

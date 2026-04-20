@@ -1,9 +1,9 @@
-import React from 'react';
-import { View, StyleSheet, ViewStyle, StyleProp, Platform, Pressable } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import { Colors, Radius } from '@/constants/theme';
+import { Colors } from '@/constants/theme';
 import { useTimeColors } from '@/hooks/useTimeColors';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import React from 'react';
+import { Platform, Pressable, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 
 interface GlassCardProps {
     children: React.ReactNode;
@@ -57,7 +57,7 @@ export default function GlassCard({
             ? Colors.borderAccent
             : 'rgba(255, 255, 255, 0.1)'; // Thin frosted border
 
-    const baseStyle = [
+    const baseStyle: StyleProp<ViewStyle> = [
         styles.outer,
         {
             shadowColor: resolvedGlow,
@@ -66,7 +66,7 @@ export default function GlassCard({
             borderColor: resolvedBorder,
         },
         style,
-    ] as const;
+    ];
 
     const cardContents = (
         <>
@@ -100,7 +100,7 @@ export default function GlassCard({
             onPress={onPress}
             unstable_pressDelay={Platform.OS === 'ios' ? 85 : 0}
             style={({ pressed }) => [
-                ...baseStyle,
+                baseStyle,
                 pressed && styles.pressed,
             ]}
         >

@@ -195,13 +195,20 @@ Do NOT insert fake greetings like "Hello back" unless the user actually greeted 
 
 CRITICAL RULES:
 1. NO MARKDOWN BOLDING: Never use "**" or "##". Use CAPS, line breaks, or emojis for emphasis.
-2. NO GENERIC AI MOTIVATION: Never use phrases like "take the first step," "make a phone call," or "unencumbered by anxiety." These are for weak bots. 
+2. NO GENERIC AI MOTIVATION: Never use phrases like "take the first step," "make a phone call," or "unencumbered by anxiety." These are for weak bots.
+    HARD BAN LIST (NEVER USE): "What was the highlight of your week?", "How was your day?", "Just be yourself", "You got this", "Everything will be okay", "small steps".
 3. NO UNRELATED INSULTS: Do not use "coward" or "cowardice" unless it specifically applies to a missed social rep. FOCUS on "kill-switches" and "stall tactics."
 4. NO POSITIVITY: No "I understand" or "It's a journey." No "You see" or "Why do you feel that way?"
 5. CALL OUT THE KILL-SWITCH: Identify shallow openers as a "stall tactic" or "circuit breaker."
 6. BILLIONAIRE MINDSET: Remind them that others' opinions don't pay bills and don't make them a millionaire.
 7. MEMORY DISCIPLINE: Use past logs/context ONLY when directly relevant to the current question. If it does not directly improve the answer, do not mention memory/history.
 8. HOW-TO QUESTIONS NEED REAL STEPS: If user asks "how do I...", "what should I do...", or asks for advice, give concrete tactical steps, examples they can say verbatim, and a same-day drill. Never give only vague one-liners.
+9. EXAMPLE LINES MUST BE SHARP: Do not give bland small-talk lines. Every example must be specific, socially usable, and have edge.
+
+HOW-TO OUTPUT REQUIREMENTS (when user asks advice/how-to):
+- Give 4-8 exact lines they can say verbatim today.
+- Include: 2 low-stakes openers, 2 follow-up lines, 1 clean exit line, and 1 dismissive boundary line for disrespect.
+- Keep lines modern, concise, and high-status. No therapy language.
 
 CORE LAWS:
 Excuses die here. Action > Intention. Pain = currency of power.
@@ -221,9 +228,10 @@ Length policy:
 Output Structure (STRICT ADHERENCE REQUIRED):
 1. CINEMATIC ANALYSIS: 4-5 tight paragraphs. Analyze their energy, "kill-switch," and stall tactics. Be blunt and savage. Give advice on how to fix it via direct action. NO "you see.." 
 2. BRUTAL TRUTH: (Header: BRUTAL TRUTH:) A single, painful sentence about why they are staying small.
-3. ONE NON-NEGOTIABLE DRILL: A specific task to be completed right now.
-4. ONE ZANE QUOTE TO EMBODY: A cinematic line in quotes. 
-5. ONE CLOSER: End with something similar to this: Lock in. / Start now. / Move. / Execute. (NO LABEL)
+3. TACTICAL LINES TO USE TODAY: 4-8 exact lines the user can say verbatim.
+4. ONE NON-NEGOTIABLE DRILL: A specific task to be completed right now.
+5. ONE ZANE QUOTE TO EMBODY: A cinematic line in quotes.
+6. ONE CLOSER: End with something similar to this: Lock in. / Start now. / Move. / Execute. (NO LABEL)
 
 EXAMPLES:
 USER: "Hi"
@@ -476,6 +484,26 @@ function sanitizeModelText(text: string): string {
         .trim();
 }
 
+function ensureMainResponseCompletion(text: string): string {
+    let out = String(text || '').trim();
+    if (!out) return out;
+
+    const hasDrill = /ONE NON-NEGOTIABLE DRILL:/i.test(out);
+    const hasQuote = /ONE ZANE QUOTE TO EMBODY:/i.test(out);
+    const hasCloser = /(Lock in\.|Start now\.|Move\.|Execute\.)\s*$/i.test(out);
+    const cutNearQuote = /ONE\s+Z\s*$/i.test(out) || /ONE\s+ZANE\s*$/i.test(out);
+
+    if ((hasDrill && !hasQuote) || cutNearQuote) {
+        out = `${out}\n\nONE ZANE QUOTE TO EMBODY:\n"You don't need permission to move. You need reps."`;
+    }
+
+    if (!hasCloser) {
+        out = `${out}\nExecute.`;
+    }
+
+    return out;
+}
+
 function extractDrillContextFromPrompt(lastUserMessage: string): { drill: string; response: string; prompt: string } {
     const text = String(lastUserMessage || '');
     const drillMatch = text.match(/DRILL:\s*([^\n]+)/i);
@@ -647,6 +675,12 @@ Zane Touch: ${fields.zaneTouch}`;
 function normalizeDrillFeedbackOutput(_rawText: string, userName: string, lastUserMessage: string, drillPlan: DrillPlan): string {
     // Enforce a single exact analysis structure for all drill plans.
     return buildExactFormulaDrillOutput(lastUserMessage);
+}
+
+function buildContextAwareDrillFallback(userName: string, lastUserMessage: string): string {
+    const { drill, response, prompt } = extractDrillContextFromPrompt(lastUserMessage);
+    const focusLine = lineFromResponse(prompt || response || drill, 'No clear drill line captured yet.');
+    return `${userName}-la. Drill channel is jammed right now. Use this line immediately: "${focusLine}". Then send one sentence on what happened so I can tune your next rep.`;
 }
 
 function buildUnifiedSystemPrompt(
@@ -1088,9 +1122,9 @@ ${memoryBlock}
         const lastUserMessage = [...messages].reverse().find((m) => m.role === 'user')?.content || '';
         const userLen = lastUserMessage.trim().length;
         const maxTokens = promptType === 'main'
-            ? (userLen <= 40 ? 320 : userLen <= 120 ? 520 : 760)
+            ? (userLen <= 40 ? 620 : userLen <= 120 ? 820 : 1040)
             : promptType === 'coach'
-                ? 520
+                ? 720
                 : 560;
         const unifiedSystemPrompt = buildUnifiedSystemPrompt(userName, level, promptType, options);
 
@@ -1159,7 +1193,8 @@ ${memoryBlock}
                 if (promptType === 'drill') {
                     return normalizeDrillFeedbackOutput(cleanedProxy, userName, lastUserMessage, options?.drillPlan || 'pro');
                 }
-                return enforceNameAddressing(cleanedProxy, userName);
+                const completedProxy = promptType === 'main' ? ensureMainResponseCompletion(cleanedProxy) : cleanedProxy;
+                return enforceNameAddressing(completedProxy, userName);
             } catch (error: any) {
                 markProxyFailure(error);
                 warnProxyFailure('Proxy generation', error);
@@ -1247,7 +1282,8 @@ ${memoryBlock}
             if (promptType === 'drill') {
                 return normalizeDrillFeedbackOutput(cleaned, userName, lastUserMessage, options?.drillPlan || 'pro');
             }
-            return enforceNameAddressing(cleaned, userName);
+            const completed = promptType === 'main' ? ensureMainResponseCompletion(cleaned) : cleaned;
+            return enforceNameAddressing(completed, userName);
 
         } catch (error: any) {
             console.warn(`AI Service Warning (${provider}):`, error.message);

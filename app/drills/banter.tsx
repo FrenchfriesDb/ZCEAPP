@@ -198,7 +198,7 @@ The Brutal Truth: Next round, don't think. Respond. Your first instinct is usual
             <View style={styles.statementInline}>
               <Text style={styles.statementLabel}>STATEMENT:</Text>
               <Text style={styles.statementText}>
-                "{safeStatement}"
+                &quot;{safeStatement}&quot;
               </Text>
             </View>
 

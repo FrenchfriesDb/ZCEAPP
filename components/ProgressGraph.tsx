@@ -1,9 +1,9 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, useWindowDimensions, Pressable } from 'react-native';
-import Svg, { Polyline, Circle, Defs, LinearGradient, Stop, G, Line } from 'react-native-svg';
 import { Colors, Fonts, Radius, Spacing } from '@/constants/theme';
 import { useTextColors } from '@/context/TextColorsContext';
 import { useTimeColors } from '@/hooks/useTimeColors';
+import React, { useMemo, useState } from 'react';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import Svg, { Circle, Defs, G, Line, LinearGradient, Polyline, Stop } from 'react-native-svg';
 
 type TimeRange = '1W' | '1M' | 'ALL';
 
@@ -97,9 +97,13 @@ export default function ProgressGraph({ dailyXp, color, totalXp, currentStreak }
                     <Pressable
                         key={r}
                         onPress={() => setRange(r)}
-                        style={[styles.toggleBtn, range === r && [styles.toggleBtnActive, { borderColor: graphColor + '22', backgroundColor: graphColor + '08' }]]}
+                        style={[
+                            styles.toggleBtn,
+                            range === r && styles.toggleBtnActive,
+                            range === r && { borderColor: graphColor + '36' }
+                        ]}
                     >
-                        <Text style={[styles.toggleText, { color: graphColor }, range === r && [styles.toggleTextActive, { color: graphColor }]]}>{r}</Text>
+                        <Text style={[styles.toggleText, { color: graphColor + 'D2' }, range === r && [styles.toggleTextActive, { color: graphColor }]]}>{r}</Text>
                     </Pressable>
                 ))}
             </View>
@@ -144,7 +148,7 @@ export default function ProgressGraph({ dailyXp, color, totalXp, currentStreak }
                                         cx={x}
                                         cy={y}
                                         r={item.isCurrent ? 4 : 3}
-                                        fill={item.isCurrent ? graphColor : (item.xp > 0 ? graphColor : 'rgba(255,255,255,0.1)')}
+                                        fill={item.isCurrent ? graphColor : (item.xp > 0 ? graphColor : 'rgba(255,255,255,0.01)')}
                                         stroke={Colors.bgPrimary}
                                         strokeWidth={1}
                                     />
@@ -198,13 +202,13 @@ const styles = StyleSheet.create({
         paddingVertical: 6,
         paddingHorizontal: 14,
         borderRadius: Radius.pill,
-        backgroundColor: 'rgba(255,255,255,0.02)',
+        backgroundColor: 'rgba(255,255,255,0.085)',
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.06)',
+        borderColor: 'rgba(255,255,255,0.10)',
     },
     toggleBtnActive: {
-        backgroundColor: 'rgba(255,255,255,0.05)',
-        borderColor: 'rgba(255,255,255,0.12)',
+        backgroundColor: 'rgba(255,255,255,0.015)',
+        borderColor: 'rgba(255,255,255,0.18)',
     },
     toggleText: {
         fontFamily: Fonts.monoBold,
@@ -212,7 +216,7 @@ const styles = StyleSheet.create({
         letterSpacing: 1,
     },
     toggleTextActive: {
-        // Will be set inline
+        opacity: 1,
     },
     title: {
         fontFamily: Fonts.monoBold,

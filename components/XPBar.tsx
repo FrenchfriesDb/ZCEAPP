@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Fonts, Radius, XPConfig } from '@/constants/theme';
-import { useXPBarColors } from '@/hooks/useXPBarColors';
 import { useTextColors } from '@/context/TextColorsContext';
+import { useXPBarColors } from '@/hooks/useXPBarColors';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, StyleSheet, Text, View } from 'react-native';
 
 interface Props {
     xp: number;
@@ -27,6 +27,14 @@ export default function XPBar({ xp }: Props) {
     const xpInLevel = XPConfig.getXpInCurrentLevel(xp);
     const progress = XPConfig.getProgress(xp); // 0–1
     const palette = useXPBarColors();
+    const isBattleGloryPalette =
+        palette.length === 3 &&
+        palette[0]?.toLowerCase() === '#fc9f32' &&
+        palette[1]?.toLowerCase() === '#ae1b1e' &&
+        palette[2]?.toLowerCase() === '#1a2766';
+    const gradientStops = palette.length >= 2
+        ? (isBattleGloryPalette ? palette : [...palette].reverse())
+        : ['#60EFFF', '#0061FF'];
     const { textPrimary } = useTextColors();
     
     const textColor = textPrimary;
@@ -71,7 +79,7 @@ export default function XPBar({ xp }: Props) {
                     {/* Gradient rendered at full bar width so colors are always proportional */}
                     {barWidth > 0 && (
                         <LinearGradient
-                            colors={palette.length >= 2 ? palette as any : ['#60EFFF', '#0061FF']}
+                            colors={gradientStops as any}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 0 }}
                             style={{ width: barWidth, height: '100%' }}

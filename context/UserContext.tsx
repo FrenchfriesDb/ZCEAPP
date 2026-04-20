@@ -6,6 +6,7 @@ import {
     createUserWithEmailAndPassword,
     deleteUser,
     signOut as fbSignOut,
+    fetchSignInMethodsForEmail,
     onAuthStateChanged,
     sendPasswordResetEmail,
     signInWithEmailAndPassword,
@@ -36,9 +37,30 @@ const Storage = {
 const USERNAME_EMAIL_MAP_KEY = 'zce_username_email_map';
 const LAST_SUCCESS_EMAIL_KEY = 'zce_last_success_email';
 const LAST_SUCCESS_USERNAME_KEY = 'zce_last_success_username';
+const ONBOARDING_DONE_KEY_PREFIX = 'zce_onboarding_done_uid_';
+const USERNAME_INDEX_COLLECTION = 'username_index';
+let LAST_USERNAME_LOOKUP_PERMISSION_WARN_AT = 0;
+let LAST_USERNAME_UPSERT_PERMISSION_WARN_AT = 0;
+let USERNAME_INDEX_UPSERT_DISABLED = false;
+
+const getOnboardingDoneKey = (uid: string) => `${ONBOARDING_DONE_KEY_PREFIX}${uid}`;
 
 const getRecentLoginError = () => "CRITICAL: Re-authentication Required. For security, you must log out and immediately log back in to change your agent credentials.";
 const STREAK_RECOVERY_GRACE_MS = 24 * 60 * 60 * 1000;
+
+const warnUsernameLookupPermissionDenied = (scope: 'index' | 'users') => {
+    const now = Date.now();
+    if (now - LAST_USERNAME_LOOKUP_PERMISSION_WARN_AT < 30000) return;
+    LAST_USERNAME_LOOKUP_PERMISSION_WARN_AT = now;
+    console.warn(`[UserContext] ${scope === 'index' ? 'Username index' : 'Firestore username'} lookup failed: permission-denied`);
+};
+
+const warnUsernameUpsertPermissionDenied = () => {
+    const now = Date.now();
+    if (now - LAST_USERNAME_UPSERT_PERMISSION_WARN_AT < 30000) return;
+    LAST_USERNAME_UPSERT_PERMISSION_WARN_AT = now;
+    console.log('[UserContext] Username index write blocked by rules (permission-denied). Continuing without index sync.');
+};
 
 
 // --- DEFAULT STATE ---
@@ -121,7 +143,7 @@ interface UserContextType {
     forgotPassword: (email: string) => Promise<void>;
     updateProfile: (updates: Partial<UserData>) => Promise<void>;
     completeDrill: (xpGain: number) => Promise<void>;
-    completeQuest: (questId: string, xpGain: number, log?: string, attachments?: { photoUri?: string, voiceUri?: string }) => Promise<void>;
+    completeQuest: (questId: string, xpGain: number, log?: string, attachments?: { photoUri?: string, voiceUri?: string, text?: string }) => Promise<void>;
     recoverStreak: () => Promise<void>;
     addJournalEntry: (entry: string, analysis?: string) => Promise<void>;
     addDrillLog: (type: string, score?: number, feedback?: string) => Promise<void>;
@@ -175,6 +197,18 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
     const [returnToOnboardingStage, setReturnToOnboardingStage] = useState<number | null>(null);
 
+    const normalizeLogArray = (value: any): any[] => {
+        if (Array.isArray(value)) return value;
+        if (value && typeof value === 'object') {
+            try {
+                return Object.values(value as Record<string, any>);
+            } catch {
+                return [];
+            }
+        }
+        return [];
+    };
+
     // KEY FIX: userRef always holds the LATEST user — eliminates stale closures.
     const userRef = useRef<UserData | null>(null);
     useEffect(() => {
@@ -206,10 +240,118 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
+    const upsertUsernameIndex = async (uid: string, username?: string, email?: string) => {
+        const normalizedUsername = (username || '').replace(/^@+/, '').trim().toLowerCase();
+        const normalizedEmail = (email || '').trim().toLowerCase();
+        if (!uid || !normalizedUsername || !normalizedEmail || USERNAME_INDEX_UPSERT_DISABLED) return;
+
+        try {
+            await setDoc(doc(db, USERNAME_INDEX_COLLECTION, normalizedUsername), {
+                uid,
+                email: normalizedEmail,
+                username: normalizedUsername,
+                updatedAt: new Date().toISOString(),
+            }, { merge: true });
+        } catch (err: any) {
+            if (err?.code === 'permission-denied') {
+                USERNAME_INDEX_UPSERT_DISABLED = true;
+                warnUsernameUpsertPermissionDenied();
+                return;
+            }
+            console.warn('[UserContext] Failed to upsert username index:', err);
+        }
+    };
+
+    const isNearUsernameMatch = (typed: string, known: string): boolean => {
+        if (!typed || !known) return false;
+        if (typed === known) return true;
+
+        const a = typed;
+        const b = known;
+        const lenDiff = Math.abs(a.length - b.length);
+        if (lenDiff > 1) return false;
+
+        let i = 0;
+        let j = 0;
+        let mismatches = 0;
+
+        while (i < a.length && j < b.length) {
+            if (a[i] === b[j]) {
+                i += 1;
+                j += 1;
+                continue;
+            }
+
+            mismatches += 1;
+            if (mismatches > 1) return false;
+
+            if (a.length > b.length) {
+                i += 1;
+            } else if (b.length > a.length) {
+                j += 1;
+            } else {
+                i += 1;
+                j += 1;
+            }
+        }
+
+        if (i < a.length || j < b.length) mismatches += 1;
+        return mismatches <= 1;
+    };
+
+    const resolveEmailViaCandidateDomains = async (usernameInput: string): Promise<string | null> => {
+        const normalizedUsername = usernameInput.replace(/^@+/, '').trim().toLowerCase();
+        if (!normalizedUsername) return null;
+
+        const domains = new Set<string>();
+        try {
+            const lastEmail = (await Storage.getItem(LAST_SUCCESS_EMAIL_KEY) || '').trim().toLowerCase();
+            if (lastEmail.includes('@')) domains.add(lastEmail.split('@')[1]);
+        } catch {
+            // no-op
+        }
+
+        try {
+            const raw = await Storage.getItem(USERNAME_EMAIL_MAP_KEY);
+            const map = raw ? JSON.parse(raw) as Record<string, string> : {};
+            Object.values(map).forEach((email) => {
+                const normalizedEmail = String(email || '').trim().toLowerCase();
+                if (normalizedEmail.includes('@')) domains.add(normalizedEmail.split('@')[1]);
+            });
+        } catch {
+            // no-op
+        }
+
+        domains.add('gmail.com');
+        domains.add('icloud.com');
+        domains.add('outlook.com');
+        domains.add('hotmail.com');
+        domains.add('yahoo.com');
+
+        const candidates = Array.from(domains)
+            .filter(Boolean)
+            .map((domain) => `${normalizedUsername}@${domain}`)
+            .slice(0, 10);
+
+        for (const candidate of candidates) {
+            try {
+                const methods = await fetchSignInMethodsForEmail(auth, candidate);
+                if (Array.isArray(methods) && methods.length > 0) {
+                    return candidate;
+                }
+            } catch {
+                // try next candidate
+            }
+        }
+
+        return null;
+    };
+
     const resolveEmailFromUsername = async (usernameInput: string): Promise<string | null> => {
         const normalizeUsername = (value: string) => value.replace(/^@+/, '').trim().toLowerCase();
         const normalizedUsername = normalizeUsername(usernameInput);
         if (!normalizedUsername) return null;
+        let permissionDenied = false;
 
         try {
             const lastUsername = (await Storage.getItem(LAST_SUCCESS_USERNAME_KEY) || '').trim().toLowerCase();
@@ -228,6 +370,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 const map = JSON.parse(raw) as Record<string, string>;
                 const cached = map[normalizedUsername];
                 if (cached) return cached;
+
+                // Handle near-miss typos like a missing/extra character on known usernames.
+                const fuzzyKey = Object.keys(map).find((key) => isNearUsernameMatch(normalizedUsername, key));
+                if (fuzzyKey && map[fuzzyKey]) {
+                    const fuzzyEmail = String(map[fuzzyKey]).trim().toLowerCase();
+                    if (fuzzyEmail) {
+                        await cacheUsernameEmail(normalizedUsername, fuzzyEmail);
+                        return fuzzyEmail;
+                    }
+                }
             }
         } catch (err) {
             console.warn('[UserContext] Failed reading username map cache:', err);
@@ -247,20 +399,42 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         }
 
         try {
-            const usernameCandidates = [
+            const indexSnap = await getDoc(doc(db, USERNAME_INDEX_COLLECTION, normalizedUsername));
+            if (indexSnap.exists()) {
+                const indexedEmail = String(indexSnap.data()?.email || '').trim().toLowerCase();
+                if (indexedEmail) {
+                    await cacheUsernameEmail(normalizedUsername, indexedEmail);
+                    return indexedEmail;
+                }
+            }
+        } catch (err: any) {
+            if (err?.code === 'permission-denied') {
+                permissionDenied = true;
+                warnUsernameLookupPermissionDenied('index');
+            } else {
+                console.warn('[UserContext] Username index lookup failed:', err?.code || err?.message || err);
+            }
+        }
+
+        try {
+            const usernameCandidates = Array.from(new Set([
                 normalizedUsername,
                 usernameInput.trim(),
                 usernameInput.trim().toLowerCase(),
                 `@${normalizedUsername}`,
-            ];
+            ]));
 
-            for (const candidate of usernameCandidates) {
-                const snap = await getDocs(query(collection(db, 'users'), where('username', '==', candidate)));
-                if (!snap.empty) {
-                    const email = String(snap.docs[0].data().email || '').trim().toLowerCase();
-                    if (email) {
-                        await cacheUsernameEmail(normalizedUsername, email);
-                        return email;
+            // Try exact indexed lookups on known username/name fields first.
+            const lookupFields: Array<'username' | 'usernameLower' | 'name'> = ['username', 'usernameLower', 'name'];
+            for (const fieldName of lookupFields) {
+                for (const candidate of usernameCandidates) {
+                    const snap = await getDocs(query(collection(db, 'users'), where(fieldName, '==', candidate)));
+                    if (!snap.empty) {
+                        const email = String(snap.docs[0].data().email || '').trim().toLowerCase();
+                        if (email) {
+                            await cacheUsernameEmail(normalizedUsername, email);
+                            return email;
+                        }
                     }
                 }
             }
@@ -272,6 +446,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 const data = userDoc.data() as any;
                 const docUsername = normalizeUsername(String(data?.username || ''));
                 if (docUsername && docUsername === normalizedUsername) return true;
+
+                const docUsernameLower = normalizeUsername(String(data?.usernameLower || ''));
+                if (docUsernameLower && docUsernameLower === normalizedUsername) return true;
+
+                const docName = normalizeUsername(String(data?.name || ''));
+                if (docName && docName === normalizedUsername) return true;
 
                 const docEmail = String(data?.email || '').trim().toLowerCase();
                 if (!docEmail || !docEmail.includes('@')) return false;
@@ -287,7 +467,18 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 }
             }
         } catch (err: any) {
-            console.warn('[UserContext] Firestore username lookup failed:', err?.code || err?.message || err);
+            if (err?.code === 'permission-denied') {
+                permissionDenied = true;
+                warnUsernameLookupPermissionDenied('users');
+            } else {
+                console.warn('[UserContext] Firestore username lookup failed:', err?.code || err?.message || err);
+            }
+        }
+
+        if (permissionDenied) {
+            const lookupErr: any = new Error('Username lookup blocked by Firestore permissions.');
+            lookupErr.code = 'auth/username-lookup-blocked';
+            throw lookupErr;
         }
 
         return null;
@@ -299,6 +490,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             console.log('[UserContext] Auth state changed. User:', firebaseUser?.uid ?? 'null');
             if (firebaseUser) {
+                setHasCompletedOnboarding(false);
                 if (firebaseUser.isAnonymous) {
                     console.log('[UserContext] Anonymous session detected. Forcing logout.');
                     try { await fbSignOut(auth); } catch (e) { console.warn('[UserContext] Failed to sign out anonymous user:', e); }
@@ -315,7 +507,23 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
                     if (docSnap.exists()) {
                         // ✅ HAPPY PATH: Firestore doc exists, load it
-                        const data = docSnap.data() as UserData;
+                        const raw = docSnap.data() as Partial<UserData>;
+                        const data: UserData = {
+                            ...DEFAULT_USER,
+                            ...raw,
+                            email: String(raw.email || firebaseUser.email || 'anonymous').trim().toLowerCase(),
+                            name: String(raw.name || firebaseUser.displayName || 'Agent ' + firebaseUser.uid.slice(0, 4)),
+                            drillLogs: normalizeLogArray(raw.drillLogs),
+                            journalLogs: normalizeLogArray(raw.journalLogs),
+                            completedQuests: Array.isArray(raw.completedQuests) ? raw.completedQuests : [],
+                            chatLogs: Array.isArray(raw.chatLogs) ? raw.chatLogs : [],
+                            dailyXp: raw.dailyXp && typeof raw.dailyXp === 'object' ? raw.dailyXp : {},
+                            username: String(raw.username || '').trim().toLowerCase(),
+                            socialLevel: String(raw.socialLevel || 'NPC'),
+                            primaryMission: String(raw.primaryMission || 'General'),
+                            commitment: String(raw.commitment || '30 days'),
+                            joinDate: String(raw.joinDate || new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })),
+                        } as UserData;
 
                         // --- BACKFILL LOGIC ---
                         if (data.streak > 1 && data.lastActivityDate) {
@@ -341,9 +549,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                         userRef.current = data;
                         await Storage.setItem('zce_user', JSON.stringify(data));
                         await cacheUsernameEmail(data.username, data.email);
+                        await upsertUsernameIndex(firebaseUser.uid, data.username, data.email);
                         if (data.username) await Storage.setItem(LAST_SUCCESS_USERNAME_KEY, data.username.toLowerCase());
                         if (data.email) await Storage.setItem(LAST_SUCCESS_EMAIL_KEY, data.email.toLowerCase());
-                        console.log('[UserContext] User loaded from Firestore:', data.email);
+                        console.log('[UserContext] User loaded from Firestore:', data.email || firebaseUser.email || '(no-email)');
                     } else {
                         // ❌ No Firestore doc found for this Firebase user.
                         // AUTO-INITIALIZE: If they've authenticated but have no data, 
@@ -387,6 +596,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                         userRef.current = defaultData;
                         await Storage.setItem('zce_user', JSON.stringify(defaultData));
                         await cacheUsernameEmail(defaultData.username, defaultData.email);
+                        await upsertUsernameIndex(firebaseUser.uid, defaultData.username, defaultData.email);
                         if (defaultData.username) await Storage.setItem(LAST_SUCCESS_USERNAME_KEY, defaultData.username.toLowerCase());
                         if (defaultData.email) await Storage.setItem(LAST_SUCCESS_EMAIL_KEY, defaultData.email.toLowerCase());
                     }
@@ -416,10 +626,23 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                         userRef.current = null;
                     }
                 }
+                const scopedOnboardingKey = getOnboardingDoneKey(firebaseUser.uid);
+                const scopedStatus = await Storage.getItem(scopedOnboardingKey);
+                if (scopedStatus === 'true') {
+                    setHasCompletedOnboarding(true);
+                } else {
+                    // Backward compatibility: migrate legacy global flag to scoped key for current user.
+                    const legacyStatus = await Storage.getItem('zce_onboarding_done');
+                    if (legacyStatus === 'true') {
+                        setHasCompletedOnboarding(true);
+                        await Storage.setItem(scopedOnboardingKey, 'true');
+                    }
+                }
             } else {
                 // Signed out
                 setUser(null);
                 userRef.current = null;
+                setHasCompletedOnboarding(false);
                 await Storage.deleteItem('zce_user');
             }
 
@@ -440,8 +663,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 }
             }
 
-            const status = await Storage.getItem('zce_onboarding_done');
-            if (status === 'true') setHasCompletedOnboarding(true);
             setIsLoading(false);
         });
         return unsubscribe;
@@ -476,7 +697,26 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (!lastDate || lastDate === today || lastDate === yesterday) return;
-        if (user.streakAtRisk || (user.streak || 0) <= 1) return;
+        if (user.streakAtRisk) return;
+
+        // If user had only a 1-day streak and missed a day, it should drop to 0 (no recovery window).
+        if ((user.streak || 0) <= 1) {
+            const alreadyReset =
+                Number(user.streak || 0) === 0 &&
+                Number(user.previousStreak || 0) === 0 &&
+                !user.streakAtRisk &&
+                !user.streakRecoveryExpiresAt;
+
+            if (alreadyReset) return;
+
+            _syncUpdate({
+                streak: 0,
+                previousStreak: 0,
+                streakAtRisk: false,
+                streakRecoveryExpiresAt: null,
+            }).catch((err) => console.warn('[UserContext] Failed to reset stale 1-day streak on load:', err));
+            return;
+        }
 
         const previousStreak = Math.max(Number(user.streak || 0), Number(user.previousStreak || 0));
 
@@ -532,6 +772,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 return 'Too many attempts. Try again later.';
             case 'auth/network-request-failed':
                 return 'No internet connection. Check your network.';
+            case 'auth/username-lookup-blocked':
+                return 'Username login is blocked by current Firestore permissions. Use email login on this build.';
             default:
                 return 'Authentication failed. Try again.';
         }
@@ -549,30 +791,39 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             const looksLikeEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawInput);
             const isUsernameLogin = !looksLikeEmail;
 
-            if (auth.currentUser) {
-                try { await fbSignOut(auth); } catch { }
-                setUser(null);
-                userRef.current = null;
-                try { await Storage.deleteItem('zce_user'); } catch { }
-            }
-
             let loginEmail = rawInput.toLowerCase();
 
             // If it doesn't look like an email, treat it as a username — look up the real email
             if (isUsernameLogin) {
-                const resolvedEmail = await resolveEmailFromUsername(rawInput);
+                let resolvedEmail: string | null = null;
+                let lookupBlocked = false;
+
+                try {
+                    resolvedEmail = await resolveEmailFromUsername(rawInput);
+                } catch (err: any) {
+                    if (err?.code === 'auth/username-lookup-blocked') {
+                        lookupBlocked = true;
+                    } else {
+                        throw err;
+                    }
+                }
+
                 if (!resolvedEmail) {
-                    const usernameErr: any = new Error('Username not found.');
-                    usernameErr.code = 'auth/user-not-found';
+                    resolvedEmail = await resolveEmailViaCandidateDomains(rawInput);
+                }
+
+                if (resolvedEmail) {
+                    loginEmail = resolvedEmail;
+                } else {
+                    const usernameErr: any = new Error(lookupBlocked ? 'Username lookup is blocked on this build.' : 'Username not found.');
+                    usernameErr.code = lookupBlocked ? 'auth/username-lookup-blocked' : 'auth/user-not-found';
                     throw usernameErr;
                 }
-                loginEmail = resolvedEmail;
             }
 
             await signInWithEmailAndPassword(auth, loginEmail, password);
             await cacheUsernameEmail(isUsernameLogin ? rawInput : undefined, loginEmail);
             await Storage.setItem(LAST_SUCCESS_EMAIL_KEY, loginEmail);
-            router.replace('/(tabs)');
         } catch (e: any) {
             const rawInput = emailOrUsername.trim();
             const looksLikeEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawInput);
@@ -582,10 +833,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 msg = "SECURITY: App Check is blocking this login. In Firebase Console -> App Check, set Authentication to 'Unenforced'.";
             }
             console.log('[signIn Error]', e.code, e.message);
-            setUser(null);
-            userRef.current = null;
-            try { await Storage.deleteItem('zce_user'); } catch { }
-            setIsLoading(false);
             Alert.alert("Access Denied", msg);
             throw new Error(msg);
         } finally { setIsLoading(false); }
@@ -618,6 +865,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             usernameLastChanged: new Date().toISOString(),
         });
         await cacheUsernameEmail(newUsername.toLowerCase(), userRef.current.email);
+        if (auth.currentUser?.uid) {
+            await upsertUsernameIndex(auth.currentUser.uid, newUsername.toLowerCase(), userRef.current.email);
+        }
         await Storage.setItem(LAST_SUCCESS_USERNAME_KEY, newUsername.toLowerCase());
     };
 
@@ -699,11 +949,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             userRef.current = initialData;
             await Storage.setItem('zce_user', JSON.stringify(initialData));
             await cacheUsernameEmail(initialData.username, initialData.email);
+            await upsertUsernameIndex(cred.user.uid, initialData.username, initialData.email);
             await Storage.setItem(LAST_SUCCESS_EMAIL_KEY, initialData.email);
             await Storage.setItem(LAST_SUCCESS_USERNAME_KEY, initialData.username.toLowerCase());
             // Complete onboarding after successful signup
             await completeOnboarding();
-            router.replace('/(tabs)');
         } catch (e: any) {
             let msg = getFriendlyAuthError(e.code || '');
             if (e.code === 'auth/username-already-in-use') {
@@ -731,6 +981,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         // Clear all local state first so UI reflects logged-out immediately
         setUser(null);
         userRef.current = null;
+        setHasCompletedOnboarding(false);
         try {
             await fbSignOut(auth);
         } catch (e) {
@@ -811,7 +1062,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
      * Called when an agent completes a quest or daily mission.
      * Marks questId in completedQuests, increments streak if it's a new day.
      */
-    const completeQuest = async (questId: string, xpGain: number = 20, log?: string, attachments?: { photoUri?: string, voiceUri?: string }) => {
+    const completeQuest = async (questId: string, xpGain: number = 20, log?: string, attachments?: { photoUri?: string, voiceUri?: string, text?: string }) => {
         const current = userRef.current;
         if (!current) { console.warn('[completeQuest] No user'); return; }
 
@@ -872,6 +1123,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         if (attachments) {
             if (attachments.photoUri) historyLog.photoUri = attachments.photoUri;
             if (attachments.voiceUri) historyLog.voiceUri = attachments.voiceUri;
+            if (attachments.text || attachments.photoUri || attachments.voiceUri) {
+                historyLog.proof = {
+                    text: attachments.text || '',
+                    photoUri: attachments.photoUri || '',
+                    voiceUri: attachments.voiceUri || '',
+                };
+            }
         }
 
         await _syncUpdate({
@@ -999,7 +1257,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     };
 
     const completeOnboarding = async () => {
+        const currentAuthUser = auth.currentUser;
+        if (!currentAuthUser || currentAuthUser.isAnonymous) {
+            throw new Error('Authentication required before completing onboarding.');
+        }
         setHasCompletedOnboarding(true);
+        await Storage.setItem(getOnboardingDoneKey(currentAuthUser.uid), 'true');
+        // Keep legacy key to avoid breaking old flows while migration rolls out.
         await Storage.setItem('zce_onboarding_done', 'true');
     };
 

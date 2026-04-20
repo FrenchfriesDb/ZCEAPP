@@ -1,6 +1,14 @@
-import { View, Text, StyleSheet, Pressable, Animated, ScrollView, TextInput, Alert, Platform, KeyboardAvoidingView } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import FluentEmoji, { resolveFluentEmojiName } from '@/components/FluentEmoji';
+import GlassButton from '@/components/GlassButton';
+import GlassCard from '@/components/GlassCard';
+import { Colors, Fonts, Radius, Spacing } from '@/constants/theme';
+import { useUser } from '@/context/UserContext';
+import { useTimeColors } from '@/hooks/useTimeColors';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Animated, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 // Web platform check
 const isWeb = Platform.OS === 'web';
 
@@ -24,14 +32,6 @@ const loadAudioBackend = async (): Promise<AudioBackend | null> => {
     }
     return _cachedAudioBackend;
 };
-import { Colors, Fonts, Spacing, Radius } from '@/constants/theme';
-import { router } from 'expo-router';
-import { useState, useRef, useEffect } from 'react';
-import { useUser } from '@/context/UserContext';
-import GlassCard from '@/components/GlassCard';
-import GlassButton from '@/components/GlassButton';
-import FluentEmoji, { resolveFluentEmojiName } from '@/components/FluentEmoji';
-import { useTimeColors } from '@/hooks/useTimeColors';
 
 const isBrowserAudioSupported = () =>
     typeof navigator !== 'undefined' &&
@@ -456,7 +456,7 @@ export default function MirrorDrill() {
                 <GlassCard style={styles.promptCard}>
                     <Text style={styles.label}>SAY THIS LINE:</Text>
                     <Animated.Text style={[styles.lineText, { opacity: fadeAnim }]}>
-                        "{ZANE_LINES[lineIdx]}"
+                        &quot;{ZANE_LINES[lineIdx]}&quot;
                     </Animated.Text>
 
                     <View style={styles.divider} />

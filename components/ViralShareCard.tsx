@@ -1,6 +1,7 @@
+import { Fonts } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, View } from 'react-native';
-import { Fonts } from '@/constants/theme';
+import QRCode from 'react-native-qrcode-svg';
 
 export type ViralShareMode = 'harvest' | 'challenge' | 'invite';
 
@@ -15,24 +16,14 @@ type ViralShareCardProps = {
   rankProgress: number;
   nextRankLabel: string;
   auraCells: number[];
+  todayCellIndex?: number;
   shareDateLabel: string;
+  shareUrl: string;
   shareUrlLabel: string;
   challengeTitle?: string;
   challengeDesc?: string;
   challengeXp?: number;
 };
-
-const QR_PATTERN = [
-  '111001110',
-  '101001010',
-  '111001110',
-  '000000000',
-  '110111011',
-  '010001010',
-  '110111011',
-  '000000000',
-  '111011111',
-];
 
 export default function ViralShareCard({
   mode,
@@ -45,7 +36,9 @@ export default function ViralShareCard({
   rankProgress,
   nextRankLabel,
   auraCells,
+  todayCellIndex,
   shareDateLabel,
+  shareUrl,
   shareUrlLabel,
   challengeTitle,
   challengeDesc,
@@ -117,6 +110,7 @@ export default function ViralShareCard({
                     level === 1 && styles.gridCell1,
                     level === 2 && styles.gridCell2,
                     level === 3 && styles.gridCell3,
+                    todayCellIndex === index && styles.gridCellToday,
                   ]}
                 />
               ))}
@@ -127,19 +121,16 @@ export default function ViralShareCard({
         <View style={styles.footerRow}>
           <View style={styles.watermarkBlock}>
             <Text style={styles.watermark}>Z.A.N.E. PROTOCOL</Text>
-            <Text style={styles.shareUrl}>{shareUrlLabel}</Text>
+            <Text style={styles.shareUrl} numberOfLines={1} ellipsizeMode="middle">{shareUrlLabel}</Text>
           </View>
           <View style={styles.qrBlock}>
-            {QR_PATTERN.map((row, rIdx) => (
-              <View key={row + rIdx} style={styles.qrRow}>
-                {row.split('').map((cell, cIdx) => (
-                  <View
-                    key={`${rIdx}-${cIdx}`}
-                    style={[styles.qrCell, cell === '1' ? styles.qrCellOn : styles.qrCellOff]}
-                  />
-                ))}
-              </View>
-            ))}
+            <QRCode
+              value={shareUrl || shareUrlLabel}
+              size={44}
+              color="#FFFFFF"
+              backgroundColor="transparent"
+              quietZone={2}
+            />
             <Text style={styles.qrLabel}>SCAN</Text>
           </View>
         </View>
@@ -151,7 +142,7 @@ export default function ViralShareCard({
 const styles = StyleSheet.create({
   shell: {
     width: '100%',
-    aspectRatio: 0.66,
+    aspectRatio: 0.62,
     borderRadius: 28,
     overflow: 'hidden',
     backgroundColor: '#000000',
@@ -164,14 +155,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.16)',
     borderRadius: 28,
-    padding: 22,
+    padding: 16,
     backgroundColor: 'rgba(0,0,0,0.88)',
   },
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   brand: {
     color: '#B8F4FF',
@@ -188,21 +179,21 @@ const styles = StyleSheet.create({
   title: {
     color: '#FFFFFF',
     fontFamily: Fonts.heading,
-    fontSize: 28,
-    lineHeight: 32,
+    fontSize: 22,
+    lineHeight: 26,
     letterSpacing: 0.8,
   },
   agent: {
-    marginTop: 6,
+    marginTop: 4,
     color: 'rgba(255,255,255,0.75)',
     fontFamily: Fonts.headingSemi,
     fontSize: 11,
     letterSpacing: 1.3,
   },
   heroBlock: {
-    marginTop: 16,
+    marginTop: 12,
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 8,
     borderRadius: 18,
     borderWidth: 1,
     borderColor: 'rgba(0, 212, 255, 0.3)',
@@ -211,21 +202,21 @@ const styles = StyleSheet.create({
   heroValue: {
     color: '#FFFFFF',
     fontFamily: Fonts.heading,
-    fontSize: 52,
+    fontSize: 40,
     letterSpacing: 1,
   },
   heroLabel: {
     color: 'rgba(255,255,255,0.8)',
     fontFamily: Fonts.monoBold,
-    fontSize: 10,
+    fontSize: 9,
     letterSpacing: 2.2,
   },
   statusBlock: {
-    marginTop: 16,
+    marginTop: 12,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.12)',
     borderRadius: 16,
-    padding: 12,
+    padding: 10,
     backgroundColor: 'rgba(255,255,255,0.03)',
   },
   rankRow: {
@@ -246,7 +237,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1.1,
   },
   rankBar: {
-    marginTop: 8,
+    marginTop: 6,
     height: 6,
     backgroundColor: 'rgba(255,255,255,0.08)',
     borderRadius: 999,
@@ -257,18 +248,18 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   rankSub: {
-    marginTop: 8,
+    marginTop: 6,
     color: 'rgba(255,255,255,0.7)',
     fontFamily: Fonts.mono,
-    fontSize: 9,
+    fontSize: 8,
     letterSpacing: 1,
   },
   harvestGridWrap: {
-    marginTop: 16,
+    marginTop: 12,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.12)',
     borderRadius: 16,
-    padding: 12,
+    padding: 10,
     backgroundColor: 'rgba(255,255,255,0.03)',
   },
   gridLabel: {
@@ -284,8 +275,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   gridCell: {
-    width: 12,
-    height: 12,
+    width: 10,
+    height: 10,
     borderRadius: 4,
   },
   gridCell0: {
@@ -299,6 +290,10 @@ const styles = StyleSheet.create({
   },
   gridCell3: {
     backgroundColor: '#7EF6FF',
+  },
+  gridCellToday: {
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
   },
   challengeBox: {
     marginTop: 16,
@@ -318,21 +313,21 @@ const styles = StyleSheet.create({
   challengeText: {
     color: 'rgba(255,255,255,0.88)',
     fontFamily: Fonts.bodyMedium,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 18,
   },
   challengeMeta: {
-    marginTop: 8,
+    marginTop: 6,
     color: 'rgba(255,255,255,0.7)',
     fontFamily: Fonts.mono,
     fontSize: 9,
     letterSpacing: 1.2,
   },
   challengeCta: {
-    marginTop: 12,
+    marginTop: 10,
     alignSelf: 'flex-start',
-    paddingVertical: 8,
-    paddingHorizontal: 14,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: 'rgba(0, 212, 255, 0.5)',
@@ -345,11 +340,11 @@ const styles = StyleSheet.create({
     letterSpacing: 1.4,
   },
   footerRow: {
-    marginTop: 'auto',
+    marginTop: 8,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    gap: 12,
+    gap: 10,
   },
   watermarkBlock: {
     flex: 1,
@@ -357,43 +352,29 @@ const styles = StyleSheet.create({
   watermark: {
     color: 'rgba(255,255,255,0.38)',
     fontFamily: Fonts.monoBold,
-    fontSize: 10,
-    letterSpacing: 2.2,
+    fontSize: 9,
+    letterSpacing: 1.8,
   },
   shareUrl: {
-    marginTop: 6,
+    marginTop: 4,
     color: 'rgba(255,255,255,0.6)',
     fontFamily: Fonts.mono,
-    fontSize: 9,
-    letterSpacing: 0.6,
+    fontSize: 7,
+    letterSpacing: 0.4,
   },
   qrBlock: {
-    padding: 6,
+    padding: 4,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.14)',
-    borderRadius: 12,
+    borderRadius: 10,
     backgroundColor: 'rgba(255,255,255,0.04)',
     alignItems: 'center',
   },
-  qrRow: {
-    flexDirection: 'row',
-    gap: 2,
-  },
-  qrCell: {
-    width: 6,
-    height: 6,
-  },
-  qrCellOn: {
-    backgroundColor: '#FFFFFF',
-  },
-  qrCellOff: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-  },
   qrLabel: {
-    marginTop: 6,
+    marginTop: 4,
     color: 'rgba(255,255,255,0.5)',
     fontFamily: Fonts.mono,
-    fontSize: 7,
-    letterSpacing: 1.2,
+    fontSize: 6,
+    letterSpacing: 1,
   },
 });
