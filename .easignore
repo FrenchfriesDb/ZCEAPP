@@ -1,0 +1,40 @@
+# EAS build upload filters (overrides .gitignore)
+
+# dependencies
+node_modules/
+node_modules_backup/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native build artifacts (keep source files, exclude generated)
+ios/Pods/
+ios/build/
+android/.gradle/
+android/build/
+android/app/build/
+
+# Native temp/caches
+.kotlin/
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env
+.env.*
+!.env.example
+
+# typescript
+*.tsbuildinfo
+
+app-example
