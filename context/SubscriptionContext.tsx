@@ -1,6 +1,7 @@
 import { useUser } from '@/context/UserContext';
 import { auth } from '@/services/firebase';
 import { PaymentService, type SubscriptionSku } from '@/services/payments';
+import { forceTimeSyncThemePreference } from '@/services/themePreference';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
@@ -172,6 +173,12 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         const nextStatus = safeSnapshot.isPremium ? 'active' : 'inactive';
         const currentStatus = (((user as any)?.subscriptionStatus || 'inactive') as string);
         const currentExpires = (((user as any)?.subscriptionExpiresAt || null) as string | null) || null;
+        const shouldForceTimeSync =
+            safeSnapshot.isPremium && (
+                currentTier !== 'director' ||
+                (currentStatus !== 'active' && currentStatus !== 'grace') ||
+                currentExpires !== safeSnapshot.expiresAt
+            );
 
         if (
             currentTier !== safeSnapshot.tier ||
@@ -185,6 +192,9 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
                 subscriptionExpiresAt: safeSnapshot.expiresAt,
                 entitlements: safeSnapshot.activeEntitlements,
             } as any);
+        }
+        if (shouldForceTimeSync) {
+            await forceTimeSyncThemePreference();
         }
         return safeSnapshot;
     }, [getRevenueCatAppUserID, updateProfile, user]);
@@ -298,6 +308,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
                 const currentUid = getRevenueCatAppUserID();
                 if (snapshot.isPremium && currentUid) {
                     await AsyncStorage.setItem(BILLING_OWNER_UID_KEY, currentUid);
+                    await forceTimeSyncThemePreference();
                 }
                 return snapshot.isPremium;
             } catch (error: any) {
@@ -321,6 +332,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
                                 } as any);
                             }
                             if (restored.isPremium) {
+                                await forceTimeSyncThemePreference();
                                 setLastError(null);
                                 return true;
                             }
@@ -363,6 +375,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
                 const currentUid = getRevenueCatAppUserID();
                 if (snapshot.isPremium && currentUid) {
                     await AsyncStorage.setItem(BILLING_OWNER_UID_KEY, currentUid);
+                    await forceTimeSyncThemePreference();
                 }
                 return snapshot.isPremium;
             } catch (error: any) {

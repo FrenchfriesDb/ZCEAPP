@@ -2,6 +2,7 @@
 import { Colors, Fonts, FontSizes, Radius, Spacing } from '@/constants/theme';
 import { useSubscription } from '@/context/SubscriptionContext';
 import { useUser } from '@/context/UserContext';
+import { usePaywall } from '@/hooks/usePaywall';
 import { useTimeColors } from '@/hooks/useTimeColors';
 import { AIService, type ZaneChatStyle } from '@/services/ai';
 import { getFirstName } from '@/utils/formatters';
@@ -27,6 +28,7 @@ const getTimeString = () => {
 export default function ChatScreen() {
     const { user, addChatMessage, clearChat, updateProfile } = useUser();
     const { canUseAIChat, dailyChatUsed, dailyChatLimit, freeWindowRemainingMs, recordAIInteraction } = useSubscription();
+    const { presentPaywall } = usePaywall();
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
@@ -161,9 +163,15 @@ export default function ChatScreen() {
         if (!text) return;
         if (!canUseAIChat) {
             const mins = Math.max(1, Math.ceil(freeWindowRemainingMs / 60000));
-            const limitNote = `${runtimeName}-la. Free plan cap reached: ${dailyChatUsed}/${dailyChatLimit} messages in 1 hour. Next slot unlocks in ~${mins} min.`;
+            const limitNote = `${runtimeName}-la. That's your 10 free sessions today. ZANE goes quiet for NPCs. Directors get unlimited access.`;
             addAiMessage(limitNote);
             await addChatMessage({ role: 'assistant', content: limitNote });
+            void presentPaywall('ai_limit', {
+                title: 'Free AI Limit Hit',
+                body: `You are at ${dailyChatUsed}/${dailyChatLimit}. Next slot unlocks in ~${mins} min. Directors get unlimited ZANE access.`,
+                ctaLabel: 'UNLOCK DIRECTOR MODE',
+                skipLabel: 'Maybe Later',
+            });
             return;
         }
 

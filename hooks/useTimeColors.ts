@@ -1,5 +1,6 @@
 import { getDynamicColors, getTimePalette, getTimeThemeInfo, type TimeThemeInfo } from '@/constants/theme';
 import { useSubscription } from '@/context/SubscriptionContext';
+import { getThemePreferenceMode, setThemePreferenceMode, subscribeThemePreference, type ThemePreferenceMode } from '@/services/themePreference';
 import { useEffect, useState } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 
@@ -31,6 +32,7 @@ let lastLoggedMinuteStamp: string | null = null;
  */
 export const useTimeColors = () => {
     const { isPremium } = useSubscription();
+    const [themeMode, setThemeModeState] = useState<ThemePreferenceMode>('white');
     const [palette, setPalette] = useState<string[]>(['#000000', '#000000']);
     const [textColors, setTextColors] = useState({
         primary: '#E8E8E8',
@@ -43,13 +45,41 @@ export const useTimeColors = () => {
     });
 
     useEffect(() => {
+        let cancelled = false;
+        const unsubscribe = subscribeThemePreference((mode) => {
+            if (!cancelled) {
+                setThemeModeState(mode);
+            }
+        });
+
+        (async () => {
+            const saved = await getThemePreferenceMode();
+            if (!cancelled) {
+                setThemeModeState(saved);
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+            unsubscribe();
+        };
+    }, []);
+
+    useEffect(() => {
         const updateColors = () => {
             const now = new Date();
             const h = now.getHours();
             const m = now.getMinutes();
 
             const nextThemeInfo = isPremium
-                ? getTimeThemeInfo(h, m)
+                ? (themeMode === 'time_sync'
+                    ? getTimeThemeInfo(h, m)
+                    : {
+                        key: 'pro_static_white',
+                        label: 'Static White (Pro)',
+                        range: 'All day',
+                        palette: ['#000000', '#000000'],
+                    })
                 : {
                     key: 'free_static_dark',
                     label: 'Static Dark (Free)',
@@ -58,11 +88,17 @@ export const useTimeColors = () => {
                 };
 
             const next = isPremium
-                ? getTimePalette(h, m)
+                ? (themeMode === 'time_sync' ? getTimePalette(h, m) : ['#000000', '#000000'])
                 : ['#000000', '#000000'];
 
             const dyn = isPremium
-                ? getDynamicColors(h, m)
+                ? (themeMode === 'time_sync'
+                    ? getDynamicColors(h, m)
+                    : {
+                        textPrimary: '#FFFFFF',
+                        textSecondary: 'rgba(255, 255, 255, 0.72)',
+                        textTertiary: 'rgba(255, 255, 255, 0.45)',
+                    })
                 : {
                     textPrimary: '#FFFFFF',
                     textSecondary: 'rgba(255, 255, 255, 0.72)',
@@ -120,7 +156,12 @@ export const useTimeColors = () => {
             if (timeout) clearTimeout(timeout);
             if (interval) clearInterval(interval);
         };
-    }, [isPremium]);
+    }, [isPremium, themeMode]);
 
-    return { palette, textColors, themeInfo };
+    const setThemeMode = async (mode: ThemePreferenceMode) => {
+        setThemeModeState(mode);
+        await setThemePreferenceMode(mode);
+    };
+
+    return { palette, textColors, themeInfo, themeMode, setThemeMode };
 };

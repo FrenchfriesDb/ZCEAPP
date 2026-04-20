@@ -32,6 +32,7 @@ import { getNightlyRiskSnapshot, pickAdaptiveDojoLoadout } from '@/constants/hab
 import { Colors, Fonts, FontSizes, Radius, Spacing, XPConfig } from '@/constants/theme';
 import { useTextColors } from '@/context/TextColorsContext';
 import { useUser } from '@/context/UserContext';
+import { usePaywall } from '@/hooks/usePaywall';
 import { useXPBarColors } from '@/hooks/useXPBarColors';
 import { AIService } from '@/services/ai';
 import { getFirstName } from '@/utils/formatters';
@@ -184,6 +185,7 @@ function getNextSignalMode(kind: 'roast' | 'quote'): 'classic' | 'personalized' 
 export default function DojoScreen() {
   const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
   const { user, completeQuest, resetQuests, recoverStreak, deploySystemBackup, updateProfile } = useUser();
+  const { maybeShowDay3EngagementPrompt, maybeShowStreakMilestonePrompt } = usePaywall();
   const { textPrimary, textTertiary } = useTextColors();
   const premiumEntitlementId =
     ((Constants.expoConfig?.extra as any)?.revenuecat?.entitlementId as string | undefined) ||
@@ -895,6 +897,16 @@ export default function DojoScreen() {
   const streakCount = user?.streakAtRisk ? (user?.previousStreak || 0) : (user?.streak || 0);
   const rankProgress = Math.min(1, Math.max(0, streakCount / streakTarget));
   const nextRankLabel = streakCount >= streakTarget ? 'Maxed' : `Next: ${streakTarget}-Day`;
+  const lastPaywallPromptedStreakRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (!user || streakCount <= 0) return;
+    if (lastPaywallPromptedStreakRef.current === streakCount) return;
+    lastPaywallPromptedStreakRef.current = streakCount;
+
+    void maybeShowDay3EngagementPrompt();
+    void maybeShowStreakMilestonePrompt(streakCount);
+  }, [maybeShowDay3EngagementPrompt, maybeShowStreakMilestonePrompt, streakCount, user]);
 
   const auraCells = useMemo(() => {
     const totalCells = 28;

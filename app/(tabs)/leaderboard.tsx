@@ -2,6 +2,7 @@ import { Colors, Fonts, FontSizes, Radius, Spacing, XPConfig } from '@/constants
 import { useSubscription } from '@/context/SubscriptionContext';
 import { useTextColors } from '@/context/TextColorsContext';
 import { useUser } from '@/context/UserContext';
+import { usePaywall } from '@/hooks/usePaywall';
 import { useTimeColors } from '@/hooks/useTimeColors';
 import { auth, db } from '@/services/firebase';
 import { formatDisplayName } from '@/utils/formatters';
@@ -9,7 +10,7 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { collection, getDocs, limit, orderBy, query } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 const getRankColor = (rank: number) => {
     if (rank === 1) return '#FFD700'; // Gold
@@ -92,6 +93,7 @@ const FREE_LEADERBOARD_LEVEL_CAP = 3;
 export default function LeaderboardScreen() {
     const { user } = useUser();
     const { isPremium, entitlementId } = useSubscription();
+    const { presentPaywall } = usePaywall();
     const { textSecondary } = useTextColors();
     const { palette } = useTimeColors();
     const selfHighlight = ensureReadableOnBlack(getSolidThemeAccent(textSecondary));
@@ -204,9 +206,26 @@ export default function LeaderboardScreen() {
                         </View>
                     </View>
                     {!isPremium && (
-                        <Text style={styles.capNotice}>
-                            Free mode is capped at Level 3 competition. Upgrade to ZCE Pro to rank above L3.
-                        </Text>
+                        <View style={styles.capWrap}>
+                            <Text style={styles.capNotice}>
+                                Free mode is capped at Level 3 competition. Upgrade to ZCE Pro to rank above L3.
+                            </Text>
+                            {myLevelRaw >= FREE_LEADERBOARD_LEVEL_CAP && (
+                                <Pressable
+                                    onPress={() => {
+                                        void presentPaywall('leaderboard_cap', {
+                                            title: 'Leaderboard Cap Reached',
+                                            body: 'Free mode tops out at Level 3 on the global board. Upgrade to compete past the cap.',
+                                            ctaLabel: 'UNLOCK FULL LEADERBOARD',
+                                            skipLabel: 'Maybe Later',
+                                        });
+                                    }}
+                                    style={({ pressed }) => [styles.capCta, pressed && styles.capCtaPressed]}
+                                >
+                                    <Text style={styles.capCtaText}>UNLOCK FULL LEADERBOARD</Text>
+                                </Pressable>
+                            )}
+                        </View>
                     )}
                 </View>
 
@@ -388,6 +407,29 @@ const styles = StyleSheet.create({
         fontSize: 12,
         lineHeight: 17,
         color: 'rgba(255,255,255,0.82)',
+    },
+    capWrap: {
+        marginTop: 8,
+        gap: 10,
+    },
+    capCta: {
+        alignSelf: 'flex-start',
+        borderRadius: 999,
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
+        backgroundColor: 'rgba(255,255,255,0.06)',
+    },
+    capCtaPressed: {
+        opacity: 0.85,
+        transform: [{ scale: 0.98 }],
+    },
+    capCtaText: {
+        fontFamily: Fonts.monoBold,
+        fontSize: 10,
+        letterSpacing: 1.1,
+        color: '#FFFFFF',
     },
     livePillShell: {
         minWidth: 142,

@@ -19,6 +19,7 @@ const ICONS = {
     email: 'email' as FluentEmojiName,
     password: 'locked' as FluentEmojiName,
     subscription: 'crown' as FluentEmojiName,
+    theme: <Ionicons name="color-palette-outline" size={18} color="#fff" />,
     restore: 'repeatButton' as FluentEmojiName,
     privacy: 'shield' as FluentEmojiName,
     terms: 'clipboard' as FluentEmojiName,
@@ -33,8 +34,7 @@ export default function EditProfileScreen() {
     const { isPremium, restorePurchases, refreshEntitlements } = useSubscription();
     const insets = useSafeAreaInsets();
     const timePalette = useTimeColors();
-    // Use the lightest color in the palette for text (last index) to ensure visibility on ALL themes including dark ones
-    const systemColor = timePalette.palette[timePalette.palette.length - 1] || '#FFFFFF';
+    const systemColor = timePalette.textColors.primary || '#FFFFFF';
 
     // Form state
     const [name, setName] = useState(user?.name || '');
@@ -63,6 +63,7 @@ export default function EditProfileScreen() {
     const subscriptionRowValue = hasActiveSubscription
         ? `${subscriptionTier} • ${subscriptionStatus}`
         : 'INACTIVE — TAP TO UPGRADE';
+    const themeModeLabel = timePalette.themeMode === 'time_sync' ? 'SKY-SYNC (TIME)' : 'WHITE';
 
     const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/;
 
@@ -145,6 +146,36 @@ export default function EditProfileScreen() {
                 ]
             );
         }
+    };
+
+    const handleThemeModePress = () => {
+        if (!isPremium) {
+            Alert.alert(
+                'PRO THEME CONTROL',
+                'Theme mode switching is available in Director mode.',
+                [
+                    { text: 'NOT NOW', style: 'cancel' },
+                    { text: 'UPGRADE', onPress: () => router.push('/settings/subscription') },
+                ]
+            );
+            return;
+        }
+
+        Alert.alert(
+            'THEME MODE',
+            'Choose your active display mode.',
+            [
+                {
+                    text: `WHITE${timePalette.themeMode === 'white' ? ' ✓' : ''}`,
+                    onPress: () => { void timePalette.setThemeMode('white'); },
+                },
+                {
+                    text: `SKY-SYNC (TIME)${timePalette.themeMode === 'time_sync' ? ' ✓' : ''}`,
+                    onPress: () => { void timePalette.setThemeMode('time_sync'); },
+                },
+                { text: 'CANCEL', style: 'cancel' },
+            ]
+        );
     };
 
     const handleDeleteAccount = () => {
@@ -410,6 +441,13 @@ export default function EditProfileScreen() {
                         value={subscriptionRowValue}
                         valueColor={hasActiveSubscription ? '#9BE7FF' : 'rgba(255,255,255,0.72)'}
                         onPress={() => router.push('/settings/subscription')}
+                    />
+                    <SettingRow
+                        icon={ICONS.theme}
+                        label="THEME MODE"
+                        value={themeModeLabel}
+                        valueColor={isPremium ? systemColor : 'rgba(255,255,255,0.42)'}
+                        onPress={handleThemeModePress}
                     />
                     <SettingRow
                         icon={ICONS.restore}

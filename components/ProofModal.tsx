@@ -12,7 +12,6 @@ import {
     Keyboard,
     KeyboardAvoidingView,
     Modal,
-    PanResponder,
     Platform,
     Pressable,
     ScrollView,
@@ -83,7 +82,6 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
     const [isRecording, setIsRecording] = useState(false);
     const [recordingSeconds, setRecordingSeconds] = useState(0);
     const pulseAnim = React.useRef(new Animated.Value(1)).current;
-    const sheetTranslateY = React.useRef(new Animated.Value(0)).current;
     const recordingRef = React.useRef<any>(null);
     const webStreamRef = React.useRef<any>(null);
     const webChunksRef = React.useRef<any[]>([]);
@@ -92,52 +90,6 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
     const systemColor = timePalette[timePalette.length - 1];
     const middleColor = timePalette[Math.floor(timePalette.length / 2)];
     const firstColor = timePalette[0];
-
-    const closeWithSwipe = React.useCallback(() => {
-        Animated.timing(sheetTranslateY, {
-            toValue: 520,
-            duration: 180,
-            useNativeDriver: true,
-        }).start(() => {
-            sheetTranslateY.setValue(0);
-            onClose();
-        });
-    }, [onClose, sheetTranslateY]);
-
-    const panResponder = React.useMemo(
-        () => PanResponder.create({
-            onMoveShouldSetPanResponder: (_, gesture) => {
-                const vertical = Math.abs(gesture.dy) > Math.abs(gesture.dx);
-                return vertical && gesture.dy > 8;
-            },
-            onPanResponderMove: (_, gesture) => {
-                if (gesture.dy > 0) {
-                    sheetTranslateY.setValue(gesture.dy);
-                }
-            },
-            onPanResponderRelease: (_, gesture) => {
-                if (gesture.dy > 120 || gesture.vy > 1) {
-                    closeWithSwipe();
-                    return;
-                }
-                Animated.spring(sheetTranslateY, {
-                    toValue: 0,
-                    useNativeDriver: true,
-                    tension: 80,
-                    friction: 12,
-                }).start();
-            },
-            onPanResponderTerminate: () => {
-                Animated.spring(sheetTranslateY, {
-                    toValue: 0,
-                    useNativeDriver: true,
-                    tension: 80,
-                    friction: 12,
-                }).start();
-            },
-        }),
-        [closeWithSwipe, sheetTranslateY]
-    );
 
     useEffect(() => {
         if (isRecording) {
@@ -436,11 +388,9 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                 <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
                 <Animated.View
-                    style={[styles.modal, { transform: [{ translateY: sheetTranslateY }] }]}
+                    style={styles.modal}
                 >
-                    <View style={styles.dragHandleHitbox} {...panResponder.panHandlers}>
-                        <View style={styles.dragHandle} />
-                    </View>
+                    <View style={styles.dragHandle} />
                     <Text style={styles.eyebrow}>VERIFICATION REQUIRED</Text>
                     <Text style={styles.title} numberOfLines={2}>{questTitle.toUpperCase()}</Text>
 
@@ -522,6 +472,9 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                     </ScrollView>
 
                     <View style={styles.footer}>
+                        <Pressable onPress={() => { Keyboard.dismiss(); onClose(); }} style={styles.cancelBtn}>
+                            <Text style={styles.cancelText}>ABANDON</Text>
+                        </Pressable>
                         <GlassButton 
                             label="VERIFY & COMPLETE" 
                             onPress={() => { Keyboard.dismiss(); handleSubmit(); }} 
@@ -561,12 +514,6 @@ const styles = StyleSheet.create({
         borderRadius: 999,
         backgroundColor: 'rgba(255,255,255,0.26)',
         alignSelf: 'center',
-    },
-    dragHandleHitbox: {
-        alignSelf: 'center',
-        width: 72,
-        height: 28,
-        justifyContent: 'center',
         marginBottom: 10,
     },
     eyebrow: { fontFamily: proofMonoFont, fontSize: 10, color: Colors.accentCyan, letterSpacing: 3, marginBottom: 6, textAlign: 'center' },

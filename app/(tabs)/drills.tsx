@@ -2,6 +2,7 @@ import GlassButton from '@/components/GlassButton';
 import { Colors, Fonts, FontSizes, Radius, Spacing } from '@/constants/theme';
 import { useSubscription } from '@/context/SubscriptionContext';
 import { useTextColors } from '@/context/TextColorsContext';
+import { usePaywall } from '@/hooks/usePaywall';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -54,6 +55,7 @@ const FREE_DRILL_IDS = new Set(['mirror', 'eye-combat', 'speed']);
 
 export default function DrillsScreen() {
     const { isPremium } = useSubscription();
+    const { presentPaywall } = usePaywall();
     const { textPrimary } = useTextColors();
     const [selectedFilter, setSelectedFilter] = useState<string>('all');
 
@@ -81,6 +83,19 @@ export default function DrillsScreen() {
             isLocked: !isPremium && !FREE_DRILL_IDS.has(drill.id),
         })),
     }));
+
+    const handleDrillPress = (drill: { isLocked: boolean; route: string; title: string }) => {
+        if (drill.isLocked) {
+            void presentPaywall('drill_locked', {
+                title: `${drill.title} is Director-only`,
+                body: 'Upgrade to unlock this drill and the full protocol system.',
+                ctaLabel: 'UNLOCK DIRECTOR MODE',
+                skipLabel: 'Maybe Later',
+            });
+            return;
+        }
+        router.push(drill.route as any);
+    };
 
     return (
         <View style={styles.container}>
@@ -167,13 +182,7 @@ export default function DrillsScreen() {
                             {category.drills.map((drill) => (
                                 <Pressable
                                     key={drill.id}
-                                    onPress={() => {
-                                        if (drill.isLocked) {
-                                            router.push('/settings/subscription');
-                                            return;
-                                        }
-                                        router.push(drill.route as any);
-                                    }}
+                                    onPress={() => handleDrillPress(drill)}
                                     style={({ pressed }) => [
                                         styles.cardWrapper,
                                         drill.isLocked && styles.cardLocked,
@@ -215,13 +224,7 @@ export default function DrillsScreen() {
                                         )}
                                         <GlassButton
                                             label={drill.isLocked ? 'UNLOCK' : 'START'}
-                                            onPress={() => {
-                                                if (drill.isLocked) {
-                                                    router.push('/settings/subscription');
-                                                    return;
-                                                }
-                                                router.push(drill.route as any);
-                                            }}
+                                            onPress={() => handleDrillPress(drill)}
                                             look="glass"
                                             tint="dark"
                                             size="sm"

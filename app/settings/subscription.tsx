@@ -1,9 +1,8 @@
 import GlassButton from '@/components/GlassButton';
 import { Fonts, Spacing } from '@/constants/theme';
+import { useSubscription } from '@/context/SubscriptionContext';
 import { useTextColors } from '@/context/TextColorsContext';
 import { useTimeColors } from '@/hooks/useTimeColors';
-import { useSubscription } from '@/context/SubscriptionContext';
-import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -63,15 +62,6 @@ export default function SubscriptionScreen() {
     const { textPrimary } = useTextColors();
     const { textColors } = useTimeColors();
     const proAccent = textColors?.primary ?? textPrimary;
-
-    const handleClose = () => {
-        const canGoBack = (router as any).canGoBack?.();
-        if (canGoBack) {
-            router.back();
-            return;
-        }
-        router.replace('/(tabs)/profile');
-    };
 
     const openWelcome = () => {
         setWelcomeSlideIndex(0);
@@ -238,15 +228,6 @@ export default function SubscriptionScreen() {
                             style={styles.actionButton}
                         />
                     ) : null}
-                    <GlassButton
-                        label="CLOSE"
-                        onPress={handleClose}
-                        look="glass"
-                        tint="dark"
-                        size="sm"
-                        compact
-                        style={styles.actionButton}
-                    />
                 </View>
             </ScrollView>
 
@@ -277,18 +258,18 @@ export default function SubscriptionScreen() {
                             ))}
                         </View>
                         <View style={styles.welcomeActions}>
-                            <Pressable
-                                onPress={() => {
-                                    if (welcomeSlideIndex === 0) {
-                                        setShowWelcome(false);
-                                        return;
-                                    }
-                                    setWelcomeSlideIndex((prev) => Math.max(0, prev - 1));
-                                }}
-                                style={styles.welcomeActionBtn}
-                            >
-                                <Text style={styles.welcomeActionText}>{welcomeSlideIndex === 0 ? 'CANCEL' : 'BACK'}</Text>
-                            </Pressable>
+                            {welcomeSlideIndex > 0 ? (
+                                <Pressable
+                                    onPress={() => {
+                                        setWelcomeSlideIndex((prev) => Math.max(0, prev - 1));
+                                    }}
+                                    style={styles.welcomeActionBtn}
+                                >
+                                    <Text style={styles.welcomeActionText}>BACK</Text>
+                                </Pressable>
+                            ) : (
+                                <View style={styles.welcomeActionSpacer} />
+                            )}
                             <Pressable
                                 onPress={() => {
                                     if (isLastSlide) {
@@ -579,6 +560,7 @@ const styles = StyleSheet.create({
         paddingBottom: 10,
     },
     welcomeActions: { flexDirection: 'row', gap: 10 },
+    welcomeActionSpacer: { flex: 1 },
     welcomeActionBtn: {
         flex: 1,
         borderRadius: 12,
