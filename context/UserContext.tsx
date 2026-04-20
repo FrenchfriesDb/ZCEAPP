@@ -552,6 +552,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                         await upsertUsernameIndex(firebaseUser.uid, data.username, data.email);
                         if (data.username) await Storage.setItem(LAST_SUCCESS_USERNAME_KEY, data.username.toLowerCase());
                         if (data.email) await Storage.setItem(LAST_SUCCESS_EMAIL_KEY, data.email.toLowerCase());
+                        try {
+                            const firstName = (String(data.name || 'Agent').trim().split(/\s+/)[0]) || 'Agent';
+                            await NotificationService.initForUser(firstName, Number(data.streak || 0));
+                        } catch (e) {
+                            console.warn('[UserContext] Notification init failed:', e);
+                        }
                         console.log('[UserContext] User loaded from Firestore:', data.email || firebaseUser.email || '(no-email)');
                     } else {
                         // ❌ No Firestore doc found for this Firebase user.
@@ -599,6 +605,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                         await upsertUsernameIndex(firebaseUser.uid, defaultData.username, defaultData.email);
                         if (defaultData.username) await Storage.setItem(LAST_SUCCESS_USERNAME_KEY, defaultData.username.toLowerCase());
                         if (defaultData.email) await Storage.setItem(LAST_SUCCESS_EMAIL_KEY, defaultData.email.toLowerCase());
+                        try {
+                            const firstName = (String(defaultData.name || 'Agent').trim().split(/\s+/)[0]) || 'Agent';
+                            await NotificationService.initForUser(firstName, Number(defaultData.streak || 0));
+                        } catch (e) {
+                            console.warn('[UserContext] Notification init failed:', e);
+                        }
                     }
                 } catch (err: any) {
                     console.warn('[UserContext] Firestore read failed:', err.code ?? err.message);
@@ -1056,6 +1068,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             lastActivityDate: today,
             drillLogs: [log, ...(current.drillLogs || [])],
         });
+
+        const firstName = (String(current.name || 'Agent').trim().split(/\s+/)[0]) || 'Agent';
+        void NotificationService.onUserActivity(firstName, streak);
+        void NotificationService.touchReengagement(firstName);
     };
 
     /**
@@ -1143,6 +1159,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             completedQuests: newDayQuests,
             drillLogs: [historyLog, ...(current.drillLogs || [])],
         });
+
+        const firstName = (String(current.name || 'Agent').trim().split(/\s+/)[0]) || 'Agent';
+        void NotificationService.onUserActivity(firstName, streak);
+        void NotificationService.touchReengagement(firstName);
     };
 
     const recoverStreak = async () => {

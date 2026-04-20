@@ -19,6 +19,7 @@ import {
     useWindowDimensions,
     View
 } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import { captureRef } from 'react-native-view-shot';
 // Don't import expo-av at module load time — load it at runtime where available.
 import FluentEmoji, { resolveFluentEmojiName } from '@/components/FluentEmoji';
@@ -131,6 +132,9 @@ const loadAudio = async () => {
   }
 };
 
+const getExpoAudioApi = (audioMod: any) =>
+  audioMod?.AudioModule ?? audioMod ?? null;
+
 function dedupeSignalText(text: string) {
   return text.replace(/\s+/g, ' ').trim().toLowerCase();
 }
@@ -179,7 +183,7 @@ function getNextSignalMode(kind: 'roast' | 'quote'): 'classic' | 'personalized' 
 
 export default function DojoScreen() {
   const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
-  const { user, completeQuest, resetQuests, recoverStreak, deploySystemBackup } = useUser();
+  const { user, completeQuest, resetQuests, recoverStreak, deploySystemBackup, updateProfile } = useUser();
   const { textPrimary, textTertiary } = useTextColors();
   const premiumEntitlementId =
     ((Constants.expoConfig?.extra as any)?.revenuecat?.entitlementId as string | undefined) ||
@@ -236,9 +240,20 @@ export default function DojoScreen() {
   // ... rest of the component state ...
   // Audio playback for archived recordings
   const playbackRef = useRef<any>(null);
+  const webAudioRef = useRef<any>(null);
+  const playbackStartedRef = useRef(false);
   const [playingUri, setPlayingUri] = useState<string | null>(null);
 
   const stopPlayback = () => {
+    playbackStartedRef.current = false;
+
+    const webAudio = webAudioRef.current;
+    if (webAudio) {
+      try { webAudio.pause?.(); } catch (error) { void error; }
+      try { webAudio.src = ''; } catch (error) { void error; }
+      webAudioRef.current = null;
+    }
+
     const player = playbackRef.current;
     if (!player) return;
     try { player.pause?.(); } catch (error) { void error; }
@@ -271,15 +286,33 @@ export default function DojoScreen() {
       // stop any existing playback
       stopPlayback();
 
+      if (Platform.OS === 'web') {
+        const webAudio = new globalThis.Audio(uri);
+        webAudioRef.current = webAudio;
+        setPlayingUri(uri);
+        webAudio.onended = () => {
+          stopPlayback();
+          setPlayingUri(null);
+        };
+        webAudio.onerror = () => {
+          stopPlayback();
+          setPlayingUri(null);
+          Alert.alert('Playback Error', 'Unable to play this recording in your browser.');
+        };
+        await webAudio.play();
+        return;
+      }
+
       const Audio = await loadAudio();
-      if (!Audio) {
+      const audioApi = getExpoAudioApi(Audio);
+      if (!audioApi) {
         Alert.alert('Playback Not Available', 'Audio playback is not available in this build.');
         return;
       }
 
-      const setAudioModeAsync = Audio?.setAudioModeAsync;
-      const createAudioPlayer = Audio?.createAudioPlayer;
-      const AudioPlayerCtor = Audio?.AudioPlayer;
+      const setAudioModeAsync = audioApi?.setAudioModeAsync;
+      const createAudioPlayer = audioApi?.createAudioPlayer;
+      const AudioPlayerCtor = audioApi?.AudioPlayer;
       const buildPlayer =
         typeof createAudioPlayer === 'function'
           ? (source: string) => {
@@ -325,13 +358,22 @@ export default function DojoScreen() {
       }
 
       setPlayingUri(uri);
+      playbackStartedRef.current = false;
       if (typeof setAudioModeAsync === 'function') {
         await setAudioModeAsync({ playsInSilentMode: true });
       }
       const player = buildPlayer(uri);
       playbackRef.current = player;
       player?.addListener?.('playbackStatusUpdate', (status: any) => {
-        if (status?.didJustFinish || (status?.isLoaded && !status?.playing)) {
+        if (status?.playing) {
+          playbackStartedRef.current = true;
+          return;
+        }
+        if (
+          status?.didJustFinish
+          || status?.error
+          || (playbackStartedRef.current && status?.isLoaded && !status?.playing)
+        ) {
           stopPlayback();
           setPlayingUri(null);
         }
@@ -352,14 +394,7 @@ export default function DojoScreen() {
   };
 
   useEffect(() => {
-    return () => {
-      const player = playbackRef.current;
-      if (!player) return;
-      try { player.pause?.(); } catch (error) { void error; }
-      try { player.seekTo?.(0); } catch (error) { void error; }
-      try { player.remove?.(); } catch (error) { void error; }
-      playbackRef.current = null;
-    };
+    return () => { stopPlayback(); };
   }, []);
 
   const initialLoadout = useMemo(() => pickAdaptiveDojoLoadout(user), [user?.email]);
@@ -370,7 +405,7 @@ export default function DojoScreen() {
   const [historyVisible, setHistoryVisible] = useState(false);
   const [historyDetailItem, setHistoryDetailItem] = useState<any>(null);
   const [selectedItem, setSelectedItem] = useState<any>(null);
-  const [historyTab, setHistoryTab] = useState<'logs' | 'verify'>('logs');
+  const [historyTab, setHistoryTab] = useState<'logs' | 'verify' | 'trash'>('logs');
   const [recoveryVisible, setRecoveryVisible] = useState(false);
   const [recoveryQuestion, setRecoveryQuestion] = useState('');
   const [recoveryAnswer, setRecoveryAnswer] = useState('');
@@ -382,6 +417,7 @@ export default function DojoScreen() {
   const shareCardRef = useRef<View | null>(null);
   const historyListRef = useRef<FlatList<any> | null>(null);
   const historyScrollOffsetRef = useRef(0);
+  const TRASH_RETENTION_MS = 15 * 24 * 60 * 60 * 1000;
 
   const restoreHistoryScrollPosition = () => {
     const offset = historyScrollOffsetRef.current;
@@ -471,6 +507,133 @@ export default function DojoScreen() {
     if (/\[(?:photo|voice|media)\s*proof\s*attached\]/i.test(content)) return true;
     if (hasProofMedia) return true;
     return false;
+  };
+
+  const getTrashExpiryTs = (item: any): number => {
+    const raw = item?.trashExpiresAt || item?.deletedAt;
+    if (!raw) return 0;
+    const ts = new Date(raw).getTime();
+    return Number.isFinite(ts) ? ts : 0;
+  };
+
+  const isInTrash = (item: any): boolean => Boolean(item?.deletedAt || item?.trashExpiresAt);
+  const isTrashExpired = (item: any): boolean => {
+    const ts = getTrashExpiryTs(item);
+    if (!ts) return false;
+    return ts <= Date.now();
+  };
+
+  useEffect(() => {
+    if (!user) return;
+
+    const now = Date.now();
+    const keep = (entry: any) => {
+      const raw = entry?.trashExpiresAt || entry?.deletedAt;
+      if (!raw) return true;
+      const ts = new Date(raw).getTime();
+      return !Number.isFinite(ts) || ts > now;
+    };
+
+    const currentDrillLogs = user.drillLogs || [];
+    const currentJournalLogs = user.journalLogs || [];
+    const nextDrillLogs = currentDrillLogs.filter(keep);
+    const nextJournalLogs = currentJournalLogs.filter(keep);
+
+    const changed = nextDrillLogs.length !== currentDrillLogs.length || nextJournalLogs.length !== currentJournalLogs.length;
+    if (!changed) return;
+
+    void updateProfile({
+      drillLogs: nextDrillLogs,
+      journalLogs: nextJournalLogs,
+    } as any);
+  }, [updateProfile, user]);
+
+  const moveHistoryItemToTrash = async (item: any) => {
+    if (!user || isInTrash(item)) return;
+
+    const deletedAt = new Date().toISOString();
+    const trashExpiresAt = new Date(Date.now() + TRASH_RETENTION_MS).toISOString();
+
+    if (item._source === 'journal') {
+      const nextJournalLogs = (user.journalLogs || []).map((entry: any, index: number) => {
+        if (index !== item._sourceIndex) return entry;
+        return { ...entry, deletedAt, trashExpiresAt };
+      });
+      await updateProfile({ journalLogs: nextJournalLogs } as any);
+      return;
+    }
+
+    const nextDrillLogs = (user.drillLogs || []).map((entry: any, index: number) => {
+      if (index !== item._sourceIndex) return entry;
+      return { ...entry, deletedAt, trashExpiresAt };
+    });
+    await updateProfile({ drillLogs: nextDrillLogs } as any);
+  };
+
+  const recoverHistoryItemFromTrash = async (item: any) => {
+    if (!user || !isInTrash(item)) return;
+
+    if (item._source === 'journal') {
+      const nextJournalLogs = (user.journalLogs || []).map((entry: any, index: number) => {
+        if (index !== item._sourceIndex) return entry;
+        const { deletedAt, trashExpiresAt, ...rest } = entry || {};
+        void deletedAt;
+        void trashExpiresAt;
+        return rest;
+      });
+      await updateProfile({ journalLogs: nextJournalLogs } as any);
+      return;
+    }
+
+    const nextDrillLogs = (user.drillLogs || []).map((entry: any, index: number) => {
+      if (index !== item._sourceIndex) return entry;
+      const { deletedAt, trashExpiresAt, ...rest } = entry || {};
+      void deletedAt;
+      void trashExpiresAt;
+      return rest;
+    });
+    await updateProfile({ drillLogs: nextDrillLogs } as any);
+  };
+
+  const permanentlyDeleteHistoryItem = async (item: any) => {
+    if (!user) return;
+
+    if (item._source === 'journal') {
+      const nextJournalLogs = (user.journalLogs || []).filter((_: any, index: number) => index !== item._sourceIndex);
+      await updateProfile({ journalLogs: nextJournalLogs } as any);
+      return;
+    }
+
+    const nextDrillLogs = (user.drillLogs || []).filter((_: any, index: number) => index !== item._sourceIndex);
+    await updateProfile({ drillLogs: nextDrillLogs } as any);
+  };
+
+  const confirmPermanentDelete = (item: any) => {
+    Alert.alert(
+      'Delete Forever?',
+      'This removes the log permanently and cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Continue',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              'Final Confirmation',
+              'Last chance. Permanently delete this log?',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Delete Forever',
+                  style: 'destructive',
+                  onPress: () => { void permanentlyDeleteHistoryItem(item); },
+                },
+              ]
+            );
+          },
+        },
+      ]
+    );
   };
   const hasShownNudge = useRef(false);
   const hasShownRecoveryPrompt = useRef(false);
@@ -1469,7 +1632,9 @@ export default function DojoScreen() {
                 const source = item._source === 'journal' ? 'journal' : 'drill';
                 const typeLabel = source === 'journal'
                   ? 'JOURNAL ENTRY'
-                  : (historyTab === 'verify' ? 'VERIFY REP' : (item.type?.toUpperCase() || 'LOG'));
+                  : (historyTab === 'verify'
+                    ? 'VERIFY REP'
+                    : (historyTab === 'trash' ? 'TRASHED LOG' : (item.type?.toUpperCase() || 'LOG')));
 
                 const content = (source === 'journal' ? (item.entry || item.feedback) : (item.feedback || item.entry)) || '';
                 let cleaned = content.replace(/\[ID:[^\]]+\]/g, '').trim();
@@ -1485,7 +1650,7 @@ export default function DojoScreen() {
                   ? firstMedia
                   : (firstMedia?.uri || firstMedia?.url || firstMedia?.photoUri || firstMedia?.imageUri || firstMedia?.photoURL || null);
                 const mediaAudio = mediaEntries.find((m: any) => {
-                  const candidate = typeof m === 'string' ? m : (m?.uri || m?.url || m?.audioUri || m?.voiceUri);
+                  const candidate = typeof m === 'string' ? m : (m?.uri || m?.url || m?.audioUri || m?.voiceUri || m?.fileUri || m?.path);
                   if (typeof m === 'object') {
                     const mediaType = String(m?.type || m?.mediaType || m?.mimeType || '').toLowerCase();
                     if (mediaType.includes('audio')) return true;
@@ -1494,10 +1659,11 @@ export default function DojoScreen() {
                 });
                 const mediaAudioUri = typeof mediaAudio === 'string'
                   ? mediaAudio
-                  : (mediaAudio?.uri || mediaAudio?.url || mediaAudio?.audioUri || mediaAudio?.voiceUri || null);
+                  : (mediaAudio?.uri || mediaAudio?.url || mediaAudio?.audioUri || mediaAudio?.voiceUri || mediaAudio?.fileUri || mediaAudio?.path || null);
 
                 const img = item.photoUri || item.proof?.photoUri || item.proof?.imageUri || item.proof?.photoURL || item.proofData?.photoUri || item.proofData?.imageUri || item.imageUri || item.imageUrl || item.image || item.photo || item.photoURL || item.attachments?.photoUri || item.attachments?.imageUri || item.attachments?.photoURL || item.attachments?.url || mediaImage;
                 const audio = item.voiceUri || item.proof?.voiceUri || item.proof?.audioUri || item.proof?.voiceURL || item.proofData?.voiceUri || item.proofData?.audioUri || item.recording || item.recordingUri || item.audio || item.audioUrl || item.voiceURL || item.attachments?.voiceUri || item.attachments?.audioUri || item.attachments?.voiceURL || mediaAudioUri;
+                const normalizedAudio = normalizeAudioUri(audio);
                 const extractedProofText = item.proof?.text
                   || item.proofData?.text
                   || item.mediaProof?.text
@@ -1516,12 +1682,14 @@ export default function DojoScreen() {
                     </View>
 
                     {img ? (
-                      <Image source={{ uri: img }} style={{ width: '100%', height: 180, borderRadius: 12, marginTop: 8 }} resizeMode="cover" />
+                      <View style={styles.historyDetailImageFrame}>
+                        <Image source={{ uri: img }} style={styles.historyDetailImage} resizeMode="contain" />
+                      </View>
                     ) : null}
 
                     {audio ? (
                       <Pressable onPress={() => togglePlay(audio)} style={{ marginTop: 8, padding: 12, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.03)' }}>
-                        <Text style={{ color: textPrimary }}>{playingUri === audio ? 'Playing...' : 'Play recording'}</Text>
+                        <Text style={{ color: textPrimary }}>{playingUri === normalizedAudio ? 'Playing...' : 'Play recording'}</Text>
                       </Pressable>
                     ) : null}
 
@@ -1549,14 +1717,14 @@ export default function DojoScreen() {
           ) : (
             <>
               <View style={styles.historyTabs}>
-                {(['logs', 'verify'] as const).map(tab => (
+                {(['logs', 'verify', 'trash'] as const).map(tab => (
                   <Pressable
                     key={tab}
                     onPress={() => setHistoryTab(tab)}
                     style={[styles.historyTabBtn, historyTab === tab && styles.historyTabBtnActive]}
                   >
                     <Text style={[styles.historyTabText, historyTab === tab && styles.historyTabTextActive]}>
-                      {tab === 'logs' ? 'LOGS' : 'VERIFY REPS'}
+                      {tab === 'logs' ? 'LOGS' : (tab === 'verify' ? 'VERIFY REPS' : 'TRASH')}
                     </Text>
                   </Pressable>
                 ))}
@@ -1564,15 +1732,24 @@ export default function DojoScreen() {
               <FlatList
                 ref={historyListRef}
                 data={(() => {
-                  const drillItems = [...(user?.drillLogs || [])].map((d: any) => ({ ...d, _source: 'drill' }));
-                  const journalItems = [...(user?.journalLogs || [])].map((j: any) => ({ ...j, _source: 'journal' }));
+                  const drillItems = [...(user?.drillLogs || [])].map((d: any, idx: number) => ({ ...d, _source: 'drill', _sourceIndex: idx }));
+                  const journalItems = [...(user?.journalLogs || [])].map((j: any, idx: number) => ({ ...j, _source: 'journal', _sourceIndex: idx }));
                   const combined = [...drillItems, ...journalItems];
 
-                  const filtered = historyTab === 'verify'
-                    ? combined.filter((item: any) => isVerifyRepLog(item))
-                    : combined.filter((item: any) => !isVerifyRepLog(item));
+                  const active = combined.filter((item: any) => !isTrashExpired(item));
+                  const filtered = historyTab === 'trash'
+                    ? active.filter((item: any) => isInTrash(item))
+                    : active.filter((item: any) => !isInTrash(item) && (historyTab === 'verify' ? isVerifyRepLog(item) : !isVerifyRepLog(item)));
 
-                  return filtered.sort((a: any, b: any) => getLogTimestamp(getLogDateValue(b), b?.id || b?.logId || b?.timestamp) - getLogTimestamp(getLogDateValue(a), a?.id || a?.logId || a?.timestamp));
+                  const sortTimestamp = (entry: any) => {
+                    if (historyTab === 'trash') {
+                      const ts = getTrashExpiryTs(entry);
+                      if (ts) return ts;
+                    }
+                    return getLogTimestamp(getLogDateValue(entry), entry?.id || entry?.logId || entry?.timestamp);
+                  };
+
+                  return filtered.sort((a: any, b: any) => sortTimestamp(b) - sortTimestamp(a));
                 })()}
                 onScroll={(event) => {
                   historyScrollOffsetRef.current = event.nativeEvent.contentOffset.y;
@@ -1580,19 +1757,85 @@ export default function DojoScreen() {
                 scrollEventThrottle={16}
                 keyExtractor={(item, index) => getLogStableId(item, index)}
                 contentContainerStyle={styles.historyList}
-                renderItem={({ item }) => (
-                  <GlassCard style={styles.logCard} onPress={() => setHistoryDetailItem(item)}>
-                    <View style={styles.logTopCompact}>
-                      <Text style={styles.logType}>
-                        {item._source === 'journal'
-                          ? 'JOURNAL ENTRY'
-                          : (historyTab === 'verify' ? 'VERIFY REP' : (item.type?.toUpperCase() || 'LOG'))}
-                      </Text>
-                      <Text style={styles.logDate}>{formatLogDate(getLogDateValue(item), item.id || item.logId || item.timestamp)}</Text>
+                renderItem={({ item }) => {
+                  const card = (
+                    <GlassCard style={styles.logCard} onPress={() => setHistoryDetailItem(item)}>
+                      <View style={styles.logTopCompact}>
+                        <Text style={styles.logType}>
+                          {item._source === 'journal'
+                            ? 'JOURNAL ENTRY'
+                            : (historyTab === 'verify'
+                              ? 'VERIFY REP'
+                              : (historyTab === 'trash' ? 'TRASHED LOG' : (item.type?.toUpperCase() || 'LOG')))}
+                        </Text>
+                        <Text style={styles.logDate}>{formatLogDate(getLogDateValue(item), item.id || item.logId || item.timestamp)}</Text>
+                      </View>
+                      {historyTab === 'trash' ? (
+                        <Text style={styles.historyTrashHint}>
+                          Auto-deletes {getTrashExpiryTs(item) > 0 ? new Date(getTrashExpiryTs(item)).toLocaleDateString() : 'soon'}
+                        </Text>
+                      ) : (
+                        <Text style={styles.logTapHint}>Tap to view details</Text>
+                      )}
+                    </GlassCard>
+                  );
+
+                  if (historyTab === 'trash') {
+                    return (
+                      <View style={styles.historySwipeRow}>
+                        <Swipeable
+                          overshootLeft={false}
+                          overshootRight={false}
+                          friction={2.1}
+                          leftThreshold={96}
+                          rightThreshold={96}
+                          dragOffsetFromLeftEdge={14}
+                          dragOffsetFromRightEdge={14}
+                          renderLeftActions={() => (
+                            <Pressable
+                              onPress={() => { void recoverHistoryItemFromTrash(item); }}
+                              style={[styles.historySwipeAction, styles.historyRecoverAction]}
+                            >
+                              <Text style={styles.historySwipeActionText}>RECOVER</Text>
+                            </Pressable>
+                          )}
+                          renderRightActions={() => (
+                            <Pressable
+                              onPress={() => confirmPermanentDelete(item)}
+                              style={[styles.historySwipeAction, styles.historyDeleteAction]}
+                            >
+                              <Text style={styles.historySwipeActionText}>DELETE</Text>
+                            </Pressable>
+                          )}
+                        >
+                          {card}
+                        </Swipeable>
+                      </View>
+                    );
+                  }
+
+                  return (
+                    <View style={styles.historySwipeRow}>
+                      <Swipeable
+                        overshootLeft={false}
+                        overshootRight={false}
+                        friction={2.1}
+                        rightThreshold={96}
+                        dragOffsetFromRightEdge={14}
+                        renderRightActions={() => (
+                          <Pressable
+                            onPress={() => { void moveHistoryItemToTrash(item); }}
+                            style={[styles.historySwipeAction, styles.historyTrashAction]}
+                          >
+                            <Text style={styles.historySwipeActionText}>DELETE</Text>
+                          </Pressable>
+                        )}
+                      >
+                        {card}
+                      </Swipeable>
                     </View>
-                    <Text style={styles.logTapHint}>Tap to view details</Text>
-                  </GlassCard>
-                )}
+                  );
+                }}
                 ListEmptyComponent={<Text style={styles.emptyText}>No data in neural buffers.</Text>}
               />
             </>
@@ -2327,6 +2570,45 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.42)',
     letterSpacing: 1,
   },
+  historyTrashHint: {
+    marginTop: 8,
+    fontFamily: Fonts.mono,
+    fontSize: 9,
+    color: 'rgba(255,139,139,0.8)',
+    letterSpacing: 0.9,
+  },
+  historySwipeRow: {
+    borderRadius: Radius.lg,
+    overflow: 'hidden',
+  },
+  historySwipeAction: {
+    width: 92,
+    borderRadius: Radius.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 1,
+  },
+  historySwipeActionText: {
+    fontFamily: Fonts.monoBold,
+    fontSize: 10,
+    letterSpacing: 1.1,
+    color: '#FFFFFF',
+  },
+  historyTrashAction: {
+    backgroundColor: 'rgba(255,77,77,0.22)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,77,77,0.5)',
+  },
+  historyRecoverAction: {
+    backgroundColor: 'rgba(88,255,182,0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(88,255,182,0.55)',
+  },
+  historyDeleteAction: {
+    backgroundColor: 'rgba(255,41,41,0.24)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,92,92,0.62)',
+  },
   logType: {
     fontFamily: Fonts.monoBold,
     fontSize: 10,
@@ -2392,6 +2674,23 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: 'rgba(0,0,0,0.2)',
     borderColor: 'rgba(255,255,255,0.16)',
+  },
+  historyDetailImageFrame: {
+    width: '100%',
+    height: 190,
+    borderRadius: 12,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 8,
+  },
+  historyDetailImage: {
+    width: '100%',
+    height: '100%',
   },
   historyDetailCloseBtn: {
     marginTop: 16,

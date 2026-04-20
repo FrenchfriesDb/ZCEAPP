@@ -66,6 +66,9 @@ const loadAudio = async () => {
 const getExpoAudioRecorderClass = (audioMod: any) =>
     audioMod?.AudioRecorder ?? audioMod?.AudioModule?.AudioRecorder ?? null;
 
+const getExpoAudioApi = (audioMod: any) =>
+    audioMod?.AudioModule ?? audioMod ?? null;
+
 interface ProofModalProps {
     visible: boolean;
     onClose: () => void;
@@ -167,11 +170,8 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                 webStreamRef.current.getTracks?.().forEach((track: any) => track.stop());
                 webStreamRef.current = null;
             }
-            if (voiceUri?.startsWith?.('blob:')) {
-                URL.revokeObjectURL(voiceUri);
-            }
         };
-    }, [voiceUri]);
+    }, []);
 
     // ── IMAGE: show action sheet on iOS (camera / library), just library on Android/web ──
     const handlePickImage = async () => {
@@ -299,7 +299,8 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
         }
 
         const Audio = await loadAudio();
-        if (!Audio || typeof Audio.requestRecordingPermissionsAsync !== 'function') {
+        const audioApi = getExpoAudioApi(Audio);
+        if (!audioApi || typeof audioApi.requestRecordingPermissionsAsync !== 'function') {
             console.error('[ProofModal] expo-audio support check failed', {
                 hasAudio: !!Audio,
                 keys: Audio ? Object.keys(Audio) : [],
@@ -340,23 +341,23 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                     recordingRef.current = null;
                 }
 
-                const { granted } = await Audio.requestRecordingPermissionsAsync();
+                const { granted } = await audioApi.requestRecordingPermissionsAsync();
                 if (!granted) {
                     Alert.alert('Mic Permission Needed', 'Allow microphone access in Settings.');
                     return;
                 }
 
-                await Audio.setAudioModeAsync({
+                await audioApi.setAudioModeAsync({
                     allowsRecording: true,
                     playsInSilentMode: true,
                 });
-                const AudioRecorderClass = getExpoAudioRecorderClass(Audio);
+                const AudioRecorderClass = getExpoAudioRecorderClass(audioApi);
                 if (typeof AudioRecorderClass !== 'function') {
                     throw new Error('expo-audio recorder API is missing from this runtime.');
                 }
 
                 const ctorAttempts: Array<() => any> = [
-                    () => new AudioRecorderClass(Audio?.RecordingPresets?.HIGH_QUALITY),
+                    () => new AudioRecorderClass(audioApi?.RecordingPresets?.HIGH_QUALITY),
                     () => new AudioRecorderClass({}),
                     () => new AudioRecorderClass(),
                 ];

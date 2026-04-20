@@ -4,6 +4,7 @@ import { Colors, Fonts, Spacing } from '@/constants/theme';
 import { useUser } from '@/context/UserContext';
 import { useTimeColors } from '@/hooks/useTimeColors';
 import { LinearGradient } from 'expo-linear-gradient';
+import { requireOptionalNativeModule } from 'expo-modules-core';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -27,12 +28,15 @@ type DrillStage = 'ready' | 'recording' | 'complete';
 const getExpoAudioRecorderClass = (audioMod: any) =>
   audioMod?.AudioRecorder ?? audioMod?.AudioModule?.AudioRecorder ?? null;
 
+const getExpoAudioApi = (audioMod: any) =>
+  audioMod?.AudioModule ?? audioMod ?? null;
+
 let _cachedAudioModule: any | null | undefined;
 const loadAudioModule = async () => {
   if (Platform.OS === 'web') return null;
   if (_cachedAudioModule !== undefined) return _cachedAudioModule;
   try {
-    _cachedAudioModule = await import('expo-audio');
+    _cachedAudioModule = requireOptionalNativeModule<any>('ExpoAudio') || null;
   } catch {
     _cachedAudioModule = null;
   }
@@ -163,9 +167,10 @@ export default function DecibelBreakerDrill() {
       recorderRef.current = null;
     }
     const Audio = await loadAudioModule();
-    if (!Audio) return;
+    const audioApi = getExpoAudioApi(Audio);
+    if (!audioApi) return;
     try {
-      await Audio.setAudioModeAsync({
+      await audioApi.setAudioModeAsync({
         allowsRecording: false,
         playsInSilentMode: true,
       });
@@ -302,28 +307,34 @@ export default function DecibelBreakerDrill() {
 
     try {
       const Audio = await loadAudioModule();
-      if (!Audio) {
+      const audioApi = getExpoAudioApi(Audio);
+      if (!audioApi) {
         throw new Error('expo-audio is unavailable in this runtime.');
       }
 
-      const { granted } = await Audio.requestRecordingPermissionsAsync();
+      const requestPermissionsAsync = audioApi.requestRecordingPermissionsAsync;
+      if (typeof requestPermissionsAsync !== 'function') {
+        throw new Error('expo-audio permission API is missing from this runtime.');
+      }
+
+      const { granted } = await requestPermissionsAsync();
       if (!granted) {
         Alert.alert('Mic Permission Needed', 'Allow microphone access in Settings.');
         return;
       }
 
-      await Audio.setAudioModeAsync({
+      await audioApi.setAudioModeAsync({
         allowsRecording: true,
         playsInSilentMode: true,
       });
 
-      const RecorderClass = getExpoAudioRecorderClass(Audio);
+      const RecorderClass = getExpoAudioRecorderClass(audioApi);
       if (typeof RecorderClass !== 'function') {
         throw new Error('expo-audio recorder API is missing from this runtime.');
       }
 
       const options = {
-        ...Audio.RecordingPresets.HIGH_QUALITY,
+        ...(audioApi.RecordingPresets?.HIGH_QUALITY || {}),
         isMeteringEnabled: true,
       };
       const recorder = new RecorderClass(options);

@@ -30,6 +30,9 @@ const loadAudio = async () => {
     }
 };
 
+const getExpoAudioApi = (audioMod: any) =>
+    audioMod?.AudioModule ?? audioMod ?? null;
+
 export default function ProfileScreen() {
     const { user, isLoading, signOut, changeUsername, purchaseSystemBackup, updateProfile } = useUser();
     const { isPremium } = useSubscription();
@@ -44,6 +47,8 @@ export default function ProfileScreen() {
     const [newUsername, setNewUsername] = useState('');
     const [usernameLoading, setUsernameLoading] = useState(false);
     const playbackRef = useRef<any>(null);
+    const webAudioRef = useRef<any>(null);
+    const playbackStartedRef = useRef(false);
     const [playingUri, setPlayingUri] = useState<string | null>(null);
     const archiveListRef = useRef<FlatList<any> | null>(null);
     const archiveScrollOffsetRef = useRef(0);
@@ -59,6 +64,15 @@ export default function ProfileScreen() {
     };
 
     const stopPlayback = () => {
+        playbackStartedRef.current = false;
+
+        const webAudio = webAudioRef.current;
+        if (webAudio) {
+            try { webAudio.pause?.(); } catch (error) { void error; }
+            try { webAudio.src = ''; } catch (error) { void error; }
+            webAudioRef.current = null;
+        }
+
         const player = playbackRef.current;
         if (!player) return;
         try { player.pause?.(); } catch (error) { void error; }
@@ -90,15 +104,33 @@ export default function ProfileScreen() {
 
             stopPlayback();
 
+            if (Platform.OS === 'web') {
+                const webAudio = new globalThis.Audio(uri);
+                webAudioRef.current = webAudio;
+                setPlayingUri(uri);
+                webAudio.onended = () => {
+                    stopPlayback();
+                    setPlayingUri(null);
+                };
+                webAudio.onerror = () => {
+                    stopPlayback();
+                    setPlayingUri(null);
+                    Alert.alert('Playback Error', 'Unable to play this recording in your browser.');
+                };
+                await webAudio.play();
+                return;
+            }
+
             const Audio = await loadAudio();
-            if (!Audio) {
+            const audioApi = getExpoAudioApi(Audio);
+            if (!audioApi) {
                 Alert.alert('Playback Not Available', 'Audio playback is not available in this build.');
                 return;
             }
 
-            const setAudioModeAsync = Audio?.setAudioModeAsync;
-            const createAudioPlayer = Audio?.createAudioPlayer;
-            const AudioPlayerCtor = Audio?.AudioPlayer;
+            const setAudioModeAsync = audioApi?.setAudioModeAsync;
+            const createAudioPlayer = audioApi?.createAudioPlayer;
+            const AudioPlayerCtor = audioApi?.AudioPlayer;
             const buildPlayer =
                 typeof createAudioPlayer === 'function'
                     ? (source: string) => {
@@ -144,6 +176,7 @@ export default function ProfileScreen() {
             }
 
             setPlayingUri(uri);
+            playbackStartedRef.current = false;
             if (typeof setAudioModeAsync === 'function') {
                 await setAudioModeAsync({ playsInSilentMode: true });
             }
@@ -151,7 +184,15 @@ export default function ProfileScreen() {
             const player = buildPlayer(uri);
             playbackRef.current = player;
             player?.addListener?.('playbackStatusUpdate', (status: any) => {
-                if (status?.didJustFinish || (status?.isLoaded && !status?.playing)) {
+                if (status?.playing) {
+                    playbackStartedRef.current = true;
+                    return;
+                }
+                if (
+                    status?.didJustFinish
+                    || status?.error
+                    || (playbackStartedRef.current && status?.isLoaded && !status?.playing)
+                ) {
                     stopPlayback();
                     setPlayingUri(null);
                 }
@@ -625,7 +666,7 @@ export default function ProfileScreen() {
                                     ? firstMedia
                                     : (firstMedia?.uri || firstMedia?.url || firstMedia?.photoUri || firstMedia?.imageUri || firstMedia?.photoURL || null);
                                 const mediaAudio = mediaEntries.find((m: any) => {
-                                    const candidate = typeof m === 'string' ? m : (m?.uri || m?.url || m?.audioUri || m?.voiceUri);
+                                    const candidate = typeof m === 'string' ? m : (m?.uri || m?.url || m?.audioUri || m?.voiceUri || m?.fileUri || m?.path);
                                     if (typeof m === 'object') {
                                         const mediaType = String(m?.type || m?.mediaType || m?.mimeType || '').toLowerCase();
                                         if (mediaType.includes('audio')) return true;
@@ -634,7 +675,7 @@ export default function ProfileScreen() {
                                 });
                                 const mediaAudioUri = typeof mediaAudio === 'string'
                                     ? mediaAudio
-                                    : (mediaAudio?.uri || mediaAudio?.url || mediaAudio?.audioUri || mediaAudio?.voiceUri || null);
+                                    : (mediaAudio?.uri || mediaAudio?.url || mediaAudio?.audioUri || mediaAudio?.voiceUri || mediaAudio?.fileUri || mediaAudio?.path || null);
 
                                 const img = item.photoUri || item.proof?.photoUri || item.proof?.imageUri || item.proof?.photoURL || item.proofData?.photoUri || item.proofData?.imageUri || item.imageUri || item.imageUrl || item.image || item.photo || item.photoURL || item.attachments?.photoUri || item.attachments?.imageUri || item.attachments?.photoURL || item.attachments?.url || mediaImage;
                                 const audio = item.voiceUri || item.proof?.voiceUri || item.proof?.audioUri || item.proof?.voiceURL || item.proofData?.voiceUri || item.proofData?.audioUri || item.recording || item.recordingUri || item.audio || item.audioUrl || item.voiceURL || item.attachments?.voiceUri || item.attachments?.audioUri || item.attachments?.voiceURL || mediaAudioUri;
