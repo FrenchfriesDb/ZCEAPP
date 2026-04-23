@@ -273,7 +273,7 @@ export default function WeaponPickerDrill() {
                   ? `You wielded ${randomWeapon.name} perfectly. That's lethal.`
                   : `You used ${randomWeapon.name}, but next time lean harder into: ${randomWeapon.desc}`}
               </Text>
-              <Text style={styles.gradeScore}>{weaponScore} pts</Text>
+              <Text style={[styles.gradeScore, styles.gradePoints]}>{weaponScore} pts</Text>
             </GlassCard>
 
             <GlassButton
@@ -371,6 +371,7 @@ const styles = StyleSheet.create({
 
   gradeCard: { width: '100%', padding: 16, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.02)', borderWidth: 1 },
   gradeScore: { fontFamily: Fonts.heading, fontSize: 16, marginBottom: 8 },
+  gradePoints: { color: '#FFFFFF' },
   gradeText: { fontFamily: Fonts.headingSemi, fontSize: 12, color: 'rgba(255,255,255,0.82)', textAlign: 'center', marginBottom: 10, lineHeight: 18 },
 
   completeCard: { width: '100%', padding: 20, backgroundColor: 'rgba(0, 245, 255, 0.05)', borderColor: 'rgba(0, 245, 255, 0.2)', borderWidth: 1 },

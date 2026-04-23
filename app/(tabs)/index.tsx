@@ -2,7 +2,6 @@ import { BlurView } from 'expo-blur';
 import Constants from 'expo-constants';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import * as ExpoSharing from 'expo-sharing';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     Alert,
@@ -20,7 +19,6 @@ import {
     View
 } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
-import { captureRef } from 'react-native-view-shot';
 // Don't import expo-av at module load time — load it at runtime where available.
 import FluentEmoji, { resolveFluentEmojiName } from '@/components/FluentEmoji';
 import GlassButton from '@/components/GlassButton';
@@ -136,6 +134,45 @@ const loadAudio = async () => {
 const getExpoAudioApi = (audioMod: any) =>
   audioMod?.AudioModule ?? audioMod ?? null;
 
+let _cachedExpoSharing: any | null | undefined;
+const loadExpoSharing = () => {
+  if (Platform.OS === 'web') return null;
+  if (_cachedExpoSharing !== undefined) return _cachedExpoSharing;
+  try {
+    const hasNativeSharing = !!requireOptionalNativeModule('ExpoSharing');
+    if (!hasNativeSharing) {
+      _cachedExpoSharing = null;
+      return null;
+    }
+    // Avoid top-level import crash when native module is absent in a client build.
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    _cachedExpoSharing = require('expo-sharing');
+    return _cachedExpoSharing;
+  } catch {
+    _cachedExpoSharing = null;
+    return null;
+  }
+};
+
+let _cachedCaptureRef: ((view: any, options?: any) => Promise<string>) | null | undefined;
+const loadCaptureRef = () => {
+  if (_cachedCaptureRef !== undefined) return _cachedCaptureRef;
+  try {
+    const hasViewShotNative = !!requireOptionalNativeModule('RNViewShot');
+    if (!hasViewShotNative) {
+      _cachedCaptureRef = null;
+      return null;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const viewShot = require('react-native-view-shot');
+    _cachedCaptureRef = typeof viewShot?.captureRef === 'function' ? viewShot.captureRef : null;
+    return _cachedCaptureRef;
+  } catch {
+    _cachedCaptureRef = null;
+    return null;
+  }
+};
+
 function dedupeSignalText(text: string) {
   return text.replace(/\s+/g, ' ').trim().toLowerCase();
 }
@@ -146,7 +183,7 @@ function buildPersonalizedHomeFallback(
   harvestReport: { todayXp: number; streak: number; avoidedText: string; tone: string },
   riskSnapshot: { xpAtRisk: number; titleAtRisk: string }
 ) {
-  const name = getFirstName(user?.name || 'Agent').toUpperCase();
+  const name = getFirstName(user?.username || user?.name || 'Agent').toUpperCase();
   const streak = user?.streakAtRisk ? user?.previousStreak || 0 : user?.streak || 0;
   const totalXp = Math.round(user?.xp || 0);
 
@@ -737,7 +774,7 @@ export default function DojoScreen() {
       const response = await AIService.generateHomeSignal({
         kind,
         mode,
-        userName: user?.name || 'AGENT',
+        userName: user?.username || user?.name || 'AGENT',
         level: XPConfig.getLevel(user?.xp || 0).level,
         memoryContext,
         recentSignals: recentSignalsRef.current,
@@ -976,10 +1013,10 @@ export default function DojoScreen() {
     try {
       let uri: string | null = null;
       const shareText = shareMode === 'challenge'
-        ? `${getFirstName(user?.name)} challenge: ${shareChallenge?.title || 'Today Challenge'} (+${shareChallenge?.xp || 10} XP). Join me on ZCE: ${publicShareBaseUrl}`
+        ? `${getFirstName(user?.username || user?.name)} challenge: ${shareChallenge?.title || 'Today Challenge'} (+${shareChallenge?.xp || 10} XP). Join me on ZCE: ${publicShareBaseUrl}`
         : shareMode === 'invite'
-          ? `${getFirstName(user?.name)} invited you to ZCE. Build charisma reps daily: ${publicShareBaseUrl}`
-          : `${getFirstName(user?.name)} | ${streakCount}-day streak | ${harvestReport.todayXp} XP today | Aura: ${harvestReport.tone}. Join me on ZCE: ${publicShareBaseUrl}`;
+          ? `${getFirstName(user?.username || user?.name)} invited you to ZCE. Build charisma reps daily: ${publicShareBaseUrl}`
+          : `${getFirstName(user?.username || user?.name)} | ${streakCount}-day streak | ${harvestReport.todayXp} XP today | Aura: ${harvestReport.tone}. Join me on ZCE: ${publicShareBaseUrl}`;
 
       // Ensure the card has completed layout/paint before capture.
       await new Promise<void>((resolve) => {
@@ -987,8 +1024,8 @@ export default function DojoScreen() {
       });
 
       try {
-        const hasViewShotNative = !!requireOptionalNativeModule('RNViewShot');
-        if (hasViewShotNative && shareCardRef.current) {
+        const captureRef = loadCaptureRef();
+        if (captureRef && shareCardRef.current) {
           uri = await captureRef(shareCardRef.current, {
             format: 'png',
             quality: 1,
@@ -1005,11 +1042,11 @@ export default function DojoScreen() {
 
       if (uri) {
         try {
-          const hasExpoSharingNative = !!requireOptionalNativeModule('ExpoSharing');
-          if (hasExpoSharingNative) {
-            const canUseImageSharing = await ExpoSharing.isAvailableAsync();
+          const expoSharing = loadExpoSharing();
+          if (expoSharing) {
+            const canUseImageSharing = await expoSharing.isAvailableAsync();
             if (canUseImageSharing) {
-              await ExpoSharing.shareAsync(normalizedUri || uri, {
+              await expoSharing.shareAsync(normalizedUri || uri, {
                 dialogTitle: 'Share your Protocol',
                 mimeType: 'image/png',
                 UTI: 'public.image',
@@ -1068,6 +1105,7 @@ export default function DojoScreen() {
     sharePending,
     streakCount,
     user?.name,
+    user?.username,
   ]);
 
   const handlePress = (item: any) => {
@@ -1281,7 +1319,7 @@ export default function DojoScreen() {
               textShadowRadius: 8,
             },
           ]}>
-            Welcome back, {getFirstName(user?.name)}.
+            Welcome back, {getFirstName(user?.username || user?.name)}.
           </Text>
 
           {/* XP Progression — Directly below streak as requested */}
@@ -1515,7 +1553,7 @@ export default function DojoScreen() {
           </Text>
           <View style={styles.friendOpsButtons}>
             <GlassButton
-              label="CHALLENGE A FRIEND"
+              label="CHALLENGE FRIEND"
               onPress={shareFriendChallenge}
               size="sm"
               tint="dark"
@@ -1596,13 +1634,12 @@ export default function DojoScreen() {
                 multiline
               />
               <View style={styles.modalButtons}>
-                <GlassButton
-                  label="ACCEPT LOSS"
+                <Pressable
                   onPress={() => setRecoveryVisible(false)}
-                  tint="dark"
-                  size="md"
-                  style={{ flex: 1 }}
-                />
+                  style={styles.recoveryCancelButton}
+                >
+                  <Text style={styles.recoveryCancelText}>ACCEPT LOSS</Text>
+                </Pressable>
                 <GlassButton
                   label="REPAIR ENGINE"
                   onPress={handleRecovery}
@@ -1895,7 +1932,7 @@ export default function DojoScreen() {
               >
                 <ViralShareCard
                   mode={shareMode}
-                  agentName={getFirstName(user?.name)}
+                  agentName={getFirstName(user?.username || user?.name)}
                   archetype={((user as any)?.subscriptionTier || 'Initiate').toString()}
                   streak={streakCount}
                   todayXp={harvestReport.todayXp}
@@ -2506,6 +2543,24 @@ const styles = StyleSheet.create({
     borderColor: Colors.borderGlass,
   },
   modalButtons: { flexDirection: 'row', gap: 12 },
+  recoveryCancelButton: {
+    flex: 1,
+    minHeight: 56,
+    borderRadius: Radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.14)',
+  },
+  recoveryCancelText: {
+    fontFamily: Fonts.headingSemi,
+    fontSize: 12,
+    color: '#FFFFFF',
+    letterSpacing: 0.9,
+    textAlign: 'center',
+  },
   historyHeader: {
     padding: Spacing.xl,
     paddingTop: 60,
