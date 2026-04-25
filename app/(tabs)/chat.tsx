@@ -25,6 +25,18 @@ const getTimeString = () => {
     return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
+const formatLimitResetText = (remainingMs: number) => {
+    const safeRemaining = Math.max(0, Number(remainingMs) || 0);
+    const mins = Math.max(1, Math.ceil(safeRemaining / 60000));
+    const resetAt = new Date(Date.now() + safeRemaining);
+    const resetClock = resetAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    return {
+        mins,
+        resetAtLabel: resetClock,
+        full: `Next free slot unlocks in ~${mins} min (around ${resetClock}).`,
+    };
+};
+
 export default function ChatScreen() {
     const { user, addChatMessage, clearChat, updateProfile } = useUser();
     const { canUseAIChat, dailyChatUsed, dailyChatLimit, freeWindowRemainingMs, recordAIInteraction } = useSubscription();
@@ -133,7 +145,7 @@ export default function ChatScreen() {
             };
             fetchWelcome();
         }
-    }, [addChatMessage, chatStyle, memoryContext, runtimeName, user?.chatLogs, user?.email, user?.level, user?.name]);
+    }, [addChatMessage, chatStyle, memoryContext, runtimeName, user?.chatLogs, user?.email, user?.level, user?.name, user?.username]);
 
     useEffect(() => {
         if (isTyping) {
@@ -162,13 +174,13 @@ export default function ChatScreen() {
         const text = input.trim();
         if (!text) return;
         if (!canUseAIChat) {
-            const mins = Math.max(1, Math.ceil(freeWindowRemainingMs / 60000));
-            const limitNote = `${runtimeName}-la. That's your 10 free sessions today. ZANE goes quiet for NPCs. Directors get unlimited access.`;
+            const { mins, resetAtLabel, full } = formatLimitResetText(freeWindowRemainingMs);
+            const limitNote = `${runtimeName}-la. That's your 10 free sessions this hour. ${full} Directors get unlimited access.`;
             addAiMessage(limitNote);
             await addChatMessage({ role: 'assistant', content: limitNote });
             void presentPaywall('ai_limit', {
                 title: 'Free AI Limit Hit',
-                body: `You are at ${dailyChatUsed}/${dailyChatLimit}. Next slot unlocks in ~${mins} min. Directors get unlimited ZANE access.`,
+                body: `You are at ${dailyChatUsed}/${dailyChatLimit}. Resets in ~${mins} min (around ${resetAtLabel}). Directors get unlimited ZANE access.`,
                 ctaLabel: 'UNLOCK DIRECTOR MODE',
                 skipLabel: 'Maybe Later',
             });
@@ -257,7 +269,7 @@ export default function ChatScreen() {
                     </Animated.View>
                     <View style={styles.headerMeta}>
                         <Text style={styles.headerTitle} numberOfLines={1}>Z.A.N.E. AI</Text>
-                        <Text style={styles.headerSub} numberOfLines={1}>ARCHITECT MODE: {isTyping ? 'ANALYZING...' : 'ONLINE'}</Text>
+                        <Text style={styles.headerSub} numberOfLines={1}>{isTyping ? 'ANALYZING...' : 'ONLINE'}</Text>
                     </View>
                 </View>
                 <Pressable onPress={() => clearChat()} style={styles.purgeBtn}>

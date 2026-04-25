@@ -1,0 +1,33 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/landing/index.html"
+    },
+    {
+      "source": "/product",
+      "destination": "/landing/product.html"
+    },
+    {
+      "source": "/plans",
+      "destination": "/landing/plans.html"
+    },
+    {
+      "source": "/support",
+      "destination": "/landing/support.html"
+    },
+    {
+      "source": "/styles.css",
+      "destination": "/landing/styles.css"
+    },
+    {
+      "source": "/app.js",
+      "destination": "/landing/app.js"
+    },
+    {
+      "source": "/assets/:path*",
+      "destination": "/landing/assets/:path*"
+    }
+  ]
+}

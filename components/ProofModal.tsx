@@ -476,7 +476,7 @@ export default function ProofModal({ visible, onClose, onComplete, questTitle }:
                             <Text style={styles.cancelText}>ABANDON</Text>
                         </Pressable>
                         <GlassButton 
-                            label="VERIFY & COMPLETE" 
+                            label="VERIFY REP" 
                             onPress={() => { Keyboard.dismiss(); handleSubmit(); }} 
                             look="verify"
                             tint="blue"

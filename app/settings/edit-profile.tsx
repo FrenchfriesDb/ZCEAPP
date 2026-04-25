@@ -437,7 +437,7 @@ export default function EditProfileScreen() {
                 <SectionCard title="SECURITY PROTOCOLS">
                     <SettingRow
                         icon={ICONS.subscription}
-                        label="SUBSCRIPTION STATUS"
+                        label="PLAN STATUS"
                         value={subscriptionRowValue}
                         valueColor={hasActiveSubscription ? '#9BE7FF' : 'rgba(255,255,255,0.72)'}
                         onPress={() => router.push('/settings/subscription')}

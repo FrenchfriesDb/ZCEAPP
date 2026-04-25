@@ -100,10 +100,8 @@ function RootLayoutNav() {
     const s1 = segmentList[1] as string | undefined;
 
     const inAuthGroup = s0 === 'auth';
-    const inTabsGroup = s0 === '(tabs)';
     const isOnboarding = inAuthGroup && s1 === 'onboarding';
     const isLoginOrSignup = inAuthGroup && (s1 === 'login' || s1 === 'signup');
-    const isForgotPassword = inAuthGroup && s1 === 'forgot-password';
 
     // --- NAVIGATION LOGIC ---
     if (__DEV__) {
@@ -123,12 +121,12 @@ function RootLayoutNav() {
 
       // If unauthenticated user is outside auth routes, route directly to login.
       // This avoids onboarding flashes after failed login attempts.
-      if (inTabsGroup || !inAuthGroup) {
+      if (!inAuthGroup) {
         router.replace('/auth/login');
         return;
       }
     } else {
-      // We have a user - always go to tabs regardless of where they are
+      // We have a user - route out of auth flow once auth resolves.
       if (inAuthGroup) {
         console.log('[NAV] Authenticated user in auth flow, redirecting to tabs...');
         router.replace('/(tabs)');
@@ -144,17 +142,28 @@ function RootLayoutNav() {
     return <LoadingScreen />;
   }
 
+  const isAuthenticated = Boolean(user);
+
+  if (isAuthenticated) {
+    return (
+      <View style={{ flex: 1 }}>
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="settings/edit-profile" options={{ presentation: 'modal', headerShown: false }} />
+          <Stack.Screen name="settings/notification-settings" options={{ presentation: 'modal', headerShown: false }} />
+          <Stack.Screen name="settings/subscription" options={{ presentation: 'modal', headerShown: false }} />
+        </Stack>
+      </View>
+    );
+  }
+
   return (
     <View style={{ flex: 1 }}>
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="auth/onboarding" options={{ headerShown: false, gestureEnabled: false }} />
         <Stack.Screen name="auth/signup" options={{ headerShown: false, gestureEnabled: false }} />
         <Stack.Screen name="auth/login" options={{ headerShown: false, gestureEnabled: false }} />
         <Stack.Screen name="auth/forgot-password" options={{ headerShown: false, gestureEnabled: false }} />
-        <Stack.Screen name="settings/edit-profile" options={{ presentation: 'modal', headerShown: false }} />
-        <Stack.Screen name="settings/notification-settings" options={{ presentation: 'modal', headerShown: false }} />
-        <Stack.Screen name="settings/subscription" options={{ presentation: 'modal', headerShown: false }} />
       </Stack>
     </View>
   );

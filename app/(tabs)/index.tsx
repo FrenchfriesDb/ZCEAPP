@@ -183,7 +183,7 @@ function buildPersonalizedHomeFallback(
   harvestReport: { todayXp: number; streak: number; avoidedText: string; tone: string },
   riskSnapshot: { xpAtRisk: number; titleAtRisk: string }
 ) {
-  const name = getFirstName(user?.username || user?.name || 'Agent').toUpperCase();
+  const name = getFirstName(user?.name || user?.username || 'Agent').toUpperCase();
   const streak = user?.streakAtRisk ? user?.previousStreak || 0 : user?.streak || 0;
   const totalXp = Math.round(user?.xp || 0);
 
@@ -774,7 +774,7 @@ export default function DojoScreen() {
       const response = await AIService.generateHomeSignal({
         kind,
         mode,
-        userName: user?.username || user?.name || 'AGENT',
+        userName: user?.name || user?.username || 'AGENT',
         level: XPConfig.getLevel(user?.xp || 0).level,
         memoryContext,
         recentSignals: recentSignalsRef.current,
@@ -1013,10 +1013,10 @@ export default function DojoScreen() {
     try {
       let uri: string | null = null;
       const shareText = shareMode === 'challenge'
-        ? `${getFirstName(user?.username || user?.name)} challenge: ${shareChallenge?.title || 'Today Challenge'} (+${shareChallenge?.xp || 10} XP). Join me on ZCE: ${publicShareBaseUrl}`
+        ? `${getFirstName(user?.name || user?.username)} challenge: ${shareChallenge?.title || 'Today Challenge'} (+${shareChallenge?.xp || 10} XP). Join me on ZCE: ${publicShareBaseUrl}`
         : shareMode === 'invite'
-          ? `${getFirstName(user?.username || user?.name)} invited you to ZCE. Build charisma reps daily: ${publicShareBaseUrl}`
-          : `${getFirstName(user?.username || user?.name)} | ${streakCount}-day streak | ${harvestReport.todayXp} XP today | Aura: ${harvestReport.tone}. Join me on ZCE: ${publicShareBaseUrl}`;
+          ? `${getFirstName(user?.name || user?.username)} invited you to ZCE. Build charisma reps daily: ${publicShareBaseUrl}`
+          : `${getFirstName(user?.name || user?.username)} | ${streakCount}-day streak | ${harvestReport.todayXp} XP today | Aura: ${harvestReport.tone}. Join me on ZCE: ${publicShareBaseUrl}`;
 
       // Ensure the card has completed layout/paint before capture.
       await new Promise<void>((resolve) => {
@@ -1319,7 +1319,7 @@ export default function DojoScreen() {
               textShadowRadius: 8,
             },
           ]}>
-            Welcome back, {getFirstName(user?.username || user?.name)}.
+            Welcome back, {getFirstName(user?.name || user?.username)}.
           </Text>
 
           {/* XP Progression — Directly below streak as requested */}
@@ -1458,7 +1458,7 @@ export default function DojoScreen() {
         <GlassCard style={styles.harvestCard}>
           <View style={styles.harvestHeader}>
             <Text style={styles.harvestLabel}>NIGHTLY HARVEST REPORT</Text>
-            <Text numberOfLines={2} style={styles.harvestTone}>{harvestReport.tone.toUpperCase()}</Text>
+            <Text numberOfLines={1} ellipsizeMode="tail" style={styles.harvestTone}>{harvestReport.tone.toUpperCase()}</Text>
           </View>
           <Text style={styles.harvestHeadline}>
             Today you harvested {harvestReport.todayXp} XP. Current streak pressure: {harvestReport.streak} days.
@@ -1638,7 +1638,7 @@ export default function DojoScreen() {
                   onPress={() => setRecoveryVisible(false)}
                   style={styles.recoveryCancelButton}
                 >
-                  <Text style={styles.recoveryCancelText}>ACCEPT LOSS</Text>
+                  <Text style={styles.recoveryCancelText}>Cancel</Text>
                 </Pressable>
                 <GlassButton
                   label="REPAIR ENGINE"
@@ -1932,7 +1932,7 @@ export default function DojoScreen() {
               >
                 <ViralShareCard
                   mode={shareMode}
-                  agentName={getFirstName(user?.username || user?.name)}
+                  agentName={getFirstName(user?.name || user?.username)}
                   archetype={((user as any)?.subscriptionTier || 'Initiate').toString()}
                   streak={streakCount}
                   todayXp={harvestReport.todayXp}
@@ -2196,7 +2196,8 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#9B9B9B',
     letterSpacing: 2.5,
-    flexShrink: 1,
+    flex: 1,
+    minWidth: 0,
     paddingRight: 10,
   },
   harvestTone: {
@@ -2206,8 +2207,8 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     opacity: 0.5,
     textAlign: 'right',
-    maxWidth: '48%',
-    flexShrink: 1,
+    marginLeft: 10,
+    flexShrink: 0,
     lineHeight: 12,
   },
   harvestHeadline: {
@@ -2555,10 +2556,11 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.14)',
   },
   recoveryCancelText: {
-    fontFamily: Fonts.headingSemi,
-    fontSize: 12,
+    fontFamily: Fonts.bodySemi,
+    fontSize: 14,
+    fontWeight: '700',
     color: '#FFFFFF',
-    letterSpacing: 0.9,
+    letterSpacing: 0.4,
     textAlign: 'center',
   },
   historyHeader: {

@@ -1,4 +1,5 @@
 import { Colors, Fonts, FontSizes, Radius, Spacing, XPConfig } from '@/constants/theme';
+import FluentEmoji from '@/components/FluentEmoji';
 import { useSubscription } from '@/context/SubscriptionContext';
 import { useTextColors } from '@/context/TextColorsContext';
 import { useUser } from '@/context/UserContext';
@@ -239,10 +240,12 @@ export default function LeaderboardScreen() {
                             const metal = getMetalPalette(entry.rank);
                             return (
                                 <View key={entry.rank} style={styles.podiumSlot}>
-                                    <Text style={styles.podiumName} numberOfLines={1}>
-                                        {displayName.split('_')[0]}
-                                        {entry.isEntryPremium ? ' 👑' : ''}
-                                    </Text>
+                                    <View style={styles.podiumNameRow}>
+                                        <Text style={styles.podiumName} numberOfLines={1}>
+                                            {displayName.split('_')[0]}
+                                        </Text>
+                                        {entry.isEntryPremium ? <FluentEmoji name="crown" size={12} /> : null}
+                                    </View>
                                     <View style={[styles.podiumBlock, {
                                         height: heights[i],
                                         borderTopColor: metal.edge,
@@ -309,11 +312,13 @@ export default function LeaderboardScreen() {
 
                                     {/* User info */}
                                     <View style={styles.rowContent}>
-                                        <Text style={[styles.rowName, isMe && { color: selfHighlight }]}>
-                                            {entry.name}
-                                            {isMe ? ' ◈ YOU' : ''}
-                                            {(entry.isEntryPremium || (isMe && isPremium)) ? ' 👑' : ''}
-                                        </Text>
+                                        <View style={styles.rowNameRow}>
+                                            <Text style={[styles.rowName, isMe && { color: selfHighlight }]}> 
+                                                {entry.name}
+                                                {isMe ? ' ◈ YOU' : ''}
+                                            </Text>
+                                            {(entry.isEntryPremium || (isMe && isPremium)) ? <FluentEmoji name="crown" size={14} /> : null}
+                                        </View>
                                         <View style={styles.rowMeta}>
                                             <Text style={styles.rowTitle}>{entry.isCappedFree ? 'LEVEL CAP ACTIVE' : entry.title}</Text>
                                             <View style={[styles.levelPill, { backgroundColor: `${rankColor}15`, borderColor: `${rankColor}30` }]}>
@@ -471,6 +476,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8,
     },
     podiumSlot: { flex: 1, alignItems: 'center', gap: 6 },
+    podiumNameRow: { flexDirection: 'row', alignItems: 'center', gap: 4, maxWidth: '100%' },
     podiumName: {
         fontFamily: Fonts.monoBold, fontSize: 9,
         color: 'rgba(255,255,255,0.86)', letterSpacing: 0.5,
@@ -530,6 +536,7 @@ const styles = StyleSheet.create({
     rankText: { fontFamily: Fonts.monoBold, fontSize: FontSizes.md, fontWeight: '800' },
 
     rowContent: { flex: 1, gap: 3 },
+    rowNameRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     rowName: {
         fontFamily: Fonts.headingSemi,
         fontSize: FontSizes.md, color: '#FFFFFF', fontWeight: '700', letterSpacing: 0.3,

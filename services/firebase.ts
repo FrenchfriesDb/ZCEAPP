@@ -1,10 +1,10 @@
 import { initializeApp } from 'firebase/app';
 // @ts-ignore
-import { initializeAuth, getAuth, getReactNativePersistence } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import Constants from 'expo-constants';
-import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
+import { getAuth, initializeAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+import { Platform } from 'react-native';
 
 type FirebaseExtraConfig = {
     firebase?: {
@@ -31,7 +31,29 @@ const firebaseConfig = {
     measurementId: firebaseExtra.measurementId || '',
 };
 
-const app = initializeApp(firebaseConfig);
+const hasRequiredFirebaseConfig = Boolean(
+    firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId
+);
+
+if (!hasRequiredFirebaseConfig) {
+    console.warn(
+        '[Firebase] Missing EXPO_PUBLIC_FIREBASE_* config in app config. Using safe placeholder config to prevent launch crash.'
+    );
+}
+
+const safeFirebaseConfig = hasRequiredFirebaseConfig
+    ? firebaseConfig
+    : {
+        apiKey: firebaseConfig.apiKey || 'missing-api-key',
+        authDomain: firebaseConfig.authDomain || 'missing-auth-domain',
+        projectId: firebaseConfig.projectId || 'missing-project-id',
+        storageBucket: firebaseConfig.storageBucket || 'missing-storage-bucket',
+        messagingSenderId: firebaseConfig.messagingSenderId || 'missing-sender-id',
+        appId: firebaseConfig.appId || 'missing-app-id',
+        measurementId: firebaseConfig.measurementId || 'missing-measurement-id',
+    };
+
+const app = initializeApp(safeFirebaseConfig);
 
 // Initialize Auth with persistence for native, standard for web
 export const auth = (function () {
@@ -39,9 +61,18 @@ export const auth = (function () {
         return getAuth(app);
     }
     try {
-        // Attempt to find persistence function dynamically to handle version variations
+        // Attempt to find persistence function dynamically to handle version variations.
+        // firebase@12 exposes this from `firebase/auth/react-native` instead of `firebase/auth`.
         const authModule = require('firebase/auth');
-        const getRNP = authModule.getReactNativePersistence || getReactNativePersistence;
+        let getRNP = authModule.getReactNativePersistence;
+        if (!getRNP) {
+            try {
+                const rnAuthModule = require('firebase/auth/react-native');
+                getRNP = rnAuthModule.getReactNativePersistence;
+            } catch {
+                getRNP = undefined;
+            }
+        }
         if (getRNP) {
             return initializeAuth(app, {
                 persistence: getRNP(AsyncStorage)

@@ -2,7 +2,9 @@ import GlassButton from '@/components/GlassButton';
 import { Fonts, Spacing } from '@/constants/theme';
 import { useSubscription } from '@/context/SubscriptionContext';
 import { useTextColors } from '@/context/TextColorsContext';
+import { useUser } from '@/context/UserContext';
 import { useTimeColors } from '@/hooks/useTimeColors';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -22,6 +24,15 @@ const PLAN_COMPARE = [
     { feature: 'Proof verification', basic: 'Standard', pro: 'Advanced + voice analysis' },
     { feature: 'Streak freeze', basic: 'No monthly freeze', pro: '1 freeze per month' },
     { feature: 'Leaderboard', basic: 'View + capped at L3 competition', pro: 'Premium ranking tier' },
+];
+
+const DIRECTOR_ARSENAL = [
+    'Unlimited Z.A.N.E. Intel',
+    'Full Drill Arsenal Unlocked',
+    'Sky-Sync Active',
+    'Unlimited Daily Quest Access',
+    'Advanced Proof + Voice Analysis',
+    'Premium Leaderboard Tier',
 ];
 
 const PRO_WELCOME_SLIDES = [
@@ -48,11 +59,13 @@ const PRO_WELCOME_SLIDES = [
 ];
 
 export default function SubscriptionScreen() {
+    const { user } = useUser();
     const {
         isPremium,
         currentProductId,
         isLoading,
         lastError,
+        isRevenueCatAvailable,
         purchaseSubscription,
         restorePurchases,
         refreshEntitlements,
@@ -69,6 +82,13 @@ export default function SubscriptionScreen() {
     };
 
     const handlePurchase = async (sku: 'monthly' | 'yearly') => {
+        if (!isRevenueCatAvailable) {
+            Alert.alert(
+                'Billing Unavailable In This Build',
+                'This client does not include native billing modules. Open the installed iOS development build (not Expo Go), then try purchase or restore again.'
+            );
+            return;
+        }
         const upgraded = await purchaseSubscription(sku);
         await refreshEntitlements();
         if (upgraded) {
@@ -77,6 +97,13 @@ export default function SubscriptionScreen() {
     };
 
     const handleRestore = async () => {
+        if (!isRevenueCatAvailable) {
+            Alert.alert(
+                'Restore Unavailable In This Build',
+                'Restore needs native billing support. If this is iOS Simulator, use a physical iPhone with a Sandbox tester for purchase/restore flows.'
+            );
+            return;
+        }
         const restored = await restorePurchases();
         await refreshEntitlements();
         if (restored) {
@@ -119,6 +146,28 @@ export default function SubscriptionScreen() {
         : currentProductId?.toLowerCase().includes('monthly')
             ? 'MONTHLY'
             : 'PRO';
+    const activePlanReadable = currentProductId?.toLowerCase().includes('yearly')
+        ? 'Yearly'
+        : currentProductId?.toLowerCase().includes('monthly')
+            ? 'Monthly'
+            : 'Plan';
+    const renewalDate = (user as any)?.subscriptionExpiresAt
+        ? new Date((user as any).subscriptionExpiresAt)
+        : null;
+    const renewalLabel = renewalDate && !Number.isNaN(renewalDate.getTime())
+        ? renewalDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        : null;
+    const activeStatusLine = renewalLabel
+        ? `Active: ZCE Pro ${activePlanReadable} (Renews on ${renewalLabel}).`
+        : `Active: ZCE Pro ${activePlanReadable} (Renews via Apple subscriptions).`;
+    const handleClose = () => {
+        const canGoBack = (router as any).canGoBack?.();
+        if (canGoBack) {
+            router.back();
+            return;
+        }
+        router.replace('/(tabs)/profile');
+    };
 
     return (
         <View style={styles.container}>
@@ -126,109 +175,154 @@ export default function SubscriptionScreen() {
 
             <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
                 <Text style={styles.eyebrow}>ZCE MEMBERSHIP</Text>
-                <Text style={styles.title}>BASIC VS PRO</Text>
-                <Text style={styles.subtitle}>
-                    Choose your tier. Compare everything clearly before checkout.
-                </Text>
+                {isPremium ? (
+                    <>
+                        <Text style={styles.title}>DIRECTOR CLEARANCE ACTIVE</Text>
+                        <Text style={styles.subtitle}>
+                            Your Director tier is live. Full command stack unlocked.
+                        </Text>
 
-                <View style={styles.featureList}>
-                    {FEATURES.map((feature) => (
-                        <View key={feature} style={styles.featureRow}>
-                            <Text style={styles.featureDot}>◆</Text>
-                            <Text style={styles.featureText}>{feature}</Text>
+                        <View style={styles.featureList}>
+                            {DIRECTOR_ARSENAL.map((feature) => (
+                                <View key={feature} style={styles.featureRow}>
+                                    <Text style={[styles.featureDot, styles.featureDotActive]}>✓</Text>
+                                    <Text style={[styles.featureText, styles.featureTextActive]}>{feature}</Text>
+                                </View>
+                            ))}
                         </View>
-                    ))}
-                </View>
 
-                <View style={styles.compareCard}>
-                    <View style={styles.compareHeaderRow}>
-                        <Text style={[styles.compareHeadCell, styles.compareHeadFeature]}>FEATURE</Text>
-                        <Text style={styles.compareHeadCell}>BASIC</Text>
-                        <Text style={styles.compareHeadCell}>PRO</Text>
-                    </View>
-                    {PLAN_COMPARE.map((row) => (
-                        <View key={row.feature} style={styles.compareRow}>
-                            <Text style={[styles.compareCell, styles.compareFeature]}>{row.feature}</Text>
-                            <Text style={styles.compareCell}>{row.basic}</Text>
-                            <Text style={[styles.compareCell, styles.comparePro]}>{row.pro}</Text>
+                        <Text style={[styles.statusGood, { color: proAccent }]}>
+                            ACTIVE: ZCE PRO • {activePlanLabel}
+                        </Text>
+                        <Text style={styles.statusMeta}>{activeStatusLine}</Text>
+
+                        <View style={styles.actionRow}>
+                            <GlassButton
+                                label="MANAGE SUBSCRIPTION"
+                                onPress={() => { void openManageSubscriptions(); }}
+                                look="glass"
+                                tint="dark"
+                                size="sm"
+                                compact
+                                style={styles.actionButton}
+                            />
+                            <GlassButton
+                                label="RESTORE"
+                                onPress={() => { void handleRestore(); }}
+                                look="glass"
+                                tint="dark"
+                                size="sm"
+                                compact
+                                disabled={isLoading}
+                                style={styles.actionButton}
+                            />
+                            <GlassButton
+                                label="CLOSE"
+                                onPress={handleClose}
+                                look="glass"
+                                tint="dark"
+                                size="sm"
+                                compact
+                                style={styles.actionButton}
+                            />
                         </View>
-                    ))}
-                </View>
+                    </>
+                ) : (
+                    <>
+                        <Text style={styles.title}>BASIC VS PRO</Text>
+                        <Text style={styles.subtitle}>
+                            Choose your tier. Compare everything clearly before checkout.
+                        </Text>
 
-                <View style={styles.planRow}>
-                    <View style={styles.planCard}>
-                        <Text style={styles.planName}>MONTHLY</Text>
-                        <Text style={styles.planPrice}>$9.99</Text>
-                        <Text style={styles.planMeta}>Cancel anytime</Text>
-                        <GlassButton
-                            label={isLoading ? 'PROCESSING...' : 'START MONTHLY'}
-                            onPress={() => { void handlePurchase('monthly'); }}
-                            look="glass"
-                            tint="dark"
-                            size="sm"
-                            compact
-                            disabled={isLoading}
-                            style={styles.planButton}
-                        />
-                    </View>
+                        <View style={styles.featureList}>
+                            {FEATURES.map((feature) => (
+                                <View key={feature} style={styles.featureRow}>
+                                    <Text style={styles.featureDot}>◆</Text>
+                                    <Text style={styles.featureText}>{feature}</Text>
+                                </View>
+                            ))}
+                        </View>
 
-                    <View style={[styles.planCard, styles.planCardFeatured]}>
-                        <Text style={styles.planName}>YEARLY</Text>
-                        <Text style={styles.planPrice}>$59.99</Text>
-                        <Text style={styles.planMeta}>Best value</Text>
-                        <GlassButton
-                            label={isLoading ? 'PROCESSING...' : 'START YEARLY'}
-                            onPress={() => { void handlePurchase('yearly'); }}
-                            look="glass"
-                            tint="dark"
-                            size="sm"
-                            compact
-                            disabled={isLoading}
-                            style={styles.planButton}
-                        />
-                    </View>
-                </View>
+                        <View style={styles.compareCard}>
+                            <View style={styles.compareHeaderRow}>
+                                <Text style={[styles.compareHeadCell, styles.compareHeadFeature]}>FEATURE</Text>
+                                <Text style={styles.compareHeadCell}>BASIC</Text>
+                                <Text style={styles.compareHeadCell}>PRO</Text>
+                            </View>
+                            {PLAN_COMPARE.map((row) => (
+                                <View key={row.feature} style={styles.compareRow}>
+                                    <Text style={[styles.compareCell, styles.compareFeature]}>{row.feature}</Text>
+                                    <Text style={styles.compareCell}>{row.basic}</Text>
+                                    <Text style={[styles.compareCell, styles.comparePro]}>{row.pro}</Text>
+                                </View>
+                            ))}
+                        </View>
 
-                {isPremium && (
-                    <Text style={[styles.statusGood, { color: proAccent }]}>
-                        ACTIVE: ZCE PRO • {activePlanLabel}
-                    </Text>
+                        <View style={styles.planRow}>
+                            <View style={styles.planCard}>
+                                <Text style={styles.planName}>MONTHLY</Text>
+                                <Text style={styles.planPrice}>$9.99</Text>
+                                <Text style={styles.planMeta}>Cancel anytime</Text>
+                                <GlassButton
+                                    label={isLoading ? 'PROCESSING...' : 'MONTHLY'}
+                                    onPress={() => { void handlePurchase('monthly'); }}
+                                    look="glass"
+                                    tint="dark"
+                                    size="sm"
+                                    compact
+                                    disabled={isLoading}
+                                    style={styles.planButton}
+                                />
+                            </View>
+
+                            <View style={[styles.planCard, styles.planCardFeatured]}>
+                                <Text style={styles.planName}>YEARLY</Text>
+                                <Text style={styles.planPrice}>$59.99</Text>
+                                <Text style={styles.planMeta}>Best value</Text>
+                                <GlassButton
+                                    label={isLoading ? 'PROCESSING...' : 'YEARLY'}
+                                    onPress={() => { void handlePurchase('yearly'); }}
+                                    look="glass"
+                                    tint="dark"
+                                    size="sm"
+                                    compact
+                                    disabled={isLoading}
+                                    style={styles.planButton}
+                                />
+                            </View>
+                        </View>
+
+                        {!isRevenueCatAvailable && (
+                            <Text style={styles.errorText}>
+                                BILLING MODULE NOT LOADED IN THIS CLIENT. USE THE INSTALLED DEV BUILD (NOT EXPO GO) FOR PURCHASE/RESTORE.
+                            </Text>
+                        )}
+
+                        {!!lastError && <Text style={styles.errorText}>{lastError}</Text>}
+
+                        <View style={styles.actionRow}>
+                            <GlassButton
+                                label="RESTORE"
+                                onPress={() => { void handleRestore(); }}
+                                look="glass"
+                                tint="dark"
+                                size="sm"
+                                compact
+                                disabled={isLoading}
+                                style={styles.actionButton}
+                            />
+                            <GlassButton
+                                label="CLOSE"
+                                onPress={handleClose}
+                                look="glass"
+                                tint="dark"
+                                size="sm"
+                                compact
+                                style={styles.actionButton}
+                            />
+                        </View>
+                    </>
                 )}
-
-                {!!lastError && <Text style={styles.errorText}>{lastError}</Text>}
-
-                <View style={styles.actionRow}>
-                    <GlassButton
-                        label="RESTORE"
-                        onPress={() => { void handleRestore(); }}
-                        look="glass"
-                        tint="dark"
-                        size="sm"
-                        compact
-                        disabled={isLoading}
-                        style={styles.actionButton}
-                    />
-                    <GlassButton
-                        label="MANAGE"
-                        onPress={() => { void openManageSubscriptions(); }}
-                        look="glass"
-                        tint="dark"
-                        size="sm"
-                        compact
-                        style={styles.actionButton}
-                    />
-                    {isPremium ? (
-                        <GlassButton
-                            label="VIEW PRO TOUR"
-                            onPress={openWelcome}
-                            look="glass"
-                            tint="dark"
-                            size="sm"
-                            compact
-                            style={styles.actionButton}
-                        />
-                    ) : null}
-                </View>
             </ScrollView>
 
             <Modal
@@ -258,29 +352,30 @@ export default function SubscriptionScreen() {
                             ))}
                         </View>
                         <View style={styles.welcomeActions}>
-                            {welcomeSlideIndex > 0 ? (
-                                <Pressable
-                                    onPress={() => {
-                                        setWelcomeSlideIndex((prev) => Math.max(0, prev - 1));
-                                    }}
-                                    style={styles.welcomeActionBtn}
-                                >
-                                    <Text style={styles.welcomeActionText}>BACK</Text>
-                                </Pressable>
-                            ) : (
-                                <View style={styles.welcomeActionSpacer} />
-                            )}
+                            <Pressable
+                                onPress={() => {
+                                    if (welcomeSlideIndex === 0) {
+                                        setShowWelcome(false);
+                                        return;
+                                    }
+                                    setWelcomeSlideIndex((prev) => Math.max(0, prev - 1));
+                                }}
+                                style={styles.welcomeActionBtn}
+                            >
+                                <Text style={styles.welcomeActionText}>{welcomeSlideIndex === 0 ? 'CANCEL' : 'BACK'}</Text>
+                            </Pressable>
                             <Pressable
                                 onPress={() => {
                                     if (isLastSlide) {
                                         setShowWelcome(false);
+                                        handleClose();
                                         return;
                                     }
                                     setWelcomeSlideIndex((prev) => Math.min(PRO_WELCOME_SLIDES.length - 1, prev + 1));
                                 }}
                                 style={styles.welcomeActionBtn}
                             >
-                                <Text style={styles.welcomeActionText}>{isLastSlide ? 'START' : 'NEXT'}</Text>
+                                <Text style={styles.welcomeActionText}>{isLastSlide ? 'RETURN TO HQ' : 'NEXT'}</Text>
                             </Pressable>
                         </View>
                     </View>
@@ -341,12 +436,20 @@ const styles = StyleSheet.create({
         fontSize: 10,
         paddingTop: 4,
     },
+    featureDotActive: {
+        fontSize: 12,
+        color: '#9BE7C4',
+        paddingTop: 2,
+    },
     featureText: {
         flex: 1,
         fontFamily: Fonts.bodyMedium,
         fontSize: 13,
         lineHeight: 18,
         color: 'rgba(255,255,255,0.86)',
+    },
+    featureTextActive: {
+        color: '#EAFDF4',
     },
     compareCard: {
         marginTop: 4,
@@ -477,6 +580,13 @@ const styles = StyleSheet.create({
         color: '#34D399',
         letterSpacing: 0.6,
     },
+    statusMeta: {
+        marginTop: 4,
+        fontFamily: Fonts.body,
+        fontSize: 12,
+        lineHeight: 18,
+        color: 'rgba(255,255,255,0.72)',
+    },
     errorText: {
         marginTop: 4,
         fontFamily: Fonts.bodyMedium,
@@ -560,7 +670,6 @@ const styles = StyleSheet.create({
         paddingBottom: 10,
     },
     welcomeActions: { flexDirection: 'row', gap: 10 },
-    welcomeActionSpacer: { flex: 1 },
     welcomeActionBtn: {
         flex: 1,
         borderRadius: 12,

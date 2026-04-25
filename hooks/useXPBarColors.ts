@@ -1,5 +1,6 @@
 import { getTimePalette, getTimeThemeInfo } from '@/constants/theme';
 import { useSubscription } from '@/context/SubscriptionContext';
+import { getThemePreferenceMode, subscribeThemePreference, type ThemePreferenceMode } from '@/services/themePreference';
 import { useEffect, useState } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 
@@ -16,23 +17,41 @@ let lastXPBarMinuteStamp: string | null = null;
 export const useXPBarColors = (): string[] => {
     const { isPremium } = useSubscription();
     const [palette, setPalette] = useState<string[]>(['#FFFFFF', '#FFFFFF']);
+    const [themeMode, setThemeMode] = useState<ThemePreferenceMode>('white');
+
+    useEffect(() => {
+        let cancelled = false;
+        const unsubscribe = subscribeThemePreference((mode) => {
+            if (!cancelled) setThemeMode(mode);
+        });
+
+        (async () => {
+            const saved = await getThemePreferenceMode();
+            if (!cancelled) setThemeMode(saved);
+        })();
+
+        return () => {
+            cancelled = true;
+            unsubscribe();
+        };
+    }, []);
 
     useEffect(() => {
         const update = () => {
             const now = new Date();
             const h = now.getHours();
             const m = now.getMinutes();
-            const nextPalette = isPremium
+            const nextPalette = isPremium && themeMode === 'time_sync'
                 ? getTimePalette(h, m)
                 : ['#FFFFFF', '#FFFFFF'];
             setPalette(nextPalette);
 
             if (__DEV__) {
-                const info = isPremium
+                const info = isPremium && themeMode === 'time_sync'
                     ? getTimeThemeInfo(h, m)
                     : {
-                        key: 'free_static_dark',
-                        label: 'Static Dark (Free)',
+                        key: isPremium ? 'pro_static_white' : 'free_static_dark',
+                        label: isPremium ? 'Static White (Pro)' : 'Static Dark (Free)',
                         range: 'All day',
                         palette: nextPalette,
                     };
@@ -79,7 +98,7 @@ export const useXPBarColors = (): string[] => {
             if (timeout) clearTimeout(timeout);
             if (interval) clearInterval(interval);
         };
-    }, [isPremium]);
+    }, [isPremium, themeMode]);
 
     return palette;
 };

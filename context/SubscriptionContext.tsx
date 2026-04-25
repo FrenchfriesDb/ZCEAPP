@@ -23,9 +23,11 @@ type SubscriptionContextType = {
     isLoading: boolean;
     lastError: string | null;
     isRevenueCatAvailable: boolean;
+    isDevPremiumOverride: boolean;
     refreshEntitlements: () => Promise<void>;
     purchaseSubscription: (sku: SubscriptionSku) => Promise<boolean>;
     restorePurchases: () => Promise<boolean>;
+    setDevPremiumOverride: (enabled: boolean) => Promise<void>;
 };
 
 const FREE_WINDOW_CHAT_LIMIT = 10;
@@ -33,6 +35,8 @@ const FREE_WINDOW_DURATION_MS = 60 * 60 * 1000; // 1 hour
 const ENTITLEMENT_ID = PaymentService.getConfig().entitlementId;
 const FREE_CHAT_WINDOW_KEY = '@zce/free_chat_window_timestamps_v1';
 const BILLING_OWNER_UID_KEY = '@zce/billing_owner_uid_v1';
+const DEV_PREMIUM_OVERRIDE_KEY = '@zce/dev_premium_override_v1';
+const DEV_OVERRIDE_ALLOWED = __DEV__;
 
 function pruneWindowTimestamps(timestamps: number[], now = Date.now()): number[] {
     return timestamps.filter((ts) => Number.isFinite(ts) && now - ts < FREE_WINDOW_DURATION_MS);
@@ -100,6 +104,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     const [isLoading, setIsLoading] = useState(false);
     const [lastError, setLastError] = useState<string | null>(null);
     const [currentProductId, setCurrentProductId] = useState<string | null>(null);
+    const [isDevPremiumOverride, setIsDevPremiumOverride] = useState(false);
     const isRevenueCatAvailable = PaymentService.isRevenueCatConfigured() && PaymentService.isRevenueCatSdkInstalled();
     const getRevenueCatAppUserID = useCallback(() => auth.currentUser?.uid || null, []);
 
@@ -127,13 +132,61 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         return () => clearInterval(id);
     }, []);
 
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                if (!DEV_OVERRIDE_ALLOWED) {
+                    await AsyncStorage.removeItem(DEV_PREMIUM_OVERRIDE_KEY);
+                    if (!cancelled) setIsDevPremiumOverride(false);
+                    return;
+                }
+                const raw = await AsyncStorage.getItem(DEV_PREMIUM_OVERRIDE_KEY);
+                if (cancelled) return;
+                setIsDevPremiumOverride(raw === '1');
+            } catch {
+                if (!cancelled) setIsDevPremiumOverride(false);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
     const isPremium = useMemo(() => {
+        if (DEV_OVERRIDE_ALLOWED && isDevPremiumOverride) return true;
         const entitlements = ((user as any)?.entitlements || []) as string[];
         const tier = ((user as any)?.subscriptionTier || 'initiate') as SubscriptionPlan;
         return tier === 'director' || entitlements.includes(ENTITLEMENT_ID);
-    }, [user]);
+    }, [isDevPremiumOverride, user]);
 
     const syncEntitlementsFromRevenueCat = useCallback(async () => {
+        if (DEV_OVERRIDE_ALLOWED && isDevPremiumOverride) {
+            setCurrentProductId('dev.simulator.pro');
+            if (user) {
+                const currentTier = ((user as any)?.subscriptionTier || 'initiate') as SubscriptionPlan;
+                const currentStatus = (((user as any)?.subscriptionStatus || 'inactive') as string);
+                const currentEntitlements = ((user as any)?.entitlements || []) as string[];
+                if (
+                    currentTier !== 'director' ||
+                    currentStatus !== 'active' ||
+                    !currentEntitlements.includes(ENTITLEMENT_ID)
+                ) {
+                    await updateProfile({
+                        subscriptionTier: 'director',
+                        subscriptionStatus: 'active',
+                        entitlements: [ENTITLEMENT_ID],
+                    } as any);
+                }
+            }
+            return {
+                isPremium: true,
+                tier: 'director' as const,
+                activeEntitlements: [ENTITLEMENT_ID],
+                activeProductId: 'dev.simulator.pro',
+                expiresAt: null,
+            };
+        }
         const snapshot = await PaymentService.getEntitlementSnapshot();
         if (!snapshot) return;
         const currentUid = getRevenueCatAppUserID();
@@ -197,7 +250,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
             await forceTimeSyncThemePreference();
         }
         return safeSnapshot;
-    }, [getRevenueCatAppUserID, updateProfile, user]);
+    }, [getRevenueCatAppUserID, isDevPremiumOverride, updateProfile, user]);
 
     useEffect(() => {
         let cancelled = false;
@@ -270,6 +323,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         isLoading,
         lastError,
         isRevenueCatAvailable,
+        isDevPremiumOverride,
         refreshEntitlements: async () => {
             try {
                 setIsLoading(true);
@@ -384,6 +438,40 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
                     'Restore failed. Ensure you are signed into the same App Store Apple ID used for purchase.'
                 );
                 return false;
+            }
+        },
+        setDevPremiumOverride: async (enabled: boolean) => {
+            if (!DEV_OVERRIDE_ALLOWED) {
+                setIsDevPremiumOverride(false);
+                return;
+            }
+            const next = Boolean(enabled);
+            setIsDevPremiumOverride(next);
+            try {
+                if (next) {
+                    await AsyncStorage.setItem(DEV_PREMIUM_OVERRIDE_KEY, '1');
+                    setCurrentProductId('dev.simulator.pro');
+                    if (user) {
+                        await updateProfile({
+                            subscriptionTier: 'director',
+                            subscriptionStatus: 'active',
+                            entitlements: [ENTITLEMENT_ID],
+                        } as any);
+                    }
+                } else {
+                    await AsyncStorage.removeItem(DEV_PREMIUM_OVERRIDE_KEY);
+                    setCurrentProductId(null);
+                    if (user) {
+                        await updateProfile({
+                            subscriptionTier: 'initiate',
+                            subscriptionStatus: 'inactive',
+                            subscriptionExpiresAt: null,
+                            entitlements: [],
+                        } as any);
+                    }
+                }
+            } catch {
+                // Keep local toggle state even if persistence fails.
             }
         },
     };

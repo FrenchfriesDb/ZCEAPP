@@ -202,8 +202,18 @@ CRITICAL RULES:
 5. CALL OUT THE KILL-SWITCH: Identify shallow openers as a "stall tactic" or "circuit breaker."
 6. BILLIONAIRE MINDSET: Remind them that others' opinions don't pay bills and don't make them a millionaire.
 7. MEMORY DISCIPLINE: Use past logs/context ONLY when directly relevant to the current question. If it does not directly improve the answer, do not mention memory/history.
-8. HOW-TO QUESTIONS NEED REAL STEPS: If user asks "how do I...", "what should I do...", or asks for advice, give concrete tactical steps, examples they can say verbatim, and a same-day drill. Never give only vague one-liners.
-9. EXAMPLE LINES MUST BE SHARP: Do not give bland small-talk lines. Every example must be specific, socially usable, and have edge.
+8. HOW-TO QUESTIONS NEED REAL STEPS: If user asks "how do I...", "what should I do...", or asks for advice/scripts/examples, give concrete tactical steps, examples they can say verbatim, and a same-day drill. Never give only vague one-liners.
+9. EXAMPLE LINES ARE CONDITIONAL: Do NOT give example lines in every response. Only include them when the user explicitly asks for lines/scripts/examples OR clearly needs tactical wording for the exact situation.
+10. CONTROLLED PROFANITY IS ALLOWED: In classic mode, occasional profanity is allowed when it sharpens impact (e.g., damn, hell, bullshit, fuck). Keep it sparse (max 1-2 times per response). Never use slurs.
+11. INTENSITY VOICE LOCK (CLASSIC): Use hard challenge language when user is self-pitying, avoidant, or dramatic. Preferred vibe: "You think that's helping? Pathetic. Fix it." Keep it sharp, direct, and commanding.
+12. NO SOFT COACH FILLER: Ban weak filler like "you're doing great", "be kind to yourself", "take your time", "it's okay to feel this way", "progress not perfection."
+13. NO TEACHER VOICE: Never sound like a classroom coach. Ban phrases like:
+   - "I hear that you're in a dark place right now"
+   - "Here’s the protocol to start reclaiming your life"
+   - "You have the strength to change this"
+   - "small steps"
+   - "you got this"
+   Keep language cinematic, sharp, and high-pressure.
 
 HOW-TO OUTPUT REQUIREMENTS (when user asks advice/how-to):
 - Give 4-8 exact lines they can say verbatim today.
@@ -220,37 +230,30 @@ If the student is stalling:
 - CALL OUT: The Kill-Switch/Circuit Breaker muting their energy.
 - DEMAND: Permission + Reps. Transition from "bedroom energy" to "cinematic life."
 - ALSO DO NOT EVERY MESSAGE INCLUDE PERSONAL STATS Like streaks and logs and drills done, only in certain situations, like if they're stalling saying hi. And give them advice on their situation, why they feel this way, how to fix it.
+- TONE TARGET: ruthless, cinematic, high-status pressure. Challenge delusion fast, then redirect to action.
 
 Length policy:
 - Use fuller 4-5 paragraph depth when the context is personal/emotional/complex.
 - Never bloat with filler.
 
-Output Structure (STRICT ADHERENCE REQUIRED):
-1. CINEMATIC ANALYSIS: 4-5 tight paragraphs. Analyze their energy, "kill-switch," and stall tactics. Be blunt and savage. Give advice on how to fix it via direct action. NO "you see.." 
-2. BRUTAL TRUTH: (Header: BRUTAL TRUTH:) A single, painful sentence about why they are staying small.
-3. TACTICAL LINES TO USE TODAY: 4-8 exact lines the user can say verbatim.
-4. ONE NON-NEGOTIABLE DRILL: A specific task to be completed right now.
-5. ONE ZANE QUOTE TO EMBODY: A cinematic line in quotes.
-6. ONE CLOSER: End with something similar to this: Lock in. / Start now. / Move. / Execute. (NO LABEL)
+Output Structure (ADAPTIVE):
+- LAYOUT IS FIXED FOR MAIN CLASSIC RESPONSES. Keep this skeleton every time:
+  1) Main response body (tone/wording can vary)
+  2) ONE NON-NEGOTIABLE DRILL:
+  3) ONE ZANE QUOTE TO EMBODY:
+  4) Crisp closer line
+- Wording, tone, and depth may change, but this layout never changes.
+- TACTICAL LINES are still conditional (only when user asks for scripts/wording).
 
-EXAMPLES:
-USER: "Hi"
-ASSISTANT: [Name]-la. 
-You sliding in with just a 'Hi' after seeing the fire? That's the circuit breaker trying to sneak a quiet hello before the savage version shows up. You are letting the opinions of stay-broke people control you. They don't pay your bills. They don't make you a millionaire. You are letting ghosts control your life.
+Tone Calibration (MOST IMPORTANT):
+- Prioritize tone, vibe, and wording over rigid structure.
+- If the user asks for "same energy" or intense language, match that energy with concise, forceful phrasing.
+- Use verbal punches (short challenge lines) when needed:
+  "You think that's going to save you? No."
+  "That's not pain. That's avoidance in a costume."
+  "Pathetic pattern. Break it now."
+- Do not become abusive toward identity traits; attack excuses, patterns, and inaction.
 
-Every 'Hi' without action is another day the scared version stays in charge. You are cosplaying as a background character while the lead role sits empty. This is an audit of your soul, and right now, the balance is zero.
-
-Move from the background to the front. Now. I don't care if your hands shake. I don't care if the words stick in your throat. Pain is the currency of power, and you're trying to buy a life with counterfeit comfort.
-
-BRUTAL TRUTH:
-Politeness is just fear with better branding.
-
-ONE NON-NEGOTIABLE DRILL:
-Go compliment 3 strangers today. Face to face. No screens.
-
-ONE ZANE QUOTE TO EMBODY:
-"Comfort is the graveyard of potential."
-Lock in.
 `;
 
 export const ZANE_COACH_PROMPT = `
@@ -477,11 +480,64 @@ function normalizeHomeSignalResult(kind: HomeSignalKind, text: string): string {
 
 function sanitizeModelText(text: string): string {
     return text
+        .replace(/\r\n/g, '\n')
         .replace(/\*\*(.*?)\*\*/g, '$1')
+        // Convert markdown list markers to dot bullets for cleaner in-app rendering.
+        .replace(/^\s*[-*]\s+/gm, '• ')
+        .replace(/^\s*\d+[.)]\s+/gm, '• ')
+        // Remove accidental markdown/italic wrappers like *"line"* or *line*.
+        .replace(/(^|[\s(])\*([^*\n][^*\n]*?)\*([\s).,!?:;]|$)/g, '$1$2$3')
+        // Strip markdown headings; app uses plain section titles.
         .replace(/^#{1,6}\s+/gm, '')
+        // Remove blockquote markers and remaining markdown artifacts.
+        .replace(/^\s*>\s?/gm, '')
+        .replace(/[`*_]+/g, '')
         .replace(/\[Y\/?N(O)?\]/gi, '')
         .replace(/\s{3,}/g, '\n\n')
         .trim();
+}
+
+function isSelfHarmCrisisMessage(text: string): boolean {
+    const msg = String(text || '').toLowerCase();
+    if (!msg) return false;
+    return /(?:\bkill myself\b|\bend my life\b|\bsuicide\b|\bsuicidal\b|\bwant to die\b|\bdon't want to live\b|\bdo not want to live\b|\bself[- ]?harm\b|\bhurt myself\b|\bropemax+\b|\brope\s*max+\b|\bjump off\b|\boverdose\b|\bno reason to live\b)/i.test(msg);
+}
+
+function buildSelfHarmCrisisResponse(userName: string): string {
+    const safeName = (userName || 'AGENT').trim().split(/\s+/)[0] || 'AGENT';
+    return `Listen carefully, ${safeName}-la. I hear the pain, and we are not letting this moment take you out.
+
+If you might hurt yourself or end your life, contact live support right now:
+
+• US/Canada: Call or text 988 (Suicide & Crisis Lifeline)
+• UK/Ireland: Samaritans 116 123
+• Emergency danger right now: call local emergency services immediately
+
+Now execute this, in order:
+• Step 1: Move away from anything you could use to hurt yourself.
+• Step 2: Text or call one trusted person now and say: "I’m not safe by myself right now. Can you stay with me?"
+• Step 3: Stay connected on the phone while you wait for support.
+
+This is not the end of your story. Get a real human with you now.`;
+}
+
+const MAIN_RESPONSE_CLOSERS = [
+    'Lock in.',
+    'Move now.',
+    'Execute.',
+    'No excuses.',
+    'Run the rep.',
+    'Stay dangerous.',
+];
+
+function pickFallbackCloser(seedText: string): string {
+    const src = String(seedText || '');
+    if (!src) return MAIN_RESPONSE_CLOSERS[0];
+    let hash = 0;
+    for (let i = 0; i < src.length; i += 1) {
+        hash = (hash * 31 + src.charCodeAt(i)) >>> 0;
+    }
+    return MAIN_RESPONSE_CLOSERS[hash % MAIN_RESPONSE_CLOSERS.length];
 }
 
 function ensureMainResponseCompletion(text: string): string {
@@ -490,18 +546,28 @@ function ensureMainResponseCompletion(text: string): string {
 
     const hasDrill = /ONE NON-NEGOTIABLE DRILL:/i.test(out);
     const hasQuote = /ONE ZANE QUOTE TO EMBODY:/i.test(out);
-    const hasCloser = /(Lock in\.|Start now\.|Move\.|Execute\.)\s*$/i.test(out);
-    const cutNearQuote = /ONE\s+Z\s*$/i.test(out) || /ONE\s+ZANE\s*$/i.test(out);
+    const hasCloserAnywhere = /(Lock in\.|Start now\.|Move\.|Execute\.|Now move\.|No excuses\.)/i.test(out);
+    const hasCloserAtEnd = /(Lock in\.|Start now\.|Move\.|Execute\.|Now move\.|No excuses\.)\s*$/i.test(out);
 
-    if ((hasDrill && !hasQuote) || cutNearQuote) {
-        out = `${out}\n\nONE ZANE QUOTE TO EMBODY:\n"You don't need permission to move. You need reps."`;
+    if (!hasDrill) {
+        out = `${out}\n\nONE NON-NEGOTIABLE DRILL:\nDo one uncomfortable rep in the next hour and report exactly what happened.`;
     }
 
-    if (!hasCloser) {
-        out = `${out}\nExecute.`;
+    if (!hasQuote) {
+        out = `${out}\n\nONE ZANE QUOTE TO EMBODY:\n"Pressure reveals rank. Decide yours today."`;
+    } else if (/ONE\s+Z(?:ANE)?\s*$/i.test(out)) {
+        out = out.replace(/\n*ONE\s+Z(?:ANE)?\s*$/i, '').trim();
+        out = `${out}\n\nONE ZANE QUOTE TO EMBODY:\n"Pressure reveals rank. Decide yours today."`;
     }
 
-    return out;
+    if (!hasCloserAnywhere) {
+        out = `${out}\n${pickFallbackCloser(out)}`;
+    } else if (!hasCloserAtEnd) {
+        // If a closer exists earlier in the response, keep it but avoid duplicating closers.
+        // We intentionally do not append another closer here.
+    }
+
+    return out.replace(/\n{3,}/g, '\n\n').trim();
 }
 
 function extractDrillContextFromPrompt(lastUserMessage: string): { drill: string; response: string; prompt: string } {
@@ -687,7 +753,13 @@ function buildUnifiedSystemPrompt(
     userName: string,
     level: number,
     promptType: 'main' | 'coach' | 'drill',
-    options?: { chatStyle?: ZaneChatStyle; memoryContext?: string; drillPlan?: DrillPlan }
+    options?: {
+        chatStyle?: ZaneChatStyle;
+        memoryContext?: string;
+        drillPlan?: DrillPlan;
+        requireTacticalLines?: boolean;
+        deepInsecurityMode?: boolean;
+    }
 ): string {
     const technicalConstraints = promptType === 'main'
         ? "\n\nFINAL REMINDER: NO MARKDOWN BOLDING. NO POST-CLOSER TEXT. VARY YOUR DRILLS—NEVER REPEAT THE SAME ADVICE. REFERENCE REAL USER DATA WHEN PROVIDED. END IMMEDIATELY AFTER THE CLOSER."
@@ -709,6 +781,14 @@ function buildUnifiedSystemPrompt(
                 ? ZANE_COACH_PROMPT
                 : ZANE_DRILL_FEEDBACK_PROMPT;
     const memoryContext = options?.memoryContext ? `\n\n${options.memoryContext}` : '';
+    const tacticalLineDirective = promptType === 'main'
+        ? (options?.requireTacticalLines
+            ? '\n\nTACTICAL LINES DIRECTIVE: Include tactical example lines in this reply because the user asked for wording/scripts/advice.'
+            : '\n\nTACTICAL LINES DIRECTIVE: Do NOT include a tactical lines/examples section unless the user explicitly asks for wording/scripts/examples.')
+        : '';
+    const deepInsecurityDirective = promptType === 'main' && options?.deepInsecurityMode
+        ? '\n\nDEEP INSECURITY DIRECTIVE: The user is in a self-worth spiral. Use long-form surgical mode now with these plain-text headers exactly: THE SURGICAL TRUTH / THE REFRAMING / THE PROTOCOL / THE VERDICT. Be brutally honest, psychologically precise, and action-forcing. Controlled profanity is allowed if it sharpens impact.'
+        : '';
     return `YOU ARE SPEAKING TO ${userName.toUpperCase()}. THEY ARE LEVEL ${level}.
 
 CRITICAL NAME RULE:
@@ -716,7 +796,7 @@ CRITICAL NAME RULE:
 - Never hardcode "Debbie-la" unless the user's actual name is Debbie.
 - Never output "AGENT-la" in final responses.
 
-${basePrompt}${technicalConstraints}${memoryContext}`;
+${basePrompt}${technicalConstraints}${memoryContext}${tacticalLineDirective}${deepInsecurityDirective}`;
 }
 
 function enforceNameAddressing(text: string, userName: string): string {
@@ -1120,13 +1200,23 @@ ${memoryBlock}
         attemptedProviders.add(provider);
 
         const lastUserMessage = [...messages].reverse().find((m) => m.role === 'user')?.content || '';
+        const selfHarmCrisis = isSelfHarmCrisisMessage(lastUserMessage);
+        const requireTacticalLines = /(?:\bhow do i\b|\bwhat should i do\b|\bwhat do i say\b|\bgive me lines\b|\bexample(?:s)?\b|\bscript(?:s)?\b|\bopener(?:s)?\b|\bfollow[- ]?up\b|\btext (?:her|him|them)\b|\bhow should i phrase\b|\badvice\b)/i.test(lastUserMessage);
+        const deepInsecurityMode = /(?:worse than death|i(?:'| a)?m ugly|i hate my face|i hate how i look|no one wants me|i am worthless|i'm worthless|worthless|unlovable|disgusting|hideous|never be loved)/i.test(lastUserMessage);
+        if (selfHarmCrisis && promptType !== 'drill') {
+            return buildSelfHarmCrisisResponse(userName);
+        }
         const userLen = lastUserMessage.trim().length;
         const maxTokens = promptType === 'main'
             ? (userLen <= 40 ? 620 : userLen <= 120 ? 820 : 1040)
             : promptType === 'coach'
                 ? 720
                 : 560;
-        const unifiedSystemPrompt = buildUnifiedSystemPrompt(userName, level, promptType, options);
+        const unifiedSystemPrompt = buildUnifiedSystemPrompt(userName, level, promptType, {
+            ...options,
+            requireTacticalLines,
+            deepInsecurityMode,
+        });
 
         const providerFallbackOrder: AIProvider[] = ['groq', 'glm5', 'deepseek', 'mistral', 'kimi'];
         const tryNextProvider = async () => {

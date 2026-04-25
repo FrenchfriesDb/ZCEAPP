@@ -3,177 +3,111 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="ZCE is a confidence and presence training system. Daily drills, AI coaching, and streak pressure." />
-    <title>ZCE | Z.A.N.E. Protocol</title>
+    <meta name="description" content="ZCE is the confidence operating system: Aura Heatmap, Velocity Monitor, drills, quests, Sky-Sync themes, and Zane AI pressure coaching." />
+    <title>ZCE | Confidence OS</title>
+    <link rel="icon" type="image/png" href="assets/favicon-zce.png" />
+    <link rel="apple-touch-icon" href="assets/favicon-zce.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
+    <script defer src="app.js"></script>
   </head>
-  <body>
-    <div class="bg-aurora"></div>
-    <div class="bg-grid"></div>
-    <div class="bg-rings"></div>
+  <body data-page="home">
+    <div class="noise"></div>
+    <div class="glow glow-a"></div>
+    <div class="glow glow-b"></div>
 
     <header class="nav">
-      <div class="brand">
-        <img src="assets/logo.png" alt="ZCE" />
+      <a class="brand" href="/">
+        <img src="assets/logo.png" alt="ZCE logo" />
         <span>ZCE</span>
-      </div>
-      <nav class="nav-links">
-        <a href="#protocol">Protocol</a>
-        <a href="#aura">Aura</a>
-        <a href="#share">Share</a>
+      </a>
+      <nav class="nav-links nav-tabs">
+        <a href="/" data-nav="home">Home</a>
+        <a href="/product" data-nav="product">Product</a>
+        <a href="/plans" data-nav="plans">Free vs Pro</a>
+        <a href="/support" data-nav="support">Support</a>
       </nav>
-      <div class="nav-actions">
-        <button class="cta" data-open-app>Open App</button>
-      </div>
+      <button class="btn btn-main" data-open-app>Get App</button>
     </header>
 
-    <main>
-      <section class="hero">
-        <div class="hero-left">
-          <div class="pill">Z.A.N.E. PROTOCOL</div>
-          <h1>Glass‑level presence. Street‑level execution.</h1>
+    <main class="site-shell">
+      <section class="hero hero-home reveal">
+        <div class="hero-copy">
+          <p class="eyebrow">Z.A.N.E. CONFIDENCE ENGINE</p>
+          <h1>Bruce Wayne discipline. Street-level charisma. Zero excuses.</h1>
           <p class="lead">
-            ZCE turns social anxiety into reps. Daily drills, AI coaching, and streak pressure so you stop freezing and start leading.
+            ZCE is not motivation content. It is a command center for presence: Aura Heatmap, Velocity Monitor, quests, social drills, Sky-Sync themes, and hard Zane AI direction when pressure spikes.
           </p>
           <div class="hero-actions">
-            <button class="cta" data-open-app>Open the App</button>
-          </div>
-          <div class="hero-metrics">
-            <div>
-              <span class="metric">14+</span>
-              <span class="label">Confidence drills</span>
-            </div>
-            <div>
-              <span class="metric">AI</span>
-              <span class="label">Live feedback</span>
-            </div>
-            <div>
-              <span class="metric">Streak</span>
-              <span class="label">Pressure engine</span>
-            </div>
+            <button class="btn btn-main" data-open-app>Download on iOS</button>
+            <a class="btn btn-ghost" href="/plans">See Free vs Pro</a>
           </div>
         </div>
-        <div class="hero-right">
-          <div class="glass-panel">
-            <div class="panel-header">
-              <span class="panel-chip">LIVE HARVEST</span>
-              <span class="panel-date">Tonight</span>
+
+        <div class="hero-stack reveal" data-delay="120">
+          <article class="glass-card mission-card">
+            <div class="mini-head">
+              <span>LIVE BOARD</span>
+              <span>Tonight</span>
             </div>
-            <div class="panel-body">
-              <h3>Director Status</h3>
-              <p>Your streak pressure is active. One rep locks momentum.</p>
-              <div class="panel-progress">
-                <div class="bar"><span></span></div>
-                <span>8 / 10 day streak</span>
-              </div>
+            <h3>Nightly Harvest</h3>
+            <p>Audit avoidance, streak pressure, aura drift, and mission output before midnight resets the field.</p>
+          </article>
+          <article class="glass-card mission-card mission-card-accent">
+            <div class="mini-head">
+              <span>AI CHANNEL</span>
+              <span>Classic Zane</span>
             </div>
-          </div>
-          <div class="glass-panel mini">
-            <div class="panel-header">
-              <span class="panel-chip">AI COACH</span>
-              <span class="panel-date">Now</span>
-            </div>
-            <p>"Say the line first. Pause. Then deliver."</p>
-          </div>
+            <h3>Hard direction, no soft filler.</h3>
+            <p>Daily drill, quote, and closer with aggressive clarity when your execution slips.</p>
+          </article>
         </div>
       </section>
 
-      <section id="protocol" class="section">
-        <div class="section-head">
-          <h2>Protocol Features</h2>
-          <p>Engineered for pressure, not platitudes.</p>
-        </div>
-        <div class="grid">
-          <div class="tile">
-            <h3>Daily Missions</h3>
-            <p>Short, savage reps you can do anywhere. Stack XP and stay dangerous.</p>
-          </div>
-          <div class="tile">
-            <h3>Mirror & Eye Combat</h3>
-            <p>Face control and stare endurance drills that reset your baseline.</p>
-          </div>
-          <div class="tile">
-            <h3>AI Operator</h3>
-            <p>Immediate breakdowns. Brutal clarity. Next‑move directives.</p>
-          </div>
-          <div class="tile">
-            <h3>Harvest Report</h3>
-            <p>Nightly debrief that calls out avoidance patterns and stakes.</p>
-          </div>
-        </div>
+      <section class="stats reveal">
+        <article class="stat reveal" data-delay="0">
+          <span class="num" data-count="14">0</span>
+          <span class="label">core drills</span>
+        </article>
+        <article class="stat reveal" data-delay="60">
+          <span class="num" data-count="10">0</span>
+          <span class="label">free AI msgs / hr</span>
+        </article>
+        <article class="stat reveal" data-delay="120">
+          <span class="num" data-count="24">0</span>
+          <span class="label">hour pressure loop</span>
+        </article>
+        <article class="stat reveal" data-delay="180">
+          <span class="num" data-count="6">0</span>
+          <span class="label">core system modules</span>
+        </article>
       </section>
 
-      <section id="aura" class="section split">
-        <div>
-          <h2>Aura Heatmap</h2>
-          <p>Your consistency, visualized. The grid fills as you perform.</p>
-          <div class="aura-grid">
-            <span></span><span></span><span></span><span></span><span></span><span class="hot"></span><span class="hot"></span><span></span>
-            <span></span><span class="warm"></span><span class="warm"></span><span></span><span></span><span></span><span class="hot"></span><span class="hot"></span>
-            <span></span><span></span><span class="warm"></span><span class="hot"></span><span></span><span></span><span class="hot"></span><span class="hot"></span>
-            <span></span><span></span><span></span><span class="warm"></span><span></span><span class="hot"></span><span class="hot"></span><span></span>
-          </div>
-        </div>
-        <div class="glass-panel tall">
-          <div class="panel-header">
-            <span class="panel-chip">MISSION BRIEF</span>
-            <span class="panel-date">Daily</span>
-          </div>
-          <h3>Eye Combat</h3>
-          <p>60s unbroken stare. No flinch. No breaks.</p>
-          <div class="cta-outline">ACCEPT CHALLENGE</div>
-        </div>
-      </section>
-
-      <section id="share" class="section">
-        <div class="section-head">
-          <h2>Share the Protocol</h2>
-          <p>Open app if installed. Otherwise send to the App Store.</p>
-        </div>
-        <div class="share-row">
-          <div>
-            <h3>Viral Share Cards</h3>
-            <p>High‑status share cards built for iMessage, IG, and DMs. No text‑only shares.</p>
-          </div>
-          <div class="share-actions">
-            <button class="cta" data-open-app>Open App</button>
-          </div>
-        </div>
-      </section>
-
-      <section class="cta-panel">
-        <div>
-          <h2>Ready to lock in?</h2>
-          <p>Download ZCE and run your first rep today.</p>
-        </div>
-        <a class="cta" href="https://apps.apple.com/app/id6759347826">Get ZCE</a>
+      <section class="page-grid reveal">
+        <a class="page-tile reveal" data-delay="20" href="/product">
+          <span class="tile-tag">SYSTEM</span>
+          <h2>Product</h2>
+          <p>Aura Heatmap, Velocity Monitor, drills overview, quests, Sky-Sync themes, and Zane AI protocol.</p>
+        </a>
+        <a class="page-tile reveal" data-delay="80" href="/plans">
+          <span class="tile-tag">ACCESS</span>
+          <h2>Free vs Pro</h2>
+          <p>Clear breakdown of the free experience and what Director mode unlocks.</p>
+        </a>
+        <a class="page-tile reveal" data-delay="140" href="/support">
+          <span class="tile-tag">SUPPORT</span>
+          <h2>Customer Service</h2>
+          <p>Email + social support lines for billing, account access, bugs, and feature requests.</p>
+        </a>
       </section>
     </main>
 
     <footer class="footer">
       <span>ZCE Protocol</span>
-      <span>Built for real‑world confidence reps</span>
+      <span class="footer-social">IG/TikTok: @charismaengine</span>
+      <button class="btn btn-main" data-open-app>Open App</button>
     </footer>
-
-    <script>
-      (function () {
-        var appStoreUrl = 'https://apps.apple.com/app/id6759347826';
-
-        function openApp() {
-          window.location.href = appStoreUrl;
-        }
-
-        document.querySelectorAll('[data-open-app]').forEach(function (btn) {
-          btn.addEventListener('click', openApp);
-        });
-
-        if (window.location.pathname === '/share') {
-          openApp();
-        }
-      })();
-    </script>
   </body>
 </html>
