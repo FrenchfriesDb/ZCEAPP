@@ -3,6 +3,6 @@ module.exports = function(api) {
   return {
     // Keep Expo's preset so RN codegen/babel versions match the Expo SDK.
     presets: ['babel-preset-expo'],
-    plugins: ['react-native-reanimated/plugin'],
+    plugins: ['react-native-worklets/plugin'],
   };
 };
