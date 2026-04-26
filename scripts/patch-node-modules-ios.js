@@ -1306,6 +1306,18 @@ if (
   log(`[patch-node-modules-ios] Patched expo-dev-launcher bridge handoff: ${path.relative(root, expoDevLauncherController)}`);
 }
 
+// ---- @expo/log-box utils shim ----
+// Some installs include build/utils.js but miss the root subpath shim file.
+// Expo imports "@expo/log-box/utils", which expects node_modules/@expo/log-box/utils.js.
+const expoLogBoxUtilsShim = p('node_modules', '@expo', 'log-box', 'utils.js');
+const expoLogBoxUtilsShimContents = `// Patched by scripts/patch-node-modules-ios.js
+module.exports = require('./build/utils');
+`;
+if (ensureTextFile(expoLogBoxUtilsShim, expoLogBoxUtilsShimContents)) {
+  changed = true;
+  log(`[patch-node-modules-ios] Added @expo/log-box utils shim: ${path.relative(root, expoLogBoxUtilsShim)}`);
+}
+
 if (!changed) {
   log('[patch-node-modules-ios] No changes needed.');
 }

@@ -8,6 +8,9 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+const PRIVACY_POLICY_URL = 'https://zceapp.vercel.app/support';
+const TERMS_OF_USE_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
+
 const FEATURES = [
     'Streak system is fully free for everyone',
     'Basic plan includes 3 daily quests + 10 AI messages per hour',
@@ -169,6 +172,19 @@ export default function SubscriptionScreen() {
         router.replace('/(tabs)/profile');
     };
 
+    const openLegalUrl = async (url: string, label: string) => {
+        try {
+            const supported = await Linking.canOpenURL(url);
+            if (!supported) {
+                Alert.alert('Link Unavailable', `Could not open ${label}.`);
+                return;
+            }
+            await Linking.openURL(url);
+        } catch {
+            Alert.alert('Link Unavailable', `Could not open ${label}.`);
+        }
+    };
+
     return (
         <View style={styles.container}>
             <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]} />
@@ -225,6 +241,21 @@ export default function SubscriptionScreen() {
                                 compact
                                 style={styles.actionButton}
                             />
+                        </View>
+
+                        <View style={styles.legalBlock}>
+                            <Text style={styles.legalCopy}>
+                                Auto-renewing subscription: ZCE Pro ({activePlanReadable}).
+                            </Text>
+                            <View style={styles.legalLinksRow}>
+                                <Pressable onPress={() => { void openLegalUrl(PRIVACY_POLICY_URL, 'Privacy Policy'); }}>
+                                    <Text style={styles.legalLink}>Privacy Policy</Text>
+                                </Pressable>
+                                <Text style={styles.legalDot}>•</Text>
+                                <Pressable onPress={() => { void openLegalUrl(TERMS_OF_USE_URL, 'Terms of Use'); }}>
+                                    <Text style={styles.legalLink}>Terms of Use</Text>
+                                </Pressable>
+                            </View>
                         </View>
                     </>
                 ) : (
@@ -320,6 +351,21 @@ export default function SubscriptionScreen() {
                                 compact
                                 style={styles.actionButton}
                             />
+                        </View>
+
+                        <View style={styles.legalBlock}>
+                            <Text style={styles.legalCopy}>
+                                Auto-renewing subscriptions: ZCE Pro Monthly (1 month, $9.99) or ZCE Pro Yearly (1 year, $59.99).
+                            </Text>
+                            <View style={styles.legalLinksRow}>
+                                <Pressable onPress={() => { void openLegalUrl(PRIVACY_POLICY_URL, 'Privacy Policy'); }}>
+                                    <Text style={styles.legalLink}>Privacy Policy</Text>
+                                </Pressable>
+                                <Text style={styles.legalDot}>•</Text>
+                                <Pressable onPress={() => { void openLegalUrl(TERMS_OF_USE_URL, 'Terms of Use'); }}>
+                                    <Text style={styles.legalLink}>Terms of Use</Text>
+                                </Pressable>
+                            </View>
                         </View>
                     </>
                 )}
@@ -600,6 +646,36 @@ const styles = StyleSheet.create({
     },
     actionButton: {
         width: '100%',
+    },
+    legalBlock: {
+        marginTop: 12,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.14)',
+        backgroundColor: 'rgba(255,255,255,0.03)',
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+    },
+    legalCopy: {
+        fontFamily: Fonts.body,
+        fontSize: 12,
+        lineHeight: 17,
+        color: 'rgba(255,255,255,0.72)',
+    },
+    legalLinksRow: {
+        marginTop: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    legalLink: {
+        fontFamily: Fonts.bodyMedium,
+        fontSize: 12,
+        color: '#9BE7FF',
+    },
+    legalDot: {
+        color: 'rgba(255,255,255,0.55)',
+        fontSize: 12,
     },
     welcomeOverlay: {
         flex: 1,

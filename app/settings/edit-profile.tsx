@@ -7,8 +7,11 @@ import { formatDisplayName } from '@/utils/formatters';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+
+const PRIVACY_POLICY_URL = 'https://zceapp.vercel.app/support';
+const TERMS_OF_USE_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
 
 // Use explicit Fluent icon names to avoid unicode fallback glitches on web/native.
 const ICONS = {
@@ -176,6 +179,19 @@ export default function EditProfileScreen() {
                 { text: 'CANCEL', style: 'cancel' },
             ]
         );
+    };
+
+    const openExternalLink = async (url: string, label: string) => {
+        try {
+            const supported = await Linking.canOpenURL(url);
+            if (!supported) {
+                Alert.alert('LINK UNAVAILABLE', `Could not open ${label}.`);
+                return;
+            }
+            await Linking.openURL(url);
+        } catch {
+            Alert.alert('LINK UNAVAILABLE', `Could not open ${label}.`);
+        }
     };
 
     const handleDeleteAccount = () => {
@@ -466,12 +482,12 @@ export default function EditProfileScreen() {
                     <SettingRow
                         icon={ICONS.privacy}
                         label="PRIVACY POLICY"
-                        onPress={() => Alert.alert('PRIVACY PROTOCOL', 'Your data is locked in a vault. We do not sell, trade, or share your information. This is your war. Your data stays yours. No third parties. No leaks. No excuses.')}
+                        onPress={() => { void openExternalLink(PRIVACY_POLICY_URL, 'Privacy Policy'); }}
                     />
                     <SettingRow
                         icon={ICONS.terms}
                         label="TERMS OF SERVICE"
-                        onPress={() => Alert.alert('TERMS OF WAR', 'By using this app, you commit to forging yourself without excuses. You will show up daily. You will do the work. You will not quit when it gets hard. This is a binding contract with yourself. We are simply the mirror.')}
+                        onPress={() => { void openExternalLink(TERMS_OF_USE_URL, 'Terms of Use'); }}
                         isLast
                     />
                 </SectionCard>
