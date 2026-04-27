@@ -1,8 +1,26 @@
 
-// Import the CSS as a global stylesheet in your React app entry (e.g., index.js or App.js)
-// import '../styles.css';
+
+import { useEffect } from "react";
+import logo from "../assets/logo.png";
 
 export default function HomePage() {
+  useEffect(() => {
+    // Move app.js logic into React
+    const appStoreUrl = 'https://apps.apple.com/app/id6759347826';
+    function openApp() {
+      window.location.href = appStoreUrl;
+    }
+    document.querySelectorAll('[data-open-app]').forEach(function (el) {
+      el.addEventListener('click', openApp);
+    });
+    // ...other app.js logic can be ported here as needed...
+    return () => {
+      document.querySelectorAll('[data-open-app]').forEach(function (el) {
+        el.removeEventListener('click', openApp);
+      });
+    };
+  }, []);
+
   return (
     <div data-page="home">
       <div className="noise"></div>
@@ -12,7 +30,7 @@ export default function HomePage() {
 
       <header className="nav">
         <a className="brand" href="/">
-          <img src="assets/logo.png" alt="ZCE logo" />
+          <img src={logo} alt="ZCE logo" />
           <span>ZCE</span>
         </a>
         <button className="nav-toggle" type="button" aria-label="Toggle navigation" aria-controls="site-nav" aria-expanded="false" data-nav-toggle>

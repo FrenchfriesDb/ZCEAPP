@@ -14,48 +14,48 @@
   ],
   "rewrites": [
     {
-      "source": "/faq",
-      "destination": "/landing/support.html"
-    },
-    {
-      "source": "/intel",
-      "destination": "/landing/support.html"
-    },
-    {
       "source": "/",
-      "destination": "/landing/index.html"
+      "destination": "/index.html"
     },
     {
       "source": "/product",
-      "destination": "/landing/product.html"
+      "destination": "/product.html"
     },
     {
       "source": "/plans",
-      "destination": "/landing/plans.html"
+      "destination": "/plans.html"
     },
     {
       "source": "/support",
-      "destination": "/landing/support.html"
+      "destination": "/support.html"
     },
     {
       "source": "/privacy",
-      "destination": "/landing/privacy.html"
+      "destination": "/privacy.html"
     },
     {
       "source": "/terms",
-      "destination": "/landing/terms.html"
+      "destination": "/terms.html"
     },
     {
       "source": "/styles.css",
-      "destination": "/landing/styles.css"
+      "destination": "/styles.css"
     },
     {
       "source": "/app.js",
-      "destination": "/landing/app.js"
+      "destination": "/app.js"
     },
     {
       "source": "/assets/:path*",
-      "destination": "/landing/assets/:path*"
+      "destination": "/assets/:path*"
+    },
+    {
+      "source": "/faq",
+      "destination": "/support.html"
+    },
+    {
+      "source": "/intel",
+      "destination": "/support.html"
     }
   ]
 }
