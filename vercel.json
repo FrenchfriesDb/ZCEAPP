@@ -1,4 +1,6 @@
 {
+  "buildCommand": "npm --prefix landing/react install && npm --prefix landing/react run build",
+  "outputDirectory": "landing/dist",
   "cleanUrls": true,
   "redirects": [
     {
@@ -15,47 +17,39 @@
   "rewrites": [
     {
       "source": "/faq",
-      "destination": "/landing/support.html"
+      "destination": "/landing/dist/index.html"
     },
     {
       "source": "/intel",
-      "destination": "/landing/support.html"
+      "destination": "/landing/dist/index.html"
     },
     {
       "source": "/",
-      "destination": "/landing/index.html"
+      "destination": "/landing/dist/index.html"
     },
     {
       "source": "/product",
-      "destination": "/landing/product.html"
+      "destination": "/landing/dist/index.html"
     },
     {
       "source": "/plans",
-      "destination": "/landing/plans.html"
+      "destination": "/landing/dist/index.html"
     },
     {
       "source": "/support",
-      "destination": "/landing/support.html"
+      "destination": "/landing/dist/index.html"
     },
     {
       "source": "/privacy",
-      "destination": "/landing/privacy.html"
+      "destination": "/landing/dist/index.html"
     },
     {
       "source": "/terms",
-      "destination": "/landing/terms.html"
-    },
-    {
-      "source": "/styles.css",
-      "destination": "/landing/styles.css"
-    },
-    {
-      "source": "/app.js",
-      "destination": "/landing/app.js"
+      "destination": "/landing/dist/index.html"
     },
     {
       "source": "/assets/:path*",
-      "destination": "/landing/assets/:path*"
+      "destination": "/landing/dist/assets/:path*"
     }
   ]
 }
