@@ -17,39 +17,35 @@
   "rewrites": [
     {
       "source": "/faq",
-      "destination": "/landing/dist/index.html"
+      "destination": "/index.html"
     },
     {
       "source": "/intel",
-      "destination": "/landing/dist/index.html"
+      "destination": "/index.html"
     },
     {
       "source": "/",
-      "destination": "/landing/dist/index.html"
+      "destination": "/index.html"
     },
     {
       "source": "/product",
-      "destination": "/landing/dist/index.html"
+      "destination": "/index.html"
     },
     {
       "source": "/plans",
-      "destination": "/landing/dist/index.html"
+      "destination": "/index.html"
     },
     {
       "source": "/support",
-      "destination": "/landing/dist/index.html"
+      "destination": "/index.html"
     },
     {
       "source": "/privacy",
-      "destination": "/landing/dist/index.html"
+      "destination": "/index.html"
     },
     {
       "source": "/terms",
-      "destination": "/landing/dist/index.html"
-    },
-    {
-      "source": "/assets/:path*",
-      "destination": "/landing/dist/assets/:path*"
+      "destination": "/index.html"
     }
   ]
 }
