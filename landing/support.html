@@ -23,37 +23,42 @@
         <img src="assets/logo.png" alt="ZCE logo" />
         <span>ZCE</span>
       </a>
-      <nav class="nav-links nav-tabs">
+      <button class="nav-toggle" type="button" aria-label="Toggle navigation" aria-controls="site-nav" aria-expanded="false" data-nav-toggle>
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <nav class="nav-links nav-tabs" id="site-nav" data-nav-menu>
         <a href="/" data-nav="home">Home</a>
         <a href="/product" data-nav="product">Product</a>
         <a href="/plans" data-nav="plans">Free vs Pro</a>
         <a href="/support" data-nav="support">Support</a>
       </nav>
-      <button class="btn btn-main" data-open-app>Get App</button>
+      <button class="btn btn-main nav-cta" data-open-app>Get App</button>
     </header>
 
     <main class="site-shell">
       <section class="page-hero reveal">
         <p class="eyebrow">CUSTOMER SERVICE</p>
         <h1>Need backup? Contact command directly.</h1>
-        <p class="lead">Fastest way to reach us: email with clear context and screenshots. Social DMs are open for quick escalations.</p>
+        <p class="lead">Send clean details and we move fast. Billing, account access, bugs, and feature requests each have a direct lane below.</p>
       </section>
 
       <section class="feature-grid">
         <article class="feature-block reveal">
           <span class="tile-tag">EMAIL</span>
-          <h2>zaneprotocol@gmail.com</h2>
-          <p>Include device type, app version, and what happened. Standard response window: 24-48 hours.</p>
+          <h2 class="contact-handle">zaneprotocol@gmail.com</h2>
+          <p>Include device type, app version, and what happened. Standard response window: within 24 hours, up to 48 on peak days.</p>
         </article>
         <article class="feature-block reveal" data-delay="70">
           <span class="tile-tag">INSTAGRAM</span>
-          <h2>@charismaengine</h2>
-          <p>Use DM for short support pings and urgent follow-up on open issues.</p>
+          <h2 class="contact-handle">@charismaengine</h2>
+          <p>Use DM for short support pings and urgent follow-up on existing tickets.</p>
         </article>
         <article class="feature-block reveal" data-delay="140">
           <span class="tile-tag">TIKTOK</span>
-          <h2>@charismaengine</h2>
-          <p>Message us there if Instagram is slow. Include your support email in the first line.</p>
+          <h2 class="contact-handle">@charismaengine</h2>
+          <p>Message us there if Instagram is slow. Include your support email in line one.</p>
         </article>
       </section>
 
@@ -80,7 +85,23 @@
 
     <footer class="footer">
       <span>ZCE Support</span>
-      <span class="footer-social">IG/TikTok: @charismaengine</span>
+      <span class="footer-social">
+        <a class="social-link" href="https://www.instagram.com/charismaengine/" target="_blank" rel="noopener noreferrer" aria-label="Instagram @charismaengine">
+          <svg class="social-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <rect x="3.25" y="3.25" width="17.5" height="17.5" rx="5.25" stroke="currentColor" stroke-width="1.8"></rect>
+            <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.8"></circle>
+            <circle cx="17.6" cy="6.4" r="1.1" fill="currentColor"></circle>
+          </svg>
+          <span class="social-handle">@charismaengine</span>
+        </a>
+        <a class="social-link" href="https://www.tiktok.com/@charismaengine" target="_blank" rel="noopener noreferrer" aria-label="TikTok @charismaengine">
+          <svg class="social-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M14.5 2h2.8c.2 2 1.8 3.5 3.7 3.6v2.9a6.4 6.4 0 0 1-3.7-1.2v7.6a6.3 6.3 0 1 1-6.3-6.3c.4 0 .9 0 1.3.1v3a3.3 3.3 0 0 0-1.3-.3 3.3 3.3 0 1 0 3.5 3.3z"></path>
+          </svg>
+          <span class="social-handle">@charismaengine</span>
+        </a>
+      </span>
+      <span class="footer-legal"><a href="/privacy">Privacy Policy</a> · <a href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" target="_blank" rel="noopener noreferrer">Terms of Use</a></span>
       <button class="btn btn-main" data-open-app>Open App</button>
     </footer>
   </body>

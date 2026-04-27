@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="ZCE is the confidence operating system: Aura Heatmap, Velocity Monitor, drills, quests, Sky-Sync themes, and Zane AI pressure coaching." />
+    <meta name="description" content="ZCE is the confidence operating system: Z.A.N.E. Protocol, Aura Heatmap, Velocity Monitor, drills, quests, Sky-Sync themes, and hard AI pressure coaching." />
     <title>ZCE | Confidence OS</title>
     <link rel="icon" type="image/png" href="assets/favicon-zce.png" />
     <link rel="apple-touch-icon" href="assets/favicon-zce.png" />
@@ -15,6 +15,7 @@
   </head>
   <body data-page="home">
     <div class="noise"></div>
+    <div class="data-grid"></div>
     <div class="glow glow-a"></div>
     <div class="glow glow-b"></div>
 
@@ -23,22 +24,27 @@
         <img src="assets/logo.png" alt="ZCE logo" />
         <span>ZCE</span>
       </a>
-      <nav class="nav-links nav-tabs">
+      <button class="nav-toggle" type="button" aria-label="Toggle navigation" aria-controls="site-nav" aria-expanded="false" data-nav-toggle>
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <nav class="nav-links nav-tabs" id="site-nav" data-nav-menu>
         <a href="/" data-nav="home">Home</a>
         <a href="/product" data-nav="product">Product</a>
         <a href="/plans" data-nav="plans">Free vs Pro</a>
         <a href="/support" data-nav="support">Support</a>
       </nav>
-      <button class="btn btn-main" data-open-app>Get App</button>
+      <button class="btn btn-main nav-cta" data-open-app>Get App</button>
     </header>
 
     <main class="site-shell">
       <section class="hero hero-home reveal">
         <div class="hero-copy">
-          <p class="eyebrow">Z.A.N.E. CONFIDENCE ENGINE</p>
+          <p class="eyebrow">Z.A.N.E. PROTOCOL</p>
           <h1>Bruce Wayne discipline. Street-level charisma. Zero excuses.</h1>
           <p class="lead">
-            ZCE is not motivation content. It is a command center for presence: Aura Heatmap, Velocity Monitor, quests, social drills, Sky-Sync themes, and hard Zane AI direction when pressure spikes.
+            ZCE is not motivational fluff. It is a command center for execution: Aura Heatmap, Velocity Monitor, quests, social drills, Sky-Sync themes, and hard Zane AI direction when pressure spikes.
           </p>
           <div class="hero-actions">
             <button class="btn btn-main" data-open-app>Download on iOS</button>
@@ -46,23 +52,27 @@
           </div>
         </div>
 
-        <div class="hero-stack reveal" data-delay="120">
-          <article class="glass-card mission-card">
-            <div class="mini-head">
-              <span>LIVE BOARD</span>
-              <span>Tonight</span>
+        <div class="hero-showcase reveal" data-delay="120" aria-hidden="true" data-tilt-scene>
+          <div class="stack-scene">
+            <div class="glass-phone" data-tilt-layer="base">
+              <div class="phone-topbar"></div>
+              <div class="phone-screen">
+                <div class="screen-glow"></div>
+                <div class="screen-title">Aura Rankings</div>
+                <div class="screen-bars">
+                  <span style="--w:88%"></span>
+                  <span style="--w:74%"></span>
+                  <span style="--w:62%"></span>
+                  <span style="--w:93%"></span>
+                </div>
+              </div>
             </div>
-            <h3>Nightly Harvest</h3>
-            <p>Audit avoidance, streak pressure, aura drift, and mission output before midnight resets the field.</p>
-          </article>
-          <article class="glass-card mission-card mission-card-accent">
-            <div class="mini-head">
-              <span>AI CHANNEL</span>
-              <span>Classic Zane</span>
-            </div>
-            <h3>Hard direction, no soft filler.</h3>
-            <p>Daily drill, quote, and closer with aggressive clarity when your execution slips.</p>
-          </article>
+
+            <div class="float-chip chip-streak" data-tilt-layer="front">Streak +1</div>
+            <div class="float-chip chip-director" data-tilt-layer="front">Director</div>
+            <div class="float-chip chip-sync" data-tilt-layer="mid">Sky-Sync Active</div>
+          </div>
+          <p class="showcase-note">Operating table preview</p>
         </div>
       </section>
 
@@ -87,9 +97,9 @@
 
       <section class="page-grid reveal">
         <a class="page-tile reveal" data-delay="20" href="/product">
-          <span class="tile-tag">SYSTEM</span>
+          <span class="tile-tag">PROTOCOL FEATURES</span>
           <h2>Product</h2>
-          <p>Aura Heatmap, Velocity Monitor, drills overview, quests, Sky-Sync themes, and Zane AI protocol.</p>
+          <p>Aura Heatmap, Velocity Monitor, drills overview, quests, Share the Protocol tools, Sky-Sync themes, and Zane AI protocol.</p>
         </a>
         <a class="page-tile reveal" data-delay="80" href="/plans">
           <span class="tile-tag">ACCESS</span>
@@ -106,7 +116,23 @@
 
     <footer class="footer">
       <span>ZCE Protocol</span>
-      <span class="footer-social">IG/TikTok: @charismaengine</span>
+      <span class="footer-social">
+        <a class="social-link" href="https://www.instagram.com/charismaengine/" target="_blank" rel="noopener noreferrer" aria-label="Instagram @charismaengine">
+          <svg class="social-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <rect x="3.25" y="3.25" width="17.5" height="17.5" rx="5.25" stroke="currentColor" stroke-width="1.8"></rect>
+            <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.8"></circle>
+            <circle cx="17.6" cy="6.4" r="1.1" fill="currentColor"></circle>
+          </svg>
+          <span class="social-handle">@charismaengine</span>
+        </a>
+        <a class="social-link" href="https://www.tiktok.com/@charismaengine" target="_blank" rel="noopener noreferrer" aria-label="TikTok @charismaengine">
+          <svg class="social-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M14.5 2h2.8c.2 2 1.8 3.5 3.7 3.6v2.9a6.4 6.4 0 0 1-3.7-1.2v7.6a6.3 6.3 0 1 1-6.3-6.3c.4 0 .9 0 1.3.1v3a3.3 3.3 0 0 0-1.3-.3 3.3 3.3 0 1 0 3.5 3.3z"></path>
+          </svg>
+          <span class="social-handle">@charismaengine</span>
+        </a>
+      </span>
+      <span class="footer-legal"><a href="/privacy">Privacy Policy</a> · <a href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" target="_blank" rel="noopener noreferrer">Terms of Use</a></span>
       <button class="btn btn-main" data-open-app>Open App</button>
     </footer>
   </body>
