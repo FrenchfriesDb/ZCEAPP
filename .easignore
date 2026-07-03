@@ -3,12 +3,17 @@
 # dependencies
 node_modules/
 node_modules_backup/
+node_modules.broken.*/
+node_modules.broken.*
 
 # Expo
 .expo/
 dist/
 web-build/
 expo-env.d.ts
+
+# VCS metadata (important when using EAS_NO_VCS=1)
+.git/
 
 # Native build artifacts (keep source files, exclude generated)
 ios/Pods/
@@ -19,11 +24,19 @@ android/app/build/
 
 # Native temp/caches
 .kotlin/
+ios/* [0-9]*
+ios/.xcode*.local
 
 # debug
 npm-debug.*
 yarn-debug.*
 yarn-error.*
+*.log
+
+# non-build project areas
+landing/
+docs/
+.vercel/
 
 # macOS
 .DS_Store

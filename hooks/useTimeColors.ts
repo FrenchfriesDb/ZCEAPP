@@ -20,8 +20,8 @@ let lastLoggedMinuteStamp: string | null = null;
  *   cloudDrift    8:00–15:59 — electric daylight
  *   goldenHour    17:00–17:29 — warm golden (#FFA585 -> #FFEDA0)
  *   sunberryTwist 17:30–17:59 — pink-sky blend (#F86CA7 -> #F4D444)
- *   sunsetCandy   18:00–18:29 — candy sunset (#FF0F7B -> #F89B29)
- *   sunset        18:30–18:59 — fiery sunset (#FF0F7B -> #F89B29)
+ *   sunsetPop     18:00–18:29 — coral spark (#F9C823 -> #FC506E)
+ *   sunset        18:30–18:59 — fiery sunset (#FF0F7B -> #F89B29 -> #ffdf75)
  *   twilight      19:00–19:29 — pink-cyan (#FF1B6B -> #45CAFF)
  *   battleGlory   19:30–19:59 — gold-red-navy (#FC9F32 -> #AE1B1E -> #1A2766)
  *   marsEcho      20:00–20:29 — mars echo (#EF745C -> #B95E82)

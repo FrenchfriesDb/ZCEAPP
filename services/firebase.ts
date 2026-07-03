@@ -18,17 +18,37 @@ type FirebaseExtraConfig = {
     };
 };
 
-const extra = ((Constants.expoConfig?.extra || {}) as FirebaseExtraConfig);
-const firebaseExtra = extra.firebase || {};
+const defaultFirebaseConfig = {
+    apiKey: 'AIzaSyBhZvABCnxMKf85EUj8NjBzwJO9tb9_ZPc',
+    authDomain: 'zce-ai-18385.firebaseapp.com',
+    projectId: 'zce-ai-18385',
+    storageBucket: 'zce-ai-18385.firebasestorage.app',
+    messagingSenderId: '865041448347',
+    appId: '1:865041448347:web:96cd085ea158b3e5f6353e',
+    measurementId: 'G-BBRFS86YH9',
+};
+
+const readFirebaseExtra = (): FirebaseExtraConfig['firebase'] => {
+    const manifest2Extra =
+        (Constants as any)?.manifest2?.extra?.expoClient?.extra ||
+        (Constants as any)?.manifest2?.extra;
+    const manifestExtra = (Constants as any)?.manifest?.extra;
+    const expoConfigExtra = Constants.expoConfig?.extra;
+
+    const extra = (expoConfigExtra || manifest2Extra || manifestExtra || {}) as FirebaseExtraConfig;
+    return extra.firebase || {};
+};
+
+const firebaseExtra = readFirebaseExtra();
 
 const firebaseConfig = {
-    apiKey: firebaseExtra.apiKey || '',
-    authDomain: firebaseExtra.authDomain || '',
-    projectId: firebaseExtra.projectId || '',
-    storageBucket: firebaseExtra.storageBucket || '',
-    messagingSenderId: firebaseExtra.messagingSenderId || '',
-    appId: firebaseExtra.appId || '',
-    measurementId: firebaseExtra.measurementId || '',
+    apiKey: firebaseExtra.apiKey || defaultFirebaseConfig.apiKey,
+    authDomain: firebaseExtra.authDomain || defaultFirebaseConfig.authDomain,
+    projectId: firebaseExtra.projectId || defaultFirebaseConfig.projectId,
+    storageBucket: firebaseExtra.storageBucket || defaultFirebaseConfig.storageBucket,
+    messagingSenderId: firebaseExtra.messagingSenderId || defaultFirebaseConfig.messagingSenderId,
+    appId: firebaseExtra.appId || defaultFirebaseConfig.appId,
+    measurementId: firebaseExtra.measurementId || defaultFirebaseConfig.measurementId,
 };
 
 const hasRequiredFirebaseConfig = Boolean(
@@ -37,23 +57,11 @@ const hasRequiredFirebaseConfig = Boolean(
 
 if (!hasRequiredFirebaseConfig) {
     console.warn(
-        '[Firebase] Missing EXPO_PUBLIC_FIREBASE_* config in app config. Using safe placeholder config to prevent launch crash.'
+        '[Firebase] Missing Firebase config after manifest resolution. Falling back to embedded public project config.'
     );
 }
 
-const safeFirebaseConfig = hasRequiredFirebaseConfig
-    ? firebaseConfig
-    : {
-        apiKey: firebaseConfig.apiKey || 'missing-api-key',
-        authDomain: firebaseConfig.authDomain || 'missing-auth-domain',
-        projectId: firebaseConfig.projectId || 'missing-project-id',
-        storageBucket: firebaseConfig.storageBucket || 'missing-storage-bucket',
-        messagingSenderId: firebaseConfig.messagingSenderId || 'missing-sender-id',
-        appId: firebaseConfig.appId || 'missing-app-id',
-        measurementId: firebaseConfig.measurementId || 'missing-measurement-id',
-    };
-
-const app = initializeApp(safeFirebaseConfig);
+const app = initializeApp(firebaseConfig);
 
 // Initialize Auth with persistence for native, standard for web
 export const auth = (function () {

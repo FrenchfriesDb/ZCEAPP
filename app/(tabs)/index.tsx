@@ -115,6 +115,13 @@ const RECOVERY_QUESTIONS = [
 const SIGNAL_INTERVAL_MS = 7_000;
 
 const pick8 = (pool: any[]) => [...pool].sort(() => 0.5 - Math.random()).slice(0, 8);
+const getLocalDateKey = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 // Use expo-audio only for playback. Avoid importing expo-av in builds that don't ship ExponentAV.
 let _cachedAudio: any | null | undefined;
@@ -677,6 +684,10 @@ export default function DojoScreen() {
   const hasShownNudge = useRef(false);
   const hasShownRecoveryPrompt = useRef(false);
   const recoveryWindowOpen = !!user?.streakRecoveryExpiresAt && new Date(user.streakRecoveryExpiresAt).getTime() > Date.now();
+  const localTodayKey = getLocalDateKey();
+  const todayXp = user?.dailyXp?.[localTodayKey] || 0;
+  const noActivityToday = todayXp <= 0;
+  const freezerWindowOpen = new Date().getHours() >= 21 && noActivityToday && (user?.systemBackups || 0) > 0;
   const riskSnapshot = useMemo(() => getNightlyRiskSnapshot(user), [user]);
   const harvestReport = useMemo(() => getHarvestReport(user), [user]);
   const midnightCountdown = useMemo(() => {
@@ -704,29 +715,38 @@ export default function DojoScreen() {
     setFieldQuests(loadout.fieldOps);
   }, [user?.email]);
 
-  // Trigger Nudge: "Yesterday you chose average. Today choose power."
+  // Trigger nudge once when streak is at risk OR when nightly freezer is available.
   useEffect(() => {
-    // Keep startup interactive: do not auto-open blocking nudge modal on boot.
-    if (!user?.streakAtRisk) {
+    const shouldOpen = !!user && (user.streakAtRisk || freezerWindowOpen);
+
+    if (!shouldOpen) {
       hasShownNudge.current = false;
       setNudgeVisible(false);
       return;
     }
 
-    hasShownNudge.current = true;
-    setNudgeVisible(false);
-  }, [user?.streakAtRisk]);
+    if (!hasShownNudge.current) {
+      setNudgeVisible(true);
+      hasShownNudge.current = true;
+    }
+  }, [user?.streakAtRisk, user?.systemBackups, noActivityToday, freezerWindowOpen]);
 
   useEffect(() => {
-    // Keep startup interactive: recovery modal should open only from explicit user action.
-    if (user?.streakAtRisk && recoveryWindowOpen && !hasShownRecoveryPrompt.current) {
+    if (__DEV__) {
+      console.log(
+        `[RECOVERY MODAL CHECK] streakAtRisk=${!!user?.streakAtRisk} recoveryWindowOpen=${recoveryWindowOpen} shown=${hasShownRecoveryPrompt.current}`
+      );
+    }
+    // Auto-open once on app open whenever streak is at risk.
+    if (user?.streakAtRisk && !hasShownRecoveryPrompt.current) {
       setRecoveryQuestion(RECOVERY_QUESTIONS[Math.floor(Math.random() * RECOVERY_QUESTIONS.length)]);
+      setRecoveryVisible(true);
       hasShownRecoveryPrompt.current = true;
-    } else if (!user?.streakAtRisk || !recoveryWindowOpen) {
+    } else if (!user?.streakAtRisk) {
       hasShownRecoveryPrompt.current = false;
       setRecoveryVisible(false);
     }
-  }, [user?.streakAtRisk, recoveryWindowOpen]);
+  }, [user?.streakAtRisk, recoveryWindowOpen, user?.streakRecoveryExpiresAt]);
 
   const refreshSignal = useCallback(async (kind: 'roast' | 'quote', modeOverride?: 'classic' | 'personalized') => {
     if (signalRefreshInFlightRef.current[kind]) return;
@@ -1344,7 +1364,7 @@ export default function DojoScreen() {
         </View>
 
         {/* ═══ SYSTEM BACKUP ALERT ═══ */}
-        {user && ((user.streakAtRisk && recoveryWindowOpen) || (new Date().getHours() >= 21 && user.xp === (user.dailyXp?.[new Date().toISOString().split('T')[0]] || 0) && (user.systemBackups || 0) > 0)) && (
+        {user && ((user.streakAtRisk && recoveryWindowOpen) || freezerWindowOpen) && (
           <GlassCard style={[styles.backupBanner, user.streakAtRisk && styles.backupBannerCritical]}>
             <View style={styles.backupBannerContent}>
               <Text style={styles.backupBannerTitle}>
@@ -1898,11 +1918,36 @@ export default function DojoScreen() {
           <BlurView intensity={40} style={StyleSheet.absoluteFill} />
           <GlassCard style={styles.nudgeCard}>
             <Text style={styles.nudgeTitle}>SYSTEM ALERT</Text>
-            <Text style={styles.nudgeQuote}>&quot;Yesterday you chose average.&quot;</Text>
-            <Text style={styles.nudgeSubTitle}>Today choose power.</Text>
+            <Text style={styles.nudgeQuote}>
+              {user?.streakAtRisk ? '"Yesterday you chose average."' : '"Night window is open."'}
+            </Text>
+            <Text style={styles.nudgeSubTitle}>
+              {user?.streakAtRisk ? 'Today choose power.' : 'Deploy your streak freezer or lose momentum.'}
+            </Text>
             <View style={styles.nudgeDivider} />
-            <Text style={styles.nudgeInstruction}>Your streak handle is compromised. Initiate a session immediately to stabilize your momentum.</Text>
-            <GlassButton label="RECLAIM STATUS" onPress={() => setNudgeVisible(false)} tint="blue" size="lg" glow style={{ width: '100%', marginTop: 20 }} />
+            <Text style={styles.nudgeInstruction}>
+              {user?.streakAtRisk
+                ? 'Your streak handle is compromised. Open Recovery Protocol immediately to stabilize your momentum.'
+                : 'No reps logged today. You still have a System Backup available right now.'}
+            </Text>
+            <GlassButton
+              label={user?.streakAtRisk ? 'OPEN RECOVERY PROTOCOL' : 'DEPLOY SYSTEM BACKUP'}
+              onPress={() => {
+                setNudgeVisible(false);
+                if (user?.streakAtRisk) {
+                  setRecoveryQuestion(RECOVERY_QUESTIONS[Math.floor(Math.random() * RECOVERY_QUESTIONS.length)]);
+                  setRecoveryVisible(true);
+                  return;
+                }
+                if ((user?.systemBackups || 0) > 0) {
+                  void deploySystemBackup();
+                }
+              }}
+              tint="blue"
+              size="lg"
+              glow
+              style={{ width: '100%', marginTop: 20 }}
+            />
           </GlassCard>
         </View>
       </Modal>

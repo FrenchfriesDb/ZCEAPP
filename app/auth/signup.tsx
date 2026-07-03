@@ -2,7 +2,7 @@ import { Fonts, Spacing } from '@/constants/theme';
 import { useUser } from '@/context/UserContext';
 import { db } from '@/services/firebase';
 import { router } from 'expo-router';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
@@ -67,14 +67,59 @@ export default function SignupScreen() {
         return () => { if (debounceTimer.current) clearTimeout(debounceTimer.current); };
     }, []);
 
-    const checkUsername = useCallback(async (value: string) => {
-        if (!USERNAME_REGEX.test(value)) { setUsernameStatus('invalid'); return; }
+    const checkUsername = useCallback(async (value: string): Promise<UsernameStatus> => {
+        if (!USERNAME_REGEX.test(value)) {
+            setUsernameStatus('invalid');
+            return 'invalid';
+        }
         setUsernameStatus('checking');
         try {
+            const indexSnap = await getDoc(doc(db, 'username_index', value.toLowerCase()));
+            if (indexSnap.exists()) {
+                setUsernameStatus('taken');
+                return 'taken';
+            }
             const snap = await getDocs(query(collection(db, 'users'), where('username', '==', value.toLowerCase())));
-            setUsernameStatus(snap.empty ? 'available' : 'taken');
-        } catch { setUsernameStatus('idle'); }
+            const nextStatus: UsernameStatus = snap.empty ? 'available' : 'taken';
+            setUsernameStatus(nextStatus);
+            return nextStatus;
+        } catch {
+            setUsernameStatus('idle');
+            return 'idle';
+        }
     }, []);
+
+    const ensureUsernameAvailable = useCallback(async (): Promise<boolean> => {
+        const normalizedUsername = username.trim().toLowerCase();
+        if (!USERNAME_REGEX.test(normalizedUsername)) {
+            setUsernameStatus('invalid');
+            setError('Username: 3–20 characters, letters, numbers, underscores only.');
+            return false;
+        }
+
+        if (debounceTimer.current) {
+            clearTimeout(debounceTimer.current);
+            debounceTimer.current = null;
+        }
+
+        const status = await checkUsername(normalizedUsername);
+        if (status === 'available') return true;
+        if (status === 'taken') {
+            setError('Username already taken.');
+            return false;
+        }
+        if (status === 'checking') {
+            setError('Still verifying username. Wait a moment.');
+            return false;
+        }
+        if (status === 'invalid') {
+            setError('Username: 3–20 characters, letters, numbers, underscores only.');
+            return false;
+        }
+
+        setError('Could not verify username right now. Try again.');
+        return false;
+    }, [checkUsername, username]);
 
     const handleUsernameChange = (raw: string) => {
         const clean = raw.replace(/\s/g, '').slice(0, 20);
@@ -104,11 +149,7 @@ export default function SignupScreen() {
         if (!name || !username || !email || !password || !confirmPassword) {
             setError('All fields required.'); return;
         }
-        if (!USERNAME_REGEX.test(username)) {
-            setError('Username: 3–20 characters, letters, numbers, underscores only.'); return;
-        }
-        if (usernameStatus === 'taken') { setError('Username taken. Choose another.'); return; }
-        if (usernameStatus === 'checking') { setError('Still verifying username. Try again in a moment.'); return; }
+        if (!(await ensureUsernameAvailable())) return;
         if (password !== confirmPassword) { setError('Access codes do not match.'); return; }
 
         setLoading(true);
@@ -275,23 +316,12 @@ export default function SignupScreen() {
                             {/* Step 1: Next | Step 2: Submit */}
                             {signupStep === 1 ? (
                                 <Pressable
-                                    onPress={() => {
+                                    onPress={async () => {
                                         if (!name.trim() || !username.trim()) {
                                             setError('Codename and Leaderboard Alias required.');
                                             return;
                                         }
-                                        if (!USERNAME_REGEX.test(username)) {
-                                            setError('Username: 3–20 characters, letters, numbers, underscores only.');
-                                            return;
-                                        }
-                                        if (usernameStatus === 'taken') {
-                                            setError('Username taken. Choose another.');
-                                            return;
-                                        }
-                                        if (usernameStatus === 'checking') {
-                                            setError('Still verifying username. Wait a moment.');
-                                            return;
-                                        }
+                                        if (!(await ensureUsernameAvailable())) return;
                                         setError('');
                                         setSignupStep(2);
                                     }}

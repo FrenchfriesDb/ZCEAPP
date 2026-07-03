@@ -11,6 +11,7 @@ import {
     Alert,
     Animated,
     Dimensions,
+    Linking,
     Platform,
     Pressable,
     ScrollView,
@@ -29,6 +30,8 @@ const CYAN = '#333333';
 const ACCENT = '#333333';
 const PAYWALL_OFFERING_ID = 'ZCE PRO';
 const ONBOARDING_PROGRESS_STEPS = [1, 2, 3, 4, 5, 6] as const;
+const PRIVACY_POLICY_URL = 'https://zceapp.vercel.app/privacy';
+const TERMS_OF_USE_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
 
 // ─── Wireframe Head ───────────────────────────────────────────────────────────
 function WireframeHead({ stage, compact = false }: { stage: number; compact?: boolean }) {
@@ -354,6 +357,19 @@ export default function OnboardingScreen() {
             setStageKey(k => k + 1);
         } else {
             Alert.alert('Restore Complete', 'No active Pro entitlement was found for this account.');
+        }
+    };
+
+    const openLegalUrl = async (url: string, label: string) => {
+        try {
+            const supported = await Linking.canOpenURL(url);
+            if (!supported) {
+                Alert.alert('Link Unavailable', `Could not open ${label}.`);
+                return;
+            }
+            await Linking.openURL(url);
+        } catch {
+            Alert.alert('Link Unavailable', `Could not open ${label}.`);
         }
     };
 
@@ -740,8 +756,8 @@ export default function OnboardingScreen() {
                                                 ]}
                                             >
                                                 <Text style={styles.webPlanName}>MONTHLY</Text>
-                                                <Text style={styles.webPlanPrice}>$9.99</Text>
-                                                <Text style={styles.webPlanMeta}>Cancel anytime</Text>
+                                                <Text style={styles.webPlanPrice}>$9.99 / Month</Text>
+                                                <Text style={styles.webPlanMeta}>1 month auto-renewing</Text>
                                                 {selectedPaywallPlan === 'monthly' && (
                                                     <Text style={styles.webPlanSelectedTag}>SELECTED</Text>
                                                 )}
@@ -759,8 +775,8 @@ export default function OnboardingScreen() {
                                                 ]}
                                             >
                                                 <Text style={styles.webPlanName}>YEARLY</Text>
-                                                <Text style={styles.webPlanPrice}>$59.99</Text>
-                                                <Text style={[styles.webPlanMeta, styles.webPlanFeaturedText]}>Best value</Text>
+                                                <Text style={styles.webPlanPrice}>$59.99 / Year</Text>
+                                                <Text style={[styles.webPlanMeta, styles.webPlanFeaturedText]}>1 year auto-renewing</Text>
                                                 {selectedPaywallPlan === 'yearly' && (
                                                     <Text style={styles.webPlanSelectedTag}>SELECTED</Text>
                                                 )}
@@ -817,6 +833,20 @@ export default function OnboardingScreen() {
                                                 compact
                                                 disabled={billingLoading}
                                             />
+                                        </View>
+
+                                        <View style={styles.webPaywallLegalBlock}>
+                                            <Text style={styles.webPaywallLegalText}>
+                                                By subscribing, you agree to our{' '}
+                                                <Text style={styles.webPaywallLegalLink} onPress={() => { void openLegalUrl(PRIVACY_POLICY_URL, 'Privacy Policy'); }}>
+                                                    Privacy Policy
+                                                </Text>
+                                                {' '}and{' '}
+                                                <Text style={styles.webPaywallLegalLink} onPress={() => { void openLegalUrl(TERMS_OF_USE_URL, 'Terms of Use'); }}>
+                                                    Terms of Use
+                                                </Text>
+                                                .
+                                            </Text>
                                         </View>
                                     </View>
                                 </ScrollView>
@@ -1276,6 +1306,26 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(255,255,255,0.86)',
         borderWidth: 1,
         backgroundColor: 'rgba(255,255,255,0.14)',
+    },
+    webPaywallLegalBlock: {
+        marginTop: 8,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.16)',
+        backgroundColor: 'rgba(255,255,255,0.04)',
+        paddingHorizontal: 10,
+        paddingVertical: 10,
+    },
+    webPaywallLegalText: {
+        fontFamily: Fonts.body,
+        color: 'rgba(255,255,255,0.72)',
+        fontSize: 11,
+        lineHeight: 16,
+    },
+    webPaywallLegalLink: {
+        fontFamily: Fonts.bodyMedium,
+        color: '#9BE7FF',
+        textDecorationLine: 'underline',
     },
 
     backBtn: {

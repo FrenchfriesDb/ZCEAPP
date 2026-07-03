@@ -1,0 +1,1196 @@
+
+Using Expo modules
+  [Expo] Enabling modular headers for pod ExpoModulesCore
+  — @expo/dom-webview (55.0.5)
+  — @expo/log-box (55.0.10)
+  [Expo] Enabling modular headers for pod React-RCTAppDelegate
+  [Expo] Enabling modular headers for pod React-RCTFabric
+  [Expo] Enabling modular headers for pod ReactAppDependencyProvider
+  [Expo] Enabling modular headers for pod React-Core
+  [Expo] Enabling modular headers for pod ReactCodegen
+  [Expo] Enabling modular headers for pod RCTRequired
+  [Expo] Enabling modular headers for pod RCTTypeSafety
+  [Expo] Enabling modular headers for pod ReactCommon
+  [Expo] Enabling modular headers for pod React-NativeModulesApple
+  [Expo] Enabling modular headers for pod Yoga
+  [Expo] Enabling modular headers for pod React-Fabric
+  [Expo] Enabling modular headers for pod React-graphics
+  [Expo] Enabling modular headers for pod React-utils
+  [Expo] Enabling modular headers for pod React-featureflags
+  [Expo] Enabling modular headers for pod React-debug
+  [Expo] Enabling modular headers for pod React-ImageManager
+  [Expo] Enabling modular headers for pod React-rendererdebug
+  [Expo] Enabling modular headers for pod React-jsi
+  [Expo] Enabling modular headers for pod React-renderercss
+  [Expo] Enabling modular headers for pod hermes-engine
+  [Expo] Enabling modular headers for pod glog
+  [Expo] Enabling modular headers for pod boost
+  [Expo] Enabling modular headers for pod DoubleConversion
+  [Expo] Enabling modular headers for pod fast_float
+  [Expo] Enabling modular headers for pod fmt
+  [Expo] Enabling modular headers for pod RCT-Folly
+  [Expo] Enabling modular headers for pod SocketRocket
+  — expo (55.0.14)
+  — expo-application (55.0.14)
+  — expo-asset (55.0.14)
+  — expo-audio (55.0.13)
+  — expo-blur (55.0.14)
+  [Expo] Enabling modular headers for pod ZXingObjC
+  — expo-camera (55.0.15)
+  — expo-clipboard (55.0.13)
+  — expo-constants (55.0.13)
+  — expo-dev-client (55.0.27)
+  [Expo] Enabling modular headers for pod expo-dev-menu-interface
+  [Expo] Enabling modular headers for pod EXManifests
+  [Expo] Enabling modular headers for pod EXUpdatesInterface
+  [Expo] Enabling modular headers for pod expo-dev-menu
+  [Expo] Enabling modular headers for pod React-jsinspector
+  [Expo] Enabling modular headers for pod expo-dev-launcher
+  — expo-dev-launcher (55.0.28)
+  — expo-dev-menu (55.0.23)
+  — expo-dev-menu-interface (55.0.2)
+  — expo-eas-client (55.0.5)
+  — expo-file-system (55.0.16)
+  — expo-font (55.0.6)
+  — expo-glass-effect (55.0.10)
+  — expo-haptics (55.0.14)
+  [Expo] Enabling modular headers for pod SDWebImage
+  [Expo] Enabling modular headers for pod SDWebImageAVIFCoder
+  [Expo] Enabling modular headers for pod SDWebImageSVGCoder
+  [Expo] Enabling modular headers for pod SDWebImageWebPCoder
+  [Expo] Enabling modular headers for pod libavif
+  — expo-image (55.0.8)
+  — expo-image-picker (55.0.18)
+  — expo-json-utils (55.0.2)
+  — expo-keep-awake (55.0.6)
+  — expo-linear-gradient (55.0.13)
+  — expo-linking (55.0.12)
+  — expo-manifests (55.0.15)
+  — expo-modules-core (55.0.22)
+  — expo-modules-core (55.0.22)
+  — expo-notifications (55.0.18)
+  [Expo] Enabling modular headers for pod RNScreens
+  — expo-router (55.0.12)
+  — expo-secure-store (55.0.13)
+  — expo-sharing (55.0.18)
+  — expo-splash-screen (55.0.17)
+  — expo-structured-headers (55.0.2)
+  — expo-symbols (55.0.7)
+  — expo-system-ui (55.0.15)
+  [Expo] Enabling modular headers for pod EXStructuredHeaders
+  [Expo] Enabling modular headers for pod EASClient
+  [Expo] Enabling modular headers for pod ReachabilitySwift
+  — expo-updates (55.0.20)
+  — expo-web-browser (55.0.14)
+[RNScreens] Gamma project enabled. Including source files.
+Found 11 modules for target `ZCE`
+link_native_modules! {ios_packages: [{configurations: [], name: "@react-native-async-storage/async-storage", root: "/Users/usahealthlife/Desktop/ZCE/ZCE/node_modules/@react-native-async-storage/async-storage", path: "../node_modules/@react-native-async-storage/async-storage", podspec_path: "/Users/usahealthlife/Desktop/ZCE/ZCE/node_modules/@react-native-async-storage/async-storage/RNCAsyncStorage.podspec", script_phases: []}, {configurations: [], name: "expo", root: "/Users/usahealthlife/Desktop/ZCE/ZCE/node_modules/expo", path: "../node_modules/expo", podspec_path: "/Users/usahealthlife/Desktop/ZCE/ZCE/node_modules/expo/Expo.podspec", script_phases: []}, {configurations: [], name: "react-native-gesture-handler", root: "/Users/usahealthlife/Desktop/ZCE/ZCE/node_modules/react-native-gesture-handler", path: "../node_modules/react-native-gesture-handler", podspec_path: "/Users/usahealthlife/Desktop/ZCE/ZCE/node_modules/react-native-gesture-handler/RNGestureHandler.podspec", script_phases: []}, {configurations: [], name: "react-native-purchases", root: "/Users/usahealthlife/Desktop/ZCE/ZCE/node_modules/react-native-purchases", path: "../node_modules/react-native-purchases", podspec_path: "/Users/usahealthlife/Desktop/ZCE/ZCE/node_modules/react-native-purchases/RNPurchases.podspec", script_phases: []}, {configurations: [], name: "react-native-purchases-ui", root: "/Users/usahealthlife/Desktop/ZCE/ZCE/node_modules/react-native-purchases-ui", path: "../node_modules/react-native-purchases-ui", podspec_path: "/Users/usahealthlife/Desktop/ZCE/ZCE/node_modules/react-native-purchases-ui/RNPaywalls.podspec", script_phases: []}, {configurations: [], name: "react-native-reanimated", root: "/Users/usahealthlife/Desktop/ZCE/ZCE/node_modules/react-native-reanimated", path: "../node_modules/react-native-reanimated", podspec_path: "/Users/usahealthlife/Desktop/ZCE/ZCE/node_modules/react-native-reanimated/RNReanimated.podspec", script_phases: []}, {configurations: [], name: "react-native-safe-area-context", root: "/Users/usahealthlife/Desktop/ZCE/ZCE/node_modules/react-native-safe-area-context", path: "../node_modules/react-native-safe-area-context", podspec_path: "/Users/usahealthlife/Desktop/ZCE/ZCE/node_modules/react-native-safe-area-context/react-native-safe-area-context.podspec", script_phases: []}, {configurations: [], name: "react-native-screens", root: "/Users/usahealthlife/Desktop/ZCE/ZCE/node_modules/react-native-screens", path: "../node_modules/react-native-screens", podspec_path: "/Users/usahealthlife/Desktop/ZCE/ZCE/node_modules/react-native-screens/RNScreens.podspec", script_phases: []}, {configurations: [], name: "react-native-svg", root: "/Users/usahealthlife/Desktop/ZCE/ZCE/node_modules/react-native-svg", path: "../node_modules/react-native-svg", podspec_path: "/Users/usahealthlife/Desktop/ZCE/ZCE/node_modules/react-native-svg/RNSVG.podspec", script_phases: []}, {configurations: [], name: "react-native-view-shot", root: "/Users/usahealthlife/Desktop/ZCE/ZCE/node_modules/react-native-view-shot", path: "../node_modules/react-native-view-shot", podspec_path: "/Users/usahealthlife/Desktop/ZCE/ZCE/node_modules/react-native-view-shot/react-native-view-shot.podspec", script_phases: []}, {configurations: [], name: "react-native-worklets", root: "/Users/usahealthlife/Desktop/ZCE/ZCE/node_modules/react-native-worklets", path: "../node_modules/react-native-worklets", podspec_path: "/Users/usahealthlife/Desktop/ZCE/ZCE/node_modules/react-native-worklets/RNWorklets.podspec", script_phases: []}], ios_project_root_path: "/Users/usahealthlife/Desktop/ZCE/ZCE/ios", react_native_path: "../node_modules/react-native"}
+[RNScreens] Gamma project enabled. Including source files.
+Auto-linking React Native modules for target `ZCE`: RNCAsyncStorage, RNGestureHandler, RNPaywalls, RNPurchases, RNReanimated, RNSVG, RNScreens, RNWorklets, react-native-safe-area-context, and react-native-view-shot
+Framework build type is static library
+[ReactNativeDependencies] Setting up ReactNativeDependencies...
+[ReactNativeDependencies] Building from source: false
+[ReactNativeDependencies] Using tarball from URL: https://repo1.maven.org/maven2/com/facebook/react/react-native-artifacts/0.83.4/react-native-artifacts-0.83.4-reactnative-dependencies-debug.tar.gz
+[ReactNativeDependencies] Source: {http: "file:///Users/usahealthlife/Desktop/ZCE/ZCE/ios/Pods/ReactNativeDependencies-artifacts/reactnative-dependencies-0.83.4-debug.tar.gz"}
+[ReactNativeCore] Setting up ReactNativeCore...
+[ReactNativeCore] Building from source: false
+Configuring the target with the New Architecture
+[ReactNativeCore] Using React Native Core and React Native Dependencies prebuilt versions.
+  $ /Users/usahealthlife/.nvm/versions/node/v20.19.4/bin/node ./../node_modules/react-native/scripts/generate-codegen-artifacts.js -p /Users/usahealthlife/Desktop/ZCE/ZCE/ios/.. -o /Users/usahealthlife/Desktop/ZCE/ZCE/ios -t ios
+  [36m[1m[Codegen][0m Analyzing /Users/usahealthlife/Desktop/ZCE/ZCE/package.json[0m
+  [36m[1m[Codegen][0m [33mSearching for codegen-enabled libraries in the app.[0m
+  [36m[1m[Codegen][0m [33mThe "codegenConfig" field is not defined in package.json. Assuming there is nothing to generate at the app level.[0m
+  [36m[1m[Codegen][0m [33mSearching for codegen-enabled libraries in react-native.config.js[0m
+  [36m[1m[Codegen][0m Found @react-native-async-storage/async-storage[0m
+  [36m[1m[Codegen][0m Found react-native-gesture-handler[0m
+  [36m[1m[Codegen][0m Found react-native-reanimated[0m
+  [36m[1m[Codegen][0m Found react-native-safe-area-context[0m
+  [36m[1m[Codegen][0m Found react-native-screens[0m
+  [36m[1m[Codegen][0m Found react-native-svg[0m
+  [36m[1m[Codegen][0m Found react-native-view-shot[0m
+  [36m[1m[Codegen][0m Found react-native-worklets[0m
+  [36m[1m[Codegen][0m Processing rnasyncstorage[0m
+  [36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+  [36m[1m[Codegen][0m Supported Apple platforms: ios, macos, tvos, visionos for rnasyncstorage[0m
+  [36m[1m[Codegen][0m Processing rngesturehandler_codegen[0m
+  [36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+  [36m[1m[Codegen][0m Supported Apple platforms: ios, macos, tvos, visionos for rngesturehandler_codegen[0m
+  [36m[1m[Codegen][0m Processing rnreanimated[0m
+  [36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+  [36m[1m[Codegen][0m Supported Apple platforms: ios, macos, tvos, visionos for rnreanimated[0m
+  [36m[1m[Codegen][0m Processing safeareacontext[0m
+  [36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+  [36m[1m[Codegen][0m Supported Apple platforms: ios, macos, tvos, visionos for safeareacontext[0m
+  [36m[1m[Codegen][0m Processing rnscreens[0m
+  [36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+  [36m[1m[Codegen][0m Supported Apple platforms: ios, tvos, visionos for rnscreens[0m
+  [36m[1m[Codegen][0m Processing rnsvg[0m
+  [36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+  [36m[1m[Codegen][0m Supported Apple platforms: ios, macos, tvos, visionos for rnsvg[0m
+  [36m[1m[Codegen][0m Processing rnviewshot[0m
+  [36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+  [36m[1m[Codegen][0m Supported Apple platforms: ios for rnviewshot[0m
+  [36m[1m[Codegen][0m Processing rnworklets[0m
+  [36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+  [36m[1m[Codegen][0m Supported Apple platforms: ios, macos, tvos, visionos for rnworklets[0m
+  [36m[1m[Codegen][0m Generating Native Code for rnasyncstorage - ios[0m
+  [36m[1m[Codegen][0m Generated artifacts: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactCodegen[0m
+  [36m[1m[Codegen][0m Generating Native Code for rngesturehandler_codegen - ios[0m
+  [36m[1m[Codegen][0m Generated artifacts: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactCodegen[0m
+  [36m[1m[Codegen][0m Generating Native Code for rnreanimated - ios[0m
+  [36m[1m[Codegen][0m Generated artifacts: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactCodegen[0m
+  [36m[1m[Codegen][0m Generating Native Code for safeareacontext - ios[0m
+  [36m[1m[Codegen][0m Generated artifacts: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactCodegen[0m
+  [36m[1m[Codegen][0m Generating Native Code for rnscreens - ios[0m
+  [36m[1m[Codegen][0m Generated artifacts: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactCodegen[0m
+  [36m[1m[Codegen][0m Generating Native Code for rnsvg - ios[0m
+  [36m[1m[Codegen][0m Generated artifacts: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactCodegen[0m
+  [36m[1m[Codegen][0m Generating Native Code for rnviewshot - ios[0m
+  [36m[1m[Codegen][0m Generated artifacts: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactCodegen[0m
+  [36m[1m[Codegen][0m Generating Native Code for rnworklets - ios[0m
+  [36m[1m[Codegen][0m Generated artifacts: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactCodegen[0m
+  [36m[1m[Codegen][0m Generating RCTThirdPartyComponentsProvider.h[0m
+  [36m[1m[Codegen][0m Generated artifact: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactCodegen/RCTThirdPartyComponentsProvider.h[0m
+  [36m[1m[Codegen][0m Generating RCTThirdPartyComponentsProvider.mm[0m
+  [36m[1m[Codegen][0m Generated artifact: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactCodegen/RCTThirdPartyComponentsProvider.mm[0m
+  [36m[1m[Codegen][0m Generating RCTModulesProvider.h[0m
+  [36m[1m[Codegen][0m Generated artifact: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactCodegen/RCTModuleProviders.h[0m
+  [36m[1m[Codegen][0m Generating RCTModuleProviders.mm[0m
+  [36m[1m[Codegen][0m Generated artifact: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactCodegen/RCTModuleProviders.mm[0m
+  [36m[1m[Codegen][0m Generating RCTAppDependencyProvider[0m
+  [36m[1m[Codegen][0m Generated artifact: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactAppDependencyProvider/RCTAppDependencyProvider.h[0m
+  [36m[1m[Codegen][0m Generated artifact: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactAppDependencyProvider/RCTAppDependencyProvider.mm[0m
+  [36m[1m[Codegen][0m Generated podspec: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactAppDependencyProvider/ReactAppDependencyProvider.podspec[0m
+  [36m[1m[Codegen][0m Generated podspec: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactCodegen/ReactCodegen.podspec[0m
+  [36m[1m[Codegen][0m Generating Package.swift[0m
+  [36m[1m[Codegen][0m Generated artifact: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/Package.swift[0m
+  [36m[1m[Codegen][0m [33mDone.[0m
+[36m[1m[Codegen][0m Analyzing /Users/usahealthlife/Desktop/ZCE/ZCE/package.json[0m
+[36m[1m[Codegen][0m [33mSearching for codegen-enabled libraries in the app.[0m
+[36m[1m[Codegen][0m [33mThe "codegenConfig" field is not defined in package.json. Assuming there is nothing to generate at the app level.[0m
+[36m[1m[Codegen][0m [33mSearching for codegen-enabled libraries in react-native.config.js[0m
+[36m[1m[Codegen][0m Found @react-native-async-storage/async-storage[0m
+[36m[1m[Codegen][0m Found react-native-gesture-handler[0m
+[36m[1m[Codegen][0m Found react-native-reanimated[0m
+[36m[1m[Codegen][0m Found react-native-safe-area-context[0m
+[36m[1m[Codegen][0m Found react-native-screens[0m
+[36m[1m[Codegen][0m Found react-native-svg[0m
+[36m[1m[Codegen][0m Found react-native-view-shot[0m
+[36m[1m[Codegen][0m Found react-native-worklets[0m
+[36m[1m[Codegen][0m Processing rnasyncstorage[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios, macos, tvos, visionos for rnasyncstorage[0m
+[36m[1m[Codegen][0m Processing rngesturehandler_codegen[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios, macos, tvos, visionos for rngesturehandler_codegen[0m
+[36m[1m[Codegen][0m Processing rnreanimated[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios, macos, tvos, visionos for rnreanimated[0m
+[36m[1m[Codegen][0m Processing safeareacontext[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios, macos, tvos, visionos for safeareacontext[0m
+[36m[1m[Codegen][0m Processing rnscreens[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios, tvos, visionos for rnscreens[0m
+[36m[1m[Codegen][0m Processing rnsvg[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios, macos, tvos, visionos for rnsvg[0m
+[36m[1m[Codegen][0m Processing rnviewshot[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios for rnviewshot[0m
+[36m[1m[Codegen][0m Processing rnworklets[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios, macos, tvos, visionos for rnworklets[0m
+[36m[1m[Codegen][0m Generating Native Code for rnasyncstorage - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactCodegen[0m
+[36m[1m[Codegen][0m Generating Native Code for rngesturehandler_codegen - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactCodegen[0m
+[36m[1m[Codegen][0m Generating Native Code for rnreanimated - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactCodegen[0m
+[36m[1m[Codegen][0m Generating Native Code for safeareacontext - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactCodegen[0m
+[36m[1m[Codegen][0m Generating Native Code for rnscreens - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactCodegen[0m
+[36m[1m[Codegen][0m Generating Native Code for rnsvg - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactCodegen[0m
+[36m[1m[Codegen][0m Generating Native Code for rnviewshot - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactCodegen[0m
+[36m[1m[Codegen][0m Generating Native Code for rnworklets - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactCodegen[0m
+[36m[1m[Codegen][0m Generating RCTThirdPartyComponentsProvider.h[0m
+[36m[1m[Codegen][0m Generated artifact: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactCodegen/RCTThirdPartyComponentsProvider.h[0m
+[36m[1m[Codegen][0m Generating RCTThirdPartyComponentsProvider.mm[0m
+[36m[1m[Codegen][0m Generated artifact: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactCodegen/RCTThirdPartyComponentsProvider.mm[0m
+[36m[1m[Codegen][0m Generating RCTModulesProvider.h[0m
+[36m[1m[Codegen][0m Generated artifact: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactCodegen/RCTModuleProviders.h[0m
+[36m[1m[Codegen][0m Generating RCTModuleProviders.mm[0m
+[36m[1m[Codegen][0m Generated artifact: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactCodegen/RCTModuleProviders.mm[0m
+[36m[1m[Codegen][0m Generating RCTAppDependencyProvider[0m
+[36m[1m[Codegen][0m Generated artifact: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactAppDependencyProvider/RCTAppDependencyProvider.h[0m
+[36m[1m[Codegen][0m Generated artifact: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactAppDependencyProvider/RCTAppDependencyProvider.mm[0m
+[36m[1m[Codegen][0m Generated podspec: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactAppDependencyProvider/ReactAppDependencyProvider.podspec[0m
+[36m[1m[Codegen][0m Generated podspec: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/ReactCodegen/ReactCodegen.podspec[0m
+[36m[1m[Codegen][0m Generating Package.swift[0m
+[36m[1m[Codegen][0m Generated artifact: /Users/usahealthlife/Desktop/ZCE/ZCE/ios/build/generated/ios/Package.swift[0m
+[36m[1m[Codegen][0m [33mDone.[0m
+  $ /Users/usahealthlife/.nvm/versions/node/v20.19.4/bin/node -p require.resolve(     "react-native",     {paths: [process.argv[1]]},     ) /Users/usahealthlife/Desktop/ZCE/ZCE/node_modules/react-native/third-party-podspecs
+  /Users/usahealthlife/Desktop/ZCE/ZCE/node_modules/react-native/index.js
+[ReactNativeDependencies] Using tarball from URL: https://repo1.maven.org/maven2/com/facebook/react/react-native-artifacts/0.83.4/react-native-artifacts-0.83.4-reactnative-dependencies-debug.tar.gz
+  Preparing
+
+Analyzing dependencies
+
+Inspecting targets to integrate
+  Using `ARCHS` setting to build architectures of target `Pods-ZCE`: (``)
+
+Finding Podfile changes
+  - EASClient
+  - EXApplication
+  - EXConstants
+  - EXJSONUtils
+  - EXManifests
+  - EXStructuredHeaders
+  - EXUpdates
+  - EXUpdatesInterface
+  - Expo
+  - ExpoAsset
+  - ExpoAudio
+  - ExpoBlur
+  - ExpoCamera
+  - ExpoClipboard
+  - ExpoDomWebView
+  - ExpoFileSystem
+  - ExpoFont
+  - ExpoGlassEffect
+  - ExpoHaptics
+  - ExpoImage
+  - ExpoImagePicker
+  - ExpoKeepAwake
+  - ExpoLinearGradient
+  - ExpoLinking
+  - ExpoLogBox
+  - ExpoModulesCore
+  - ExpoModulesJSI
+  - ExpoNotifications
+  - ExpoRouter
+  - ExpoSecureStore
+  - ExpoSharing
+  - ExpoSplashScreen
+  - ExpoSymbols
+  - ExpoSystemUI
+  - ExpoWebBrowser
+  - FBLazyVector
+  - RCTDeprecation
+  - RCTRequired
+  - RCTSwiftUI
+  - RCTSwiftUIWrapper
+  - RCTTypeSafety
+  - RNCAsyncStorage
+  - RNGestureHandler
+  - RNPaywalls
+  - RNPurchases
+  - RNReanimated
+  - RNSVG
+  - RNScreens
+  - RNWorklets
+  - React
+  - React-Core
+  - React-Core-prebuilt
+  - React-CoreModules
+  - React-Fabric
+  - React-FabricComponents
+  - React-FabricImage
+  - React-ImageManager
+  - React-Mapbuffer
+  - React-NativeModulesApple
+  - React-RCTActionSheet
+  - React-RCTAnimation
+  - React-RCTAppDelegate
+  - React-RCTBlob
+  - React-RCTFBReactNativeSpec
+  - React-RCTFabric
+  - React-RCTImage
+  - React-RCTLinking
+  - React-RCTNetwork
+  - React-RCTRuntime
+  - React-RCTSettings
+  - React-RCTText
+  - React-RCTVibration
+  - React-RuntimeApple
+  - React-RuntimeCore
+  - React-RuntimeHermes
+  - React-callinvoker
+  - React-cxxreact
+  - React-debug
+  - React-defaultsnativemodule
+  - React-domnativemodule
+  - React-featureflags
+  - React-featureflagsnativemodule
+  - React-graphics
+  - React-hermes
+  - React-idlecallbacksnativemodule
+  - React-intersectionobservernativemodule
+  - React-jserrorhandler
+  - React-jsi
+  - React-jsiexecutor
+  - React-jsinspector
+  - React-jsinspectorcdp
+  - React-jsinspectornetwork
+  - React-jsinspectortracing
+  - React-jsitooling
+  - React-jsitracing
+  - React-logger
+  - React-microtasksnativemodule
+  - React-networking
+  - React-oscompat
+  - React-perflogger
+  - React-performancecdpmetrics
+  - React-performancetimeline
+  - React-rendererconsistency
+  - React-renderercss
+  - React-rendererdebug
+  - React-runtimeexecutor
+  - React-runtimescheduler
+  - React-timing
+  - React-utils
+  - React-webperformancenativemodule
+  - ReactAppDependencyProvider
+  - ReactCodegen
+  - ReactCommon
+  - ReactNativeDependencies
+  - Yoga
+  - expo-dev-client
+  - expo-dev-launcher
+  - expo-dev-menu
+  - expo-dev-menu-interface
+  - hermes-engine
+  - react-native-safe-area-context
+  - react-native-view-shot
+
+Fetching external sources
+-> Fetching podspec for `EASClient` from `../node_modules/expo-eas-client/ios`
+-> Fetching podspec for `EXApplication` from `../node_modules/expo-application/ios`
+-> Fetching podspec for `EXConstants` from `../node_modules/expo-constants/ios`
+-> Fetching podspec for `EXJSONUtils` from `../node_modules/expo-json-utils/ios`
+-> Fetching podspec for `EXManifests` from `../node_modules/expo-manifests/ios`
+-> Fetching podspec for `EXStructuredHeaders` from `../node_modules/expo-structured-headers/ios`
+-> Fetching podspec for `EXUpdates` from `../node_modules/expo-updates/ios`
+-> Fetching podspec for `EXUpdatesInterface` from `../node_modules/expo-updates-interface/ios`
+-> Fetching podspec for `Expo` from `../node_modules/expo`
+-> Fetching podspec for `ExpoAsset` from `../node_modules/expo-asset/ios`
+-> Fetching podspec for `ExpoAudio` from `../node_modules/expo-audio/ios`
+-> Fetching podspec for `ExpoBlur` from `../node_modules/expo-blur/ios`
+-> Fetching podspec for `ExpoCamera` from `../node_modules/expo-camera/ios`
+-> Fetching podspec for `ExpoClipboard` from `../node_modules/expo-clipboard/ios`
+-> Fetching podspec for `ExpoDomWebView` from `../node_modules/@expo/dom-webview/ios`
+-> Fetching podspec for `ExpoFileSystem` from `../node_modules/expo-file-system/ios`
+-> Fetching podspec for `ExpoFont` from `../node_modules/expo-font/ios`
+-> Fetching podspec for `ExpoGlassEffect` from `../node_modules/expo-glass-effect/ios`
+-> Fetching podspec for `ExpoHaptics` from `../node_modules/expo-haptics/ios`
+-> Fetching podspec for `ExpoImage` from `../node_modules/expo-image/ios`
+-> Fetching podspec for `ExpoImagePicker` from `../node_modules/expo-image-picker/ios`
+-> Fetching podspec for `ExpoKeepAwake` from `../node_modules/expo-keep-awake/ios`
+-> Fetching podspec for `ExpoLinearGradient` from `../node_modules/expo-linear-gradient/ios`
+-> Fetching podspec for `ExpoLinking` from `../node_modules/expo-linking/ios`
+-> Fetching podspec for `ExpoLogBox` from `../node_modules/@expo/log-box`
+-> Fetching podspec for `ExpoModulesCore` from `../node_modules/expo/node_modules/expo-modules-core`
+-> Fetching podspec for `ExpoModulesJSI` from `../node_modules/expo/node_modules/expo-modules-core`
+-> Fetching podspec for `ExpoNotifications` from `../node_modules/expo-notifications/ios`
+-> Fetching podspec for `ExpoRouter` from `../node_modules/expo-router/ios`
+-> Fetching podspec for `ExpoSecureStore` from `../node_modules/expo-secure-store/ios`
+-> Fetching podspec for `ExpoSharing` from `../node_modules/expo-sharing/ios`
+-> Fetching podspec for `ExpoSplashScreen` from `../node_modules/expo-splash-screen/ios`
+-> Fetching podspec for `ExpoSymbols` from `../node_modules/expo-symbols/ios`
+-> Fetching podspec for `ExpoSystemUI` from `../node_modules/expo-system-ui/ios`
+-> Fetching podspec for `ExpoWebBrowser` from `../node_modules/expo-web-browser/ios`
+-> Fetching podspec for `FBLazyVector` from `../node_modules/react-native/Libraries/FBLazyVector`
+-> Fetching podspec for `RCTDeprecation` from `../node_modules/react-native/ReactApple/Libraries/RCTFoundation/RCTDeprecation`
+-> Fetching podspec for `RCTRequired` from `../node_modules/react-native/Libraries/Required`
+-> Fetching podspec for `RCTSwiftUI` from `../node_modules/react-native/ReactApple/RCTSwiftUI`
+-> Fetching podspec for `RCTSwiftUIWrapper` from `../node_modules/react-native/ReactApple/RCTSwiftUIWrapper`
+-> Fetching podspec for `RCTTypeSafety` from `../node_modules/react-native/Libraries/TypeSafety`
+-> Fetching podspec for `RNCAsyncStorage` from `../node_modules/@react-native-async-storage/async-storage`
+-> Fetching podspec for `RNGestureHandler` from `../node_modules/react-native-gesture-handler`
+-> Fetching podspec for `RNPaywalls` from `../node_modules/react-native-purchases-ui`
+-> Fetching podspec for `RNPurchases` from `../node_modules/react-native-purchases`
+-> Fetching podspec for `RNReanimated` from `../node_modules/react-native-reanimated`
+-> Fetching podspec for `RNSVG` from `../node_modules/react-native-svg`
+-> Fetching podspec for `RNScreens` from `../node_modules/react-native-screens`
+[RNScreens] Gamma project enabled. Including source files.
+-> Fetching podspec for `RNWorklets` from `../node_modules/react-native-worklets`
+-> Fetching podspec for `React` from `../node_modules/react-native/`
+-> Fetching podspec for `React-Core` from `../node_modules/react-native/`
+-> Fetching podspec for `React-CoreModules` from `../node_modules/react-native/React/CoreModules`
+-> Fetching podspec for `React-Fabric` from `../node_modules/react-native/ReactCommon`
+-> Fetching podspec for `React-FabricComponents` from `../node_modules/react-native/ReactCommon`
+-> Fetching podspec for `React-FabricImage` from `../node_modules/react-native/ReactCommon`
+-> Fetching podspec for `React-ImageManager` from `../node_modules/react-native/ReactCommon/react/renderer/imagemanager/platform/ios`
+-> Fetching podspec for `React-Mapbuffer` from `../node_modules/react-native/ReactCommon`
+-> Fetching podspec for `React-NativeModulesApple` from `../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios`
+-> Fetching podspec for `React-RCTActionSheet` from `../node_modules/react-native/Libraries/ActionSheetIOS`
+-> Fetching podspec for `React-RCTAnimation` from `../node_modules/react-native/Libraries/NativeAnimation`
+-> Fetching podspec for `React-RCTAppDelegate` from `../node_modules/react-native/Libraries/AppDelegate`
+-> Fetching podspec for `React-RCTBlob` from `../node_modules/react-native/Libraries/Blob`
+-> Fetching podspec for `React-RCTFBReactNativeSpec` from `../node_modules/react-native/React`
+-> Fetching podspec for `React-RCTFabric` from `../node_modules/react-native/React`
+-> Fetching podspec for `React-RCTImage` from `../node_modules/react-native/Libraries/Image`
+-> Fetching podspec for `React-RCTLinking` from `../node_modules/react-native/Libraries/LinkingIOS`
+-> Fetching podspec for `React-RCTNetwork` from `../node_modules/react-native/Libraries/Network`
+-> Fetching podspec for `React-RCTRuntime` from `../node_modules/react-native/React/Runtime`
+-> Fetching podspec for `React-RCTSettings` from `../node_modules/react-native/Libraries/Settings`
+-> Fetching podspec for `React-RCTText` from `../node_modules/react-native/Libraries/Text`
+-> Fetching podspec for `React-RCTVibration` from `../node_modules/react-native/Libraries/Vibration`
+-> Fetching podspec for `React-RuntimeApple` from `../node_modules/react-native/ReactCommon/react/runtime/platform/ios`
+-> Fetching podspec for `React-RuntimeCore` from `../node_modules/react-native/ReactCommon/react/runtime`
+-> Fetching podspec for `React-RuntimeHermes` from `../node_modules/react-native/ReactCommon/react/runtime`
+-> Fetching podspec for `React-callinvoker` from `../node_modules/react-native/ReactCommon/callinvoker`
+-> Fetching podspec for `React-cxxreact` from `../node_modules/react-native/ReactCommon/cxxreact`
+-> Fetching podspec for `React-debug` from `../node_modules/react-native/ReactCommon/react/debug`
+-> Fetching podspec for `React-defaultsnativemodule` from `../node_modules/react-native/ReactCommon/react/nativemodule/defaults`
+-> Fetching podspec for `React-domnativemodule` from `../node_modules/react-native/ReactCommon/react/nativemodule/dom`
+-> Fetching podspec for `React-featureflags` from `../node_modules/react-native/ReactCommon/react/featureflags`
+-> Fetching podspec for `React-featureflagsnativemodule` from `../node_modules/react-native/ReactCommon/react/nativemodule/featureflags`
+-> Fetching podspec for `React-graphics` from `../node_modules/react-native/ReactCommon/react/renderer/graphics`
+-> Fetching podspec for `React-hermes` from `../node_modules/react-native/ReactCommon/hermes`
+-> Fetching podspec for `React-idlecallbacksnativemodule` from `../node_modules/react-native/ReactCommon/react/nativemodule/idlecallbacks`
+-> Fetching podspec for `React-intersectionobservernativemodule` from `../node_modules/react-native/ReactCommon/react/nativemodule/intersectionobserver`
+-> Fetching podspec for `React-jserrorhandler` from `../node_modules/react-native/ReactCommon/jserrorhandler`
+-> Fetching podspec for `React-jsi` from `../node_modules/react-native/ReactCommon/jsi`
+-> Fetching podspec for `React-jsiexecutor` from `../node_modules/react-native/ReactCommon/jsiexecutor`
+-> Fetching podspec for `React-jsinspector` from `../node_modules/react-native/ReactCommon/jsinspector-modern`
+-> Fetching podspec for `React-jsinspectorcdp` from `../node_modules/react-native/ReactCommon/jsinspector-modern/cdp`
+-> Fetching podspec for `React-jsinspectornetwork` from `../node_modules/react-native/ReactCommon/jsinspector-modern/network`
+-> Fetching podspec for `React-jsinspectortracing` from `../node_modules/react-native/ReactCommon/jsinspector-modern/tracing`
+-> Fetching podspec for `React-jsitooling` from `../node_modules/react-native/ReactCommon/jsitooling`
+-> Fetching podspec for `React-jsitracing` from `../node_modules/react-native/ReactCommon/hermes/executor/`
+-> Fetching podspec for `React-logger` from `../node_modules/react-native/ReactCommon/logger`
+-> Fetching podspec for `React-microtasksnativemodule` from `../node_modules/react-native/ReactCommon/react/nativemodule/microtasks`
+-> Fetching podspec for `React-networking` from `../node_modules/react-native/ReactCommon/react/networking`
+-> Fetching podspec for `React-oscompat` from `../node_modules/react-native/ReactCommon/oscompat`
+-> Fetching podspec for `React-perflogger` from `../node_modules/react-native/ReactCommon/reactperflogger`
+-> Fetching podspec for `React-performancecdpmetrics` from `../node_modules/react-native/ReactCommon/react/performance/cdpmetrics`
+-> Fetching podspec for `React-performancetimeline` from `../node_modules/react-native/ReactCommon/react/performance/timeline`
+-> Fetching podspec for `React-rendererconsistency` from `../node_modules/react-native/ReactCommon/react/renderer/consistency`
+-> Fetching podspec for `React-renderercss` from `../node_modules/react-native/ReactCommon/react/renderer/css`
+-> Fetching podspec for `React-rendererdebug` from `../node_modules/react-native/ReactCommon/react/renderer/debug`
+-> Fetching podspec for `React-runtimeexecutor` from `../node_modules/react-native/ReactCommon/runtimeexecutor`
+-> Fetching podspec for `React-runtimescheduler` from `../node_modules/react-native/ReactCommon/react/renderer/runtimescheduler`
+-> Fetching podspec for `React-timing` from `../node_modules/react-native/ReactCommon/react/timing`
+-> Fetching podspec for `React-utils` from `../node_modules/react-native/ReactCommon/react/utils`
+-> Fetching podspec for `React-webperformancenativemodule` from `../node_modules/react-native/ReactCommon/react/nativemodule/webperformance`
+-> Fetching podspec for `ReactAppDependencyProvider` from `build/generated/ios/ReactAppDependencyProvider`
+-> Fetching podspec for `ReactCodegen` from `build/generated/ios/ReactCodegen`
+-> Fetching podspec for `ReactCommon` from `../node_modules/react-native/ReactCommon`
+-> Fetching podspec for `Yoga` from `../node_modules/react-native/ReactCommon/yoga`
+-> Fetching podspec for `expo-dev-client` from `../node_modules/expo-dev-client/ios`
+-> Fetching podspec for `expo-dev-launcher` from `../node_modules/expo-dev-launcher`
+-> Fetching podspec for `expo-dev-menu` from `../node_modules/expo-dev-menu`
+-> Fetching podspec for `expo-dev-menu-interface` from `../node_modules/expo-dev-menu-interface/ios`
+-> Fetching podspec for `react-native-safe-area-context` from `../node_modules/react-native-safe-area-context`
+-> Fetching podspec for `react-native-view-shot` from `../node_modules/react-native-view-shot`
+
+Resolving dependencies of `Podfile`
+  CDN: trunk Relative path: CocoaPods-version.yml exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: all_pods_versions_9_a_d.txt exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/9/a/d/PurchasesHybridCommon/17.55.1/PurchasesHybridCommon.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: all_pods_versions_6_a_1.txt exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/6/a/1/PurchasesHybridCommonUI/17.55.1/PurchasesHybridCommonUI.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: all_pods_versions_d_d_6.txt exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/d/d/6/ReachabilitySwift/5.2.4/ReachabilitySwift.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: all_pods_versions_f_3_c.txt exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/f/3/c/ZXingObjC/3.6.9/ZXingObjC.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/f/3/c/ZXingObjC/3.6.9/ZXingObjC.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/f/3/c/ZXingObjC/3.6.9/ZXingObjC.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: all_pods_versions_1_1_7.txt exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/1/1/7/SDWebImage/5.21.7/SDWebImage.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: all_pods_versions_3_7_e.txt exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/3/7/e/SDWebImageAVIFCoder/0.12.0/SDWebImageAVIFCoder.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: all_pods_versions_a_0_c.txt exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/a/0/c/SDWebImageSVGCoder/1.8.0/SDWebImageSVGCoder.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: all_pods_versions_e_9_d.txt exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/e/9/d/SDWebImageWebPCoder/0.15.0/SDWebImageWebPCoder.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: all_pods_versions_f_d_e.txt exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/f/d/e/libavif/1.0.0/libavif.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/f/d/e/libavif/1.0.0/libavif.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/f/d/e/libavif/1.0.0/libavif.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: all_pods_versions_b_2_b.txt exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/b/2/b/libdav1d/1.2.0/libdav1d.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/b/2/b/libdav1d/1.2.0/libdav1d.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/d/d/6/ReachabilitySwift/5.2.4/ReachabilitySwift.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/6/a/1/PurchasesHybridCommonUI/17.55.1/PurchasesHybridCommonUI.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: all_pods_versions_c_3_7.txt exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/c/3/7/RevenueCatUI/5.67.2/RevenueCatUI.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/c/3/7/RevenueCatUI/5.67.1/RevenueCatUI.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: all_pods_versions_e_9_b.txt exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/e/9/b/RevenueCat/5.67.2/RevenueCat.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/e/9/b/RevenueCat/5.67.1/RevenueCat.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/1/1/7/SDWebImage/5.21.7/SDWebImage.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/1/1/7/SDWebImage/5.21.7/SDWebImage.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/3/7/e/SDWebImageAVIFCoder/0.11.1/SDWebImageAVIFCoder.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/f/d/e/libavif/1.0.0/libavif.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/1/1/7/SDWebImage/5.21.7/SDWebImage.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/9/a/d/PurchasesHybridCommon/17.55.1/PurchasesHybridCommon.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/f/3/c/ZXingObjC/3.6.9/ZXingObjC.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/e/9/d/SDWebImageWebPCoder/0.14.6/SDWebImageWebPCoder.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/1/1/7/SDWebImage/5.21.7/SDWebImage.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: all_pods_versions_1_9_2.txt exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/1/9/2/libwebp/1.5.0/libwebp.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/a/0/c/SDWebImageSVGCoder/1.7.0/SDWebImageSVGCoder.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/1/1/7/SDWebImage/5.21.7/SDWebImage.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/1/9/2/libwebp/1.5.0/libwebp.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/1/9/2/libwebp/1.5.0/libwebp.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/1/9/2/libwebp/1.5.0/libwebp.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/1/9/2/libwebp/1.5.0/libwebp.podspec.json exists! Returning local because checking is only performed in repo update
+  CDN: trunk Relative path: Specs/1/9/2/libwebp/1.5.0/libwebp.podspec.json exists! Returning local because checking is only performed in repo update
+
+Comparing resolved specification to the sandbox manifest
+  - EASClient
+  - EXApplication
+  - EXConstants
+  - EXJSONUtils
+  - EXManifests
+  - EXStructuredHeaders
+  - EXUpdates
+  - EXUpdatesInterface
+  - Expo
+  - ExpoAsset
+  - ExpoAudio
+  - ExpoBlur
+  - ExpoCamera
+  - ExpoClipboard
+  - ExpoDomWebView
+  - ExpoFileSystem
+  - ExpoFont
+  - ExpoGlassEffect
+  - ExpoHaptics
+  - ExpoImage
+  - ExpoImagePicker
+  - ExpoKeepAwake
+  - ExpoLinearGradient
+  - ExpoLinking
+  - ExpoLogBox
+  - ExpoModulesCore
+  - ExpoModulesJSI
+  - ExpoNotifications
+  - ExpoRouter
+  - ExpoSecureStore
+  - ExpoSharing
+  - ExpoSplashScreen
+  - ExpoSymbols
+  - ExpoSystemUI
+  - ExpoWebBrowser
+  - FBLazyVector
+  - PurchasesHybridCommon
+  - PurchasesHybridCommonUI
+  - RCTDeprecation
+  - RCTRequired
+  - RCTSwiftUI
+  - RCTSwiftUIWrapper
+  - RCTTypeSafety
+  - RNCAsyncStorage
+  - RNGestureHandler
+  - RNPaywalls
+  - RNPurchases
+  - RNReanimated
+  - RNSVG
+  - RNScreens
+  - RNWorklets
+  - ReachabilitySwift
+  - React
+  - React-Core
+  - React-Core-prebuilt
+  - React-CoreModules
+  - React-Fabric
+  - React-FabricComponents
+  - React-FabricImage
+  - React-ImageManager
+  - React-Mapbuffer
+  - React-NativeModulesApple
+  - React-RCTActionSheet
+  - React-RCTAnimation
+  - React-RCTAppDelegate
+  - React-RCTBlob
+  - React-RCTFBReactNativeSpec
+  - React-RCTFabric
+  - React-RCTImage
+  - React-RCTLinking
+  - React-RCTNetwork
+  - React-RCTRuntime
+  - React-RCTSettings
+  - React-RCTText
+  - React-RCTVibration
+  - React-RuntimeApple
+  - React-RuntimeCore
+  - React-RuntimeHermes
+  - React-callinvoker
+  - React-cxxreact
+  - React-debug
+  - React-defaultsnativemodule
+  - React-domnativemodule
+  - React-featureflags
+  - React-featureflagsnativemodule
+  - React-graphics
+  - React-hermes
+  - React-idlecallbacksnativemodule
+  - React-intersectionobservernativemodule
+  - React-jserrorhandler
+  - React-jsi
+  - React-jsiexecutor
+  - React-jsinspector
+  - React-jsinspectorcdp
+  - React-jsinspectornetwork
+  - React-jsinspectortracing
+  - React-jsitooling
+  - React-jsitracing
+  - React-logger
+  - React-microtasksnativemodule
+  - React-networking
+  - React-oscompat
+  - React-perflogger
+  - React-performancecdpmetrics
+  - React-performancetimeline
+  - React-rendererconsistency
+  - React-renderercss
+  - React-rendererdebug
+  - React-runtimeexecutor
+  - React-runtimescheduler
+  - React-timing
+  - React-utils
+  - React-webperformancenativemodule
+  - ReactAppDependencyProvider
+  - ReactCodegen
+  - ReactCommon
+  - ReactNativeDependencies
+  - RevenueCat
+  - RevenueCatUI
+  - SDWebImage
+  - SDWebImageAVIFCoder
+  - SDWebImageSVGCoder
+  - SDWebImageWebPCoder
+  - Yoga
+  - ZXingObjC
+  - expo-dev-client
+  - expo-dev-launcher
+  - expo-dev-menu
+  - expo-dev-menu-interface
+  - hermes-engine
+  - libavif
+  - libdav1d
+  - libwebp
+  - react-native-safe-area-context
+  - react-native-view-shot
+
+Downloading dependencies
+
+-> Using EASClient (55.0.5)
+
+-> Using EXApplication (55.0.14)
+
+-> Using EXConstants (55.0.13)
+
+-> Using EXJSONUtils (55.0.2)
+
+-> Using EXManifests (55.0.15)
+
+-> Using EXStructuredHeaders (55.0.2)
+
+-> Using EXUpdates (55.0.20)
+
+-> Using EXUpdatesInterface (55.1.5)
+
+-> Using Expo (55.0.14)
+
+-> Using ExpoAsset (55.0.14)
+
+-> Using ExpoAudio (55.0.13)
+
+-> Using ExpoBlur (55.0.14)
+
+-> Using ExpoCamera (55.0.15)
+
+-> Using ExpoClipboard (55.0.13)
+
+-> Using ExpoDomWebView (55.0.5)
+
+-> Using ExpoFileSystem (55.0.16)
+
+-> Using ExpoFont (55.0.6)
+
+-> Using ExpoGlassEffect (55.0.10)
+
+-> Using ExpoHaptics (55.0.14)
+
+-> Using ExpoImage (55.0.8)
+
+-> Using ExpoImagePicker (55.0.18)
+
+-> Using ExpoKeepAwake (55.0.6)
+
+-> Using ExpoLinearGradient (55.0.13)
+
+-> Using ExpoLinking (55.0.12)
+
+-> Using ExpoLogBox (55.0.10)
+
+-> Using ExpoModulesCore (55.0.22)
+
+-> Using ExpoModulesJSI (55.0.22)
+
+-> Using ExpoNotifications (55.0.18)
+
+-> Using ExpoRouter (55.0.12)
+
+-> Using ExpoSecureStore (55.0.13)
+
+-> Using ExpoSharing (55.0.18)
+
+-> Using ExpoSplashScreen (55.0.17)
+
+-> Using ExpoSymbols (55.0.7)
+
+-> Using ExpoSystemUI (55.0.15)
+
+-> Using ExpoWebBrowser (55.0.14)
+
+-> Using FBLazyVector (0.83.4)
+
+-> Using PurchasesHybridCommon (17.55.1)
+
+-> Using PurchasesHybridCommonUI (17.55.1)
+
+-> Using RCTDeprecation (0.83.4)
+
+-> Using RCTRequired (0.83.4)
+
+-> Using RCTSwiftUI (0.83.4)
+
+-> Using RCTSwiftUIWrapper (0.83.4)
+
+-> Using RCTTypeSafety (0.83.4)
+
+-> Using RNCAsyncStorage (2.2.0)
+
+-> Using RNGestureHandler (2.30.1)
+
+-> Using RNPaywalls (9.15.2)
+
+-> Using RNPurchases (9.15.2)
+
+-> Using RNReanimated (4.2.1)
+
+-> Using RNSVG (15.15.3)
+
+-> Using RNScreens (4.23.0)
+
+-> Using RNWorklets (0.7.2)
+
+-> Using ReachabilitySwift (5.2.4)
+
+-> Using React (0.83.4)
+
+-> Using React-Core (0.83.4)
+
+-> Using React-Core-prebuilt (0.83.4)
+
+-> Using React-CoreModules (0.83.4)
+
+-> Using React-Fabric (0.83.4)
+
+-> Using React-FabricComponents (0.83.4)
+
+-> Using React-FabricImage (0.83.4)
+
+-> Using React-ImageManager (0.83.4)
+
+-> Using React-Mapbuffer (0.83.4)
+
+-> Using React-NativeModulesApple (0.83.4)
+
+-> Using React-RCTActionSheet (0.83.4)
+
+-> Using React-RCTAnimation (0.83.4)
+
+-> Using React-RCTAppDelegate (0.83.4)
+
+-> Using React-RCTBlob (0.83.4)
+
+-> Using React-RCTFBReactNativeSpec (0.83.4)
+
+-> Using React-RCTFabric (0.83.4)
+
+-> Using React-RCTImage (0.83.4)
+
+-> Using React-RCTLinking (0.83.4)
+
+-> Using React-RCTNetwork (0.83.4)
+
+-> Using React-RCTRuntime (0.83.4)
+
+-> Using React-RCTSettings (0.83.4)
+
+-> Using React-RCTText (0.83.4)
+
+-> Using React-RCTVibration (0.83.4)
+
+-> Using React-RuntimeApple (0.83.4)
+
+-> Using React-RuntimeCore (0.83.4)
+
+-> Using React-RuntimeHermes (0.83.4)
+
+-> Using React-callinvoker (0.83.4)
+
+-> Using React-cxxreact (0.83.4)
+
+-> Using React-debug (0.83.4)
+
+-> Using React-defaultsnativemodule (0.83.4)
+
+-> Using React-domnativemodule (0.83.4)
+
+-> Using React-featureflags (0.83.4)
+
+-> Using React-featureflagsnativemodule (0.83.4)
+
+-> Using React-graphics (0.83.4)
+
+-> Using React-hermes (0.83.4)
+
+-> Using React-idlecallbacksnativemodule (0.83.4)
+
+-> Using React-intersectionobservernativemodule (0.83.4)
+
+-> Using React-jserrorhandler (0.83.4)
+
+-> Using React-jsi (0.83.4)
+
+-> Using React-jsiexecutor (0.83.4)
+
+-> Using React-jsinspector (0.83.4)
+
+-> Using React-jsinspectorcdp (0.83.4)
+
+-> Using React-jsinspectornetwork (0.83.4)
+
+-> Using React-jsinspectortracing (0.83.4)
+
+-> Using React-jsitooling (0.83.4)
+
+-> Using React-jsitracing (0.83.4)
+
+-> Using React-logger (0.83.4)
+
+-> Using React-microtasksnativemodule (0.83.4)
+
+-> Using React-networking (0.83.4)
+
+-> Using React-oscompat (0.83.4)
+
+-> Using React-perflogger (0.83.4)
+
+-> Using React-performancecdpmetrics (0.83.4)
+
+-> Using React-performancetimeline (0.83.4)
+
+-> Using React-rendererconsistency (0.83.4)
+
+-> Using React-renderercss (0.83.4)
+
+-> Using React-rendererdebug (0.83.4)
+
+-> Using React-runtimeexecutor (0.83.4)
+
+-> Using React-runtimescheduler (0.83.4)
+
+-> Using React-timing (0.83.4)
+
+-> Using React-utils (0.83.4)
+
+-> Using React-webperformancenativemodule (0.83.4)
+
+-> Using ReactAppDependencyProvider (0.83.4)
+
+-> Using ReactCodegen (0.83.4)
+
+-> Using ReactCommon (0.83.4)
+
+-> Using ReactNativeDependencies (0.83.4)
+
+-> Using RevenueCat (5.67.1)
+
+-> Using RevenueCatUI (5.67.1)
+
+-> Using SDWebImage (5.21.7)
+
+-> Using SDWebImageAVIFCoder (0.11.1)
+
+-> Using SDWebImageSVGCoder (1.7.0)
+
+-> Using SDWebImageWebPCoder (0.14.6)
+
+-> Using Yoga (0.0.0)
+
+-> Using ZXingObjC (3.6.9)
+
+-> Using expo-dev-client (55.0.27)
+
+-> Using expo-dev-launcher (55.0.28)
+
+-> Using expo-dev-menu (55.0.23)
+
+-> Using expo-dev-menu-interface (55.0.2)
+
+-> Using hermes-engine (0.14.1)
+
+-> Using libavif (1.0.0)
+
+-> Using libdav1d (1.2.0)
+
+-> Using libwebp (1.5.0)
+
+-> Using react-native-safe-area-context (5.6.2)
+
+-> Using react-native-view-shot (4.0.3)
+  - Running pre install hooks
+  - Running pre integrate hooks
+
+Generating Pods project
+  - Creating Pods project
+  - Installing files into Pods project
+    - Adding source files
+    - Adding frameworks
+    - Adding libraries
+    - Adding resources
+    - Adding development pod helper files
+    - Linking headers
+  - Installing Pod Targets
+    - Installing target `EASClient` iOS 15.1
+      - Generating module map file at `Pods/Target Support Files/EASClient/EASClient.modulemap`
+      - Generating umbrella header at `Pods/Target Support Files/EASClient/EASClient-umbrella.h`
+      - Generating dummy source at `Pods/Target Support Files/EASClient/EASClient-dummy.m`
+    - Installing target `EXApplication` iOS 15.1
+      - Generating Info.plist file at `Pods/Target Support Files/EXApplication/ResourceBundle-ExpoApplication_privacy-EXApplication-Info.plist`
+      - Generating module map file at `Pods/Target Support Files/EXApplication/EXApplication.modulemap`
+      - Generating umbrella header at `Pods/Target Support Files/EXApplication/EXApplication-umbrella.h`
+      - Generating dummy source at `Pods/Target Support Files/EXApplication/EXApplication-dummy.m`
+    - Installing target `EXConstants` iOS 15.1
+      - Generating Info.plist file at `Pods/Target Support Files/EXConstants/ResourceBundle-EXConstants-EXConstants-Info.plist`
+      - Generating Info.plist file at `Pods/Target Support Files/EXConstants/ResourceBundle-ExpoConstants_privacy-EXConstants-Info.plist`
+      - Generating module map file at `Pods/Target Support Files/EXConstants/EXConstants.modulemap`
+      - Generating umbrella header at `Pods/Target Support Files/EXConstants/EXConstants-umbrella.h`
+      - Generating dummy source at `Pods/Target Support Files/EXConstants/EXConstants-dummy.m`
+    - Installing target `EXJSONUtils` iOS 15.1
+      - Generating module map file at `Pods/Target Support Files/EXJSONUtils/EXJSONUtils.modulemap`
+      - Generating umbrella header at `Pods/Target Support Files/EXJSONUtils/EXJSONUtils-umbrella.h`
+      - Generating dummy source at `Pods/Target Support Files/EXJSONUtils/EXJSONUtils-dummy.m`
+    - Installing target `EXManifests` iOS 15.1
+      - Generating module map file at `Pods/Target Support Files/EXManifests/EXManifests.modulemap`
+      - Generating umbrella header at `Pods/Target Support Files/EXManifests/EXManifests-umbrella.h`
+      - Generating dummy source at `Pods/Target Support Files/EXManifests/EXManifests-dummy.m`
+    - Installing target `EXStructuredHeaders` iOS 15.1
+      - Generating module map file at `Pods/Target Support Files/EXStructuredHeaders/EXStructuredHeaders.modulemap`
+      - Generating umbrella header at `Pods/Target Support Files/EXStructuredHeaders/EXStructuredHeaders-umbrella.h`
+      - Generating dummy source at `Pods/Target Support Files/EXStructuredHeaders/EXStructuredHeaders-dummy.m`
+    - Installing target `EXUpdates` iOS 15.1
+      - Generating Info.plist file at `Pods/Target Support Files/EXUpdates/ResourceBundle-EXUpdates-EXUpdates-Info.plist`
+  CDN: trunk Relative path: CocoaPods-version.yml exists! Returning local because checking is only performed in repo update
+
+――― MARKDOWN TEMPLATE ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
+
+### Command
+
+```
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/bin/pod install --no-repo-update --verbose
+```
+
+### Report
+
+* What did you do?
+
+* What did you expect to happen?
+
+* What happened instead?
+
+
+### Stack
+
+```
+   CocoaPods : 1.16.2
+        Ruby : ruby 4.0.1 (2026-01-13 revision e04267a14b) +PRISM [arm64-darwin25]
+    RubyGems : 4.0.3
+        Host : macOS 26.3.1 ((a))
+       Xcode : 26.3 (17C529)
+         Git : git version 2.51.2
+Ruby lib dir : /opt/homebrew/Cellar/ruby/4.0.1/lib
+Repositories : trunk - CDN - https://cdn.cocoapods.org/
+```
+
+### Plugins
+
+```
+cocoapods-deintegrate : 1.0.5
+cocoapods-plugins     : 1.0.0
+cocoapods-search      : 1.0.1
+cocoapods-trunk       : 1.6.0
+cocoapods-try         : 1.2.0
+```
+
+### Podfile
+
+```ruby
+# Set by expo-router. This enables Fabric-only features from react-native-screens
+ENV['RNS_GAMMA_ENABLED'] ||= '1'
+require File.join(File.dirname(`node --print "require.resolve('expo/package.json')"`), "scripts/autolinking")
+require File.join(File.dirname(`node --print "require.resolve('react-native/package.json')"`), "scripts/react_native_pods")
+
+require 'json'
+podfile_properties = JSON.parse(File.read(File.join(__dir__, 'Podfile.properties.json'))) rescue {}
+
+def ccache_enabled?(podfile_properties)
+  # Environment variable takes precedence
+  return ENV['USE_CCACHE'] == '1' if ENV['USE_CCACHE']
+
+  # Fall back to Podfile properties
+  podfile_properties['apple.ccacheEnabled'] == 'true'
+end
+
+ENV['EX_DEV_CLIENT_NETWORK_INSPECTOR'] ||= podfile_properties['EX_DEV_CLIENT_NETWORK_INSPECTOR']
+ENV['RCT_USE_RN_DEP'] ||= '1' if podfile_properties['ios.buildReactNativeFromSource'] != 'true'
+ENV['RCT_USE_PREBUILT_RNCORE'] ||= '1' if podfile_properties['ios.buildReactNativeFromSource'] != 'true'
+ENV['RCT_HERMES_V1_ENABLED'] ||= '1' if podfile_properties['expo.useHermesV1'] == 'true'
+platform :ios, podfile_properties['ios.deploymentTarget'] || '15.1'
+
+prepare_react_native_project!
+
+target 'ZCE' do
+  use_expo_modules!
+
+  if ENV['EXPO_USE_COMMUNITY_AUTOLINKING'] == '1'
+    config_command = ['node', '-e', "process.argv=['', '', 'config'];require('@react-native-community/cli').run()"];
+  else
+    config_command = [
+      'node',
+      '--no-warnings',
+      '--eval',
+      'require(\'expo/bin/autolinking\')',
+      'expo-modules-autolinking',
+      'react-native-config',
+      '--json',
+      '--platform',
+      'ios'
+    ]
+  end
+
+  config = use_native_modules!(config_command)
+
+  use_frameworks! :linkage => podfile_properties['ios.useFrameworks'].to_sym if podfile_properties['ios.useFrameworks']
+  use_frameworks! :linkage => ENV['USE_FRAMEWORKS'].to_sym if ENV['USE_FRAMEWORKS']
+
+  use_react_native!(
+    :path => config[:reactNativePath],
+    :hermes_enabled => podfile_properties['expo.jsEngine'] == nil || podfile_properties['expo.jsEngine'] == 'hermes',
+    # An absolute path to your application root.
+    :app_path => "#{Pod::Config.instance.installation_root}/..",
+    :privacy_file_aggregation_enabled => podfile_properties['apple.privacyManifestAggregationEnabled'] != 'false',
+  )
+
+  post_install do |installer|
+    react_native_post_install(
+      installer,
+      config[:reactNativePath],
+      :mac_catalyst_enabled => false,
+      :ccache_enabled => ccache_enabled?(podfile_properties),
+    )
+
+    # Xcode/folly toolchain mismatch can surface undeclared jemalloc symbols
+    # in folly/memory/Malloc.h while compiling ReactCodegen. Force folly to
+    # skip jemalloc probing for iOS app builds.
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |build_config|
+        defs = build_config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] || ['$(inherited)']
+        defs = [defs] unless defs.is_a?(Array)
+        unless defs.include?('FOLLY_ASSUME_NO_JEMALLOC=1')
+          defs << 'FOLLY_ASSUME_NO_JEMALLOC=1'
+        end
+        build_config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = defs
+      end
+    end
+  end
+end
+```
+
+### Error
+
+```
+SignalException - SIGTERM
+/opt/homebrew/Cellar/ruby/4.0.1/lib/ruby/4.0.0/fileutils.rb:1535:in 'IO#read'
+/opt/homebrew/Cellar/ruby/4.0.1/lib/ruby/4.0.0/fileutils.rb:1535:in 'FileUtils.compare_stream'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer/xcode/pods_project_generator/target_installer_helper.rb:18:in 'block in Pod::Installer::Xcode::PodsProjectGenerator::TargetInstallerHelper#update_changed_file'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer/xcode/pods_project_generator/target_installer_helper.rb:18:in 'IO.open'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer/xcode/pods_project_generator/target_installer_helper.rb:18:in 'Pod::Installer::Xcode::PodsProjectGenerator::TargetInstallerHelper#update_changed_file'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer/xcode/pods_project_generator/target_installer_helper.rb:63:in 'block in Pod::Installer::Xcode::PodsProjectGenerator::TargetInstallerHelper#create_info_plist_file_with_sandbox'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/user_interface.rb:149:in 'Pod::UserInterface.message'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer/xcode/pods_project_generator/target_installer_helper.rb:61:in 'Pod::Installer::Xcode::PodsProjectGenerator::TargetInstallerHelper#create_info_plist_file_with_sandbox'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer/xcode/pods_project_generator/target_installer.rb:147:in 'Pod::Installer::Xcode::PodsProjectGenerator::TargetInstaller#create_info_plist_file'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer/xcode/pods_project_generator/pod_target_installer.rb:593:in 'block (2 levels) in Pod::Installer::Xcode::PodsProjectGenerator::PodTargetInstaller#add_resources_bundle_targets'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer/xcode/pods_project_generator/pod_target_installer.rb:575:in 'Hash#each'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer/xcode/pods_project_generator/pod_target_installer.rb:575:in 'Enumerable#map'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer/xcode/pods_project_generator/pod_target_installer.rb:575:in 'block in Pod::Installer::Xcode::PodsProjectGenerator::PodTargetInstaller#add_resources_bundle_targets'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer/xcode/pods_project_generator/pod_target_installer.rb:574:in 'Array#each'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer/xcode/pods_project_generator/pod_target_installer.rb:574:in 'Enumerable#each_with_object'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer/xcode/pods_project_generator/pod_target_installer.rb:574:in 'Pod::Installer::Xcode::PodsProjectGenerator::PodTargetInstaller#add_resources_bundle_targets'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer/xcode/pods_project_generator/pod_target_installer.rb:54:in 'block in Pod::Installer::Xcode::PodsProjectGenerator::PodTargetInstaller#install!'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/user_interface.rb:149:in 'Pod::UserInterface.message'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer/xcode/pods_project_generator/pod_target_installer.rb:40:in 'Pod::Installer::Xcode::PodsProjectGenerator::PodTargetInstaller#install!'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer/xcode/pods_project_generator.rb:115:in 'block in Pod::Installer::Xcode::PodsProjectGenerator#install_pod_targets'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer/xcode/pods_project_generator.rb:112:in 'Array#map'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer/xcode/pods_project_generator.rb:112:in 'Pod::Installer::Xcode::PodsProjectGenerator#install_pod_targets'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer/xcode/single_pods_project_generator.rb:32:in 'block in Pod::Installer::Xcode::SinglePodsProjectGenerator#install_all_pod_targets'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/user_interface.rb:149:in 'Pod::UserInterface.message'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer/xcode/single_pods_project_generator.rb:31:in 'Pod::Installer::Xcode::SinglePodsProjectGenerator#install_all_pod_targets'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer/xcode/single_pods_project_generator.rb:19:in 'Pod::Installer::Xcode::SinglePodsProjectGenerator#generate!'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer.rb:320:in 'block in Pod::Installer#create_and_save_projects'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/user_interface.rb:64:in 'Pod::UserInterface.section'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer.rb:315:in 'Pod::Installer#create_and_save_projects'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer.rb:307:in 'Pod::Installer#generate_pods_project'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer.rb:183:in 'Pod::Installer#integrate'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer.rb:170:in 'Pod::Installer#install!'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/command/install.rb:52:in 'Pod::Command::Install#run'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/claide-1.1.0/lib/claide/command.rb:334:in 'CLAide::Command.run'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/lib/cocoapods/command.rb:52:in 'Pod::Command.run'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/gems/cocoapods-1.16.2/bin/pod:55:in '<top (required)>'
+/opt/homebrew/Cellar/ruby/4.0.1/lib/ruby/4.0.0/rubygems.rb:303:in 'Kernel#load'
+/opt/homebrew/Cellar/ruby/4.0.1/lib/ruby/4.0.0/rubygems.rb:303:in 'Gem.activate_and_load_bin_path'
+/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec/bin/pod:25:in '<main>'
+```
+
+――― TEMPLATE END ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
+
+[!] Oh no, an error occurred.
+
+Search for existing GitHub issues similar to yours:
+https://github.com/CocoaPods/CocoaPods/search?q=SIGTERM&type=Issues
+
+If none exists, create a ticket, with the template displayed above, on:
+https://github.com/CocoaPods/CocoaPods/issues/new
+
+Be sure to first read the contributing guide for details on how to properly submit a ticket:
+https://github.com/CocoaPods/CocoaPods/blob/master/CONTRIBUTING.md
+
+Don't forget to anonymize any private data!
+
+Looking for related issues on cocoapods/cocoapods...
+ - Command PhaseScriptExecution failed with a nonzero exit code -- rsync error: received SIGINT, SIGTERM, or SIGHUP (code 20)
+   https://github.com/CocoaPods/CocoaPods/issues/12060 [open] [9 comments]
+   10 Mar 2024
+
+ - ERROR | xcodebuild: Returned an unsuccessful exit code
+   https://github.com/CocoaPods/CocoaPods/issues/12308 [open] [2 comments]
+   30 May 2024
+
+ - PhaseScriptExecution Error: resources.sh: No such file or directory
+   https://github.com/CocoaPods/CocoaPods/issues/8677 [open] [13 comments]
+   22 Sep 2023
+
+and 10 more at:
+https://github.com/cocoapods/cocoapods/search?q=SIGTERM&type=Issues&utf8=✓

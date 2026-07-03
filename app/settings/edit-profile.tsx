@@ -10,7 +10,7 @@ import { useState } from 'react';
 import { Alert, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const PRIVACY_POLICY_URL = 'https://zceapp.vercel.app/support';
+const PRIVACY_POLICY_URL = 'https://zceapp.vercel.app/privacy';
 const TERMS_OF_USE_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
 
 // Use explicit Fluent icon names to avoid unicode fallback glitches on web/native.
@@ -530,7 +530,9 @@ export default function EditProfileScreen() {
 
                         <View style={styles.currentValueRow}>
                             <Text style={styles.currentValueLabel}>CURRENT:</Text>
-                            <Text style={styles.currentValue}>@{user?.username || 'not set'}</Text>
+                            <Text style={styles.currentValue} numberOfLines={1} ellipsizeMode="middle">
+                                @{user?.username || 'not set'}
+                            </Text>
                         </View>
 
                         <TextInput
@@ -570,17 +572,25 @@ export default function EditProfileScreen() {
 
                         <View style={styles.currentValueRow}>
                             <Text style={styles.currentValueLabel}>CURRENT:</Text>
-                            <Text style={styles.currentValue}>{user?.email}</Text>
+                            <Text style={styles.currentValue} numberOfLines={1} ellipsizeMode="middle">
+                                {user?.email}
+                            </Text>
                         </View>
 
                         <TextInput
-                            style={styles.modalInput}
+                            style={[styles.modalInput, styles.modalInputEmail]}
                             value={newEmail}
                             onChangeText={setNewEmail}
                             placeholder="new@email.com"
                             placeholderTextColor="rgba(255,255,255,0.3)"
                             autoCapitalize="none"
                             keyboardType="email-address"
+                            autoCorrect={false}
+                            autoComplete="email"
+                            textContentType="emailAddress"
+                            multiline={false}
+                            returnKeyType="done"
+                            onSubmitEditing={handleUpdateEmail}
                         />
 
                         <View style={styles.modalActions}>
@@ -894,8 +904,9 @@ const styles = StyleSheet.create({
     currentValueRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
+        justifyContent: 'space-between',
+        width: '100%',
+        paddingHorizontal: 4,
         marginBottom: 16,
     },
     currentValueLabel: {
@@ -909,6 +920,10 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#fff',
         letterSpacing: 0.5,
+        flex: 1,
+        marginLeft: 10,
+        textAlign: 'right',
+        minWidth: 0,
     },
     modalInput: {
         height: 56,
@@ -922,6 +937,11 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.1)',
+    },
+    modalInputEmail: {
+        textAlign: 'left',
+        fontSize: 14,
+        paddingHorizontal: 16,
     },
     modalError: {
         color: '#FF3B30',

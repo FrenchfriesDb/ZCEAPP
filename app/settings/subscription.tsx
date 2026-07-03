@@ -8,7 +8,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-const PRIVACY_POLICY_URL = 'https://zceapp.vercel.app/support';
+const PRIVACY_POLICY_URL = 'https://zceapp.vercel.app/privacy';
 const TERMS_OF_USE_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
 
 const FEATURES = [
@@ -247,15 +247,17 @@ export default function SubscriptionScreen() {
                             <Text style={styles.legalCopy}>
                                 Auto-renewing subscription: ZCE Pro ({activePlanReadable}).
                             </Text>
-                            <View style={styles.legalLinksRow}>
-                                <Pressable onPress={() => { void openLegalUrl(PRIVACY_POLICY_URL, 'Privacy Policy'); }}>
-                                    <Text style={styles.legalLink}>Privacy Policy</Text>
-                                </Pressable>
-                                <Text style={styles.legalDot}>•</Text>
-                                <Pressable onPress={() => { void openLegalUrl(TERMS_OF_USE_URL, 'Terms of Use'); }}>
-                                    <Text style={styles.legalLink}>Terms of Use</Text>
-                                </Pressable>
-                            </View>
+                            <Text style={styles.legalCopy}>
+                                By subscribing, you agree to our{' '}
+                                <Text style={styles.legalLink} onPress={() => { void openLegalUrl(PRIVACY_POLICY_URL, 'Privacy Policy'); }}>
+                                    Privacy Policy
+                                </Text>
+                                {' '}and{' '}
+                                <Text style={styles.legalLink} onPress={() => { void openLegalUrl(TERMS_OF_USE_URL, 'Terms of Use'); }}>
+                                    Terms of Use
+                                </Text>
+                                .
+                            </Text>
                         </View>
                     </>
                 ) : (
@@ -292,7 +294,7 @@ export default function SubscriptionScreen() {
                         <View style={styles.planRow}>
                             <View style={styles.planCard}>
                                 <Text style={styles.planName}>MONTHLY</Text>
-                                <Text style={styles.planPrice}>$9.99</Text>
+                                <Text style={styles.planPrice}>$9.99 / Month</Text>
                                 <Text style={styles.planMeta}>Cancel anytime</Text>
                                 <GlassButton
                                     label={isLoading ? 'PROCESSING...' : 'MONTHLY'}
@@ -308,7 +310,7 @@ export default function SubscriptionScreen() {
 
                             <View style={[styles.planCard, styles.planCardFeatured]}>
                                 <Text style={styles.planName}>YEARLY</Text>
-                                <Text style={styles.planPrice}>$59.99</Text>
+                                <Text style={styles.planPrice}>$59.99 / Year</Text>
                                 <Text style={styles.planMeta}>Best value</Text>
                                 <GlassButton
                                     label={isLoading ? 'PROCESSING...' : 'YEARLY'}
@@ -357,15 +359,17 @@ export default function SubscriptionScreen() {
                             <Text style={styles.legalCopy}>
                                 Auto-renewing subscriptions: ZCE Pro Monthly (1 month, $9.99) or ZCE Pro Yearly (1 year, $59.99).
                             </Text>
-                            <View style={styles.legalLinksRow}>
-                                <Pressable onPress={() => { void openLegalUrl(PRIVACY_POLICY_URL, 'Privacy Policy'); }}>
-                                    <Text style={styles.legalLink}>Privacy Policy</Text>
-                                </Pressable>
-                                <Text style={styles.legalDot}>•</Text>
-                                <Pressable onPress={() => { void openLegalUrl(TERMS_OF_USE_URL, 'Terms of Use'); }}>
-                                    <Text style={styles.legalLink}>Terms of Use</Text>
-                                </Pressable>
-                            </View>
+                            <Text style={styles.legalCopy}>
+                                By subscribing, you agree to our{' '}
+                                <Text style={styles.legalLink} onPress={() => { void openLegalUrl(PRIVACY_POLICY_URL, 'Privacy Policy'); }}>
+                                    Privacy Policy
+                                </Text>
+                                {' '}and{' '}
+                                <Text style={styles.legalLink} onPress={() => { void openLegalUrl(TERMS_OF_USE_URL, 'Terms of Use'); }}>
+                                    Terms of Use
+                                </Text>
+                                .
+                            </Text>
                         </View>
                     </>
                 )}
@@ -662,20 +666,11 @@ const styles = StyleSheet.create({
         lineHeight: 17,
         color: 'rgba(255,255,255,0.72)',
     },
-    legalLinksRow: {
-        marginTop: 8,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
     legalLink: {
         fontFamily: Fonts.bodyMedium,
         fontSize: 12,
         color: '#9BE7FF',
-    },
-    legalDot: {
-        color: 'rgba(255,255,255,0.55)',
-        fontSize: 12,
+        textDecorationLine: 'underline',
     },
     welcomeOverlay: {
         flex: 1,

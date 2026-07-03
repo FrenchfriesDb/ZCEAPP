@@ -21,7 +21,7 @@ import * as Font from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { LogBox, StyleSheet, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { enableScreens } from 'react-native-screens';
 import { TextColorsProvider } from '../context/TextColorsContext';
@@ -32,6 +32,10 @@ const ROASTS = [
 ];
 
 const pick8 = (pool: any[]) => [...pool].sort(() => 0.5 - Math.random()).slice(0, 8);
+
+LogBox.ignoreLogs([
+  'Sending `onAnimatedValueUpdate` with no listeners registered.',
+]);
 
 export default function RootLayout() {
   const [fontsLoaded, setFontsLoaded] = useState(false);
@@ -160,9 +164,9 @@ function RootLayoutNav() {
   return (
     <View style={{ flex: 1 }}>
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
-        <Stack.Screen name="auth/onboarding" options={{ headerShown: false, gestureEnabled: false }} />
-        <Stack.Screen name="auth/signup" options={{ headerShown: false, gestureEnabled: false }} />
         <Stack.Screen name="auth/login" options={{ headerShown: false, gestureEnabled: false }} />
+        <Stack.Screen name="auth/signup" options={{ headerShown: false, gestureEnabled: false }} />
+        <Stack.Screen name="auth/onboarding" options={{ headerShown: false, gestureEnabled: false }} />
         <Stack.Screen name="auth/forgot-password" options={{ headerShown: false, gestureEnabled: false }} />
       </Stack>
     </View>

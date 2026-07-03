@@ -20,6 +20,7 @@ import {
     getDoc,
     getDocs,
     query,
+    runTransaction,
     setDoc,
     updateDoc,
     where,
@@ -246,12 +247,24 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         if (!uid || !normalizedUsername || !normalizedEmail || USERNAME_INDEX_UPSERT_DISABLED) return;
 
         try {
-            await setDoc(doc(db, USERNAME_INDEX_COLLECTION, normalizedUsername), {
-                uid,
-                email: normalizedEmail,
-                username: normalizedUsername,
-                updatedAt: new Date().toISOString(),
-            }, { merge: true });
+            await runTransaction(db, async (tx) => {
+                const indexRef = doc(db, USERNAME_INDEX_COLLECTION, normalizedUsername);
+                const snap = await tx.get(indexRef);
+                if (snap.exists()) {
+                    const existingUid = String(snap.data()?.uid || '').trim();
+                    if (existingUid && existingUid !== uid) {
+                        console.warn('[UserContext] Refusing to overwrite username index owned by another uid:', normalizedUsername);
+                        return;
+                    }
+                }
+
+                tx.set(indexRef, {
+                    uid,
+                    email: normalizedEmail,
+                    username: normalizedUsername,
+                    updatedAt: new Date().toISOString(),
+                }, { merge: true });
+            });
         } catch (err: any) {
             if (err?.code === 'permission-denied') {
                 USERNAME_INDEX_UPSERT_DISABLED = true;
@@ -259,6 +272,76 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 return;
             }
             console.warn('[UserContext] Failed to upsert username index:', err);
+        }
+    };
+
+    const assertUsernameAvailable = async (username: string, currentUid?: string) => {
+        const normalizedUsername = username.replace(/^@+/, '').trim().toLowerCase();
+        if (!normalizedUsername) {
+            const err: any = new Error('Username is required.');
+            err.code = 'auth/username-required';
+            throw err;
+        }
+
+        try {
+            const indexSnap = await getDoc(doc(db, USERNAME_INDEX_COLLECTION, normalizedUsername));
+            if (indexSnap.exists()) {
+                const existingUid = String(indexSnap.data()?.uid || '').trim();
+                if (existingUid && existingUid !== currentUid) {
+                    const err: any = new Error('Username already taken.');
+                    err.code = 'auth/username-already-in-use';
+                    throw err;
+                }
+            }
+        } catch (err: any) {
+            if (err?.code === 'auth/username-already-in-use') throw err;
+            if (err?.code === 'permission-denied') {
+                warnUsernameLookupPermissionDenied('index');
+            } else {
+                console.warn('[UserContext] Username index availability check failed:', err?.code || err?.message || err);
+            }
+        }
+
+        const usernameSnap = await getDocs(query(collection(db, 'users'), where('username', '==', normalizedUsername)));
+        const takenByOtherUser = usernameSnap.docs.some((userDoc) => userDoc.id !== currentUid);
+        if (takenByOtherUser) {
+            const err: any = new Error('Username already taken.');
+            err.code = 'auth/username-already-in-use';
+            throw err;
+        }
+    };
+
+    const reserveUsernameIndex = async (uid: string, username: string, email: string) => {
+        const normalizedUsername = username.replace(/^@+/, '').trim().toLowerCase();
+        const normalizedEmail = email.trim().toLowerCase();
+        try {
+            await runTransaction(db, async (tx) => {
+                const indexRef = doc(db, USERNAME_INDEX_COLLECTION, normalizedUsername);
+                const snap = await tx.get(indexRef);
+                if (snap.exists()) {
+                    const existingUid = String(snap.data()?.uid || '').trim();
+                    if (existingUid && existingUid !== uid) {
+                        const err: any = new Error('Username already taken.');
+                        err.code = 'auth/username-already-in-use';
+                        throw err;
+                    }
+                }
+
+                tx.set(indexRef, {
+                    uid,
+                    email: normalizedEmail,
+                    username: normalizedUsername,
+                    updatedAt: new Date().toISOString(),
+                });
+            });
+        } catch (err: any) {
+            if (err?.code === 'auth/username-already-in-use') throw err;
+            if (err?.code === 'permission-denied') {
+                const unavailableErr: any = new Error('Username verification is unavailable right now. Try again.');
+                unavailableErr.code = 'auth/username-verification-unavailable';
+                throw unavailableErr;
+            }
+            throw err;
         }
     };
 
@@ -632,10 +715,20 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                             userRef.current = null;
                         }
                     } else {
-                        // No cache and no Firestore — sign out
-                        await fbSignOut(auth);
-                        setUser(null);
-                        userRef.current = null;
+                        // Fresh install + Firestore unavailable: keep authenticated session with a local fallback profile
+                        // so login/signup still succeeds instead of bouncing the user back to auth screens.
+                        const fallbackData: UserData = {
+                            ...DEFAULT_USER,
+                            email: String(firebaseUser.email || 'anonymous').trim().toLowerCase(),
+                            name: String(firebaseUser.displayName || `Agent ${firebaseUser.uid.slice(0, 4)}`),
+                            joinDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+                            username: '',
+                        };
+                        setUser(fallbackData);
+                        userRef.current = fallbackData;
+                        await Storage.setItem('zce_user', JSON.stringify(fallbackData));
+                        if (fallbackData.email) await Storage.setItem(LAST_SUCCESS_EMAIL_KEY, fallbackData.email.toLowerCase());
+                        console.log('[UserContext] Using local fallback profile after Firestore failure.');
                     }
                 }
                 const scopedOnboardingKey = getOnboardingDoneKey(firebaseUser.uid);
@@ -784,6 +877,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 return 'Too many attempts. Try again later.';
             case 'auth/network-request-failed':
                 return 'No internet connection. Check your network.';
+            case 'auth/username-already-in-use':
+                return 'Username already taken.';
+            case 'auth/username-verification-unavailable':
+                return 'Username verification is unavailable right now. Try again.';
             case 'auth/username-lookup-blocked':
                 return 'Username login is blocked by current Firestore permissions. Use email login on this build.';
             default:
@@ -845,15 +942,17 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 msg = "SECURITY: App Check is blocking this login. In Firebase Console -> App Check, set Authentication to 'Unenforced'.";
             }
             console.log('[signIn Error]', e.code, e.message);
+            setIsLoading(false);
             Alert.alert("Access Denied", msg);
             throw new Error(msg);
-        } finally { setIsLoading(false); }
+        }
     };
 
     // Change username — enforces 30-day cooldown
     const changeUsername = async (newUsername: string): Promise<void> => {
         if (!userRef.current) throw new Error("Not logged in.");
         const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/;
+        const normalizedUsername = newUsername.toLowerCase();
         if (!USERNAME_REGEX.test(newUsername)) {
             throw new Error("Username must be 3–20 characters: letters, numbers, underscores only.");
         }
@@ -867,20 +966,20 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             }
         }
 
-        // Check uniqueness in Firestore
-        const q = query(collection(db, 'users'), where('username', '==', newUsername.toLowerCase()));
-        const snap = await getDocs(q);
-        if (!snap.empty) throw new Error("That username is already taken.");
+        await assertUsernameAvailable(normalizedUsername, auth.currentUser?.uid);
+        if (auth.currentUser?.uid) {
+            await reserveUsernameIndex(auth.currentUser.uid, normalizedUsername, userRef.current.email);
+        }
 
         await _syncUpdate({
-            username: newUsername.toLowerCase(),
+            username: normalizedUsername,
             usernameLastChanged: new Date().toISOString(),
         });
-        await cacheUsernameEmail(newUsername.toLowerCase(), userRef.current.email);
+        await cacheUsernameEmail(normalizedUsername, userRef.current.email);
         if (auth.currentUser?.uid) {
-            await upsertUsernameIndex(auth.currentUser.uid, newUsername.toLowerCase(), userRef.current.email);
+            await upsertUsernameIndex(auth.currentUser.uid, normalizedUsername, userRef.current.email);
         }
-        await Storage.setItem(LAST_SUCCESS_USERNAME_KEY, newUsername.toLowerCase());
+        await Storage.setItem(LAST_SUCCESS_USERNAME_KEY, normalizedUsername);
     };
 
     const forgotPassword = async (email: string) => {
@@ -914,12 +1013,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 throw new Error('Username must be 3–20 characters: letters, numbers, underscores only.');
             }
 
-            const usernameSnap = await getDocs(query(collection(db, 'users'), where('username', '==', normalizedUsername)));
-            if (!usernameSnap.empty) {
-                const usernameTakenError: any = new Error('Username already in use.');
-                usernameTakenError.code = 'auth/username-already-in-use';
-                throw usernameTakenError;
-            }
+            await assertUsernameAvailable(normalizedUsername);
 
             const cred = await createUserWithEmailAndPassword(auth, cleanEmail, password);
             const initialData: UserData = {
@@ -956,12 +1050,25 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 entitlements: [],
                 lastDrillDate: null,
             };
-            await setDoc(doc(db, 'users', cred.user.uid), initialData);
+
+            try {
+                await reserveUsernameIndex(cred.user.uid, initialData.username, initialData.email);
+            } catch (reserveErr: any) {
+                try { await deleteUser(cred.user); } catch { }
+                throw reserveErr;
+            }
+
+            try {
+                await setDoc(doc(db, 'users', cred.user.uid), initialData);
+            } catch (profileErr: any) {
+                console.warn('[signUp] Firestore profile seed failed, continuing with local session:', profileErr?.code || profileErr?.message || profileErr);
+            }
+
             setUser(initialData);
             userRef.current = initialData;
             await Storage.setItem('zce_user', JSON.stringify(initialData));
             await cacheUsernameEmail(initialData.username, initialData.email);
-            await upsertUsernameIndex(cred.user.uid, initialData.username, initialData.email);
+
             await Storage.setItem(LAST_SUCCESS_EMAIL_KEY, initialData.email);
             await Storage.setItem(LAST_SUCCESS_USERNAME_KEY, initialData.username.toLowerCase());
             // Complete onboarding after successful signup
@@ -969,7 +1076,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         } catch (e: any) {
             let msg = getFriendlyAuthError(e.code || '');
             if (e.code === 'auth/username-already-in-use') {
-                msg = 'Username already in use.';
+                msg = 'Username already taken.';
             }
             if (e.message === 'Email is required.' || e.message === 'Password is required.' || e.message === 'Username is required.' || e.message?.startsWith('Username must be')) {
                 msg = e.message;

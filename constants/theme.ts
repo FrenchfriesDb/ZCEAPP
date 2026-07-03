@@ -85,7 +85,7 @@ export const TimeColors = {
   // 6:00–6:30 PM — Coral Spark
   sunsetPop: ['#F9C823', '#FC506E'],
   // 6:30–7:00 PM — fiery sunset
-  sunset: ['#FF0F7B', '#F89B29'],
+  sunset: ['#FF0F7B', '#F89B29', '#ffdf75'],
   // 7:00–7:30 PM — neon pink-cyan
   twilight: ['#FF1B6B', '#45CAFF'],
   // 7:30–8 PM — Battle glory (gold → red → deep blue)
@@ -138,7 +138,7 @@ export const getTimeThemeInfo = (hour: number, minute: number): TimeThemeInfo =>
   if (totalMinutes < 1050) return { key: 'goldenHour', label: 'Golden Hour', range: '5:00 PM–5:29 PM', palette: TimeColors.goldenHour };
   if (totalMinutes < 1080) return { key: 'sunberryTwist', label: 'Sunberry Twist', range: '5:30 PM–5:59 PM', palette: TimeColors.sunberryTwist };
   if (totalMinutes < 1110) return { key: 'sunsetPop', label: 'Coral Spark', range: '6:00 PM–6:29 PM', palette: TimeColors.sunsetPop };
-  if (totalMinutes < 1140) return { key: 'sunsetCandy', label: 'Sunset Candy', range: '6:30 PM–6:59 PM', palette: TimeColors.sunsetCandy };
+  if (totalMinutes < 1140) return { key: 'sunset', label: 'Fiery Sunset', range: '6:30 PM–6:59 PM', palette: TimeColors.sunset };
   if (totalMinutes < 1170) return { key: 'twilight', label: 'Twilight', range: '7:00 PM–7:29 PM', palette: TimeColors.twilight };
   if (totalMinutes < 1200) return { key: 'battleGlory', label: 'Battle Glory', range: '7:30 PM–7:59 PM', palette: TimeColors.battleGlory };
   if (totalMinutes < 1230) return { key: 'marsEcho', label: 'Mars Echo', range: '8:00 PM–8:29 PM', palette: TimeColors.marsEcho };
@@ -250,12 +250,12 @@ export const getDynamicColors = (hour: number, minute: number) => {
     };
   }
 
-  // 6:30–6:59 PM — Sunset Candy
+  // 6:30–6:59 PM — Fiery Sunset
   if (totalMinutes >= 1110 && totalMinutes < 1140) {
     return {
-      textPrimary: '#FC506E',
+      textPrimary: '#FF0F7B',
       textSecondary: '#F89B29',
-      textTertiary: '#FF919C',
+      textTertiary: '#ffdf75',
     };
   }
 
