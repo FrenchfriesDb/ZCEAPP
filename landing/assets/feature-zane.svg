@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-label="Zane AI visual">
-  <rect width="1200" height="675" fill="#03070f"/>
-  <rect x="130" y="110" width="940" height="460" rx="28" fill="#0f1828" stroke="#79f4ff" stroke-opacity="0.35"/>
-  <rect x="180" y="175" width="560" height="95" rx="18" fill="#18263b"/>
-  <text x="218" y="232" fill="#dff5ff" font-size="34" font-family="Outfit, sans-serif">Classic: Stop stalling. Execute now.</text>
-  <rect x="460" y="300" width="560" height="95" rx="18" fill="#1f2f46"/>
-  <text x="498" y="357" fill="#dff5ff" font-size="34" font-family="Outfit, sans-serif">Coach: One drill. No excuses.</text>
-  <rect x="180" y="425" width="560" height="95" rx="18" fill="#18263b"/>
-  <text x="218" y="482" fill="#dff5ff" font-size="34" font-family="Outfit, sans-serif">Nervous System: Breathe. Ground.</text>
+  <rect width="1200" height="675" fill="#0a0908"/>
+  <rect x="130" y="110" width="940" height="460" rx="28" fill="#1e1c19" stroke="#e3c595" stroke-opacity="0.35"/>
+  <rect x="180" y="175" width="560" height="95" rx="18" fill="#2e2b25"/>
+  <text x="218" y="232" fill="#f4f1ea" font-size="34" font-family="Outfit, sans-serif">Classic: Stop stalling. Execute now.</text>
+  <rect x="460" y="300" width="560" height="95" rx="18" fill="#3f3926"/>
+  <text x="498" y="357" fill="#f4f1ea" font-size="34" font-family="Outfit, sans-serif">Coach: One drill. No excuses.</text>
+  <rect x="180" y="425" width="560" height="95" rx="18" fill="#2e2b25"/>
+  <text x="218" y="482" fill="#f4f1ea" font-size="34" font-family="Outfit, sans-serif">Nervous System: Breathe. Ground.</text>
 </svg>

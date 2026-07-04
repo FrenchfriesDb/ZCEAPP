@@ -1,13 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-label="Quest System visual">
-  <rect width="1200" height="675" fill="#040810"/>
-  <rect x="140" y="120" width="920" height="435" rx="30" fill="#0c1626" stroke="#a7c2ff" stroke-opacity="0.45"/>
-  <rect x="200" y="190" width="800" height="72" rx="14" fill="#16253a"/>
-  <rect x="200" y="290" width="800" height="72" rx="14" fill="#16253a"/>
-  <rect x="200" y="390" width="800" height="72" rx="14" fill="#16253a"/>
-  <circle cx="245" cy="226" r="16" fill="#9fffae"/>
-  <circle cx="245" cy="326" r="16" fill="#79f4ff"/>
-  <circle cx="245" cy="426" r="16" fill="#ffbe78"/>
-  <text x="280" y="236" fill="#dff5ff" font-size="34" font-family="Outfit, sans-serif">Open with eye contact + name</text>
-  <text x="280" y="336" fill="#dff5ff" font-size="34" font-family="Outfit, sans-serif">Run one story rep in public</text>
-  <text x="280" y="436" fill="#dff5ff" font-size="34" font-family="Outfit, sans-serif">Record nightly harvest report</text>
+  <rect width="1200" height="675" fill="#0b0a09"/>
+  <rect x="140" y="120" width="920" height="435" rx="30" fill="#1c1a16" stroke="#e0d9c6" stroke-opacity="0.45"/>
+  <rect x="200" y="190" width="800" height="72" rx="14" fill="#2c2924"/>
+  <rect x="200" y="290" width="800" height="72" rx="14" fill="#2c2924"/>
+  <rect x="200" y="390" width="800" height="72" rx="14" fill="#2c2924"/>
+  <circle cx="245" cy="226" r="16" fill="#ddd6c1"/>
+  <circle cx="245" cy="326" r="16" fill="#e3c595"/>
+  <circle cx="245" cy="426" r="16" fill="#e3ce94"/>
+  <text x="280" y="236" fill="#f4f1ea" font-size="34" font-family="Outfit, sans-serif">Open with eye contact + name</text>
+  <text x="280" y="336" fill="#f4f1ea" font-size="34" font-family="Outfit, sans-serif">Run one story rep in public</text>
+  <text x="280" y="436" fill="#f4f1ea" font-size="34" font-family="Outfit, sans-serif">Record nightly harvest report</text>
 </svg>

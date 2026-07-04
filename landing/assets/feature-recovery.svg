@@ -1,13 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-label="Recovery protocol visual">
-  <rect width="1200" height="675" fill="#03060d"/>
-  <rect x="145" y="115" width="910" height="445" rx="30" fill="#0c1524" stroke="#e0e8ff" stroke-opacity="0.34"/>
-  <circle cx="380" cy="340" r="135" fill="#182740" stroke="#8ca7ff" stroke-opacity="0.6"/>
-  <text x="320" y="352" fill="#f1f5ff" font-size="56" font-family="Outfit, sans-serif">72h</text>
-  <text x="265" y="392" fill="#cfd8f6" font-size="28" font-family="Outfit, sans-serif">Streak Rescue</text>
-  <rect x="560" y="205" width="410" height="70" rx="14" fill="#16253a"/>
-  <text x="600" y="250" fill="#dff5ff" font-size="30" font-family="Outfit, sans-serif">1. Cold-start drill</text>
-  <rect x="560" y="295" width="410" height="70" rx="14" fill="#16253a"/>
-  <text x="600" y="340" fill="#dff5ff" font-size="30" font-family="Outfit, sans-serif">2. Social exposure</text>
-  <rect x="560" y="385" width="410" height="70" rx="14" fill="#16253a"/>
-  <text x="600" y="430" fill="#dff5ff" font-size="30" font-family="Outfit, sans-serif">3. Nightly reset</text>
+  <rect width="1200" height="675" fill="#090807"/>
+  <rect x="145" y="115" width="910" height="445" rx="30" fill="#1a1916" stroke="#f4f2eb" stroke-opacity="0.34"/>
+  <circle cx="380" cy="340" r="135" fill="#302d28" stroke="#e7daa4" stroke-opacity="0.6"/>
+  <text x="320" y="352" fill="#faf9f6" font-size="56" font-family="Outfit, sans-serif">72h</text>
+  <text x="265" y="392" fill="#ebe6da" font-size="28" font-family="Outfit, sans-serif">Streak Rescue</text>
+  <rect x="560" y="205" width="410" height="70" rx="14" fill="#2c2924"/>
+  <text x="600" y="250" fill="#f4f1ea" font-size="30" font-family="Outfit, sans-serif">1. Cold-start drill</text>
+  <rect x="560" y="295" width="410" height="70" rx="14" fill="#2c2924"/>
+  <text x="600" y="340" fill="#f4f1ea" font-size="30" font-family="Outfit, sans-serif">2. Social exposure</text>
+  <rect x="560" y="385" width="410" height="70" rx="14" fill="#2c2924"/>
+  <text x="600" y="430" fill="#f4f1ea" font-size="30" font-family="Outfit, sans-serif">3. Nightly reset</text>
 </svg>

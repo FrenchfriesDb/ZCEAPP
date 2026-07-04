@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-label="Velocity Monitor visual">
-  <rect width="1200" height="675" fill="#050a14"/>
-  <rect x="120" y="120" width="960" height="435" rx="28" fill="#0c1626" stroke="#7ad8ff" stroke-opacity="0.4"/>
-  <polyline points="190,450 320,400 440,420 560,330 680,350 800,260 920,220 1010,170" fill="none" stroke="#79f4ff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
-  <polyline points="190,480 320,470 440,445 560,420 680,405 800,360 920,340 1010,300" fill="none" stroke="#4a6ec9" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
-  <circle cx="1010" cy="170" r="16" fill="#b5ff9a"/>
-  <text x="170" y="185" fill="#d9f8ff" font-size="44" font-family="Outfit, sans-serif">Velocity Monitor</text>
+  <rect width="1200" height="675" fill="#0e0d0b"/>
+  <rect x="120" y="120" width="960" height="435" rx="28" fill="#1c1a16" stroke="#e3ca96" stroke-opacity="0.4"/>
+  <polyline points="190,450 320,400 440,420 560,330 680,350 800,260 920,220 1010,170" fill="none" stroke="#e3c595" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <polyline points="190,480 320,470 440,445 560,420 680,405 800,360 920,340 1010,300" fill="none" stroke="#b1a162" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+  <circle cx="1010" cy="170" r="16" fill="#dcd4bd"/>
+  <text x="170" y="185" fill="#f2efe6" font-size="44" font-family="Outfit, sans-serif">Velocity Monitor</text>
 </svg>

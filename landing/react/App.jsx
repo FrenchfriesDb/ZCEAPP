@@ -403,7 +403,7 @@ function HomePage({ navigate }) {
       <section className="hero hero-home reveal">
         <div className="hero-copy">
           <p className="eyebrow">Z.A.N.E. PROTOCOL</p>
-          <h1>Bruce Wayne discipline. Street-level charisma. Zero excuses.</h1>
+          <h1>Bruce Wayne discipline. Zero excuses.</h1>
           <p className="lead">ZCE is not motivational fluff. It is a command center for execution: Aura Heatmap, Velocity Monitor, quests, social drills, Sky-Sync themes, and hard Zane AI direction when pressure spikes.</p>
           <div className="hero-actions">
             <button className="btn btn-main" onClick={() => { window.location.href = APP_STORE_URL; }}>Download on iOS</button>
