@@ -1,13 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-label="AI analysis engine visual">
-  <rect width="1200" height="675" fill="#04070f"/>
-  <rect x="130" y="110" width="940" height="455" rx="30" fill="#0d1626" stroke="#b8cdff" stroke-opacity="0.45"/>
-  <rect x="190" y="180" width="520" height="315" rx="20" fill="#121f34"/>
-  <polyline points="230,430 300,390 370,410 440,340 510,350 580,285 650,250" fill="none" stroke="#8ca7ff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="650" cy="250" r="12" fill="#f3f7ff"/>
-  <rect x="760" y="180" width="250" height="96" rx="14" fill="#182843"/>
-  <text x="790" y="235" fill="#dff5ff" font-size="32" font-family="Outfit, sans-serif">Focus: 83%</text>
-  <rect x="760" y="300" width="250" height="96" rx="14" fill="#182843"/>
-  <text x="790" y="355" fill="#dff5ff" font-size="32" font-family="Outfit, sans-serif">Risk: Drift</text>
-  <rect x="760" y="420" width="250" height="75" rx="14" fill="#79f4ff"/>
-  <text x="800" y="468" fill="#04111f" font-size="28" font-family="Outfit, sans-serif">AI Analysis</text>
+  <rect width="1200" height="675" fill="#0a0a09"/>
+  <rect x="130" y="110" width="940" height="455" rx="30" fill="#1c1a17" stroke="#e6e0d1" stroke-opacity="0.45"/>
+  <rect x="190" y="180" width="520" height="315" rx="20" fill="#272420"/>
+  <polyline points="230,430 300,390 370,410 440,340 510,350 580,285 650,250" fill="none" stroke="#e7daa4" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="650" cy="250" r="12" fill="#fbfaf7"/>
+  <rect x="760" y="180" width="250" height="96" rx="14" fill="#322f29"/>
+  <text x="790" y="235" fill="#f4f1ea" font-size="32" font-family="Outfit, sans-serif">Focus: 83%</text>
+  <rect x="760" y="300" width="250" height="96" rx="14" fill="#322f29"/>
+  <text x="790" y="355" fill="#f4f1ea" font-size="32" font-family="Outfit, sans-serif">Risk: Drift</text>
+  <rect x="760" y="420" width="250" height="75" rx="14" fill="#e3c595"/>
+  <text x="800" y="468" fill="#131210" font-size="28" font-family="Outfit, sans-serif">AI Analysis</text>
 </svg>

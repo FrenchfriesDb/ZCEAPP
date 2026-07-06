@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-label="Drills Overview visual">
-  <rect width="1200" height="675" fill="#050910"/>
-  <rect x="110" y="110" width="980" height="455" rx="30" fill="#0d1624" stroke="#98bbff" stroke-opacity="0.45"/>
-  <rect x="170" y="190" width="390" height="90" rx="18" fill="#16243a"/><text x="205" y="246" fill="#dff4ff" font-size="38" font-family="Outfit, sans-serif">Mirror Drill</text>
-  <rect x="170" y="305" width="390" height="90" rx="18" fill="#16243a"/><text x="205" y="361" fill="#dff4ff" font-size="38" font-family="Outfit, sans-serif">Eye Combat</text>
-  <rect x="170" y="420" width="390" height="90" rx="18" fill="#16243a"/><text x="205" y="476" fill="#dff4ff" font-size="38" font-family="Outfit, sans-serif">Pressure Story</text>
-  <circle cx="840" cy="340" r="130" fill="#1b2c43" stroke="#79f4ff" stroke-opacity="0.5"/>
-  <text x="775" y="352" fill="#79f4ff" font-size="58" font-family="Outfit, sans-serif">14</text>
-  <text x="740" y="395" fill="#d9f8ff" font-size="30" font-family="Outfit, sans-serif">DRILLS</text>
+  <rect width="1200" height="675" fill="#0c0b09"/>
+  <rect x="110" y="110" width="980" height="455" rx="30" fill="#1b1916" stroke="#dbd3bc" stroke-opacity="0.45"/>
+  <rect x="170" y="190" width="390" height="90" rx="18" fill="#2c2924"/><text x="205" y="246" fill="#f4f1ea" font-size="38" font-family="Outfit, sans-serif">Mirror Drill</text>
+  <rect x="170" y="305" width="390" height="90" rx="18" fill="#2c2924"/><text x="205" y="361" fill="#f4f1ea" font-size="38" font-family="Outfit, sans-serif">Eye Combat</text>
+  <rect x="170" y="420" width="390" height="90" rx="18" fill="#2c2924"/><text x="205" y="476" fill="#f4f1ea" font-size="38" font-family="Outfit, sans-serif">Pressure Story</text>
+  <circle cx="840" cy="340" r="130" fill="#3b3523" stroke="#e3c595" stroke-opacity="0.5"/>
+  <text x="840" y="317" text-anchor="middle" dominant-baseline="central" fill="#e3c595" font-size="58" font-family="Outfit, sans-serif">14</text>
+  <text x="840" y="367" text-anchor="middle" dominant-baseline="central" fill="#f2efe6" font-size="30" font-family="Outfit, sans-serif">DRILLS</text>
 </svg>

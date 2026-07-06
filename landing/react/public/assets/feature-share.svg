@@ -1,14 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-label="Share the Protocol visual">
-  <rect width="1200" height="675" fill="#04070f"/>
-  <rect x="170" y="115" width="420" height="445" rx="28" fill="#0f1b2d" stroke="#8dafff" stroke-opacity="0.5"/>
-  <rect x="230" y="175" width="300" height="170" rx="16" fill="#182841"/>
-  <rect x="230" y="370" width="300" height="24" rx="12" fill="#d9f8ff"/>
-  <rect x="230" y="410" width="220" height="20" rx="10" fill="#8fb8ff"/>
-  <rect x="230" y="445" width="260" height="20" rx="10" fill="#7bd3ff"/>
-  <rect x="640" y="175" width="390" height="110" rx="18" fill="#132033"/>
-  <text x="690" y="240" fill="#dff5ff" font-size="34" font-family="Outfit, sans-serif">Export Proof</text>
-  <rect x="640" y="315" width="390" height="110" rx="18" fill="#132033"/>
-  <text x="690" y="380" fill="#dff5ff" font-size="34" font-family="Outfit, sans-serif">Post Receipt</text>
-  <rect x="640" y="455" width="390" height="70" rx="14" fill="#79f4ff"/>
-  <text x="695" y="500" fill="#06121f" font-size="30" font-family="Outfit, sans-serif">Share the Protocol</text>
+  <rect width="1200" height="675" fill="#0a0a09"/>
+  <rect x="170" y="115" width="420" height="445" rx="28" fill="#211f1b" stroke="#e7d9a5" stroke-opacity="0.5"/>
+  <rect x="230" y="175" width="300" height="170" rx="16" fill="#312e28"/>
+  <rect x="230" y="370" width="300" height="24" rx="12" fill="#f2efe6"/>
+  <rect x="230" y="410" width="220" height="20" rx="10" fill="#d8cfb6"/>
+  <rect x="230" y="445" width="260" height="20" rx="10" fill="#e3cc97"/>
+  <rect x="640" y="175" width="390" height="110" rx="18" fill="#272420"/>
+  <text x="690" y="240" fill="#f4f1ea" font-size="34" font-family="Outfit, sans-serif">Export Proof</text>
+  <rect x="640" y="315" width="390" height="110" rx="18" fill="#272420"/>
+  <text x="690" y="380" fill="#f4f1ea" font-size="34" font-family="Outfit, sans-serif">Post Receipt</text>
+  <rect x="640" y="455" width="390" height="70" rx="14" fill="#e3c595"/>
+  <text x="695" y="500" fill="#141311" font-size="30" font-family="Outfit, sans-serif">Share the Protocol</text>
 </svg>

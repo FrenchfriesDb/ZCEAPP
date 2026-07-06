@@ -5,6 +5,6 @@
   <rect x="170" y="305" width="390" height="90" rx="18" fill="#2c2924"/><text x="205" y="361" fill="#f4f1ea" font-size="38" font-family="Outfit, sans-serif">Eye Combat</text>
   <rect x="170" y="420" width="390" height="90" rx="18" fill="#2c2924"/><text x="205" y="476" fill="#f4f1ea" font-size="38" font-family="Outfit, sans-serif">Pressure Story</text>
   <circle cx="840" cy="340" r="130" fill="#3b3523" stroke="#e3c595" stroke-opacity="0.5"/>
-  <text x="775" y="352" fill="#e3c595" font-size="58" font-family="Outfit, sans-serif">14</text>
-  <text x="740" y="395" fill="#f2efe6" font-size="30" font-family="Outfit, sans-serif">DRILLS</text>
+  <text x="840" y="317" text-anchor="middle" dominant-baseline="central" fill="#e3c595" font-size="58" font-family="Outfit, sans-serif">14</text>
+  <text x="840" y="367" text-anchor="middle" dominant-baseline="central" fill="#f2efe6" font-size="30" font-family="Outfit, sans-serif">DRILLS</text>
 </svg>

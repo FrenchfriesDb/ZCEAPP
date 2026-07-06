@@ -3,10 +3,10 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
-  publicDir: false,
   build: {
     outDir: "../assets/react-app",
     emptyOutDir: true,
+    copyPublicDir: false,
     cssCodeSplit: false,
     rollupOptions: {
       output: {
